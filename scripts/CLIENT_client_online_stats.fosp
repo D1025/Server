@@ -1,0 +1,2195 @@
+                           
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+shared class Sprite
+{
+	Sprite()
+	{
+		Id=0;
+		Width=0;
+		Height=0;
+		FrmCount=0;
+	}
+	
+	bool Load(string&name,int path)
+	{
+		if(name.length()>0)
+		{
+			Id=LoadSprite(name,path);
+			Filename=name;
+		}
+		else
+		Id=0;
+		RefreshData();
+		return Id!=0;
+	}
+	
+	void LoadHash(uint nameHash,uint8 dir)
+	{
+		Id=LoadSprite(nameHash,dir);
+		RefreshData();
+	}
+	
+	void LoadByIni(string&iniKey,int path)
+	{
+		string@name=GetIfaceIniStr(iniKey);
+		if(@name!=null&&name.length()>0)
+		Id=LoadSprite(name,path);
+		else
+		Id=0;
+		RefreshData();
+	}
+	
+	void Draw(int x,int y)
+	{
+		if(Id!=0)
+		DrawSprite(Id,-1,x,y,0);
+	}
+	
+	private void RefreshData()
+	{
+		if(Id!=0)
+		{
+			Width=GetSpriteWidth(Id,0);
+			Height=GetSpriteHeight(Id,0);
+			FrmCount=GetSpriteCount(Id);
+		}
+		else
+		{
+			Width=0;
+			Height=0;
+			FrmCount=0;
+			Filename="";
+		}
+	}
+	
+	uint Id;
+	int Width;
+	int Height;
+	uint FrmCount;
+	string Filename;
+};     
+
+shared interface IControl
+{
+	void SetParent(IControl@parent); 
+	
+	bool IsVisible();
+	bool IsActive();
+	
+	void Disable();
+	void Enable();
+	
+	void Show(bool showAll=false);
+	void Show(int left,int top);
+	void Hide(); 
+	
+	void ShowWindow();
+	void ShowWindow(int left,int top);
+	void HideWindow();
+	void Center();
+	
+	int Left();
+	int Right();
+	int Top();
+	int Bottom();
+	int Width();
+	int Height();
+	
+	IControl@Position(int,int);
+	IControl@Position(string&iniKey);
+	IControl@Left(int);
+	IControl@Top(int);
+	IControl@Width(int);
+	IControl@Height(int);
+	IControl@Size(int,int);
+	
+	void Init();
+	void Draw();
+	void Update();
+	bool MouseDown(int x,int y,int click);
+	bool MouseUp(int x,int y,int click);
+	void MouseMove(int fromX,int fromY,int toX,int toY);
+	bool KeyDown(uint8 key,string&keyText);
+	void KeyUp(uint8 key,string&keyText);
+};   
+
+class Control:IControl
+{
+	
+	IControl@parent;
+	
+	array<IControl@>controls; 
+	
+	int left;
+	int top;
+	int width;
+	int height;     
+	
+	bool active;
+	
+	bool visible;
+	
+	bool focus; 
+	
+	bool mousePressed;
+	int mouseX;
+	int mouseY;
+	
+	Control()
+	{
+		active=true;
+		visible=true;
+		focus=false;
+		
+		mousePressed=false;
+		mouseX=0;
+		mouseY=0;
+		
+		left=top=width=height=0;
+	}
+	
+	Control(int left,int top,int width,int height)
+	{
+		active=true;
+		visible=true;
+		focus=false;
+		
+		mousePressed=false;
+		mouseX=0;
+		mouseY=0;
+		
+		this.left=left;
+		this.top=top;
+		this.width=width;
+		this.height=height;
+	}    
+	
+	bool IsVisible(){return visible;}
+	bool IsActive(){return active;}   
+	
+	int Left()
+	{
+		if((@parent!=null))
+		return parent.Left()+left;
+		else
+		return left;
+	}
+	int Top()
+	{
+		if((@parent!=null))
+		return parent.Top()+top;
+		else
+		return top;
+	}
+	int Right(){return Left()+Width();}
+	int Bottom(){return Top()+Height();}
+	int Height(){return height;}
+	int Width(){return width;}
+	
+	IControl@Position(int x,int y){left=x;top=y;return this;}
+	IControl@Left(int x){left=x;return this;}
+	IControl@Top(int y){top=y;return this;}
+	IControl@Width(int w){width=w;return this;}
+	IControl@Height(int h){height=h;return this;}
+	IControl@Size(int w,int h){height=h;width=w;return this;}
+	
+	IControl@Position(string&iniKey)
+	{
+		left=0;
+		top=0;
+		width=0;
+		height=0; 
+		
+		string@str=GetIfaceIniStr(iniKey);
+		if(@str==null||str=="")
+		return this;
+		
+		array<string@>@valuesStr=split(str," ");
+		if(valuesStr.length()!=4)
+		return this;
+		
+		array<int>values(4);
+		for(int i=0;i<4;i++)
+		if(!StrToInt(valuesStr[i],values[i]))
+		return this;
+		
+		left=values[0];
+		top=values[1];
+		width=values[2]-values[0]+1;
+		height=values[3]-values[1]+1;
+		return this;
+	}   
+	
+	bool IsInside(int x,int y)
+	{
+		return(x>=Left())&&(x<Right())&&(y>=Top())&&(y<Bottom());
+	}   
+	
+	void SetParent(IControl@control)
+	{
+		@parent=control;
+	}   
+	
+	void Enable()
+	{
+		active=true;
+		OnEnabled();
+	}
+	void Disable()
+	{
+		active=false;
+		OnDisabled();
+	}   
+	
+	void Show(bool showAll=false)
+	{
+		visible=true;
+		if(showAll)
+		{
+			for(uint i=0,j=controls.length();i<j;i++)
+			controls[i].Show(showAll);
+		}
+		OnShow();
+	}
+	void Show(int left,int top)
+	{
+		this.left=left;
+		this.top=top;
+		visible=true;
+		OnShow();
+	}
+	void Hide()
+	{
+		visible=false;
+		for(uint i=0,j=controls.length();i<j;i++)
+		controls[i].Hide();
+		OnHide();
+	}
+	
+	void ShowWindow()
+	{
+		Message("This control does not have window attached.");
+	}
+	void ShowWindow(int x,int y)
+	{
+		Message("This control does not have window attached.");
+	}
+	void HideWindow()
+	{
+		Message("This control does not have window attached.");
+	}  
+	
+	void Center()
+	{
+		Position(parent.Width()/2-Width()/2,parent.Height()/2-Height()/2);
+	}
+	void Init()
+	{
+		for(uint i=0,j=controls.length();i<j;i++)
+		controls[i].Init();
+	}  
+	
+	void SetFocus(bool focused)
+	{
+		this.focus=focused;
+		
+		if(focused)
+		GotFocus();
+		else
+		LostFocus();
+	}   
+	
+	void AddControl(IControl@control)
+	{
+		control.SetParent(this);
+		controls.insertLast(@control);
+	}    
+	
+	bool MouseDown(int x,int y,int click)
+	{
+		bool intercepted=false;
+		for(uint i=0,j=controls.length();i<j;i++)
+		{
+			if(controls[i].IsVisible()&&controls[i].IsActive())
+			intercepted=controls[i].MouseDown(x,y,click)?true:intercepted;
+		}
+		if(!intercepted)
+		{
+			if(click!=(4)&&click!=(3))
+			{
+				if(IsInside(x,y))
+				{
+					mousePressed=true;
+					mouseX=x;
+					mouseY=y;
+					SetFocus(true);
+					intercepted=true;
+				}
+				else
+				{
+					SetFocus(false);
+				}
+			}
+		}
+		return intercepted;
+	}
+	bool MouseUp(int x,int y,int click)
+	{
+		bool intercepted=false;
+		if(IsInside(x,y)&&mousePressed)
+		{
+			
+			Click();
+			intercepted=true;
+		}
+		
+		mousePressed=false;
+		
+		for(uint i=0,j=controls.length();i<j;i++)
+		{
+			if(controls[i].IsVisible()&&controls[i].IsActive())
+			intercepted=controls[i].MouseUp(x,y,click)?true:intercepted;
+		}
+		return intercepted;
+	}
+	void MouseMove(int fromX,int fromY,int toX,int toY)
+	{
+		for(uint i=0,j=controls.length();i<j;i++)
+		{
+			if(controls[i].IsVisible()&&controls[i].IsActive())
+			controls[i].MouseMove(fromX,fromY,toX,toY);
+		}
+	}
+	bool KeyDown(uint8 key,string&keyText)
+	{
+		bool intercepted=false;
+		for(uint i=0,j=controls.length();i<j;i++)
+		{
+			if(controls[i].IsVisible()&&controls[i].IsActive())
+			intercepted=controls[i].KeyDown(key,keyText)?true:intercepted;
+		}
+		return intercepted;
+	}
+	void KeyUp(uint8 key,string&keyText)
+	{
+		for(uint i=0,j=controls.length();i<j;i++)
+		{
+			if(controls[i].IsVisible()&&controls[i].IsActive())
+			controls[i].KeyUp(key,keyText);
+		}
+	}   
+	
+	void Draw()
+	{
+		for(uint i=0,j=controls.length();i<j;i++)
+		if(controls[i].IsVisible())
+		controls[i].Draw();
+	}  
+	
+	void Update()
+	{
+		for(uint i=0,j=controls.length();i<j;i++)
+		{
+			if(controls[i].IsActive())
+			controls[i].Update();
+		}
+	}        
+	
+	void Click()
+	{}  
+	
+	void GotFocus()
+	{}  
+	
+	void LostFocus()
+	{}  
+	
+	void OnShow()
+	{}  
+	
+	void OnHide()
+	{}  
+	
+	void OnEnabled()
+	{}  
+	
+	void OnDisabled()
+	{}
+};      
+
+class CButton:Control
+{
+	string caption;
+	Sprite spriteUp;
+	Sprite spriteDown;
+	
+	int textBorder;
+	
+	CButton(int left,int top,string@caption)
+	{
+		super(left,top,119,30);
+		spriteUp.Load("wm_tab.png",(4));
+		spriteDown.Load("wm_blanktab.png",(4));
+		this.caption=caption;
+		textBorder=30;
+	}
+	CButton(int left,int top,int width,int height,string&down)
+	{ 
+		
+		if(!spriteDown.Load(down,(4)))
+		Message("Couldn't load sprite: "+down);
+		super(left,top,(((width)>(spriteDown.Width))?(width):(spriteDown.Width)),(((height)>(spriteDown.Height))?(height):(spriteDown.Height)));
+		textBorder=0;
+	}
+	CButton(int left,int top,int width,int height,string&up,string&down)
+	{
+		if(!spriteUp.Load(up,(4)))
+		Message("Couldn't load sprite(up): "+up);
+		if(!spriteDown.Load(down,(4)))
+		Message("Couldn't load sprite(down): "+down);
+		super(left,top,(((width)>(spriteUp.Width))?(width):(spriteUp.Width)),(((height)>(spriteUp.Height))?(height):(spriteUp.Height)));
+		textBorder=0;
+	}
+	CButton(string&iniKey,string&down)
+	{ 
+		
+		if(!spriteDown.Load(down,(4)))
+		Message("Couldn't load sprite: "+down);
+		Control::Position(iniKey);
+		textBorder=0;
+	}  
+	
+	void SetCaption(string@caption){this.caption=caption;}
+	
+	void Draw()
+	{
+		if(mousePressed)
+		{
+			if(spriteDown.Id!=0)
+			DrawSprite(spriteDown.Id,0,Left(),Top(),0);
+		}
+		else
+		{
+			if(spriteUp.Id!=0)
+			DrawSprite(spriteUp.Id,0,Left(),Top(),0);
+		}
+		int color=active?0:int(0xffaaaaaa);
+		if(caption!="")
+		DrawText(caption,Left()+textBorder,Top(),Width()-textBorder,Height(),color,(5),(0x0008)|(0x0200));
+	}
+}; 
+
+class CDialogRedButton:Control
+{
+	Sprite spriteDown;
+	
+	CDialogRedButton(int left,int top)
+	{
+		super(left,top,16,16);
+		spriteDown.Load("di_rdbt1.frm",(4));
+	}  
+	
+	void Draw()
+	{
+		if(mousePressed)
+		DrawSprite(spriteDown.Id,0,Left(),Top(),0);
+	}
+};
+
+class CSmallButton:Control
+{
+	Sprite spriteDown;
+	
+	CSmallButton(int left,int top)
+	{
+		super(left,top,16,16);
+		spriteDown.Load("lilreddn.frm",(4));
+	}  
+	
+	void Draw()
+	{
+		if(mousePressed)
+		DrawSprite(spriteDown.Id,0,Left(),Top(),0);
+	}
+};
+
+class CSmallArrowUp:Control
+{
+	Sprite spriteDown;
+	
+	CSmallArrowUp(int left,int top)
+	{
+		super(left,top,16,16); 
+		
+	}  
+	
+	void Draw()
+	{ 
+		
+	}
+};
+
+class CSmallArrowDown:Control
+{
+	Sprite spriteDown;
+	
+	CSmallArrowDown(int left,int top)
+	{
+		super(left,top,16,16); 
+		
+	}  
+	
+	void Draw()
+	{ 
+		
+	}
+};   
+
+class CLabel:Control
+{
+	int font;
+	int color;
+	int format;
+	string@caption;
+	
+	CLabel(int left,int top,int width,int height,string@caption)
+	{
+		super(left,top,width,height);
+		@this.caption=@caption;
+		this.color=0;
+		font=(5);
+		format=(0x0008)|(0x0200);
+	}
+	CLabel(int left,int top,int width,int height,string@caption,int font)
+	{
+		super(left,top,width,height);
+		@this.caption=@caption;
+		this.color=0;
+		this.font=font;
+		format=(0x0008)|(0x0200);
+	}
+	void SetCaption(string@caption)
+	{
+		@this.caption=@caption;
+	}
+	void set_Caption(string@caption)
+	{
+		@this.caption=@caption;
+	}
+	string@get_Caption()
+	{
+		return@caption;
+	}
+	void SetColor(uint color)
+	{
+		this.color=color;
+	}
+	void set_Color(uint color)
+	{
+		this.color=color;
+	}
+	void SetFont(uint font)
+	{
+		this.font=font;
+	}
+	void set_Font(uint font)
+	{
+		this.font=font;
+	}
+	void SetFormat(uint format)
+	{
+		this.format=format;
+	}
+	void Draw()
+	{
+		DrawText(caption,Left(),Top(),Width(),Height(),color,font,format);
+	}
+};   
+
+class CTextBox:Control
+{
+	
+	string text;
+	
+	string drawnText;
+	uint cursorPos;
+	
+	uint cursorTime;
+	
+	uint cursorChangedTime;
+	
+	int showCursor;
+	
+	string cursor1;
+	string cursor2; 
+	
+	int color;
+	int format;
+	int font;
+	uint maxlength;
+	
+	CTextBox(int left,int top,int width,int height,string@text)
+	{
+		super(left,top,width,height);
+		this.text=text;
+		cursorPos=text.rawLength();
+		cursorTime=400;
+		cursorChangedTime=0;
+		showCursor=0;
+		cursor1="!";
+		cursor2=".";
+		drawnText=text;
+		
+		color=0;
+		font=(5);
+		format=(0x0200);
+		maxlength=0;
+	}  
+	
+	string@Text()
+	{
+		return text;
+	}  
+	
+	string@GetCursor()
+	{
+		if(showCursor==0)
+		return"";
+		else if(showCursor==1)
+		return cursor1;
+		else
+		return cursor2;
+	}
+	void SetColor(uint color)
+	{
+		this.color=color;
+	}
+	void SetFormat(uint format)
+	{
+		this.format=format;
+	}
+	void SetText(string@text)
+	{
+		this.text=text;
+		cursorPos=text.rawLength();
+		RefreshDrawnText();
+	}
+	void SetMaxLength(uint ml)
+	{
+		maxlength=ml;
+	}  
+	
+	void ShowCursor(int show)
+	{
+		showCursor=show;
+		RefreshDrawnText();
+	}  
+	
+	void RefreshDrawnText()
+	{
+		if(showCursor>0)
+		{
+			if(cursorPos==text.rawLength())
+			drawnText=text+GetCursor();
+			else
+			drawnText=substring(text,0,cursorPos)+GetCursor()+substring(text,cursorPos,text.rawLength()-cursorPos);
+		}
+		else
+		drawnText=text;
+	}                                   
+	
+	void InsertChar(uint8 key,string&keyText)
+	{
+		text=substring(text,0,cursorPos)+keyText+substring(text,cursorPos,text.length()-cursorPos);
+		cursorPos++;
+	}
+	
+	void Draw()
+	{
+		uint tick=GetTick();
+		
+		if(tick-cursorChangedTime>cursorTime)
+		{
+			cursorChangedTime=tick;
+			if(showCursor==1)
+			ShowCursor(2);
+			else if(focus)
+			ShowCursor(1);
+			else
+			ShowCursor(0);
+		} 
+		
+		DrawText(drawnText,Left(),Top(),Width(),Height(),color,font,format);
+	}
+	
+	bool KeyDown(uint8 key,string&keyText)
+	{
+		if(focus)
+		{
+			
+			if(key==0x0E)
+			{
+				if(text.rawLength()>0&&cursorPos>0)
+				{
+					text=substring(text,0,cursorPos-1)+substring(text,cursorPos,text.rawLength()-cursorPos);
+					cursorPos--;
+				}
+			}
+			else if(key==0xD3)
+			{
+				if(text.rawLength()>0&&cursorPos<text.rawLength())
+				{
+					text=substring(text,0,cursorPos)+substring(text,cursorPos+1,text.rawLength()-cursorPos-1);
+				}
+			}
+			
+			else if(key==0xC7)
+			{
+				cursorPos=0;
+			}
+			else if(key==0xCF)
+			{
+				cursorPos=text.rawLength();
+			}
+			
+			else if(key==0xCB)
+			{
+				if(cursorPos>0)
+				cursorPos--;
+			}
+			else if(key==0xCD)
+			{
+				if(cursorPos<text.rawLength())
+				cursorPos++;
+			}
+			
+			else if(key==0x01||key==0x1C||key==0x9C)
+			{
+				SetFocus(false);
+			}
+			else
+			{
+				if(maxlength==0||maxlength>text.rawLength())
+				InsertChar(key,keyText);
+			}
+			
+			RefreshDrawnText();
+			return true;
+		}
+		return Control::KeyDown(key,keyText);
+	}
+};   
+
+class CSprite:Control
+{
+	Sprite sprite;
+	
+	CSprite(string@spriteName,int path=(4))
+	{
+		super();
+		sprite.Load(spriteName,path);
+	}
+	CSprite(uint nameHash,int path=(4))
+	{
+		super();
+		sprite.LoadHash(nameHash,path);
+	}
+	CSprite(int left,int top,int width,int height,string@spriteName,int path=(4))
+	{
+		super(left,top,width,height);
+		sprite.Load(spriteName,path);
+	}
+	
+	void Draw()
+	{
+		DrawSprite(sprite.Id,-1,Left(),Top(),0);
+		Control::Draw();
+	}
+};   
+
+class CSpriteEx:CSprite
+{
+	int index;
+	bool scratch;
+	bool center;
+	uint color;
+	bool applyOffsets;
+	
+	CSpriteEx(string@spriteName)
+	{
+		super(spriteName);
+		Init();
+	}
+	
+	CSpriteEx(uint nameHash,int path=(4))
+	{
+		super(nameHash,path);
+		Init();
+	}
+	
+	CSpriteEx(int left,int top,int width,int height,string@spriteName)
+	{
+		super(left,top,width,height,spriteName);
+		Init();
+	}
+	
+	private void Init()
+	{
+		CSprite::Init();
+		this.index=-1;
+		this.scratch=false;
+		this.center=false;
+		this.color=0;
+		this.applyOffsets=true;
+	}
+	
+	void Draw()
+	{
+		if(this.sprite.Id>0)
+		DrawSprite(this.sprite.Id,this.index,Left(),Top(),this.sprite.Width,this.sprite.Height,this.scratch,this.center,this.color,this.applyOffsets);
+		Control::Draw();
+	}
+};   
+
+class CListBox:Control
+{
+	array<string@>elements;
+	
+	uint start;
+	
+	uint index;
+	
+	uint textHeight;
+	
+	CListBox(int left,int top,int width,int height)
+	{
+		super(left,top,width,height);
+		start=0;
+		textHeight=12;
+	}   
+	
+	uint GetRowCount()
+	{
+		return height/textHeight;
+	}  
+	
+	uint GetIndex()
+	{
+		return index;
+	}  
+	
+	void AddElement(string@elem)
+	{
+		elements.insertLast(elem);
+	}  
+	
+	void Scroll(int d)
+	{
+		start=(((int(start)+d)>(int(elements.length()-1)))?(int(elements.length()-1)):(((int(start)+d)<(0))?(0):(int(start)+d)));
+	}  
+	
+	void Draw()
+	{
+		for(uint i=start,j=(((elements.length())<(start+uint(Height()/textHeight)))?(elements.length()):(start+uint(Height()/textHeight)));i<j;i++)
+		{
+			DrawText(elements[i],Left(),Top()+(i-start)*textHeight,Width(),textHeight,i==index?0xffffffff:0,(5),(0x0200));
+		}
+	}   
+	
+	void Click()
+	{
+		uint el=start+(mouseY-Top())/textHeight;
+		if(el<elements.length())
+		index=el;
+		Control::Click();
+	}
+};   
+
+class CContextButton:CButton
+{
+	uint crId;
+	uint itemId;
+	uint16 hexX;
+	uint16 hexY;
+	
+	CContextButton(string caption)
+	{
+		super(0,0,caption);
+		hexX=0;
+		hexY=0;
+	}   
+	
+	void SetCritter(CritterCl@cr)
+	{
+		crId=itemId=0;
+		if((@cr!=null))
+		crId=cr.Id;
+	}  
+	
+	void SetItem(ItemCl@item)
+	{
+		crId=itemId=0;
+		if((@item!=null))
+		itemId=item.Id;
+	}  
+	
+	void SetHex(uint16 x,uint16 y)
+	{
+		this.hexX=x;
+		this.hexY=y;
+	}
+};   
+
+class Window:Control,IGUIScreenCallbackFocus,IGUIScreenCallbackShow
+{
+	IGUIScreenOpt@screen;
+	
+	int Left(){return screen.GetPosX();}
+	int Top(){return screen.GetPosY();}
+	int Width(){return screen.GetWidth();}
+	int Height(){return screen.GetHeight();}
+	
+	bool autoMode;
+	
+	Window()
+	{
+		super();
+		autoMode=false;
+	}
+	
+	void Init()
+	{
+		@screen=GUI_GetScreenOptions();
+		Control::Init();
+	}
+	
+	IControl@Position(int x,int y)
+	{
+		screen.Position(x,y);
+		return this;
+	}
+	IControl@Size(int w,int h)
+	{
+		screen.Size(w,h);
+		return this;
+	}  
+	
+	void Center()
+	{
+		Position(__ScreenWidth/2-Width()/2,__ScreenHeight/2-Height()/2);
+	} 
+	
+	void OnShow(int p0,int p1,int p2)
+	{
+		if(p0!=0||p1!=0)
+		Show(p0,p1);
+		else
+		Show();
+	}
+	
+	void Show(int x,int y)
+	{
+		screen.Position(x,y);
+		Control::Show(x,y);
+	} 
+	
+	void ShowWindow()
+	{
+		GUI_ShowScreen(screen.GetIndex(),0,0,0);
+	}
+	void ShowWindow(int x,int y)
+	{
+		screen.Position(x,y);
+		GUI_ShowScreen(screen.GetIndex(),x,y,0);
+	}
+	void HideWindow()
+	{
+		GUI_HideScreen(screen.GetIndex(),0,0,0);
+		Disable();
+	}
+	void OnLostFocus()
+	{
+		HideWindow();
+		Disable();
+	}
+	
+	bool MouseDown(int x,int y,int click)
+	{
+		bool intercepted=false;
+		for(uint i=0,j=controls.length();i<j;i++)
+		{
+			if(controls[i].IsVisible()&&controls[i].IsActive())
+			intercepted=controls[i].MouseDown(x,y,click)?true:intercepted;
+		}
+		if(!intercepted)
+		{
+			if(click!=(4)&&click!=(3))
+			{
+				if(IsInside(x,y))
+				{
+					mousePressed=true;
+					mouseX=x;
+					mouseY=y;
+					SetFocus(true);
+					intercepted=true;
+				}
+				else
+				{
+					SetFocus(false);
+				}
+				
+				return false;
+			}
+		}
+		return intercepted;
+	}   
+	
+	void Auto(bool v){autoMode=v;}
+	bool Auto(){return autoMode;}
+};       
+
+import void GUI_Init()from"client_gui";
+import void GUI_GetActiveScreens(array<int>&result)from"client_gui";
+import int GUI_GetActiveScreen()from"client_gui";
+import int GUI_GetActiveMainScreen()from"client_gui";
+import int GUI_GetMainScreen()from"client_gui";
+import void GUI_ShowScreen(int screenIndex,int p0,int p1,int p2)from"client_gui";
+import void GUI_HideScreen(int screenIndex,int p0,int p1,int p2)from"client_gui";
+import void GUI_Render(bool mainScreen)from"client_gui";
+
+import void GUI_Update(uint dt)from"client_gui";
+import bool GUI_MouseDown(int x,int y,int click)from"client_gui";
+import bool GUI_MouseUp(int x,int y,int click)from"client_gui";
+import void GUI_MouseMove(int fromX,int fromY,int toX,int toY)from"client_gui";
+import bool GUI_KeyDown(uint8 key,string&keyText)from"client_gui";
+import bool GUI_KeyUp(uint8 key,string&keyText)from"client_gui";
+import void GUI_InputLost()from"client_gui";
+import bool GUI_IsKeyPressed(uint8 key)from"client_gui"; 
+
+import void GUI_GetIniCoords(string&ini,int&left,int&top,int&right,int&bottom)from"client_gui"; 
+
+import IGUIScreenOpt@GUI_CreateScreen(int screenIndex,string@sprName)from"client_gui";
+
+import IGUIScreenOpt@GUI_GetScreen(int screenIndex)from"client_gui"; 
+
+import IGUIElementTextOpt@GUI_AddText(int screenIndex)from"client_gui";
+import IGUIElementTextOpt@GUI_AddText(int screenIndex,string@text,int x,int y)from"client_gui";
+import IGUIElementImageOpt@GUI_AddImage(int screenIndex)from"client_gui";
+import IGUIElementImageOpt@GUI_AddImage(int screenIndex,string@sprName,int patch,int x,int y)from"client_gui";
+import IGUIElementButtonOpt@GUI_AddButton(int screenIndex)from"client_gui";
+import IGUIElementButtonOpt@GUI_AddButton(int screenIndex,int x,int y)from"client_gui";
+
+import void GUI_DeleteScreen(int screenIndex)from"client_gui"; 
+
+import IGUIScreenOpt@GUI_GetScreenOptions()from"client_gui";     
+
+shared interface IGUIScreenCallbackShow
+{
+	void OnShow(int p0,int p1,int p2);
+};
+shared interface IGUIScreenCallbackHide
+{
+	void OnHide(int p0,int p1,int p2);
+};
+shared interface IGUIScreenCallbackMove
+{
+	void OnMove(int posX,int posY);
+};
+shared interface IGUIScreenCallbackFocus
+{
+	void OnLostFocus();
+};
+
+shared interface IGUIScreenCallbackKeyPress
+{
+	bool OnKeyPress(uint8 key,string&keyText);
+}
+
+shared interface IGUIScreenCallbackMouseDown
+{
+	bool OnMouseDown(int click);
+} 
+
+shared interface IGUIScreenOpt
+{
+	IGUIScreenOpt@SetCallbackShow(IGUIScreenCallbackShow@callback);
+	IGUIScreenOpt@SetCallbackHide(IGUIScreenCallbackHide@callback);
+	IGUIScreenOpt@SetCallbackMove(IGUIScreenCallbackMove@callback);
+	IGUIScreenOpt@SetCallbackFocus(IGUIScreenCallbackFocus@callback);
+	IGUIScreenOpt@SetCallbackMouseDown(IGUIScreenCallbackMouseDown@callback);
+	IGUIScreenOpt@SetCallbackKeyPress(IGUIScreenCallbackKeyPress@callback);
+	
+	IControl@Control();
+	IGUIScreenOpt@Control(IControl@control);
+	IGUIScreenOpt@Position(int x,int y);
+	IGUIScreenOpt@Size(int w,int h);
+	IGUIScreenOpt@CanMove(bool enabled);
+	IGUIScreenOpt@Modal(bool enabled);
+	IGUIScreenOpt@Multiinstance(bool enabled);
+	IGUIScreenOpt@IgnoreBorders(bool enabled);
+	IGUIScreenOpt@CloseOnMiss(bool enabled);
+	IGUIScreenOpt@AutoCursor(bool enabled,int cursorType);
+	IGUIScreenOpt@Hardcoded(bool enabled); 
+	
+	int GetPosX();
+	int GetPosY();
+	int GetWidth();
+	int GetHeight();
+	int GetIndex();
+};
+
+shared interface IGUIElementCallbackInit{void OnInit(int id);}
+shared interface IGUIElementCallbackDraw{void OnDraw(int id);}
+shared interface IGUIElementCallbackKeyPress{bool OnKeyPress(uint8 key,string&keyText);}
+shared interface IGUIElementCallbackMouseDown{void OnMouseDown(int click);}
+shared interface IGUIElementCallbackMouseClick{void OnMouseClick(int id,int click);}
+shared interface IGUIElementCallbackMouseMove{void OnMouseMove(int x,int y);}
+shared interface IGUIElementCallbackValueChange{void OnValueChange(int newValue);}
+shared interface IGUIElementCallbackStateChange{void OnStateChange(bool state);}
+
+shared interface IGUIElementOpt
+{
+	IGUIElementOpt@CallbackInit(IGUIElementCallbackInit@callback);
+	IGUIElementOpt@CallbackDraw(IGUIElementCallbackDraw@callback);
+	IGUIElementOpt@CallbackKeyPress(IGUIElementCallbackKeyPress@callback);
+	IGUIElementOpt@CallbackMouseDown(IGUIElementCallbackMouseDown@callback);
+	IGUIElementOpt@CallbackMouseClick(IGUIElementCallbackMouseClick@callback);
+	IGUIElementOpt@CallbackMouseMove(IGUIElementCallbackMouseMove@callback);
+	IGUIElementOpt@Position(int x,int y);
+	IGUIElementOpt@Position(int x,int y,int w,int h);
+	IGUIElementOpt@Position(string&iniKey);
+	IGUIElementOpt@Visible(bool visible);
+	IGUIElementOpt@AbsolutePosition(bool absolutePosition);
+	IGUIElementOpt@AbsolutePosition(int x,int y);
+	IGUIElementOpt@CollisionTransparent(bool collisionTransparent);
+	IGUIElementOpt@AddText(int id,string@text,int x,int y,int width,int height,int font,uint color,int flags);
+	IGUIElementOpt@AddImage(int id,string@sprName,int x,int y);
+	IGUIElementOpt@AddImage(int id,int patch,string@sprName,int x,int y);
+	IGUIElementCallbackInit@GetCallbackInit();
+	
+	void MouseDown(int click);
+	void MouseUp(int click,bool IsCollision);
+	void MouseMove(int x,int y); 
+	
+	void Draw(int screenX,int screenY);
+	void Update(uint dt);
+	void SetFocused(bool state);
+	void SetVisible(bool visible);
+	void SetAbsolutePosition(bool absolutePosition);
+	void SetCollisionTransparent(bool collisionTransparent);
+	void InputLost();
+	
+	IGUIElementOpt@GetNewInstance(); 
+	
+	bool IsVisible();
+	bool IsFocused();
+	bool IsAbsolutePosition();
+	bool IsCollisionTransparent();
+	bool IsCollision(int screenX,int screenY,int mouseX,int mouseY);
+	int GetId();
+	int GetPosX();
+	int GetPosY();
+	int GetHeight();
+	int GetWidth();
+	
+	bool KeyPress(uint8 key,string&keyText);
+	void KeyUp(uint8 key,string&keyText);
+}
+
+shared interface IGUIElementTextOpt
+{
+	IGUIElementTextOpt@CallbackInit(IGUIElementCallbackInit@callback);
+	IGUIElementTextOpt@CallbackDraw(IGUIElementCallbackDraw@callback);
+	IGUIElementTextOpt@CallbackMouseDown(IGUIElementCallbackMouseDown@callback);
+	IGUIElementTextOpt@CallbackMouseClick(IGUIElementCallbackMouseClick@callback);
+	IGUIElementTextOpt@CallbackMouseMove(IGUIElementCallbackMouseMove@callback);
+	
+	IGUIElementTextOpt@Position(int x,int y);
+	IGUIElementTextOpt@Position(int x,int y,int w,int h);
+	IGUIElementTextOpt@Position(string&iniKey);
+	IGUIElementTextOpt@AbsolutePosition(int x,int y);
+	IGUIElementTextOpt@AbsolutePosition(bool absolutePosition);
+	IGUIElementTextOpt@Text(string@text);
+	IGUIElementTextOpt@Text(string@text,int font,uint color);
+	IGUIElementTextOpt@Text(string@text,int font,uint color,int flags);
+	IGUIElementTextOpt@Text(string@text,int font,uint color,uint downColor,int flags);
+	IGUIElementTextOpt@Visible(bool visible);
+	IGUIElementTextOpt@TextBoxSize(int width,int height);
+	IGUIElementTextOpt@TextOptions(int font,uint color);
+	IGUIElementTextOpt@TextOptions(int font,uint color,int flags);
+	IGUIElementTextOpt@TextOptions(int font,uint color,uint colorDown,int flags);
+	IGUIElementTextOpt@TextColor(uint color);
+	
+	void Draw(int screenX,int screenY);
+	void SetText(string&text);
+	void SetVisible(bool visible);
+	void SetFocused(bool state); 
+	
+	bool IsVisible();
+	string@GetText();
+	int GetFont();
+	uint GetTextColor(); 
+	
+	int GetId();
+}
+
+shared interface IGUIElementImageOpt
+{
+	IGUIElementImageOpt@CallbackInit(IGUIElementCallbackInit@callback);
+	IGUIElementImageOpt@CallbackDraw(IGUIElementCallbackDraw@callback);
+	IGUIElementImageOpt@CallbackMouseDown(IGUIElementCallbackMouseDown@callback);
+	IGUIElementImageOpt@CallbackMouseClick(IGUIElementCallbackMouseClick@callback);
+	
+	IGUIElementImageOpt@Position(int x,int y);
+	IGUIElementImageOpt@Position(int x,int y,int w,int h);
+	IGUIElementImageOpt@Position(string&iniKey);
+	IGUIElementImageOpt@AbsolutePosition(bool absolutePosition);
+	IGUIElementImageOpt@Visible(bool visible); 
+	
+	void SetVisible(bool visible);
+	void SetPosX(int x);
+	void SetPosY(int y);
+	void SetFocused(bool state);
+	void Draw(int screenX,int screenY);  
+	
+	bool IsVisible();
+	int GetPosX();
+	int GetPosY();
+	int GetImageWidth();
+	int GetImageHeight();
+	
+	bool IsCollision(int screenX,int screenY,int mouseX,int mouseY);
+}
+
+shared interface IGUIElementButtonOpt
+{
+	IGUIElementButtonOpt@CallbackInit(IGUIElementCallbackInit@callback);
+	IGUIElementButtonOpt@CallbackDraw(IGUIElementCallbackDraw@callback);
+	IGUIElementButtonOpt@CallbackMouseDown(IGUIElementCallbackMouseDown@callback);
+	IGUIElementButtonOpt@CallbackMouseClick(IGUIElementCallbackMouseClick@callback);
+	
+	IGUIElementButtonOpt@Position(int x,int y);
+	IGUIElementButtonOpt@Position(int x,int y,int w,int h);
+	IGUIElementButtonOpt@Position(string&iniKey);
+	IGUIElementButtonOpt@AbsolutePosition(bool absolutePosition);
+	IGUIElementButtonOpt@Text(string@text);
+	IGUIElementButtonOpt@Text(string@text,int font,uint color);
+	IGUIElementButtonOpt@Text(string@text,int font,uint color,int flags);
+	IGUIElementButtonOpt@Text(string@text,int font,uint color,uint downColor,int flags);
+	IGUIElementButtonOpt@Visible(bool visible);
+	IGUIElementButtonOpt@TextShift(int deltaX,int deltaY,int deltaDownX,int deltaDownY);
+	IGUIElementButtonOpt@TextWidth(int width);
+	IGUIElementButtonOpt@UpPic(string@sprName);
+	IGUIElementButtonOpt@DownPic(string@sprName);
+	IGUIElementButtonOpt@ClickableZone(int width,int height);
+	IGUIElementButtonOpt@ClickableZone(int x,int y,int width,int height);
+	
+	void SetVisible(bool visible);
+	void SetFocused(bool state); 
+	
+	bool IsVisible();
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+import uint COLOR_RGB_STRING(string&r,string&g,string&b)from"client_utils";
+import uint COLOR_RGBA_STRING(string&r,string&g,string&b,string&a)from"client_utils";
+import void COLOR_RGB_UNPACK(uint color,uint8&r,uint8&g,uint8&b)from"client_utils";
+import void COLOR_RGB_UNPACK(uint color,uint8&r,uint8&g,uint8&b,uint8&a)from"client_utils";
+
+import string RandomString(uint8 length)from"client_utils";
+
+import bool string2bool(string@text)from"client_utils";
+import uint string2uint(string@text)from"client_utils";
+import uint rgb_string2uint(string&text)from"client_utils";
+import uint rgba_string2uint(string&text)from"client_utils";
+
+import int string2int(string&text)from"client_utils";
+import uint font_string2uint(string&text)from"client_utils";
+import uint range_string2int(string&text,int&from,int&to)from"client_utils";
+import uint range_string2uint(string&text,uint&from,uint&to)from"client_utils";
+import void vis_string2bool(string&text,bool&head,bool&msgbox)from"client_utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";                                                                                                                 
+
+int OnlineStats=0;
+int OnlineStatsBuffer=0;   
+
+bool OS_GUI=true;               
+
+class COSButton:Control
+{
+	
+	int mod;
+	int ID;
+	int type;
+	string sType;
+	string name;
+	Sprite spriteUp;
+	Sprite spriteDown;
+	CLabel@label;
+	CALLBACK@callback;
+	int page;
+	int flag;
+	string msg; 
+	
+	bool state; 
+	
+	uint color_on;
+	uint color_off;
+	
+	COSButton(int mod,uint type,string sType,string name,int flag,string@caption,string@msg)
+	{
+		super();
+		
+		this.mod=mod;
+		this.type=type;
+		this.sType=sType;
+		this.name=name;
+		this.flag=flag;
+		this.msg=msg;
+		
+		if(this.type!=(2))
+		{
+			@this.label=CLabel(0,0,0,0,caption);
+			if((@this.label!=null))
+			{
+				this.label.Position((("OnlineStats")+"Button"+name+"Text"));
+				this.label.font=string2uint((GetIfaceIniStr((("OnlineStats")+"FontButtons"+sType))));
+				this.label.SetFormat((0x0200)|(0x0008));
+				if(this.type==(0))
+				{
+					this.label.SetColor(rgb_string2uint((GetIfaceIniStr((("OnlineStats")+"ColorButtons"+sType)))));
+				}
+				else if(this.type==(1))
+				{
+					this.color_on=rgb_string2uint((GetIfaceIniStr((("OnlineStats")+"ColorButtons"+sType+"Enabled"))));
+					this.color_off=rgb_string2uint((GetIfaceIniStr((("OnlineStats")+"ColorButtons"+sType+"Disabled"))));
+					this.label.SetColor(this.color_on);
+				}
+				else if(this.type==(3))
+				{
+					this.color_on=rgb_string2uint((GetIfaceIniStr((("OnlineStats")+"ColorButtons"+sType+"MouseOver"))));
+					this.color_off=rgb_string2uint((GetIfaceIniStr((("OnlineStats")+"ColorButtons"+sType+"MouseOut"))));
+					this.label.SetColor(this.color_off);
+				}
+				else
+				this.color_on=this.color_off=0;
+				
+				OnlineStatsWindow.AddControl(@this.label);
+				this.label.Update();
+			}
+			
+			else
+			Message("ERROR: can't create CLabel: button type<"+type+"> sType,name<"+sType+","+name+">");
+			
+		}
+		
+		switch(this.type)
+		{
+			case(3):
+			break;
+			case(2):
+			this.spriteUp.Load((GetIfaceIniStr((("OnlineStats")+"Buttons"+name+"PicUp"))),(4));
+			this.spriteDown.Load((GetIfaceIniStr((("OnlineStats")+"Buttons"+name+"PicDown"))),(4));
+			break;
+			default:
+			this.spriteUp.Load((GetIfaceIniStr((("OnlineStats")+"Buttons"+sType+"PicUp"))),(4));
+			this.spriteDown.Load((GetIfaceIniStr((("OnlineStats")+"Buttons"+sType+"PicDown"))),(4));
+		}
+		
+		if(this.type==(1))
+		this.page=(((string2uint((GetIfaceIniStr((("OnlineStats")+"Button"+name+"Page")))))>(99))?(99):(((string2uint((GetIfaceIniStr((("OnlineStats")+"Button"+name+"Page")))))<(0))?(0):(string2uint((GetIfaceIniStr((("OnlineStats")+"Button"+name+"Page")))))));
+		else
+		this.page=0;
+		
+		if(this.type==(1))
+		@this.callback=cb_toggleButton;
+		else if(this.type==(2))
+		@this.callback=cb_arrow;
+		else
+		@this.callback=cb_nop;
+		
+		this.state=false;
+	}
+	
+	void Init()
+	{
+		if(this.sType!=""&&this.name!="")
+		{
+			this.Position((("OnlineStats")+"Button"+this.name));
+			this.Update();
+		}
+		
+	}
+	
+	void OnShow()
+	{
+		if((@this.label!=null))
+		{
+			this.label.Show();
+			this.label.Update();
+		}
+	}
+	
+	void OnHide()
+	{
+		if((@this.label!=null))
+		{
+			this.label.Hide();
+			this.label.Update();
+		}
+	}
+	
+	void OnEnabled()
+	{
+		if((@this.label!=null))
+		{
+			;;
+			this.label.SetColor(this.color_on);
+			this.label.Update();
+		}
+	}
+	
+	void OnDisabled()
+	{
+		if((@this.label!=null))
+		{
+			;;
+			this.label.SetColor(this.color_off);
+			this.label.Update();
+		}
+	}
+	
+	void SetClick(CALLBACK@callback)
+	{
+		@this.callback=callback;
+	}
+	
+	void Click()
+	{
+		if(this.type==(1))
+		this.state=!this.state;
+		
+		if((@this.callback!=null))
+		this.callback(this);
+		return;
+	}
+	
+	void MouseMove(int fromX,int fromY,int toX,int toY)
+	{
+		bool inside=false;
+		
+		if((this.IsInside(fromX,fromY)||this.IsInside(toX,toY))&&this.IsVisible())
+		inside=true;
+		
+		if(this.type==(3))
+		{
+			if(inside)
+			{
+				this.SetColor(this.color_on);
+				OnlineStatsWindow.infobox.SetCaption(("Click to visit this page:\n\n"+this.msg));
+				OnlineStatsWindow.infoboxID=ID;
+				OnlineStatsWindow.infobox.Update();
+			}
+			else
+			this.SetColor(this.color_off);
+		}
+		else if(OnlineStatsWindow.infoboxID<=-1&&this.type==(0)&&this.msg.length()>0)
+		{
+			if(inside)
+			{
+				OnlineStatsWindow.infobox.SetCaption(this.msg);
+				OnlineStatsWindow.infoboxID=this.ID;
+				OnlineStatsWindow.infobox.Update();
+			}
+		}
+		else if(OnlineStatsWindow.infoboxID<=-1&&this.type==(1)&&this.msg.length()>0)
+		{
+			if(inside||(this.label.IsInside(fromX,fromY)||this.label.IsInside(toX,toY)))
+			{
+				OnlineStatsWindow.infobox.SetCaption(this.msg);
+				OnlineStatsWindow.infoboxID=this.ID;
+				OnlineStatsWindow.infobox.Update();
+			}
+		}
+	}
+	
+	void SetCaption(string caption)
+	{
+		if((@this.label!=null))
+		this.label.SetCaption(caption);
+	}
+	void SetColor(uint color)
+	{
+		if((@this.label!=null))
+		this.label.SetColor(color);
+	}
+	void SetFormat(uint format)
+	{
+		if((@this.label!=null))
+		this.label.SetFormat(format);
+	}
+	
+	void Draw()
+	{
+		if(this.Height()==0&&this.Width()==0)
+		return;
+		
+		switch(this.type)
+		{
+			case(0):
+			case(2):
+			if(mousePressed)
+			DrawSprite(this.spriteDown.Id,0,Left(),Top(),0);
+			else
+			DrawSprite(this.spriteUp.Id,0,Left(),Top(),0);
+			break;
+			case(1):
+			if(this.state==true)
+			DrawSprite(this.spriteDown.Id,0,Left(),Top(),0);
+			else
+			DrawSprite(this.spriteUp.Id,0,Left(),Top(),0);
+			break;
+		}
+	}
+};
+
+class COnlineStatsWindow:Window,IGUIScreenCallbackHide
+{
+	CLabel@title;
+	CLabel@infobox;
+	uint infoboxUpdate;
+	int infoboxID;
+	CLabel@pageInfo;
+	array<COSButton@>buttons;
+	int page;
+	int pages;
+	CLabel@Author;
+	
+	void Init()
+	{
+		@this.title=CLabel(0,0,0,0,"ONLINE STATS",(7));
+		if((@this.title!=null))
+		{
+			this.title.Position((("OnlineStats")+"MainText"));
+			this.title.SetColor(rgb_string2uint((GetIfaceIniStr((("OnlineStats")+"ColorMainText")))));
+			this.title.SetFormat((0x0008));
+			this.AddControl(@this.title);
+		}
+		
+		else
+		Message("ERROR: can't create CLabel: title");
+		
+		@this.infobox=CLabel(0,0,0,0,(" "),(5));
+		if((@this.infobox!=null))
+		{
+			this.infobox.Position((("OnlineStats")+"InfoBoxText"));
+			this.infobox.SetColor(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))));
+			this.infobox.SetFormat((0x0008));
+			this.AddControl(@this.infobox);
+		}
+		
+		else
+		Message("ERROR: can't create CLabel: infobox");
+		this.infoboxID=-1; 
+		
+		this.buttons.insertLast(COSButton((0),(0),"Normal","OK",0,("OK"),("Click to send current settings.")));
+		this.buttons[this.buttons.length()-1].SetFormat((0x0004)|(0x0008));
+		this.buttons[this.buttons.length()-1].SetClick(@cb_ok);
+		
+		this.buttons.insertLast(COSButton((0),(0),"Normal","Cancel",0,("Cancel"),("Click to abandon all changes.")));
+		this.buttons[this.buttons.length()-1].SetFormat((0x0004)|(0x0008));
+		this.buttons[this.buttons.length()-1].SetClick(@cb_cancel);
+		
+		this.buttons.insertLast(COSButton((0),(2),"Arrow","ArrowUp",-1,"",""));
+		this.buttons.insertLast(COSButton((0),(2),"Arrow","ArrowDown",1,"",""));
+		
+		this.buttons.insertLast(COSButton((0),(3),"Link","HomePage",(0),("VTDB Homepage"),("http://game.fonline-aftertimes.net/")));
+		this.buttons[this.buttons.length()-1].SetClick(@cb_url); 
+		
+		this.buttons.insertLast(COSButton((0),(3),"Link","CharPage",(1),("Character page"),("http://game.fonline-aftertimes.net/")+("char.php?"+("%ID%"))));
+		this.buttons[this.buttons.length()-1].SetClick(@cb_url); 
+		
+		@this.Author=CLabel(0,0,0,0,"WHINE Team",(7));
+		if((@this.Author!=null))
+		{
+			this.Author.Position((("OnlineStats")+"Author"));
+			this.Author.SetColor((((((__GetColor((((uint((0xFF<<24)|(((112)&0xFF)<<16)|(((96)&0xFF)<<8)|((80)&0xFF)))>>16)&0xFF)+0,(((uint((0xFF<<24)|(((112)&0xFF)<<16)|(((96)&0xFF)<<8)|((80)&0xFF)))>>8)&0xFF)+0,((uint((0xFF<<24)|(((112)&0xFF)<<16)|(((96)&0xFF)<<8)|((80)&0xFF)))&0xFF)+0))|0xFF000000)^0xFF000000)|((((uint((0xFF<<24)|(((112)&0xFF)<<16)|(((96)&0xFF)<<8)|((80)&0xFF)))>>24)&0xFF)&0xFF)<<24)));
+			this.Author.SetFormat((0x0008)|(0x0100));
+			this.AddControl(@this.Author);
+			this.Author.Hide();
+		}
+		
+		else
+		Message("ERROR: can't create CLabel: Author"); 
+		
+		@this.pageInfo=CLabel(0,0,0,0,"pageInfo");
+		if((@this.pageInfo!=null))
+		{
+			this.pageInfo.Position((("OnlineStats")+"PageInfoText"));
+			this.pageInfo.SetColor(rgb_string2uint((GetIfaceIniStr((("OnlineStats")+"ColorPageInfoText")))));
+			this.pageInfo.SetFormat((0x0008));
+			AddControl(@this.pageInfo);
+		}
+		
+		else
+		Message("ERROR: can't create CLabel: pageInfo"); 
+		
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBAll",(0x00000001),"ALL (VTDB)",("All informations will be available to view.\n\nRemember that this flag will be used for things added in future.")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBSpecial",(0x00000002),"SPECIAL",("Display character SPECIAL points")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBXp",(0x00000004),"Experience",("Display character level, current experience, and points needed for next level")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBLife",(0x00000008),"Health",("Display hit points and body status")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBStats",(0x00000010),"Statistics",("Display character statistics")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBSkills",(0x00000020),"Skills",("Display character skills")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBTraits",(0x00000040),"Traits",("Display character traits")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBPerks",(0x00000080),"Perks",("Display character perks")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBProfessions",(0x00000100),"Professions",("Display character professions")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBKarma",(0x00000200),"Karma",("Display character karma")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBAddictions",(0x00000400),"Addictions",("Display character addictions")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBReputation",(0x00000800),"Reputation",("Display character reputation")));
+		this.buttons.insertLast(COSButton((1),(1),"Toggle","VTDBKills",(0x00001000),"Kills",("Display how many creatures meet its creator, thanks to You")));    
+		
+		this.buttons.insertLast(COSButton((2),(1),"Toggle","XFireAll",(0x00004000),"ALL (XFire)",("All informations will be available to view.\n\nRemember that this flag will be used for things added in future.")));
+		this.buttons.insertLast(COSButton((2),(1),"Toggle","XFireCharName",(0x00008000),"Character name",("Display character name")));
+		this.buttons.insertLast(COSButton((2),(1),"Toggle","XFireCharLevel",(0x00010000),"Character level",("Show character level next to name - works only if you allow display characterr name")));
+		this.buttons.insertLast(COSButton((2),(1),"Toggle","XFireLocation",(0x00020000),"Current location",("Display current location")));           
+		
+		this.page=1;
+		this.pages=1;
+		for(uint b=0;b<this.buttons.length();b++)
+		{
+			this.buttons[b].ID=b;
+			if(this.buttons[b].page>this.pages)
+			this.pages=this.buttons[b].page;
+			AddControl(@this.buttons[b]);
+		}
+		if(this.pages==1)
+		this.pageInfo.Hide();
+		
+		Window::Init();
+	}
+	
+	void OnShow()
+	{
+		this.page=1;
+		
+		for(uint b=0;b<this.buttons.length();b++)
+		{
+			if(this.buttons[b].page>1)
+			this.buttons[b].Hide();
+			else
+			this.buttons[b].Show();
+			
+			if(this.buttons[b].type==(1))
+			{
+				if((((OnlineStats)&(this.buttons[b].flag))!=0))
+				this.buttons[b].state=true;
+				else
+				this.buttons[b].state=false;
+				
+				if(((((OnlineStats)&((0x00000001)))!=0)&&this.buttons[b].flag!=(0x00000001)&&this.buttons[b].mod==(1))||
+				((((OnlineStats)&((0x00004000)))!=0)&&this.buttons[b].flag!=(0x00004000)&&this.buttons[b].mod==(2)))
+				{
+					this.buttons[b].Disable();
+				}
+				else
+				{
+					this.buttons[b].Enable();
+				}
+			}
+			else if(this.buttons[b].type==(3)&&this.buttons[b].flag==(1))
+			{
+				CritterCl@chosen=GetChosen();
+				if((@chosen!=null))
+				{
+					this.buttons[b].msg=ReplaceText(this.buttons[b].msg,("%ID%"),chosen.Id);
+					this.buttons[b].flag=(2);
+				}
+				
+				else
+				{
+					this.buttons[b].Hide();
+					this.buttons[b].Disable();
+					this.buttons[b].flag=-1;
+					Message("ERROR: GetChosen() fail, "+this.buttons[b].sType+"->"+this.buttons[b].name);
+				}
+			}
+		}
+		OnlineStatsBuffer=OnlineStats;
+		this.infobox.SetCaption((" "));
+		this.infoboxID=-1;
+		
+		this.pageInfo.SetCaption("page "+this.page+"/"+this.pages);
+		
+		this.Update();
+	}
+	
+	void OnHide(int,int,int)
+	{
+		this.infobox.SetCaption((" "));
+		this.infoboxID=-1;
+		OnlineStatsBuffer=0;
+		
+		this.Update();
+	}   
+	
+	void MouseMove(int fromX,int fromY,int toX,int toY)
+	{            
+		
+		this.infoboxID=-1;
+		for(uint b=0;b<this.buttons.length();b++)
+		{
+			this.buttons[b].MouseMove(fromX,fromY,toX,toY);
+		}
+		if(this.infoboxID==-1)
+		{
+			this.infobox.SetCaption((" "));
+			this.infobox.Update();
+		}
+	}
+	
+};
+COnlineStatsWindow OnlineStatsWindow; 
+
+funcdef void CALLBACK(COSButton@button);        
+
+void cb_nop(COSButton@button)
+{
+	;;
+	return;
+};
+
+void cb_ok(COSButton@button)
+{
+	;;
+	SendSetup(OnlineStatsBuffer);
+	cb_cancel(button);
+	return;
+}
+
+void cb_cancel(COSButton@button)
+{
+	;;
+	button.parent.HideWindow();
+	OnlineStatsBuffer=0;
+	return;
+}
+
+void cb_toggleButton(COSButton@button)
+{
+	;;
+	if(button.flag==0)
+	{
+		;;
+	}
+	if(button.state==false)
+	{
+		;;
+		(OnlineStatsBuffer=((OnlineStatsBuffer)&(~(button.flag))));
+	}
+	else
+	{
+		;;
+		((OnlineStatsBuffer)=(OnlineStatsBuffer)|(button.flag));
+	}
+	if(button.flag==(0x00000001)||button.flag==(0x00004000))
+	{
+		for(uint b=0;b<OnlineStatsWindow.buttons.length();b++)
+		{
+			if(OnlineStatsWindow.buttons[b].mod==button.mod&&
+			OnlineStatsWindow.buttons[b].type==(1)&&
+			OnlineStatsWindow.buttons[b].ID!=button.ID)
+			{
+				if(button.state==true)
+				{
+					;;
+					OnlineStatsWindow.buttons[b].Disable();
+				}
+				else
+				{
+					;;
+					OnlineStatsWindow.buttons[b].Enable();
+				}
+			}
+		}
+		OnlineStatsWindow.Update();
+	}
+	return;
+}
+
+void cb_arrow(COSButton@button)
+{
+	int old=OnlineStatsWindow.page;
+	OnlineStatsWindow.page=((((OnlineStatsWindow.page+button.flag))>(OnlineStatsWindow.pages))?(OnlineStatsWindow.pages):((((OnlineStatsWindow.page+button.flag))<(1))?(1):((OnlineStatsWindow.page+button.flag))));
+	;;
+	if(old!=OnlineStatsWindow.page)
+	{
+		for(uint b=0;b<OnlineStatsWindow.buttons.length();b++)
+		{
+			if(OnlineStatsWindow.buttons[b].page==0||
+			OnlineStatsWindow.buttons[b].page==OnlineStatsWindow.page)
+			{
+				OnlineStatsWindow.buttons[b].Show();
+			}
+			else
+			{
+				OnlineStatsWindow.buttons[b].Hide();
+			}
+		}
+		OnlineStatsWindow.pageInfo.SetCaption("page "+OnlineStatsWindow.page+"/"+OnlineStatsWindow.pages);
+		OnlineStatsWindow.Update();
+	}
+}  
+
+void cb_url(COSButton@button)
+{
+	;;
+	
+	if((@button.msg!=null)&&button.msg!=""&&button.msg.length()>10&&
+	(substring(button.msg,0,7)=="http://"||
+	substring(button.msg,0,6)=="ftp://"))
+	{
+		;;
+		OnlineStats_URL(button.msg);
+	}
+}
+
+class InjectButton:Control
+{
+	IGUIScreenOpt@window;
+	bool infected;
+	Sprite buttonDown;
+	array<int>pos;
+	
+	InjectButton(IGUIScreenOpt@window,int infected)
+	{
+		@this.window=window;
+		if(infected>0)
+		{
+			this.buttonDown.LoadByIni("ChaPrintPicDn",(4));
+			this.infected=true;
+		}
+		else
+		this.infected=false;
+		
+		this.pos.resize(4);
+		int x=0;
+		int y=0;
+		GUI_GetIniCoords("ChaPrintText",pos[0],pos[1],x,y);
+		pos[2]=x-pos[0];
+		pos[3]=y-pos[1];
+	}
+	
+	void Init()
+	{
+		if(this.infected)
+		this.Position("ChaPrint");
+		else
+		{
+			this.Position(0,0);
+			this.Size(0,0);
+		}
+	}
+	
+	void Click()
+	{
+		if(this.infected)
+		{
+			;;
+			GUI_HideScreen((13),0,0,0);
+			OnlineStatsWindow.ShowWindow();
+		}
+	} 
+	
+	int Left()
+	{
+		if((@this.window!=null))
+		return(this.window.GetPosX()+this.left);
+		return(0);
+	}
+	
+	int Top()
+	{
+		if((@this.window!=null))
+		return(this.window.GetPosY()+this.top);
+		return(0);
+	}
+	
+	void Draw()
+	{    
+		
+		if(this.infected)
+		{
+			if(this.mousePressed)
+			DrawSprite(this.buttonDown.Id,0,this.Left(),this.Top(),0); 
+			
+			DrawText(("Online"),this.window.GetPosX()+pos[0],this.window.GetPosY()+pos[1],pos[2],pos[3], (((((((((__GetColor(((((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))>>16)&0xFF)+2,((((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))>>8)&0xFF)+2,(((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))&0xFF)+2))|0xFF000000)^0xFF000000)|(((((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))>>24)&0xFF)&0xFF)<<24)))|0xFF000000)^0xFF000000)|((200)&0xFF)<<24), (7), (0x0008));
+		}
+		else
+		{
+			DrawText("Print",this.window.GetPosX()+pos[0],this.window.GetPosY()+pos[1],pos[2],pos[3], (((((((((__GetColor(((((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))>>16)&0xFF)+2,((((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))>>8)&0xFF)+2,(((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))&0xFF)+2))|0xFF000000)^0xFF000000)|(((((uint((0xFF<<24)|(((0x8F)&0xFF)<<16)|(((0x6F)&0xFF)<<8)|((0)&0xFF))))>>24)&0xFF)&0xFF)<<24)))|0xFF000000)^0xFF000000)|((200)&0xFF)<<24), (7), (0x0008));
+		}
+	}
+};
+
+array<string>XFireInfoName;
+array<string>XFireInfoValue; 
+
+int XFire_InfoId(string&name)
+{
+	
+	if(__Port!=2238)
+	return(-1);
+	
+	if(XFireInfoName.length()==0)
+	return(-1);
+	
+	for(uint k=0;k<XFireInfoName.length();k++)
+	{
+		if(XFireInfoName[k]==name)
+		return(k);
+	}
+	return(-1);
+}
+
+bool XFire_SetInfo(string name,string value)
+{
+	
+	if(__Port!=2238)
+	return(false);
+	if(name.length()==0||name==""||
+	value.length()==0||value==""||
+	XFireInfoName.length()>=100)
+	return(false);
+	
+	int id=XFire_InfoId(name);
+	if(id>=0)
+	{
+		XFireInfoName[id]=name;
+		XFireInfoValue[id]=value;
+	}
+	else
+	{
+		id=XFireInfoName.length();
+		XFireInfoName.insertLast(name);
+		XFireInfoValue.insertLast(value);
+	}
+	XFireDLL_InfoSet(id,name,value);
+	return(true);
+}
+
+void XFire_Update()
+{
+	
+	if(__Port!=2238)
+	return;
+	XFireDLL_InfoSend();
+}
+
+void XFire_LoopCheck()
+{
+	;;
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	{
+		;;
+		
+		XFireDLL_InfoCleanup();
+		XFireInfoName.resize(0);
+		XFireInfoValue.resize(0);
+		XFireDLL_InfoSet(0,"","");
+		XFireDLL_InfoSend();
+	}
+}
+
+bool initialized=false;
+void InitOnlineStats()
+{
+	if(initialized)
+	{
+		GUI_DeleteScreen((48));
+		OnlineStatsWindow.buttons.resize(0);
+	}
+	
+	;; 
+	
+	string mainpic=(GetIfaceIniStr((("OnlineStats")+"MainPic")));
+	if(mainpic.length()<=0)
+	{
+		;;
+		OS_GUI=false;
+		Log("OnlineStats GUI disabled : missing <OnlineStatsMainPic>");
+	}
+	else
+	{
+		GUI_CreateScreen((48),mainpic)
+		.Control(OnlineStatsWindow)
+		.SetCallbackShow(OnlineStatsWindow)
+		.SetCallbackHide(OnlineStatsWindow)
+		.SetCallbackFocus(OnlineStatsWindow)
+		.CanMove(true)
+		.Modal(false)
+		.Multiinstance(false);
+		
+		OS_GUI=true;
+	}
+	
+	int infect=0;
+	StrToInt((GetIfaceIniStr((("OnlineStats")+"InfectCharScreen"))),infect);
+	
+	IGUIScreenOpt@screen=GUI_GetScreen((13));
+	InjectButton@insect=InjectButton(screen,infect);
+	Control@control=@Control();
+	control.AddControl(@insect);
+	screen.Control(control).Multiinstance(false);
+	
+	;;
+	initialized=true;
+}                                                   
+
+int OnlineStatsCommand(string&message)
+{
+	array<string@>@command=split(message," ");
+	
+	if(message=="~online_stats"||(command.length()>=1&&command[0]=="~online_stats"))
+	{                               
+		
+		;;
+		if(OS_GUI==false)
+		{
+			;;
+			return(0);
+		}
+		else if(!initialized)
+		{
+			;;
+			return(0);
+		}
+		OnlineStatsWindow.ShowWindow();
+		return(0);
+		
+	}
+	return(2);
+}
+
+void OnlineStatsGetSetup()
+{
+	;;
+	RunServerScriptUnsafe("online_stats@unsafe_setup",0,-1,0," ",null);
+}
+
+void SendSetup(int setup)
+{
+	;;
+	RunServerScriptUnsafe("online_stats@unsafe_setup",setup,0,0," ",null);
+}   
+
+void _Setup(int setup,int display,int,string@,array<int>@)
+{
+	OnlineStatsWindow.HideWindow();
+	if(display>0)
+	Message("VTDB updated.");      
+	
+	OnlineStats=setup;
+	OnlineStatsBuffer=0;
+}
+
+void _XFire(int mode,int data1,int data2,string@message,array<int>@data)
+{
+	
+	if(__Port!=2238)
+	return;
+	
+	if(!(@message!=null)||message.length()<1)
+	{
+		;;
+		return;
+	}
+	
+	;;
+	
+	bool update=false;
+	
+	switch(mode)
+	{   
+		
+		case(-1):
+		{
+			;;
+			XFireDLL_InfoCleanup();
+			update=true;
+		};
+		break;
+		
+		case(1):
+		{
+			array<string@>@keys=split(message,"~");
+			if(keys.length()>0)
+			{
+				for(uint k=0;k<keys.length();k++)
+				{
+					array<string@>@set=split(keys[k],"=");
+					if(set.length()>=2)
+					{
+						string name=set[0];
+						string value=set[1];
+						if(name.length()>0)
+						{
+							if(XFire_SetInfo(name,value))
+							{
+								;;
+								update=true;
+							}
+						}
+					}
+				}
+			}
+		};
+		break;
+		
+		case(2):
+		{
+			if((@message!=null)&&message!=""&&message!=" "&&data1>=0&&data2>0)
+			{
+				string value=GetMsgStr(data1,data2);
+				if((@value!=null)&&value!="")
+				{
+					if(XFire_SetInfo(message,value))
+					{
+						;;
+						update=true;
+					}
+				}
+			}
+		};
+		break;
+		
+		default:
+		{
+			;;
+		};
+		break; 
+		
+	}
+	
+	if(update)
+	{
+		;;
+		XFire_Update();
+	}
+}
+

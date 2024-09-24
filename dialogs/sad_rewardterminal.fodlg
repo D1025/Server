@@ -1,0 +1,34 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 D _script map_sad@d_PowerOn 0  @
+2 2000 None 0 #
+3 2010 R _script map_sad@r_OpenRewardDoor 0  #
+0 2020 @
+3 3000 None 0 #
+2 3010 #
+0 3020 &
+
+[engl]
+{100}{}{Soldier from Sierra}
+{200}{}{You see an Soldier from Sierra.}
+{210}{}{Looks for someone who was born before The Great War.}
+{1000}{}{Predialogue installations}
+{1010}{}{Power is on}
+{2000}{}{<<Sierra Army Complex Terminal>>
+>>AUTHORIZED PERSONNEL ONLY
+
+>External storage magazine.
+>Control panel.}
+{2010}{}{[Open the external storage.]}
+{2020}{}{[Log off.]}
+{3000}{}{Openning...}
+{3010}{}{[Back]}
+{3020}{}{[Log off]}
+

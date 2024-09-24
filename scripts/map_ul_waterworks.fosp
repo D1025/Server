@@ -1,0 +1,10 @@
+     
+
+import void InitializeDynamicMob(Map&map)from"mob_dynamic";
+import void CollectRewardSpawners(Map&map)from"base_control";
+
+void map_init(Map&map,bool firstTime)
+{
+	CollectRewardSpawners(map);
+	if(firstTime)InitializeDynamicMob(map);
+}

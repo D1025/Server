@@ -1,0 +1,3028 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+shared interface IConfigVar
+{
+	string GetName();
+	string GetValue();
+	array<string>GetValueAsArray();
+	array<string>GetValueAsArray(string&delimeter);
+	void SetValue(int val);
+	void SetValue(uint val);
+	void SetValue(string&val);
+	void SetValue(array<string>&val);
+	void SetValue(array<string>&val,string&delimeter);
+};
+
+shared interface IConfigSection
+{
+	string GetName();
+	bool AddVar(string&var,string&val);
+	bool DeleteVar(string&var);
+	bool DeleteVar(string&var,bool caseSensitive);
+	IConfigVar@GetVar(string&var);
+	IConfigVar@GetVar(string&varname,bool caseSensitive);
+	void GetVars(array<string>&list);
+	bool SetVar(string&varname,string val);
+	bool VarExists(string&var);
+	bool VarExists(string&var,bool caseSensitive);
+};
+
+shared interface IConfigFile
+{
+	bool IsVirtual();
+	string GetName();
+	bool AddSection(string&section);
+	IConfigSection@GetSection(string&section);
+	IConfigSection@GetSection(string&sectioname,bool caseSensitive);
+	void GetSections(array<string>&list);
+	bool SectionExists(string&section);
+	bool SectionExists(string&section,bool caseSensitive);
+};  
+
+import IConfigFile@NewConfig(string&filename)from"config_file";
+import bool LoadConfig(string&filename)from"config_file";
+import bool SaveConfig(string&filename)from"config_file";
+import bool UnloadConfig(string&filename)from"config_file";
+
+import IConfigFile@GetConfigFile(string&filename)from"config_file";
+import IConfigFile@GetConfigFile(string&filename,bool caseSensitive)from"config_file";
+import IConfigSection@GetConfigSection(string&filename,string&sectioname)from"config_file";
+import IConfigSection@GetConfigSection(string&filename,string&sectioname,bool caseSensitive)from"config_file";
+import IConfigVar@GetConfigVar(string&filename,string&sectioname,string@varname)from"config_file";
+import IConfigVar@GetConfigVar(string&filename,string&sectioname,string@varname,bool caseSensitive)from"config_file";
+
+import string@GetConfigValue(string&filename,string&section,string@varname)from"config_file";
+import string@GetConfigValue(string&filename,string&sectioname,string@varname,bool caseSensitive)from"config_file";
+
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,string&value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,bool value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,int value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,uint value)from"config_file";                                                                                     
+
+shared class Serializator
+{
+	Serializator()
+	{
+		CurPos=0;
+		BufSize=0;
+		DataSize=0;
+	}
+	
+	Serializator(uint approxSize)
+	{
+		CurPos=0;
+		BufSize=0;
+		DataSize=0;
+		GrowBuffer(approxSize);
+	}
+	
+	void GrowBuffer()
+	{
+		BufSize+=(128);
+		Array.resize(BufSize);
+	}
+	
+	void GrowBuffer(uint length)
+	{
+		BufSize+=length;
+		Array.resize(BufSize);
+	}
+	
+	bool Save(string&name)
+	{
+		if(DataSize==0)
+		return false;
+		bool result=SetAnyData(name,Array,DataSize);
+		Clear();
+		return result;
+	}
+	
+	bool Load(string&name)
+	{
+		Clear();
+		if(!IsAnyData(name))
+		return false;
+		if(!GetAnyData(name,Array))
+		return false;
+		BufSize=Array.length();
+		DataSize=BufSize;
+		return true;
+	}
+	
+	void Clear()
+	{
+		CurPos=0;
+		BufSize=0;
+		DataSize=0;
+	}
+	
+	Serializator@SetCurPos(uint pos)
+	{
+		if(pos>BufSize)
+		GrowBuffer(pos-BufSize+(128));
+		CurPos=pos;
+		return this;
+	}
+	
+	Serializator@Fill(uint8 value,uint length)
+	{
+		if(CurPos+length>BufSize)
+		GrowBuffer(CurPos+length-BufSize+(128));
+		for(uint i=0;i<length;i++)
+		Array[CurPos++]=value;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@Set(const int64&value)
+	{
+		if(CurPos+8>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>56)&0xFF;
+		Array[CurPos++]=(value>>48)&0xFF;
+		Array[CurPos++]=(value>>40)&0xFF;
+		Array[CurPos++]=(value>>32)&0xFF;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int64&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const int32&value)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int32&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const int16&value)
+	{
+		if(CurPos+2>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int16&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const int8&value)
+	{
+		if(CurPos+1>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=value;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int8&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint64&value)
+	{
+		if(CurPos+8>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>56)&0xFF;
+		Array[CurPos++]=(value>>48)&0xFF;
+		Array[CurPos++]=(value>>40)&0xFF;
+		Array[CurPos++]=(value>>32)&0xFF;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint64&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint32&value)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint32&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint16&value)
+	{
+		if(CurPos+2>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint16&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint8&value)
+	{
+		if(CurPos+1>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=value;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint8&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const bool&value)
+	{
+		if(CurPos+1>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=value?1:0;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const bool&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const string&value)
+	{
+		uint len=value.rawLength();
+		if(CurPos+len+1>BufSize)
+		GrowBuffer(CurPos+len+1-BufSize+(128));
+		for(uint i=0;i<len;i++)
+		Array[CurPos++]=value.rawGet(i);
+		Array[CurPos++]=0;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const string&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const float&value)
+	{
+		int dummy=FloatToInt(value);
+		return Set(dummy);
+	}
+	
+	Serializator@opShl(const float&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const array<int64>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*8;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int64>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<int32>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*4;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int32>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<int16>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*2;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int16>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<int8>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int8>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint64>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*8;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint64>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint32>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*4;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint32>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint16>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*2;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint16>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint8>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint8>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<bool>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<bool>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<string>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		for(uint i=0,j=valuesLen;i<j;i++)
+		len+=values[i].length();
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<string>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<float>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*4;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(FloatToInt(values[i]));
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<float>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const Critter&cr)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		uint value=cr.Id;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const Critter&cr)
+	{
+		return Set(cr);
+	}
+	
+	Serializator@Set(const Item&item)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		uint value=item.Id;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const Item&item)
+	{
+		return Set(item);
+	}
+	
+	Serializator@Get(int64&value)
+	{
+		value=0;
+		if(CurPos+8>DataSize)
+		return this;
+		value|=Array[CurPos++]<<56;
+		value|=Array[CurPos++]<<48;
+		value|=Array[CurPos++]<<40;
+		value|=Array[CurPos++]<<32;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int64&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(int32&value)
+	{
+		value=0;
+		if(CurPos+4>DataSize)
+		return this;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int32&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(int16&value)
+	{
+		value=0;
+		if(CurPos+2>DataSize)
+		return this;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int16&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(int8&value)
+	{
+		value=0;
+		if(CurPos+1>DataSize)
+		return this;
+		value=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int8&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint64&value)
+	{
+		value=0;
+		if(CurPos+8>DataSize)
+		return this;
+		value|=Array[CurPos++]<<56;
+		value|=Array[CurPos++]<<48;
+		value|=Array[CurPos++]<<40;
+		value|=Array[CurPos++]<<32;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint64&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint32&value)
+	{
+		value=0;
+		if(CurPos+4>DataSize)
+		return this;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint32&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint16&value)
+	{
+		value=0;
+		if(CurPos+2>DataSize)
+		return this;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint16&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint8&value)
+	{
+		value=0;
+		if(CurPos+1>DataSize)
+		return this;
+		value=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint8&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(bool&value)
+	{
+		value=false;
+		if(CurPos+1>DataSize)
+		return this;
+		value=Array[CurPos++]==1?true:false;
+		return this;
+	}
+	
+	Serializator@opShr(bool&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(string&str)
+	{
+		uint len=0;
+		for(uint i=CurPos;;i++)
+		{
+			if(i==DataSize)
+			{
+				str="";
+				return this;
+			}
+			if(Array[i]==0)
+			{
+				len=i-CurPos;
+				break;
+			}
+		}
+		str.rawResize(len);
+		for(uint i=0;i<len;i++)
+		str.rawSet(i,Array[CurPos++]);
+		CurPos++;
+		return this;
+	}
+	
+	Serializator@opShr(string&str)
+	{
+		return Get(str);
+	}
+	
+	Serializator@Get(float&value)
+	{
+		int dummy=0;
+		Get(dummy);
+		value=IntToFloat(dummy);
+		return this;
+	}
+	
+	Serializator@opShr(float&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(array<int64>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int64>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<int32>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int32>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<float>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		{
+			int dummy=0;
+			Get(dummy);
+			values[i]=IntToFloat(dummy);
+		}
+		return this;
+	}
+	
+	Serializator@opShr(array<float>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<int16>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int16>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<int8>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int8>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint64>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint64>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint32>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint32>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint16>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint16>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint8>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint8>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<bool>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<bool>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<string>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<string>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(Critter@&cr)
+	{
+		@cr=null;
+		if(CurPos+4>DataSize)
+		return this;
+		uint id=0;
+		id|=Array[CurPos++]<<24;
+		id|=Array[CurPos++]<<16;
+		id|=Array[CurPos++]<<8;
+		id|=Array[CurPos++];
+		@cr=::GetCritter(id);
+		return this;
+	}
+	
+	Serializator@opShr(Critter@&cr)
+	{
+		return Get(cr);
+	}
+	
+	Serializator@Get(Item@&item)
+	{
+		@item=null;
+		if(CurPos+4>DataSize)
+		return this;
+		uint id=0;
+		id|=Array[CurPos++]<<24;
+		id|=Array[CurPos++]<<16;
+		id|=Array[CurPos++]<<8;
+		id|=Array[CurPos++];
+		@item=::GetItem(id);
+		return this;
+	}
+	
+	Serializator@opShr(Item@&item)
+	{
+		return Get(item);
+	}
+	
+	array<uint8>Array;
+	uint CurPos;
+	uint BufSize;
+	uint DataSize;
+};                                                                                                                                                                                                                                                                                                                                                                              
+
+import Location@GetLocationOf(Critter&critter)from"utils";
+import string GetLocationName(uint locId)from"utils";
+import string GetLocationName(Location@loc)from"utils";
+import bool ReadPids(array<int>&out pids,bool removeinvalid)from"utils";
+import void ReadDefines(string@fileName,dictionary&items,array<string>@defines)from"utils";
+import bool ParseDefine(const string&in line,string&out spid,int&out id)from"utils";
+import int SkipWhitespaces(const string&in str,int start)from"utils";
+import int SkipNonWhitespaces(const string&in str,int start)from"utils";
+import bool IsParameterTag(string&str)from"utils";
+import string GetParameterString(array<string@>@arr,string&parameter)from"utils";
+import int GetIndexOfString(array<string@>@arr,string&str)from"utils";
+import string GetConcatenatedString(array<string@>@arr,uint startindex,int stopindex)from"utils";
+import string GetConditionOfCritter(Critter@cr)from"utils";
+import string GetExtConditionOfCritter(Critter@cr)from"utils";
+import uint GetAllOnlinePlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players,bool ignorePriviledges)from"utils";
+import uint GetNumberOfPlayersOnline()from"utils";
+import void SetTurnBasedAvailability(Location@loc)from"utils";
+import bool IsGuarded(Map@map)from"utils";
+import bool IsPublic(Map@map)from"utils";
+import bool IsEncounterMap(Map@map)from"utils";
+import bool IsTown(Map@map)from"utils";
+import bool IsDungeon(Map@map)from"utils";
+import bool IsBaseControl(Map@map)from"utils";
+
+import uint GetMapType(Map@map)from"utils";
+import void LockDoor(uint x,uint y,Map@map,uint complexity,uint lockid)from"utils";
+import void UnlockDoor(uint x,uint y,Map@map)from"utils";
+import void ClearContainer(Item@container)from"utils";
+import void MoveItemsCritterToCont(Critter&crFrom,Item&contTo,uint specid)from"utils";
+import string GetCritterInfo(Critter&cr)from"utils";
+import bool AddExpTeam(Critter&critter,int xp)from"utils";
+import void ClearEnemyStack(Critter&critter)from"utils";
+import void ClearEnemyStacksOnMap(Map@map)from"utils";
+import bool IsCurrentEnemy(Critter&cr,uint targetId)from"utils";
+import string@GetSafePlayerName(uint id)from"utils";
+import string GetSafePlayerName(uint id,string&onSuccess,string&onError)from"utils";
+import IDateTime@GetCurrentDateTime()from"utils";
+import string GetCurrentDateTimeString()from"utils";
+import string GetCurrentDateTimeString(bool date,bool time)from"utils";
+import Critter@GetMostSkilled(array<Critter@>@group,int skill)from"utils";
+import string GetAuthString(Critter&player)from"utils";
+import string GetAuthString(int accesslevel)from"utils";
+import bool CanRequestHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player,int minutes)from"utils";
+import Critter@GetOnlineGM()from"utils";
+import void Preprocess(Critter&player,string&commandString)from"utils";
+import bool IsHumanoid(Critter@cr)from"utils";
+import uint GetGroupIndex(Critter&cr)from"utils";
+import uint GetGroupIndex(int st)from"utils";
+import void SetGroupIndex(Critter&cr,uint val)from"utils";
+import uint GetGroupRank(Critter&cr)from"utils";
+import void SetGroupRank(Critter&cr,uint val)from"utils";
+import uint GetGroupMode(Critter&cr)from"utils";
+import void SetGroupMode(Critter&cr,uint val)from"utils";
+import void SetGroupInfo(Critter&cr,uint faction,uint rank,uint mode)from"utils";
+import void SetGroupInfoPack(Critter&cr,uint packInfo)from"utils";
+import void ClearEvents(Critter&cr)from"utils";
+
+import int GetGvar(uint gvar)from"utils";
+import void SetGvar(uint gvar,uint value)from"utils";
+import int GetLLvar(Location&location,uint llvar)from"utils";
+import int GetLLvar(uint locationId,uint llvar)from"utils";
+import void SetLLvar(Location&location,uint llvar,uint value)from"utils";
+import int GetLMvar(Map&map,uint llvar)from"utils";
+import int GetLMvar(uint mapId,uint llvar)from"utils";
+import void SetLMvar(Map&map,uint llvar,uint value)from"utils";
+import int GetLIvar(Item&item,uint llvar)from"utils";
+import int GetLIvar(uint itemId,uint llvar)from"utils";
+import void SetLIvar(Item&item,uint llvar,uint value)from"utils";
+import int GetLvar(Critter&critter,uint lvar)from"utils";
+import int GetLvar(uint id,uint lvar)from"utils";
+import void SetLvar(Critter&critter,uint lvar,uint value)from"utils";
+import void SetLvar(uint id,uint lvar,uint value)from"utils";
+import int GetUvar(uint uvar,uint key,uint index)from"utils";
+import void SetUvar(uint uvar,uint key,uint index,uint value)from"utils";
+
+import uint GetContainerValue(Item@container)from"utils";
+import uint BaseItemValue(uint pid,bool ammo)from"utils";
+import uint BaseItemValue(uint pid,uint broken,uint det,bool ammo)from"utils";
+import uint BaseItemValue(Item@item)from"utils";
+import uint BaseItemValue(Item@item,uint proc)from"utils";
+import uint BaseSingleItemValue(Item@item)from"utils";
+import uint BaseSingleItemValue(Item@item,uint proc)from"utils";
+
+import void SetBloodType(Critter@cr)from"utils";
+import string GetBloodType(Critter@cr)from"utils";
+import string GetBloodRandom()from"utils";
+
+import void LogCommandUsage(Critter&player,string&commandString)from"utils";
+import void DropTimeouts(Critter&cr)from"utils";
+
+import bool HasItem(Critter@cr,uint pid)from"utils";
+import bool HasSomeWeapon(Critter@cr)from"utils";
+import uint GetBestWeaponSkill(Critter@cr)from"utils";
+import void GiveBag(uint bag,Critter@cr)from"utils";
+import void SetQuestGarbager(uint time,uint playerid,uint locid,uint var,uint val)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import void AddScore(Critter@cr,uint score,uint points)from"utils";
+
+import bool ReloadWeapon(Critter&cr)from"utils";
+import Item@GetRadio(Critter&cr)from"utils";
+import Item@GetRepairTool(Critter&cr)from"utils";
+import Item@GetEquippedItem(Critter&cr,uint Pid)from"utils";
+import Item@GetEquippedItem(Critter&cr,array<uint>&Pids)from"utils";
+import Item@GetEquippedItemByType(Critter&cr,uint ItemType)from"utils"; 
+
+import bool SkillRoll(Critter@cr,int skill,int bonus)from"utils";
+import int SkillCheck(Critter&cr,int skill,int skillused,Item@item,int bonus)from"utils";
+import string SkillName(uint8 skill)from"utils";
+import void ChangeCrTypeSafe(Critter&cr,uint8 crType)from"utils";
+
+import bool Pickable(Item@item)from"utils";
+
+import void TransferItemsToContOnMap(Critter&cr,Map@map,int entid,int contpid,int itemtypes)from"utils";
+import void TransferItemsFromContOnMap(Critter&cr,Map@map,int entid,int contpid)from"utils";
+
+import string IpToString(uint ip)from"utils";
+
+import void VerboseAction(Critter&cr,string&text)from"utils";
+import void VerboseAction(Critter&cr,Critter&target,string&text)from"utils";
+import void VerboseExperience(Critter&cr,int xpDiff,int levelDiff)from"utils";
+
+import void SetChosenActions(Critter&cr,array<int>&actions)from"utils";
+
+import void HexLine(uint16 x0,uint16 y0,uint16 x1,uint16 y1,array<uint16>@xList,array<uint16>@yList)from"utils";
+import void HexCircle(uint16 x0,uint16 y0,uint16 radius,array<uint16>@xList,array<uint16>@yList)from"utils";
+
+import void StartPersonalDataCleanup()from"utils";
+
+import bool IsPersonalData(Location&location,string&name)from"utils";
+import bool GetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Location&location,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Location&location,string&name)from"utils";
+
+import bool IsPersonalData(Map&map,string&name)from"utils";
+import bool GetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Map&map,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Map&map,string&name)from"utils";
+
+import bool IsPersonalData(Critter&critter,string&name)from"utils";
+import bool GetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Critter&critter,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Critter&critter,string&name)from"utils";
+
+import bool IsPersonalData(Item&item,string&name)from"utils";
+import bool GetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Item&item,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Item&item,string&name)from"utils";
+
+import bool FindPreferredGridApprox(Map&map,uint16&hx,uint16&hy)from"utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";    
+
+import int FindInArray(array<int>&arr,int value)from"utils";
+import int FindInArray(array<uint>&arr,uint value)from"utils";
+import int FindInArray(array<uint16>&arr,uint16 value)from"utils";
+import int FindInArray(array<uint8>&arr,uint8 value)from"utils";
+import bool FindInArray(array<int>&arr,int id,int&index)from"utils";
+import bool FindInArray(array<uint>&arr,uint id,int&index)from"utils";
+import bool FindInArray(array<uint8>&arr,uint8 id,int&index)from"utils";
+import int FindInArray(array<string>&arr,string&value)from"utils";
+import int FindInArray(array<string@>@arr,string&value)from"utils";
+import bool Present(int what,array<int>&where)from"utils";
+import bool Present(uint what,array<uint>&where)from"utils";
+import bool Present(uint16 what,array<uint16>&where)from"utils";
+import bool Present(string&what,array<string>&where)from"utils";
+import bool Present(string&what,array<string@>@where)from"utils";
+
+import uint CreateLocationForGroup(Critter&player,uint16 pid,uint16 worldX,uint16 worldY,array<Critter@>&)from"utils";
+import bool FindFirstFreeHex(Map@map,uint16&x,uint16&y,uint8 dir,uint16 maxSteps)from"utils";
+import bool FindNearestFreeHex(Map&map,uint16&x,uint16&y,uint radius)from"utils";
+
+import bool GetItemCoordinates(Item&item,uint&mapID,uint16&x,uint16&y)from"utils";
+import bool ItemOnHex(uint16 pid,Map@map,uint16 x,uint16 y)from"utils";
+
+import void PrintCallstack()from"utils";
+import void PrintCallstack(int level)from"utils";
+
+import bool LocationHasCritters(Location&loc,uint findType)from"utils";
+import uint LocationGetCritters(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint LocationGetPlayersAndFollowers(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint MapGetPlayersAndFollowers(Map&map,uint findType,array<Critter@>@critters)from"utils";
+import uint CritterGetPlayersAndFollowers(Critter&critter,bool lookOnMe,uint findType,array<Critter@>@critters)from"utils";
+import bool LocationHasItems(Location&loc,uint16 protoId)from"utils";
+import uint LocationGetItems(Location&loc,uint16 protoId,array<Item@>@items)from"utils";
+import void LocationDeleteItems(Location&loc,uint16 protoId)from"utils";
+
+import bool IsDisposableEncounter(Location@loc)from"utils";
+
+import bool IsT4Item(Item&item)from"utils";
+import bool IsT3Item(Item&item)from"utils";
+import uint16 AddT3Item()from"utils";
+import uint16 AddT4Item()from"utils";
+import uint16 AddImplant()from"utils";
+import uint16 AddT4BP()from"utils";
+import uint16 AddRareAmmo()from"utils";
+import uint16 AddTypicalAmmo()from"utils";
+
+import void SetDeterioration(Item&item)from"utils";  
+
+shared class CPosition
+{
+	uint x;
+	uint y;
+	uint dir;
+};
+
+shared interface IRect
+{
+	bool IsWithin(Critter&cr);
+};
+
+shared class Rect:IRect
+{
+	uint x1;
+	uint y1;
+	uint x2;
+	uint y2;
+	
+	Rect(uint x1,uint y1,uint x2,uint y2)
+	{
+		this.x1=x1;
+		this.y1=y1;
+		this.x2=x2;
+		this.y2=y2;
+	}
+	
+	bool IsWithin(Critter&cr)
+	{
+		return((cr.HexX>=this.x1&&cr.HexX<=this.x2)&&(cr.HexY>=this.y1&&cr.HexY<=this.y2));
+	}
+};
+
+shared interface IDateTime
+{
+	uint16 get_Year();
+	uint16 get_Month();
+	uint16 get_DayOfWeek();
+	uint16 get_Day();
+	uint16 get_Hour();
+	uint16 get_Minute();
+	uint16 get_Second();
+	uint16 get_Milliseconds();
+	string@ToString();
+};                                                                                                   
+
+shared interface IWeatherZone
+{
+	uint GetID();
+	bool Load();
+	bool Save();
+	
+	string GetName();
+	void SetName(string name);
+	
+	uint GetTimeEvent();
+	void SetTimeEvent(uint id);
+	
+	int GetFlags();
+	bool GetFlag(int flag);
+	void SetFlag(int flag);
+	void UnsetFlag(int flag);
+	
+	uint GetSpeedMove();
+	bool SetSpeedMove(uint speed);
+	uint GetSpeedLevel();
+	bool SetSpeedLevel(uint speed);
+	uint GetSpeedRadius();
+	bool SetSpeedRadius(uint speed);
+	uint GetSubZones();
+	bool SetSubZones(uint subzones);
+	
+	bool SetType(uint type);
+	bool Position(uint coords_x,uint coords_y);
+	bool Move(uint coords_x,uint coords_y);
+	bool Level(uint level);
+	bool Radius(uint radius);
+	
+	bool LoadActions(string&filename);
+	void Action(uint action,uint data1,uint data2);
+	void Update();
+	void UpdateFast(Location@loc);
+	void Lock();
+	void Unlock();
+	uint GetUpdateTime();
+	uint SetUpdateTime(uint time);
+	void Delete();
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+
+uint[]rain_table=
+{
+	6,(1),
+	9,(1),
+	8,(1),
+	18,(1),
+	16,(1),
+	20,(1),
+	21,(1),
+	22,(1),
+	15,(1),
+	31,(1),
+	32,(1),
+	115,(1),
+	116,(1),
+	117,(1),
+	118,(1),
+	54,(1),
+	55,(1),
+	56,(1),
+	57,(1),
+	58,(1),
+	260,(1),
+	261,(1),
+	262,(1),
+	263,(1),
+	264,(1),
+	265,(1),
+	266,(1),
+	25,(1),
+	26,(1),
+	27,(1),
+	28,(1),
+	29,(1),
+	30,(1),
+	34,(1),
+	35,(1),
+	36,(1),
+	37,(1),
+	45,(1),
+	42,(1),
+	75,(1),
+	76,(1),
+	77,(1),
+	78,(1),
+	79,(1),
+	80,(1),
+	81,(1),
+	82,(1),
+	83,(1),
+	49,(1),
+	50,(1),
+	51,(1),
+	52,(1),
+	53,(1),
+	62,(1),
+	64,(1),
+	63,(1),
+	137,(1),
+	139,(1),
+	135,(1),
+	140,(1),
+	109,(1),
+	111,(1),
+	1,(1),
+	70,(1),
+	71,(1),
+	85,(1),
+	86,(1),
+	87,(1),
+	88,(1),
+	89,(1),
+	240,(1),
+	241,(1),
+	242,(1),
+	243,(1),
+	244,(1),
+	245,(1),
+	246,(1),
+	247,(1),
+	267,(1),
+	268,(1),
+	270,(1),
+	269,(1),
+	90,(1),
+	91,(1),
+	92,(1),
+	93,(1),
+	141,(1),
+	142,(1),
+	143,(1),
+	144,(1),
+	145,(1),
+	146,(1),
+	147,(1),
+	221,(1),
+	222,(1),
+	223,(1),
+	224,(1),
+	225,(1),
+	226,(1),
+	227,(1),
+	280,(1),
+	281,(1),
+	112,(1),
+	113,(1),
+	100,(1),
+	101,(1),
+	102,(1),
+	114,(1),
+	376,(1),
+	377,(1),
+	378,(1),
+	374,(1),
+	375,(1),
+	372,(1),
+	373,(1),
+	370,(1),
+	371,(1),
+	84,(1),
+	283,(1),
+	284,(1),
+	285,(1),
+	286,(1),
+	282,(1),
+	279,(1),
+	40,(1),
+	275,(1),
+	276,(1),
+	277,(1),
+	278,(1),
+	39,(1),
+	325,(1),
+	326,(1),
+	327,(1),
+	328,(1),
+	2,(1),
+	3,(1),
+	313,(1),
+	314,(1),
+	315,(1),
+	316,(1),
+	317,(1),
+	65,(1),
+	66,(1),
+	4,(1),
+	5,(1),
+	7,(1),
+	10,(1),
+	14,(1),
+	17,(1),
+	19,(1),
+	23,(1),
+	24,(1),
+	33,(1),
+	38,(1),
+	41,(1),
+	43,(1),
+	44,(1),
+	160,(1),
+	161,(1),
+	162,(1),
+	163,(1),
+	164,(1),
+	165,(1),
+	166,(1),
+	167,(1),
+	168,(1),
+	169,(1),
+	345,(1),
+	346,(1),
+	347,(1),
+	348,(1),
+	170,(1),
+	171,(1),
+	172,(1),
+	173,(1),
+	174,(1),
+	175,(1),
+	176,(1),
+	177,(1),
+	178,(1),
+	180,(1),
+	185,(1),
+	181,(1),
+	186,(1),
+	182,(1),
+	187,(1),
+	183,(1),
+	188,(1),
+	184,(1),
+	189,(1),
+	213,(1),
+	212,(1),
+	401,(1),
+	400,(1),
+	190,(1),
+	191,(1),
+	192,(1),
+	193,(1),
+	194,(1),
+	195,(1),
+	196,(1),
+	197,(1),
+	198,(1),
+	199,(1),
+	217,(1),
+	218,(1),
+	205,(1),
+	206,(1),
+	207,(1),
+	208,(1),
+	209,(1),
+	211,(1),
+	210,(1),
+	200,(1),
+	201,(1),
+	202,(1),
+	203,(1),
+	204,(1),
+	214,(1),
+	215,(1),
+	216,(1),
+	230,(1),
+	231,(1),
+	232,(1),
+	233,(1),
+	228,(1),
+	236,(1),
+	235,(1),
+	238,(1),
+	237,(1),
+	229,(1),
+	234,(1),
+	287,(1),
+	288,(1),
+	289,(1),
+	290,(1),
+	300,(1),
+	301,(1),
+	302,(1),
+	303,(1),
+	304,(1),
+	305,(1),
+	306,(1),
+	307,(1),
+	308,(1),
+	309,(1),
+	310,(1),
+	311,(1),
+	312,(1),
+	291,(1),
+	340,(1),
+	341,(1),
+	342,(1),
+	344,(1),
+	343,(1),
+	239,(1),
+	385,(1),
+	450,(1),
+	451,(1),
+	452,(1),
+	453,(1),
+	454,(1),
+	455,(1),
+	380,(1),
+	500,(1),
+	501,(1),
+	502,(1),
+	503,(1),
+	504,(1),
+	505,(1),
+	506,(1),
+	507,(1),
+	508,(1),
+	509,(1),
+	509,(1),
+	511,(1),
+	512,(1),
+	513,(1),
+	514,(1),
+	549,(1),
+	550,(1),
+	551,(1),
+	552,(1),
+	553,(1),
+	554,(1),
+	555,(1),
+	556,(1),
+	557,(1),
+	558,(1),
+	561,(1),
+	562,(1),
+	559,(1),
+	560,(1),
+	563,(1),
+	564,(1),
+	565,(1),
+	11,(1),
+	12,(1),
+	13,(1),
+	566,(1),
+	379,(1),
+	567,(1),
+	568,(1),
+	569,(1),
+}; 
+
+void InitWeather_Rain()
+{}
+
+int map_rain(uint map_pid)
+{
+	for(uint r=0;r<rain_table.length();r+=2)
+	{
+		if(rain_table[r]==map_pid)
+		return(rain_table[r+1]);
+	}
+	{;};
+	return((0));
+}
+
+void WeatherUpdate_Rain(Map@map,int level)
+{
+	if((@map!=null))
+	{
+		if(level>0)
+		{
+			int rain=map_rain(map.GetProtoId());
+			switch(rain)
+			{
+				case(0):
+				level=0;
+				break;
+				case(2):
+				level-=15;
+				break;
+				case(1):
+				default:
+				break;
+			}
+		}
+		
+		level=(((level)>(255))?(255):(((level)<(0))?(0):(level)));
+		map.SetRain(level);
+	}
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+
+import void AffectRadiation(Critter&cr,int value)from"radiation";
+
+int[]radiation_ignoremaps=
+{
+	
+	(240),(241),(242),(243),(244),(245),(246),(84)
+	
+};
+
+void InitWeather_Radiation()
+{}  
+
+void WeatherUpdate_Radiation(Critter@critter,int level)
+{
+	if(!(@critter!=null))
+	{
+		Log("Invalid critter");
+		return;
+	}    
+	
+	AffectRadiation(critter,Random(level/2,level));
+}
+
+void WeatherUpdate_Radiation(Map@map,int level)
+{
+	if((@map!=null))
+	{
+		if(level<=0)
+		return;
+		
+		if(radiation_ignoremaps.length()>0&&Present(int(map.GetProtoId()),radiation_ignoremaps))
+		return;
+		
+		array<Critter@>crits;
+		uint num=map.GetCritters(0,(0x03),crits);
+		for(uint c=0;c<crits.length();c++)
+		{
+			if((@crits[c]!=null))
+			WeatherUpdate_Radiation(crits[c],level);
+		}
+	}
+}        
+
+uint LastID=0;
+class CWeatherZone:IWeatherZone
+{
+	
+	uint ID;
+	Serializator save;
+	string Name;
+	uint TimeEvent; 
+	
+	uint Type;
+	int Flags;
+	
+	int WorldX;
+	int WorldY;
+	int DestinationX;
+	int DestinationY;
+	int SpeedMove;
+	
+	int CurrentLevel;
+	int WantedLevel;
+	int SpeedLevel;
+	
+	int CurrentRadius;
+	int WantedRadius;
+	int SpeedRadius;
+	
+	int SubZones;
+	int WantedSubZones;
+	
+	uint UpdateTime;
+	
+	uint NextAction;
+	array<int>Actions;
+	
+	bool Locked;    
+	
+	CWeatherZone(uint coords_x,uint coords_y,uint type)
+	{
+		LastID++;
+		this.ID=LastID;
+		this.Name="";
+		this.Type=type;
+		this.TimeEvent=0;
+		this.Flags=0;
+		
+		this.WorldX=coords_x;
+		this.WorldY=coords_y;
+		this.DestinationX=coords_x;
+		this.DestinationY=coords_y;
+		this.SpeedMove=0;
+		
+		this.CurrentLevel=0;
+		this.WantedLevel=0;
+		this.SpeedLevel=0;
+		
+		this.CurrentRadius=0;
+		this.WantedRadius=0;
+		this.SpeedRadius=0;
+		
+		this.SubZones=1;
+		this.WantedSubZones=1;
+		
+		this.NextAction=0;
+		
+		this.UpdateTime=(((15)*__TimeMultiplier));
+		
+		this.Locked=false;                  
+		
+	}
+	
+	CWeatherZone(string name)
+	{
+		LastID++;
+		this.ID=LastID;
+		this.Name=name;
+		this.Type=0;
+		this.TimeEvent=0;
+		this.Flags=0;
+		
+		this.WorldX=0;
+		this.WorldY=0;
+		this.DestinationX=0;
+		this.DestinationY=0;
+		this.SpeedMove=0;
+		
+		this.CurrentLevel=0;
+		this.WantedLevel=0;
+		this.SpeedLevel=0;
+		
+		this.CurrentRadius=0;
+		this.WantedRadius=0;
+		this.SpeedRadius=0;
+		
+		this.SubZones=1;
+		this.WantedSubZones=1;
+		
+		this.NextAction=0;
+		
+		this.UpdateTime=(((15)*__TimeMultiplier));
+		
+		this.Locked=false;                 
+		
+	}
+	
+	uint GetID()
+	{
+		return(this.ID);
+	}
+	
+	bool Load()
+	{
+		this.save.Clear();
+		
+		if(!IsAnyData("WeatherZone:"+this.Name))
+		return(false);
+		if(!this.save.Load("WeatherZone:"+this.Name))
+		return(false);
+		
+		this.save.
+		Get(this.Type).Get(this.Flags).
+		Get(this.WorldX).Get(this.WorldY).Get(this.DestinationX).Get(this.DestinationY).Get(this.SpeedMove).
+		Get(this.CurrentLevel).Get(this.WantedLevel).Get(this.SpeedLevel).
+		Get(this.CurrentRadius).Get(this.WantedRadius).Get(this.SpeedRadius).
+		Get(this.SubZones).Get(this.WantedSubZones).
+		Get(this.UpdateTime).
+		Get(this.NextAction).Get(this.Actions).
+		Get(this.Locked);
+		
+		return(true);
+	}
+	
+	bool Save()
+	{
+		this.save.Clear();
+		return(
+		this.save.
+		Set(this.Type).Set(this.Flags).
+		Set(this.WorldX).Set(this.WorldY).Set(this.DestinationX).Set(this.DestinationY).Set(this.SpeedMove).
+		Set(this.CurrentLevel).Set(this.WantedLevel).Set(this.SpeedLevel).
+		Set(this.CurrentRadius).Set(this.WantedRadius).Set(this.SpeedRadius).
+		Set(this.SubZones).Set(this.WantedSubZones).
+		Set(this.UpdateTime).
+		Set(this.NextAction).Set(this.Actions).
+		Set(this.Locked).
+		Save("WeatherZone:"+this.Name)
+		);
+	}
+	
+	string GetName()
+	{
+		if(this.Name!="")
+		return("WeatherZone("+this.ID+")["+this.Name+"]");
+		else
+		return("WeatherZone("+this.ID+")");
+	}
+	
+	void SetName(string name)
+	{
+		this.Name=name;
+	}
+	
+	uint GetTimeEvent()
+	{
+		return(this.TimeEvent);
+	}
+	
+	void SetTimeEvent(uint id)
+	{
+		this.TimeEvent=id;
+	}
+	
+	int GetFlags()
+	{
+		return(this.Flags);
+	}
+	
+	bool GetFlag(int flag)
+	{
+		if((((this.Flags)&(flag))!=0))
+		return(true);
+		else
+		return(false);
+	}
+	
+	void SetFlag(int flag)
+	{
+		((this.Flags)=(this.Flags)|(flag));
+	}
+	
+	void UnsetFlag(int flag)
+	{
+		(this.Flags=((this.Flags)&(~(flag))));
+	}
+	
+	uint GetSpeedMove()
+	{
+		return(this.SpeedMove);
+	}
+	
+	bool SetSpeedMove(uint speed)
+	{
+		if(this.Locked==true)
+		return(false);
+		else
+		{
+			if(this.SpeedMove!=int(speed))
+			{
+				{;};
+				this.SpeedMove=speed;
+			}
+			return(true);
+		}
+	}
+	
+	uint GetSpeedLevel()
+	{
+		return(this.SpeedLevel);
+	}
+	
+	bool SetSpeedLevel(uint speed)
+	{
+		if(this.Locked==true)
+		return(false);
+		else
+		{
+			if(this.SpeedLevel!=int(speed))
+			{
+				{;};
+				this.SpeedLevel=speed;
+			}
+			return(true);
+		}
+	}
+	
+	uint GetSpeedRadius()
+	{
+		return(this.SpeedRadius);
+	}
+	
+	bool SetSpeedRadius(uint speed)
+	{
+		if(this.Locked==true)
+		return(false);
+		else
+		{
+			if(this.SpeedRadius!=int(speed))
+			{
+				{;};
+				this.SpeedRadius=speed;
+			}
+			return(true);
+		}
+	}
+	
+	uint GetSubZones()
+	{
+		return(this.WantedSubZones);
+	}
+	
+	bool SetSubZones(uint subzones)
+	{
+		if(this.Locked==true)
+		return(false);
+		else
+		{
+			if(this.WantedSubZones!=int(subzones))
+			{
+				{;};
+				this.WantedSubZones=subzones;
+			}
+			return(true);
+		}
+	}
+	
+	bool SetType(uint type)
+	{
+		if(this.Locked==true)
+		{
+			{;};
+			return(false);
+		}
+		else
+		{
+			if(this.Type!=type)
+			{
+				{;};
+				this.Type=type;
+			}
+			return(true);
+		}
+	}
+	
+	bool Position(uint coords_x,uint coords_y)
+	{
+		if(this.Locked==true||this.GetFlag((0x0000020)))
+		return(false);
+		else
+		{
+			if(this.WorldX!=int(coords_x)||this.WorldY!=int(coords_y))
+			{
+				{;};
+				this.WorldX=coords_x;
+				this.WorldY=coords_y;
+				this.DestinationX=coords_x;
+				this.DestinationY=coords_y;
+			}
+			return(true);
+		}
+	}
+	
+	bool Move(uint coords_x,uint coords_y)
+	{
+		if(this.Locked==true||this.GetFlag((0x0000020)))
+		return(false);
+		else
+		{
+			if(this.DestinationX!=int(coords_x)||this.DestinationY!=int(coords_y))
+			{
+				{;};
+				this.DestinationX=coords_x;
+				this.DestinationY=coords_y;
+			}
+			return(true);
+		}
+	}
+	
+	bool Level(uint level)
+	{
+		{;};
+		if(this.Locked==true)
+		{
+			{;};
+			return(false);
+		}
+		else
+		{
+			if(this.WantedLevel!=int(level))
+			{
+				{;};
+				this.WantedLevel=level;
+			}
+			return(true);
+		}
+	}
+	
+	bool Radius(uint radius)
+	{
+		{;};
+		if(this.Locked==true)
+		return(false);
+		else
+		{
+			if(this.WantedRadius!=int(radius))
+			{
+				{;};
+				this.WantedRadius=radius;
+			}
+			return(true);
+		}
+	}
+	
+	bool LoadActions(string&filename)
+	{
+		file actions;
+		if(actions.open(filename,"r")>=0)
+		{
+			string all;
+			int l=actions.readString(actions.getSize(),all);
+			actions.close();
+			array<string@>@lines=splitEx(all,"\n");
+			{;};
+			for(uint l=0;l<lines.length();l++)
+			{
+				array<string@>@action=splitEx(lines[l]," ");
+				if(action.length()<2)
+				continue;
+				int arg1=0;
+				int arg2=0;
+				StrToInt(action[1],arg1);
+				if(action.length()>=3)
+				StrToInt(action[2],arg2); 
+				
+				if(action[0]=="DELETE")
+				this.Action((1),0,0);
+				else if(action[0]=="SETFLAG"||action[0]=="UNSETFLAG")
+				{
+					int act=(action[0]=="SETFLAG"?(2):(3));
+					for(uint f=1;f<action.length();f++)
+					{
+						if(action[f]=="ATDAY")
+						this.Action(act,(0x0000008),0);
+						else if(action[f]=="ATNIGHT")
+						this.Action(act,(0x0000010),0);
+						else if(action[f]=="NOMOVE")
+						this.Action(act,(0x0000010),0);
+					}
+				}
+				else if(action[0]=="UPDATETIME")
+				this.Action((4),arg1,0);
+				else if(action[0]=="SPEEDMOVE")
+				this.Action((5),arg1,0);
+				else if(action[0]=="SPEEDLEVEL")
+				this.Action((6),arg1,0);
+				else if(action[0]=="SPEEDRADIUS")
+				this.Action((7),arg1,0);
+				else if(action[0]=="POSITION")
+				this.Action((8),arg1,arg2);
+				else if(action[0]=="MOVE")
+				this.Action((9),arg1,arg2);
+				else if(action[0]=="LEVEL")
+				this.Action((10),arg1,arg2);
+				else if(action[0]=="RADIUS")
+				this.Action((11),arg1,0);
+				else if(action[0]=="SUBZONES")
+				this.Action((12),arg1,0);
+				else if(action[0]=="LOCK")
+				this.Action((13),arg1,0);
+				else if(action[0]=="UNLOCK")
+				this.Action((14),arg1,0);     
+				
+				else if(action[0]=="LEVEL_RANDOM")
+				{int arg=-1;if(StrToInt(action[Random(1,action.length()-1)],arg)) this.Action((10),arg,0); }
+				else if(action[0]=="RADIUS_RANDOM")
+				{int arg=-1;if(StrToInt(action[Random(1,action.length()-1)],arg)) this.Action((11),arg,0); }
+				else if(action[0]=="SUBZONES_RANDOM")
+				{int arg=-1;if(StrToInt(action[Random(1,action.length()-1)],arg)) this.Action((12),arg,0); } 
+				
+				else
+				{
+					Log(this.GetName()+": unknown action <"+action[0]+">");
+				}
+			}
+			return(true);
+		}
+		else
+		{
+			Log(this.GetName()+": can't open actions file ("+filename+")");
+			return(false);
+		}
+	}
+	
+	void Action(uint action,uint data1,uint data2)
+	{
+		if(action<=(0)||action>=(15))
+		{
+			Log(this.GetName()+": unknown action id: <"+action+">");
+		}
+		else
+		{
+			{;};
+			this.Actions.insertLast(action);
+			this.Actions.insertLast(data1);
+			this.Actions.insertLast(data2);
+		}
+	}
+	
+	void RunAction(int action)
+	{
+		{;};
+		bool ok=false;
+		switch(this.Actions[action])
+		{
+			case(1):
+			this.Delete(false);
+			ok=true;
+			break;
+			case(2):
+			this.SetFlag(this.Actions[action+1]);
+			ok=true;
+			break;
+			case(3):
+			this.UnsetFlag(this.Actions[action+1]);
+			ok=true;
+			break;
+			case(4):
+			this.UpdateTime=((this.Actions[action+1])*__TimeMultiplier);
+			ok=true;
+			break;
+			case(5):
+			ok=this.SetSpeedMove(this.Actions[action+1]);
+			break;
+			case(6):
+			ok=this.SetSpeedLevel(this.Actions[action+1]);
+			break;
+			case(7):
+			ok=this.SetSpeedRadius(this.Actions[action+1]);
+			break;
+			case(8):
+			ok=this.Position(this.Actions[action+1],this.Actions[action+2]);
+			break;
+			case(9):
+			ok=this.Move(this.Actions[action+1],this.Actions[action+2]);
+			break;
+			case(10):
+			ok=this.Level(this.Actions[action+1]);
+			break;
+			case(11):
+			ok=this.Radius(this.Actions[action+1]);
+			break;
+			case(12):
+			ok=this.SetSubZones(this.Actions[action+1]);
+			break;
+			case(13):
+			Log("WeatherZone:"+this.Name+" locked");
+			this.Locked=true;
+			ok=true;
+			break;
+			case(14):
+			Log("WeatherZone:"+this.Name+" unlocked");
+			this.Locked=false;
+			ok=true;
+			break;
+			case(0):
+			case(15):
+			break;
+			default:
+			Log(this.GetName()+": Unknown action id <"+action+">");
+			ok=false;
+			break;
+		}
+		{;};
+	}
+	
+	void Update()
+	{ 
+		
+		array<int>old_locations;
+		array<int>new_locations; 
+		
+		if(this.CurrentRadius>0)
+		{
+			array<Location@>locations;
+			int count=GetLocations(this.WorldX,this.WorldY,this.CurrentRadius,locations);
+			if(count>0||locations.length()>0)
+			{
+				for(uint l=0;l<locations.length();l++)
+				{  
+					
+					old_locations.insertLast(locations[l].Id);
+				}
+				
+			}
+		}  
+		
+		if(this.SpeedMove>0&&(this.DestinationX!=this.WorldX||this.DestinationY!=this.WorldY))
+		{
+			
+			int change_x=0;
+			int change_y=0;
+			if(this.DestinationX!=this.WorldX)
+			change_x=(this.DestinationX>this.WorldX
+			?Random(Random(0,1),this.SpeedMove)
+			:Random(Random(0,-1),-this.SpeedMove));
+			if(this.DestinationY!=this.WorldY)
+			change_y=(this.DestinationY>this.WorldY
+			?Random(Random(0,1),this.SpeedMove)
+			:Random(Random(0,-1),-this.SpeedMove));
+			
+			this.WorldX+=change_x;
+			this.WorldY+=change_y;
+		}
+		if(this.SpeedLevel>0&&this.WantedLevel!=this.CurrentLevel)
+		{
+			int change=(this.WantedLevel>this.CurrentLevel?Random(1,this.SpeedLevel):Random(-1,-this.SpeedLevel));
+			
+			this.CurrentLevel+=change;
+		}
+		if(this.SpeedRadius>0&&this.WantedRadius!=this.CurrentRadius)
+		{
+			int change=(this.WantedRadius>this.CurrentRadius?Random(1,this.SpeedRadius):Random(-1,-this.SpeedRadius));
+			
+			this.CurrentRadius+=change;
+		}
+		
+		if(this.WantedSubZones!=this.SubZones)
+		{
+			int change=(this.WantedSubZones>this.SubZones?int(1):-1);
+			
+			this.SubZones+=change;
+		}   
+		
+		if(this.CurrentLevel<0)
+		this.CurrentLevel=0;
+		
+		if(this.CurrentRadius<0)
+		this.CurrentRadius=0;
+		
+		if(this.SubZones<1)
+		this.SubZones=1; 
+		
+		if(this.CurrentRadius>0)
+		{
+			array<Location@>locations;
+			int count=GetLocations(this.WorldX,this.WorldY,this.CurrentRadius,locations);
+			if(count>0||locations.length()>0)
+			{
+				for(uint l=0;l<locations.length();l++)
+				{  
+					
+					new_locations.insertLast(locations[l].Id);
+				}
+				
+			}
+		} 
+		
+		for(uint l=0;l<old_locations.length();l++)
+		{
+			if(!Present(old_locations[l],new_locations))
+			{
+				Log(this.GetName()+": location "+old_locations[l]+" outside weather zone "+this.ID);
+				WeatherUpdate(old_locations[l],this.Type,0);
+			}
+		} 
+		
+		if(this.SubZones>1&&this.CurrentRadius>this.SubZones)
+		{
+			array<int>locations_done;
+			array<int>critters_done;
+			int szRadius=this.CurrentRadius/this.SubZones;
+			for(uint sz=1;int(sz)<=this.SubZones;sz++)
+			{
+				
+				array<Location@>locations;
+				int ldone=0;
+				int pdone=0;
+				int count=GetLocations(this.WorldX,this.WorldY,sz*szRadius,locations);
+				if(count>0||locations.length()>0)
+				{
+					for(uint l=0;l<locations.length();l++)
+					{
+						if(  
+						
+						!Present(int(locations[l].Id),locations_done))
+						{
+							ldone++;
+							WeatherUpdate(locations[l],this.Type,this.CurrentLevel/sz);
+							locations_done.insertLast(locations[l].Id);
+						}
+					}
+				}
+				array<Critter@>critters;
+				int ccount=GetGlobalMapCritters(this.WorldX,this.WorldY,this.CurrentRadius,(0x03),critters);
+				if(ccount>0||critters.length()>0)
+				{
+					for(uint c=0;c<critters.length();c++)
+					{
+						if(!Present(int(critters[c].Id),critters_done))
+						{
+							pdone++;
+							WeatherUpdate(critters[c],this.Type,this.CurrentLevel);
+							critters_done.insertLast(critters[c].Id);
+						}
+					}
+				}      
+				
+			}
+		}
+		else
+		{
+			array<Location@>locations;
+			int lcount=GetLocations(this.WorldX,this.WorldY,this.CurrentRadius,locations);
+			if(lcount>0||locations.length()>0)
+			{
+				for(uint l=0;l<locations.length();l++)
+				{  
+					
+					{
+						WeatherUpdate(locations[l],this.Type,this.CurrentLevel);
+					}
+				}
+			}
+			array<Critter@>critters;
+			int ccount=GetGlobalMapCritters(this.WorldX,this.WorldY,this.CurrentRadius,(0x03),critters);
+			if(ccount>0||critters.length()>0)
+			{
+				for(uint c=0;c<critters.length();c++)
+				{
+					WeatherUpdate(critters[c],this.Type,this.CurrentLevel);
+				}
+			}
+		}
+		
+		if(this.Actions.length()>0&&this.WorldX==this.DestinationX&&this.WorldY==this.DestinationY)
+		{ 
+			
+			this.RunAction(this.NextAction);
+			
+			this.NextAction+=3;
+			
+			if(this.NextAction>this.Actions.length()-1)
+			{
+				Log(this.GetName()+": no more actions, resetting");
+				this.NextAction=0;
+			}
+			
+		}                
+		
+	}
+	
+	void UpdateFast(Location@loc)
+	{
+		if(!(@loc!=null))
+		return;
+		
+		if(this.CurrentRadius==0||this.CurrentLevel==0||this.SubZones==0)
+		return;
+		
+		if(this.SubZones>1&&this.CurrentRadius>this.SubZones)
+		{
+			int szRadius=this.CurrentRadius/this.SubZones;
+			for(uint sz=1;int(sz)<=this.SubZones;sz++)
+			{
+				array<Location@>locations;
+				int lcount=GetLocations(this.WorldX,this.WorldY,sz*szRadius,locations);
+				if(lcount>0||locations.length()>0)
+				{
+					for(uint l=0;l<locations.length();l++)
+					{
+						if(locations[l].Id==loc.Id)
+						{
+							{;};
+							WeatherUpdate(locations[l],this.Type,this.CurrentLevel/sz);
+							return;
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			array<Location@>locations;
+			int lcount=GetLocations(this.WorldX,this.WorldY,this.CurrentRadius,locations);
+			if(lcount>0||locations.length()>0)
+			{
+				for(uint l=0;l<locations.length();l++)
+				{
+					if(locations[l].Id==loc.Id)
+					{
+						{;};
+						WeatherUpdate(locations[l],this.Type,this.CurrentLevel);
+						return;
+					}
+				}
+			}
+		}
+	}
+	
+	void Lock()
+	{
+		{;};
+		this.Locked=true;
+	}
+	
+	void Unlock()
+	{
+		{;};
+		this.Locked=false;
+	}
+	
+	uint GetUpdateTime()
+	{
+		return(this.UpdateTime);
+	}
+	
+	uint SetUpdateTime(uint time)
+	{
+		if(!Locked&&this.UpdateTime!=time)
+		{
+			{;};
+			this.UpdateTime=time;
+		}
+		return(this.GetUpdateTime());
+	}
+	
+	void Delete()
+	{
+		this.Delete(false);
+	}
+	
+	void Delete(bool fast)
+	{
+		if(fast)
+		{
+			this.CurrentRadius=this.WantedRadius=0;
+		}
+		else
+		{
+			this.Level(0);
+			this.Radius(0);
+		}
+		this.SetFlag((0x0000002));
+	}
+	
+};
+array<CWeatherZone@>WeatherZones;
+
+bool initialized=false;
+uint LastUpdate=0;
+uint event=0;
+
+void InitWeather()
+{
+	InitWeatherReal();
+	event=CreateTimeEvent((__FullSecond)+((5)*__TimeMultiplier),"e_Update",false);
+}
+
+void InitWeatherReal()
+{
+	if(WeatherZones.length()>0)
+	WeatherZones.resize(0);
+	
+	if(LoadConfig("config\\Weather.cfg"))
+	{
+		IConfigFile@config=GetConfigFile("config\\Weather.cfg");
+		if((@config!=null))
+		{
+			array<string>sections;
+			config.GetSections(sections);
+			for(uint s=0;s<sections.length();s++)
+			{
+				uint id=AddWeatherZone(sections[s]);
+				if(id<0)
+				{
+					Log("WeatherZone ID not valid : "+sections[s]);
+					continue;
+				}
+				IWeatherZone@zone=GetWeatherZone(sections[s]);
+				if(!(@zone!=null))
+				{
+					Log("WeatherZone not valid : "+sections[s]);
+					continue;
+				}
+				if(zone.Load())
+				{
+					Log("Loaded "+zone.GetName());
+				}
+				else
+				{
+					Log("Saving "+zone.GetName());
+					zone.Save();
+				}
+				IConfigSection@section=GetConfigSection("config\\Weather.cfg",sections[s]);
+				if(!(@section!=null))
+				continue;
+				
+				array<string>vars;
+				section.GetVars(vars);
+				for(uint v=0;v<vars.length();v++)
+				{
+					string@val=GetConfigValue("config\\Weather.cfg",sections[s],vars[v]);
+					if(!(@val!=null)||val.length()==0)
+					continue;
+					int ival=0;
+					StrToInt(val,ival);
+					if(vars[v]=="Position")
+					{
+						array<string@>@position=split(val," ");
+						if(position[0]=="LOCATION")
+						{
+							if(StrToInt(position[1],ival))
+							{
+								Location@l=GetLocationByPid(ival,0);
+								if((@l!=null))
+								{
+									zone.Position(l.WorldX,l.WorldY);
+								}
+								else
+								{
+									Log("Invalid location <"+ival+">");
+									zone.Delete();
+								}
+							}
+						}
+						else
+						{
+							int x=0;
+							int y=0;
+							if(StrToInt(position[0],x)&&StrToInt(position[1],y))
+							{
+								zone.Position(x,y);
+							}
+							else
+							{
+								Log("Invalid position for "+zone.GetName());
+								zone.Delete();
+							}
+						}
+					}
+					else if(vars[v]=="Type")
+					zone.SetType(ival);
+					else if(vars[v]=="Level")
+					zone.Level(ival);
+					else if(vars[v]=="Radius")
+					zone.Radius(ival);
+					else if(vars[v]=="SubZones")
+					zone.SetSubZones(ival);
+					else if(vars[v]=="SpeedMove")
+					zone.SetSpeedMove(ival);
+					else if(vars[v]=="SpeedLevel")
+					zone.SetSpeedLevel(ival);
+					else if(vars[v]=="SpeedRadius")
+					zone.SetSpeedRadius(ival);
+					else if(vars[v]=="UpdateTime")
+					zone.SetUpdateTime(((ival)*__TimeMultiplier));
+					else if(vars[v]=="Locked")
+					{
+						if(ival>0)
+						zone.Lock();
+					}
+				}
+				zone.SetTimeEvent(CreateTimeEvent((__FullSecond)+1,"e_UpdateZone",zone.GetID(),false));
+			}
+			InitWeather_Rain();
+			InitWeather_Radiation();
+		}
+		else
+		{
+			Log("Weather config not valid : "+"config\\Weather.cfg");
+		}
+	}
+	else
+	{
+		Log("Weather config not found/already loaded : "+"config\\Weather.cfg");
+	}
+	
+	initialized=true;
+}
+
+void SaveWeather()
+{
+	if(WeatherZones.length()==0)
+	return;
+	
+	for(uint z=0;z<WeatherZones.length();z++)
+	{
+		Log("Saving "+WeatherZones[z].GetName());
+		WeatherZones[z].Save();
+	}
+}
+
+uint e_Update(array<int>@data)
+{
+	
+	if(!initialized)
+	{
+		{;};
+		InitWeatherReal();
+	}
+	
+	if(WeatherZones.length()==0)
+	return((((1)*__TimeMultiplier*60)));    
+	
+	for(uint z=0;z<WeatherZones.length();z++)
+	{
+		
+		if(WeatherZones[z].GetFlag((0x0000002))&&WeatherZones[z].CurrentRadius<=0)
+		{
+			Log("Removing "+WeatherZones[z].GetName());
+			if(IsAnyData("WeatherZone:"+WeatherZones[z].Name))
+			{
+				{;};
+				EraseAnyData("WeatherZone:"+WeatherZones[z].Name);
+			}
+			if(WeatherZones[z].TimeEvent>0)
+			{
+				{;};
+				EraseTimeEvent(WeatherZones[z].TimeEvent);
+			}   
+			
+			WeatherZones.removeAt(z);;
+			z=0;
+		}
+	}     
+	
+	return((((30)*__TimeMultiplier)));
+}
+
+uint e_UpdateZone(array<int>@data)
+{
+	if(data.length()==0)
+	{
+		Log("Missing WeatherZone ID");
+		return(0);
+	}
+	IWeatherZone@zone=GetWeatherZone(data[0]);
+	if(!(@zone!=null))
+	{
+		Log("Invalid WeatherZone: "+data[0]);
+		return(0);
+	}
+	
+	zone.Update();
+	
+	return(zone.GetUpdateTime());
+}
+
+uint AddWeatherZone(string&name)
+{
+	Log("Adding weather zone: "+name);
+	WeatherZones.insertLast(CWeatherZone(name));
+	return(LastID);
+}
+
+uint AddWeatherZone(uint coords_x,uint coords_y,uint type)
+{
+	Log("Adding weather zone: coords "+coords_x+":"+coords_y);
+	WeatherZones.insertLast(CWeatherZone(coords_x,coords_y,type));
+	return(LastID);
+} 
+
+IWeatherZone@GetWeatherZone(uint id)
+{
+	for(uint z=0;z<WeatherZones.length();z++)
+	{
+		if(WeatherZones[z].ID==id)
+		return(WeatherZones[z]);
+	}
+	return(null);
+}
+IWeatherZone@GetWeatherZone(string&name)
+{
+	for(uint z=0;z<WeatherZones.length();z++)
+	{
+		if(WeatherZones[z].Name==name)
+		return(WeatherZones[z]);
+	}
+	return(null);
+}
+
+void WeatherUpdate(Critter@critter,uint&type,int&level)
+{
+	if(!(@critter!=null))
+	{
+		Log("Invalid critter");
+	}
+	else
+	{
+		switch(type)
+		{
+			case(2):
+			WeatherUpdate_Radiation(critter,level);
+			break;
+			case(1):
+			default:
+			break;
+		}
+	}
+}
+
+void WeatherUpdate(Location@loc,uint&type,int&level)
+{
+	if(!(@loc!=null))
+	{
+		Log("Invalid location");
+	}
+	else
+	{
+		array<Map@>maps;
+		uint count=loc.GetMaps(maps);
+		if(count>0||maps.length()>0)
+		{
+			for(uint m=0;m<maps.length();m++)
+			{
+				switch(type)
+				{
+					case(1):
+					WeatherUpdate_Rain(maps[m],level);
+					break;
+					case(2):
+					WeatherUpdate_Radiation(maps[m],level);
+					break;
+					default:
+					break;
+				}
+			}
+		}
+	}
+}
+
+void WeatherUpdate(int locid,uint type,int level)
+{
+	if(locid<=0)
+	{
+		Log("Invalid location id");
+		return;
+	}
+	Location@loc=GetLocation(locid);
+	if(!(@loc!=null))
+	{
+		Log("Can't get location : "+locid);
+		return;
+	}
+	
+	WeatherUpdate(loc,type,level);
+}
+
+void WeatherUpdateFast(Location@loc)
+{
+	if(!(@loc!=null))
+	{
+		Log("Invalid location");
+	}
+	else
+	{
+		for(uint z=0;z<WeatherZones.length();z++)
+		{
+			WeatherZones[z].UpdateFast(loc);
+		}
+	}
+}
+
+void DeleteWeatherZone(uint&id,uint&speed_level,uint&speed_radius)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		DeleteWeatherZone(zone,speed_level,speed_radius);
+	}
+}
+
+void DeleteWeatherZone(string&name,uint&speed_level,uint&speed_radius)
+{
+	IWeatherZone@zone=GetWeatherZone(name);
+	if((@zone!=null))
+	{
+		DeleteWeatherZone(zone,speed_level,speed_radius);
+	}
+}
+
+void DeleteWeatherZone(IWeatherZone@zone,uint&speed_level,uint&speed_radius)
+{
+	if((@zone!=null))
+	{
+		Log(zone.GetName()+" marked to deletion");
+		zone.Level(0);
+		zone.Radius(0);
+		zone.SetSpeedLevel(speed_level);
+		zone.SetSpeedRadius(speed_radius);
+		zone.SetFlag((0x0000002));
+	}
+}   
+
+void init(Critter&player,int,int,int force)
+{
+	if(!initialized||force>0)
+	{
+		InitWeather();
+	}
+	;
+}
+
+void add(Critter&player,int x,int y,int type)
+{
+	if(type<=0||type>(2))
+	{
+		player.Say((11),"Invalid weather type: "+type);
+		return;
+	}
+	uint id=AddWeatherZone(x>0?x:player.WorldX,y>0?y:player.WorldY,type);
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		zone.SetTimeEvent(CreateTimeEvent((__FullSecond)+1,"e_UpdateZone",id,false));
+	}
+}
+
+void deleteallzones(Critter&player,int,int,int)
+{
+	player.Say((11),"Removing "+WeatherZones.length()+" weather zone(s)");
+	for(uint z=0;z<WeatherZones.length();z++)
+	WeatherZones[z].Delete(true);
+}
+
+void deleteevent(Critter&player,int,int,int)
+{
+	if(event>0)
+	{
+		player.Say((11),"Removing time event "+event);
+		EraseTimeEvent(event);
+	}
+}
+
+void cleanup(Critter&player,int,int,int)
+{
+	deleteallzones(player,0,0,0);
+	array<int>dummy;
+	e_Update(dummy);
+	deleteevent(player,0,0,0);
+}
+
+void update(Critter&player,int,int,int)
+{
+	array<int>data;
+	e_Update(data);
+}
+
+void speedmove(Critter&player,int id,int speed,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.SetSpeedMove(speed))
+		player.Say((11),"SpeedMove = "+speed);
+		else
+		player.Say((11),"Zone locked");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+void speedlevel(Critter&player,int id,int speed,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.SetSpeedLevel(speed))
+		player.Say((11),"SpeedLevel = "+speed);
+		else
+		player.Say((11),"Zone locked");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+void speedradius(Critter&player,int id,int speed,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.SetSpeedRadius(speed))
+		player.Say((11),"SpeedRadius = "+speed);
+		else
+		player.Say((11),"Zone locked");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+void move(Critter&player,int id,int x,int y)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.Move(x,y))
+		player.Say((11),"Move => "+x+":"+y);
+		else
+		player.Say((11),"Zone locked / NOMOVE");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+void level(Critter&player,int id,int level,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.Level(level))
+		player.Say((11),"Level => "+level);
+		else
+		player.Say((11),"Zone locked");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+void radius(Critter&player,int id,int radius,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.Radius(radius))
+		player.Say((11),"Radius => "+radius);
+		else
+		player.Say((11),"Zone locked");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+void subzones(Critter&player,int id,int zones,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.SetSubZones(zones))
+		player.Say((11),"SubZones => "+zones);
+		else
+		player.Say((11),"Zone locked");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+void updatetime(Critter&player,int id,int sec,int min)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		int res=zone.SetUpdateTime(((sec)*__TimeMultiplier)+((min)*__TimeMultiplier*60));
+		player.Say((11),"UpdateTime = "+res);
+	}
+}
+
+void type(Critter&player,int id,int type,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(zone.SetType(type))
+		player.Say((11),"Type => "+type);
+		else
+		player.Say((11),"Zone locked");
+	}
+	else
+	player.Say((11),"ERROR");
+}
+
+import bool GodOfTheRealm(uint id)from"cheats";
+void lock(Critter&player,int id,int state,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(!GodOfTheRealm(player.Id))
+		{
+			player.Say((11),"No.");
+			return;
+		}
+		
+		zone.Lock();
+	}
+}
+void unlock(Critter&player,int id,int state,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		if(!GodOfTheRealm(player.Id))
+		{
+			player.Say((11),"No.");
+			return;
+		}
+		
+		zone.Unlock();
+	}
+}
+
+void actiontest(Critter&player,int id,int,int)
+{
+	IWeatherZone@zone=GetWeatherZone(id);
+	if((@zone!=null))
+	{
+		player.Say((11),"Loading rain_klam.foweather");
+		zone.LoadActions("weather/rain_klam.foweather");
+	}
+}             
+

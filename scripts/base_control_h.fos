@@ -1,0 +1,11 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// base_control_h.fos
+//
+
+import void InitBaseControl() from "base_control";
+import bool LoadBaseData() from "base_control";
+import bool SaveBaseData() from "base_control";
+import uint e_TakeControlByNPC(array<uint>@ controllingdata) from "base_control";

@@ -1,0 +1,93 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_ares.fos
+//
+
+#include "_maps.fos"
+// #include "_vars.fos"
+//#include "_macros.fos"
+//#include "mapdata_h.fos"
+// #include "messages_h.fos"
+// #include "guard_h.fos"
+// #include "npc_common_h.fos"
+// #include "npc_planes_h.fos"
+// #include "utils_h.fos"
+#include "elevators_h.fos"
+#include "triggers.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void InitializeDynamicMob(Map& map, bool withBoss) from "mob_dynamic";
+
+// 1 elevator 1-2
+CElevator FirstElevator(ELEVATOR_MILITARY_12);
+// 2 elevator 1-3 
+CElevator SecondElevator(ELEVATOR_MILITARY_123);
+
+bool ElevatorsAdded = false;
+
+void map_init(Map& map, bool firstTime)
+{
+    /* if(firstTime)
+    {
+    // placing blockers to vault door
+	Item@ blocker = map.AddItem(106, 84, PID_UNVISIBLE_BLOCK, 1);
+	Item@ blocker2 = map.AddItem(106, 85, PID_UNVISIBLE_BLOCK, 1);
+    } */
+    // to add only one for all floors
+	//Dynamic mobs
+	if(firstTime)
+	switch(map.GetProtoId())
+	{
+		case MAP_Vault15Surface : InitializeDynamicMob(map); break;
+		case MAP_Vault15Level1 : InitializeDynamicMob(map); break;
+		case MAP_Vault15Level2 : InitializeDynamicMob(map); break;
+		case MAP_Vault15Level3 : InitializeDynamicMob(map, true); break;
+	}
+	
+    if(!ElevatorsAdded)
+    {
+        // add elevators
+        AddElevator(FirstElevator);
+        AddElevator(SecondElevator);
+        ElevatorsAdded = true;
+    }
+    // parse elevators floors
+    uint16 x = 0, y = 0;
+
+    switch(map.GetProtoId())
+    {
+	case MAP_Vault15Surface:
+        if(map.GetEntireCoords(1, 0, x, y))
+            FirstElevator.AddFloor(map.Id, 1);
+		break;
+    case MAP_Vault15Level1:
+        if(map.GetEntireCoords(1, 0, x, y))
+            FirstElevator.AddFloor(map.Id, 1);
+		if(map.GetEntireCoords(2, 0, x, y))
+            SecondElevator.AddFloor(map.Id, 2);
+        break;
+    case MAP_Vault15Level2:
+		if(map.GetEntireCoords(2, 0, x, y))
+            SecondElevator.AddFloor(map.Id, 2);
+        break;
+	case MAP_Vault15Level3:
+        if(map.GetEntireCoords(2, 0, x, y))
+            SecondElevator.AddFloor(map.Id, 2);
+        break;
+	default:
+    }
+}
+
+//
+// Elevator triggers
+//
+void t_ElevatorFirst(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(FirstElevator, critter, entered);
+}
+void t_ElevatorSecond(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(SecondElevator, critter, entered);
+}

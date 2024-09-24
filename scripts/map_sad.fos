@@ -1,0 +1,2348 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_sad.fos
+//
+// Sierra's event by worldremaker
+//
+
+//#include "_defines.fos"
+#include "_macros.fos"
+#include "elevators_h.fos"
+#include "lockers.fos"
+//#include "_maps.fos"
+#include "npc_planes_h.fos"
+#include "broadcast_h.fos"
+#include "mob_dynamic_h.fos"
+#include "mapdata_h.fos"
+#include "workbench.fos"
+#include "npc_roles_h.fos"
+#include "polygon_h.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import int GetDistance(Critter& mob) from "mob_dynamic";
+import void ExplodeEx(Map& map, uint16 hexX, uint16 hexY, uint16 effectPid, uint effectRadius, uint damage, uint damageType, uint damageRadius, uint ownerId, uint16 explodePid) from "explode";
+
+#define EVENT_TIME                (20)            // in real minutes
+#define MAX_ENTRANCE_SOLDIERS     (15)            // Max Sierra Soldiers to spawn
+#define MAX_LEVEL1_SOLDIERS       (13)            // Max Sierra Soldiers to spawn, with robots in total
+#define MAX_LEVEL2_SOLDIERS       (12)            // Max Sierra Soldiers to spawn, with robots in total
+#define MAX_LEVEL3_SOLDIERS       (11)            // Max Sierra Soldiers to spawn, with robots in total
+#define MAX_LEVEL4_SOLDIERS       (10)            // Max Sierra Soldiers to spawn, with robots in total
+
+//Dialog defines:
+#define ELEV_HACK_SUCC            (13)
+#define ELEV_HACK_FAIL            (14)
+#define ROBOT_DESTROY             (16)
+#define ROBOT_HACK_STAND          (17)
+#define ROBOT_HACK_FAIL           (18)
+#define ROBOT_HACK_SUCC           (19)
+#define ROBOT_OFF                 (26)
+#define ROBOT_ON                  (27)
+
+//
+// Sierra Army Depot - a place to have fun
+// Level2 - "military" crafting
+// Level3 - drugs experiments(crafting)
+//
+
+
+
+//
+// Initialize map
+//
+
+// Global variables
+bool ElevatorsAdded = false, HowitzerLoaded, DoorAreBroken,
+
+// Power switches etc...	
+	/*PowerON,
+	PowerGen1Working, PowerGen2Working, PowerGen3Working,
+	PowerGen4Working, PowerGen5Working, PowerGen6Working,*/
+	PowerON,
+	PowerGen1Working, PowerGen2Working, PowerGen3Working,
+	PowerGen4Working, PowerGen5Working, PowerGen6Working,
+// Elevators are unblocked...
+	//AccessToElevator123, AccessToElevator34;
+	AccessToElevator123, AccessToElevator34,
+	RobotsOnline, RobotsHacked, RobotsAreOnline = true;
+	
+// uint8 soldiercount;
+
+//Array for robots. Gathering informations:
+//{ [0] = robot.id , [1] = robot.GetHomePos( hexX ) , [2] = robot.GetHomePos( hexX ) , [3] = robot.GetHomePos( dir ) ... 
+// ... another 4 params for 1 each robot ... end }
+array<uint> SierraRobots;
+
+// elevator 1-2-3
+CElevator Elevator_123(ELEVATOR_MILITARY_123);
+
+class Elevator_123Callback : IElevatorOnMove
+{
+    Elevator_123Callback() {}
+    bool OnMove(Critter@ cr, uint& floor)
+    {
+        if(!PowerON)
+        {
+            cr.Say(SAY_NETMSG, "The elevator seems to be without power.");
+            return false;
+        }
+        return true;
+    }
+};
+// elevator 3-4
+CElevator Elevator_34(ELEVATOR_MILITARY_34);
+
+class Elevator_34Callback : IElevatorOnMove
+{
+    Elevator_34Callback() {}
+    bool OnMove(Critter@ cr, uint& floor)
+    {
+        if(!PowerON)
+        {
+            cr.Say(SAY_NETMSG, "The elevator seems to be without power.");
+            return false;
+        }
+        return true;
+    }
+};
+
+Elevator_123Callback@ check_123;
+Elevator_34Callback@ check_34;
+
+void map_init(Map& map, bool firstTime)
+{
+    if(map.GetProtoId() == MAP_SierraArmyDepot_TheBattlefield && firstTime)
+	{
+		SpawnSierraDoor(map);
+		
+		Item@ rewarddoor = map.GetItem(130, 83, 3358);
+		if(FLAG(rewarddoor.LockerCondition, LOCKER_ISOPEN))
+			SwitchState(rewarddoor);
+	}
+	
+	if(map.GetProtoId() == MAP_SierraArmyDepot_TheBattlefield)
+	{
+		if(GetGlobalVar(GVAR_sierra_poweron) == 1) PowerON = true; else PowerON = false;
+		if(GetGlobalVar(GVAR_sierra_powergen1working) == 1) PowerGen1Working = true; else PowerGen1Working = false;
+		if(GetGlobalVar(GVAR_sierra_powergen2working) == 1) PowerGen2Working = true; else PowerGen2Working = false;
+		if(GetGlobalVar(GVAR_sierra_powergen3working) == 1) PowerGen3Working = true; else PowerGen3Working = false;
+		if(GetGlobalVar(GVAR_sierra_powergen4working) == 1) PowerGen4Working = true; else PowerGen4Working = false;
+		if(GetGlobalVar(GVAR_sierra_powergen5working) == 1) PowerGen5Working = true; else PowerGen5Working = false;
+		if(GetGlobalVar(GVAR_sierra_powergen6working) == 1) PowerGen6Working = true; else PowerGen6Working = false;
+		if(GetGlobalVar(GVAR_sierra_accesstoelevator123) == 1) AccessToElevator123 = true; else AccessToElevator123 = false;
+		if(GetGlobalVar(GVAR_sierra_accesstoelevator34) == 1) AccessToElevator34 = true; else AccessToElevator34 = false;
+		if(GetGlobalVar(GVAR_sierra_howitzerloaded) == 1) HowitzerLoaded = true; else HowitzerLoaded = false;
+		if(GetGlobalVar(GVAR_sierra_robotsonline) == 1) RobotsOnline = true; else RobotsOnline = false;
+		if(GetGlobalVar(GVAR_sierra_robotscontrol) == 2) RobotsHacked = true; else RobotsHacked = false;
+		
+		Item@ sierraGate = map.GetItem(100, 41, PID_SIERRA_DOOR);
+		if(valid(sierraGate)) DoorAreBroken = false; else DoorAreBroken = true;
+		
+		InitExternalMagazine(map);
+		InitTheMainGate(map);
+	}
+	
+	Item@ powerswitch = null;
+	
+	switch(map.GetProtoId())
+	{
+		case MAP_SierraArmyDepot_Powersub :
+			@powerswitch = map.GetItem(80, 67, 3236);
+			if(PowerON)
+			{
+				powerswitch.Animate(0, 1);
+				powerswitch.AnimStayBegin = 1;
+				powerswitch.AnimStayEnd = 1;
+				powerswitch.Update();
+			}
+			else
+			{
+				powerswitch.Animate(1, 0);
+				powerswitch.AnimStayBegin = 0;
+				powerswitch.AnimStayEnd = 0;
+				powerswitch.Update();
+			}			
+		case MAP_SierraArmyDepot_Level1 :
+		case MAP_SierraArmyDepot_Level2 :
+		case MAP_SierraArmyDepot_Level3 :
+		case MAP_SierraArmyDepot_Level4 :
+			PowerON ? map.SetTime(720) : map.SetTime(180);
+			//PowerON ? SetRobotsOnline() : SetRobotsOffline(map.GetLocation());
+			break;
+	}
+	
+	// add only one for all floors
+    if(!ElevatorsAdded)
+    {
+        // add elevators
+        AddElevator(Elevator_123);
+        AddElevator(Elevator_34);
+		@check_123 = @Elevator_123Callback();
+        Elevator_123.SetOnMove(check_123);
+		@check_34 = @Elevator_34Callback();
+        Elevator_34.SetOnMove(check_34);
+        ElevatorsAdded = true;
+    }
+
+    uint16 x = 0, y = 0;
+    // parse elevators floors (only for vault levels)
+    switch(map.GetProtoId())
+    {
+    case MAP_SierraArmyDepot_Level1:
+        if(map.GetEntireCoords(1, 0, x, y))
+            Elevator_123.AddFloor(map.Id, 1);
+        break;
+    case MAP_SierraArmyDepot_Level2:
+        if(map.GetEntireCoords(1, 0, x, y))
+            Elevator_123.AddFloor(map.Id, 1);
+        break;
+    case MAP_SierraArmyDepot_Level3:
+        if(map.GetEntireCoords(1, 0, x, y))
+            Elevator_123.AddFloor(map.Id, 1);
+        if(map.GetEntireCoords(2, 0, x, y))
+            Elevator_34.AddFloor(map.Id, 2);
+        break;
+    case MAP_SierraArmyDepot_Level4:
+        if(map.GetEntireCoords(2, 0, x, y))
+            Elevator_34.AddFloor(map.Id, 2);
+        break;
+    default:
+    }
+
+    // i just can't make up witty comments anymore
+
+}
+
+//
+// Elevator triggers
+//
+
+void t_Elevator(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(Elevator_123, critter, entered);
+}
+
+void t_ElevatorPower(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(Elevator_34, critter, entered);
+}
+
+//
+// Turrets's part
+//
+
+void SierraTurret(Critter& mob, bool firstTime)
+{
+	mob.SetEvent(CRITTER_EVENT_IDLE, "mob_dynamic@_DontMove");
+	mob.SetEvent(CRITTER_EVENT_ATTACKED, "mob_dynamic@_Alert");
+	mob.SetEvent(CRITTER_EVENT_DEAD, "mob_dynamic@_ClearEnemyStack");
+	
+	_CritSetMode(mob, MODE_NO_STEAL);
+    _CritSetMode(mob, MODE_NO_DROP);
+    _CritSetMode(mob, MODE_NO_LOOT);
+	_CritSetMode(mob, MODE_UNLIMITED_AMMO);
+	_CritSetMode(mob, MODE_NO_TALK);
+    _CritSetMode(mob, MODE_NO_BARTER);
+	
+	_CritSetExtMode(mob, MODE_EXT_MOB);
+}
+
+//
+// Spawn door with blocker
+//
+
+void SpawnSierraDoor(Map& map)
+{
+	if(!valid(map)) return;
+	
+	//Check what happens with main gate
+	Item@ SierraDoor = map.GetItem(100, 41, PID_SIERRA_DOOR);
+	if(valid(SierraDoor))
+		return;
+	
+	// collecting blocking critters
+	array<Critter@> critters;
+	
+	map.GetCrittersHex(98, 41, 0, FIND_LIFE_AND_KO, critters);
+	map.GetCrittersHex(99, 42, 0, FIND_LIFE_AND_KO, critters);
+	map.GetCrittersHex(101, 42, 0, FIND_LIFE_AND_KO, critters);
+	map.GetCrittersHex(100, 41, 0, FIND_LIFE_AND_KO, critters);
+	
+	// and now kill them all
+	if(critters.length() > 0)
+	for(uint i = 0, j = critters.length(); i < j; i++)
+	{
+		if(valid(critters[i]))
+		{
+			if(critters[i].IsPlayer()) critters[i].Say(SAY_NETMSG, "You were squeezed by door.");
+			critters[i].ToDead(ANIM2_DEAD_EXPLODE, null);
+		}
+	}
+	
+	critters.resize(0);
+	
+	map.GetCritters(0, FIND_LIFE_AND_KO, critters);
+	// and now kill them all
+	if(critters.length() > 0)
+		for(uint i = 0, j = critters.length(); i < j; i++)
+		{
+			if(valid(critters[i]))
+			{
+				if(IsInTheMainGate(critters[i], map))
+				{				
+					if(critters[i].IsPlayer())
+						critters[i].Say(SAY_NETMSG, "You were squeezed by door.");
+					critters[i].ToDead(ANIM2_DEAD_EXPLODE, null);
+				}
+			}
+		}
+	
+	//spawn blockers 98,41 ; 99,42 ; 101,42
+	@SierraDoor = map.AddItem(98, 41, PID_MHEX, 1);
+	if(valid(SierraDoor))
+		SETFLAG(SierraDoor.Flags, 0 | ITEM_ALWAYS_VIEW);
+	@SierraDoor = map.AddItem(99, 42, PID_MHEX, 1);
+	if(valid(SierraDoor))
+		SETFLAG(SierraDoor.Flags, 0 | ITEM_ALWAYS_VIEW);
+	@SierraDoor = map.AddItem(101, 42, PID_MHEX, 1);
+	if(valid(SierraDoor))
+		SETFLAG(SierraDoor.Flags, 0 | ITEM_ALWAYS_VIEW);
+	//spawn main gate 100,41
+	map.AddItem(100, 41, PID_SIERRA_DOOR, 1);
+	
+	DoorAreBroken = false;
+}
+
+//
+// Door vs Howitzer
+//
+
+bool s_Howitzer(Critter& player, Scenery& howitzer, int skill, Item@ item)
+{
+    if(!player.IsPlayer())
+        return false;
+
+	if(valid(item) && item.GetProtoId() == PID_HOWITZER_SHELL)
+	{
+		
+		if(HowitzerLoaded)
+		{
+			player.Say(SAY_NETMSG, "Howitzer can fire only one shell at once.");
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Howitzer is ready to fire.");
+			
+			if(item.GetCount() > 1)
+				item.SetCount(item.GetCount() - 1);
+			else
+				DeleteItem(item);
+			HowitzerLoaded = true;
+			SetGvar(GVAR_sierra_howitzerloaded, 1);
+		}
+		return true;
+	}
+	
+	if(valid(item) && item.GetProtoId() != PID_HOWITZER_SHELL)
+	{
+		player.Say(SAY_NETMSG, "Now seriously... You want to put it there?");
+		return true;
+	}
+	
+	if(skill == SKILL_PICK_ON_GROUND && !valid(item))
+	{
+		if(DoorAreBroken)
+		{
+			player.Say(SAY_NETMSG, "Howitzer is too hot now for another shot.");
+			return true;
+		}
+		
+		if(HowitzerLoaded)
+		{
+			Map@ map = player.GetMap();
+			if(!valid(map))
+				return true;
+			
+			//player.Say(SAY_NORM_ON_HEAD, "3... 2... 1... Fire!");
+			DestroySierraDoor(map, player);
+			HowitzerLoaded = false;
+			SetGvar(GVAR_sierra_howitzerloaded, 0);
+			DoorAreBroken = true;
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Howitzer is not loaded.");
+		}
+		
+		return true;		
+	}
+	
+	if(skill == SK_REPAIR && !valid(item) && DoorAreBroken)
+	{
+		player.Say(SAY_NETMSG, "It's too hot, not broken.");
+		return true;
+	}
+	
+    return false;
+}
+
+void PowerSwitch(Item& powerswitch, bool firstTime)
+{
+	if(firstTime)
+	{
+		powerswitch.AnimStayBegin = 0;
+		powerswitch.AnimStayEnd = 0;
+		powerswitch.Update();
+	}
+	powerswitch.SetEvent(ITEM_EVENT_SKILL, "_UsePowerSwitch");
+}
+
+bool _UsePowerSwitch(Item& powerswitch, Critter& player, int skill)
+{
+	player.Animate(ANIM1_UNARMED, ANIM2_USE, powerswitch, true, true);
+	
+	if(skill == SKILL_PICK_ON_GROUND)
+	{
+		if(!PowerON && AllGeneratorsWorking())
+		{
+			player.Say(SAY_NETMSG, "Whole base is supplied now.");
+			PowerON = true;
+			PowerOn(player.GetMap());
+			/*powerswitch.Animate(0, 1);
+			powerswitch.AnimStayBegin = 1;
+			powerswitch.AnimStayEnd = 1;
+			powerswitch.Update();*/
+			return true;
+		}
+		else if(!PowerON && !AllGeneratorsWorking())
+		{
+			player.Say(SAY_NETMSG, "Some generator is damaged.");
+			return true;
+		}
+		else if(PowerON)
+		{
+			player.Say(SAY_NETMSG, "Turning off the whole base.");
+			PowerON = false;
+			PowerOff(player.GetMap());
+			/*powerswitch.Animate(1, 0);
+			powerswitch.AnimStayBegin = 0;
+			powerswitch.AnimStayEnd = 0;
+			powerswitch.Update();*/
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool s_PowerGenerator1(Critter& player, Scenery& generator, int skill, Item@ item)
+{
+	if(!valid(item) && skill == SKILL_PICK_ON_GROUND)
+	{
+		if(PowerGen1Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Someone should repair it.");
+		}
+		return true;
+	}
+	if(!valid(item) && skill == SK_REPAIR)
+	{
+		if(PowerGen1Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			if(player.Timeout[TO_SK_REPAIR] > 0)
+			{
+				player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
+				return true;
+			}
+			
+			if(player.Skill[SK_REPAIR] >= Random(100, 200))
+			{
+				PowerGen1Working = true;
+				SetGvar(GVAR_sierra_powergen1working, 1);
+			}
+			
+			_SetTimeout(player, TO_SK_REPAIR, REAL_SECOND(30));
+			
+			if(PowerGen1Working)
+				player.Say(SAY_NETMSG, "You've repaired this generator.");
+			else
+				player.Say(SAY_NETMSG, "You didn't repair this generator.");
+		}
+		return true;
+	}
+	return false;
+}
+
+bool s_PowerGenerator2(Critter& player, Scenery& generator, int skill, Item@ item)
+{
+	if(!valid(item) && skill == SKILL_PICK_ON_GROUND)
+	{
+		if(PowerGen2Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Someone should repair it.");
+		}
+		return true;
+	}
+	if(!valid(item) && skill == SK_REPAIR)
+	{
+		if(PowerGen2Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			if(player.Timeout[TO_SK_REPAIR] > 0)
+			{
+				player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
+				return true;
+			}
+			
+			if(player.Skill[SK_REPAIR] >= Random(100, 200))
+			{
+				PowerGen2Working = true;
+				SetGvar(GVAR_sierra_powergen2working, 1);
+			}
+			
+			_SetTimeout(player, TO_SK_REPAIR, REAL_SECOND(30));
+			
+			if(PowerGen2Working)
+				player.Say(SAY_NETMSG, "You've repaired this generator.");
+			else
+				player.Say(SAY_NETMSG, "You didn't repair this generator.");
+		}
+		return true;
+	}
+	return false;
+}
+
+bool s_PowerGenerator3(Critter& player, Scenery& generator, int skill, Item@ item)
+{
+	if(!valid(item) && skill == SKILL_PICK_ON_GROUND)
+	{
+		if(PowerGen3Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Someone should repair it.");
+		}
+		return true;
+	}
+	if(!valid(item) && skill == SK_REPAIR)
+	{
+		if(PowerGen3Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			if(player.Timeout[TO_SK_REPAIR] > 0)
+			{
+				player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
+				return true;
+			}
+			
+			if(player.Skill[SK_REPAIR] >= Random(100, 200))
+			{
+				PowerGen3Working = true;
+				SetGvar(GVAR_sierra_powergen3working, 1);
+			}
+			
+			_SetTimeout(player, TO_SK_REPAIR, REAL_SECOND(30));
+			
+			if(PowerGen3Working)
+				player.Say(SAY_NETMSG, "You've repaired this generator.");
+			else
+				player.Say(SAY_NETMSG, "You didn't repair this generator.");
+		}
+		return true;
+	}
+	return false;
+}
+
+bool s_PowerGenerator4(Critter& player, Scenery& generator, int skill, Item@ item)
+{
+	if(!valid(item) && skill == SKILL_PICK_ON_GROUND)
+	{
+		if(PowerGen4Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Someone should repair it.");
+		}
+		return true;
+	}
+	if(!valid(item) && skill == SK_REPAIR)
+	{
+		if(PowerGen4Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			if(player.Timeout[TO_SK_REPAIR] > 0)
+			{
+				player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
+				return true;
+			}
+			
+			if(player.Skill[SK_REPAIR] >= Random(100, 200))
+			{
+				PowerGen4Working = true;
+				SetGvar(GVAR_sierra_powergen4working, 1);
+			}
+			
+			_SetTimeout(player, TO_SK_REPAIR, REAL_SECOND(30));
+			
+			if(PowerGen4Working)
+				player.Say(SAY_NETMSG, "You've repaired this generator.");
+			else
+				player.Say(SAY_NETMSG, "You didn't repair this generator.");
+		}
+		return true;
+	}
+	return false;
+}
+
+bool s_PowerGenerator5(Critter& player, Scenery& generator, int skill, Item@ item)
+{
+	if(!valid(item) && skill == SKILL_PICK_ON_GROUND)
+	{
+		if(PowerGen5Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Someone should repair it.");
+		}
+		return true;
+	}
+	if(!valid(item) && skill == SK_REPAIR)
+	{
+		if(PowerGen5Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			if(player.Timeout[TO_SK_REPAIR] > 0)
+			{
+				player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
+				return true;
+			}
+			
+			if(player.Skill[SK_REPAIR] >= Random(100, 200))
+			{
+				PowerGen5Working = true;
+				SetGvar(GVAR_sierra_powergen5working, 1);
+			}
+			
+			_SetTimeout(player, TO_SK_REPAIR, REAL_SECOND(30));
+			
+			if(PowerGen5Working)
+				player.Say(SAY_NETMSG, "You've repaired this generator.");
+			else
+				player.Say(SAY_NETMSG, "You didn't repair this generator.");
+		}
+		return true;
+	}
+	
+	return false;
+}
+
+bool s_PowerGenerator6(Critter& player, Scenery& generator, int skill, Item@ item)
+{
+	if(!valid(item) && skill == SKILL_PICK_ON_GROUND)
+	{
+		if(PowerGen6Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "Someone should repair it.");
+		}
+		return true;
+	}
+	if(!valid(item) && skill == SK_REPAIR)
+	{
+		if(PowerGen6Working)
+		{
+			player.Say(SAY_NETMSG, "This generator is working well.");
+		}
+		else
+		{
+			if(player.Timeout[TO_SK_REPAIR] > 0)
+			{
+				player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
+				return true;
+			}
+			
+			if(player.Skill[SK_REPAIR] >= Random(100, 200))
+			{
+				PowerGen6Working = true;
+				SetGvar(GVAR_sierra_powergen6working, 1);
+			}
+			
+			_SetTimeout(player, TO_SK_REPAIR, REAL_SECOND(30));
+			
+			if(PowerGen6Working)
+				player.Say(SAY_NETMSG, "You've repaired this generator.");
+			else
+				player.Say(SAY_NETMSG, "You didn't repair this generator.");
+		}
+		return true;
+	}
+	return false;
+}
+
+bool s_SierraTerminal(Critter& player, Scenery& terminal, int skill, Item@ item)
+{
+    if(!player.IsPlayer() || skill != -1 || valid(item))
+        return false;
+    RunDialog(player, DIALOG_sad_terminal, terminal.HexX, terminal.HexY, false);
+    return true;
+}
+
+bool s_RewardTerminal(Critter& player, Scenery& terminal, int skill, Item@ item)
+{
+    if(!player.IsPlayer() || skill != -1 || valid(item))
+        return false;
+		
+	if(!PowerON)
+	{
+		player.Say(SAY_NETMSG, "Terminal is still restarting...");
+		return true;		
+	}
+    RunDialog(player, DIALOG_sad_rewardterminal, terminal.HexX, terminal.HexY, false);
+    return true;
+}
+
+void ElevatorDoor123(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseDoor123");
+}
+
+void ElevatorDoor34(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseDoor34");
+}
+
+void RewardDoor(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseRewardDoor");
+}
+
+bool s_Scanner1(Critter& player, Scenery& scanner, int skill, Item@ item)
+{
+	if(!player.IsPlayer())
+        return false;
+
+	if(valid(item) && item.GetProtoId() == PID_DIXON_EYE)
+	{
+		Map@ map = player.GetMap();
+		if(!valid(map)) return false;
+		
+		Item@ ElevatorDoor = null;
+		
+		switch(map.GetProtoId())
+		{
+			case MAP_SierraArmyDepot_Level1 :
+				@ElevatorDoor = map.GetItem(76, 73, 2421);
+				break;
+			case MAP_SierraArmyDepot_Level2 :
+				@ElevatorDoor = map.GetItem(86, 77, 2421);
+				break;
+			case MAP_SierraArmyDepot_Level3 :
+				@ElevatorDoor = map.GetItem(98, 79, 2421);
+				break;
+			default: return false;
+		}
+		
+		if(!FLAG(ElevatorDoor.LockerCondition, LOCKER_ISOPEN))
+		{
+			SwitchState(ElevatorDoor);
+		}
+		
+		return true;
+	}
+	
+	else if(valid(item) && item.GetProtoId() != PID_DIXON_EYE)
+	{
+		if(item.GetProtoId() == PID_CLIFTON_EYE)
+			player.Say(SAY_NETMSG, "You can't get access by this eye.");
+		else
+			player.Say(SAY_NETMSG, "You can't use it here to get access");
+		
+		return true;
+	}
+	else if(!valid(item))
+	{
+		if(skill == SKILL_PICK_ON_GROUND)
+			player.Say(SAY_NETMSG, "You can't get access by your eyes.");
+		if(skill == SK_LOCKPICK)
+			player.Say(SAY_NETMSG, "Only right person can open the elevator.");
+		if(skill == SK_REPAIR)
+			player.Say(SAY_NETMSG, "It's working realy fine.");
+			
+		return true;
+	}
+	
+	return false;
+}
+
+bool s_Scanner2(Critter& player, Scenery& scanner, int skill, Item@ item)
+{
+	if(!player.IsPlayer())
+        return false;
+
+	if(valid(item) && item.GetProtoId() == PID_CLIFTON_EYE)
+	{
+		Map@ map = player.GetMap();
+		if(!valid(map)) return false;
+		
+		Item@ ElevatorDoor = null;
+		
+		switch(map.GetProtoId())
+		{
+			case MAP_SierraArmyDepot_Level3 :
+				@ElevatorDoor = map.GetItem(90, 79, 2421);
+				break;
+			case MAP_SierraArmyDepot_Level4 :
+				@ElevatorDoor = map.GetItem(84, 75, 2421);
+				break;
+			default: return false;
+		}
+		
+		if(!FLAG(ElevatorDoor.LockerCondition, LOCKER_ISOPEN))
+		{
+			SwitchState(ElevatorDoor);
+		}
+		
+		return true;
+	}
+	
+	else if(valid(item) && item.GetProtoId() != PID_CLIFTON_EYE)
+	{
+		if(item.GetProtoId() == PID_DIXON_EYE)
+			player.Say(SAY_NETMSG, "You can't get access by this eye.");
+		else
+			player.Say(SAY_NETMSG, "You can't use it here to get access");
+		
+		return true;
+	}
+	else if(!valid(item))
+	{
+		if(skill == SKILL_PICK_ON_GROUND)
+			player.Say(SAY_NETMSG, "You can't get access by your eyes.");
+		if(skill == SK_LOCKPICK)
+			player.Say(SAY_NETMSG, "Only right person can open the elevator.");
+		if(skill == SK_REPAIR)
+			player.Say(SAY_NETMSG, "It's working realy fine.");
+			
+		return true;
+	}
+	
+	return false;
+}
+
+bool _UseDoor123(Item& item, Critter& player, int skill)
+{
+	// Open or close
+    if(skill == SKILL_PICK_ON_GROUND)
+    {
+		if(!AccessToElevator123)
+        {
+			player.Say(SAY_NETMSG, "You don't have access to this elevator.");
+            return true;
+        }
+		
+        // open it if closed
+        if(_LockerIsClose(item))
+        {
+			return false;
+        }
+    }
+	if(skill == SK_LOCKPICK && !AccessToElevator123)
+	{
+		player.Say(SAY_NETMSG, "You can't find the way to open elevator door.");
+        return true;
+    }
+    return false;
+}
+
+bool _UseDoor34(Item& item, Critter& player, int skill)
+{
+	// Open or close
+    if(skill == SKILL_PICK_ON_GROUND)
+    {
+		if(!AccessToElevator34)
+        {
+			player.Say(SAY_NETMSG, "You don't have access to this elevator.");
+            return true;
+        }
+		
+        // open it if closed
+        if(_LockerIsClose(item))
+        {
+			return false;
+        }
+    }
+	if(skill == SK_LOCKPICK && !AccessToElevator34)
+	{
+		player.Say(SAY_NETMSG, "You can't find the way to open elevator door.");
+        return true;
+    }
+    return false;
+}
+
+bool _UseRewardDoor(Item& item, Critter& player, int skill)
+{
+	// Open or close
+    if(skill == SKILL_PICK_ON_GROUND)
+    {
+		player.Say(SAY_NETMSG, "You don't have access to this building.");
+        return true;
+		
+        // open it if closed
+        /*if(_LockerIsClose(item))
+        {
+			return false;
+        }*/
+    }
+	if(skill == SK_LOCKPICK)
+	{
+		player.Say(SAY_NETMSG, "You can't find the way to open building.");
+        return true;
+    }
+    return false;
+}
+
+void DeleteEventItems()
+{
+	array<Item@> eyes;
+	GetAllItems(PID_DIXON_EYE, eyes);
+	GetAllItems(PID_CLIFTON_EYE, eyes);
+		
+	if(eyes.length() > 0)
+		for(uint16 i = 0; i < eyes.length(); i++)
+			if(valid(eyes[i]))
+				DeleteItem(eyes[i]);
+}
+
+void DestroySierraDoor(Map& map, Critter& player)
+{
+	DeleteEventItems();
+	
+	Item@ deleteDoor = null;
+	
+	//spawn blockers 98,41 ; 99,42 ; 101,42
+	@deleteDoor = map.GetItem(98, 41, PID_MHEX);
+	if(valid(deleteDoor))
+		DeleteItem(deleteDoor);
+	@deleteDoor = map.GetItem(99, 42, PID_MHEX);
+	if(valid(deleteDoor))
+		DeleteItem(deleteDoor);
+	@deleteDoor = map.GetItem(101, 42, PID_MHEX);
+	if(valid(deleteDoor))
+		DeleteItem(deleteDoor);
+	//spawn main gate 100,41
+	@deleteDoor = map.GetItem(100, 41, PID_SIERRA_DOOR);
+	if(valid(deleteDoor))
+		DeleteItem(deleteDoor);
+	
+	uint8 radius = Random(4, 6);
+	
+	//void ExplodeEx(Map& map, uint16 hexX, uint16 hexY, uint16 effectPid, uint effectRadius, uint damage, uint damageType, uint damageRadius, uint ownerId, uint16 explodePid)   // Export
+	
+	ExplodeEx(map, 100, 41, PID_EXPLODE_ROCKET, radius, Random(1000, 2000), DAMAGE_EXPLODE, 3, player.Id, 0);
+	//map.RunEffect(PID_EXPLODE_ROCKET, 100, 41, radius);
+	
+	array<Critter@> blowcrits;
+	map.GetCrittersHex(100, 41, radius, FIND_LIFE_AND_KO, blowcrits);
+	for(uint8 i = 0; i < blowcrits.length(); i++)
+		if(valid(blowcrits[i]))
+		{
+			blowcrits[i].Say(SAY_NETMSG, "You were exploded with door.");
+			blowcrits[i].ToDead(ANIM2_DEAD_EXPLODE, null);
+		}
+		
+	blowcrits.resize(0);
+	array<Map@> maps;
+	
+	map.GetLocation().GetMaps(maps);
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+		maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_PLAYERS, blowcrits);
+		
+	for(uint8 i = 0; i < blowcrits.length(); i++)
+		if(valid(blowcrits[i]))
+			blowcrits[i].PlaySound("sad_siren.wav", true);
+			
+	array<Item@> lockers;
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		if(!valid(maps[i]))
+			continue;
+		if(maps[i].GetProtoId() != MAP_SierraArmyDepot_TheBattlefield)
+			maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers);
+	}
+	
+	for(uint16 i = 0; i < lockers.length(); i++)
+	{
+		if(valid(lockers[i]))
+		{
+			lockers[i].LockerId = 0;
+			lockers[i].LockerComplexity = 0;
+			ClearContainer(lockers[i]);
+		}
+	}
+			
+	map.AddItem(100, 41, PID_SIERRA_BROKEN_DOOR, 1);
+	map.AddItem(100, 41, PID_SIERRA_DOOR_DEBRIS, 1);
+			
+	uint16 seconds;
+	
+	if(player.GetAccess() == ACCESS_ADMIN)
+		seconds = 60 * 5;
+	else
+		seconds = 60 * EVENT_TIME;
+		
+	ServerEventCNTSet("Someone broke into Sierra Army Depot: %COUNTDOWN%", LOCATION_Sierra, EVENT_TYPE_SIERRA_IS_OPEN, REAL_SECOND(seconds));
+	CreateTimeEvent(AFTER(REAL_SECOND(seconds)), "e_EndSierraEvent", map.Id, true);
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+		if(maps[i].GetProtoId() != MAP_SierraArmyDepot_Powersub)
+		{
+			uint8 soldiercount = maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO | FIND_ONLY_NPC);
+			
+			array<uint> soldierdata = { maps[i].Id , soldiercount } ;
+			CreateTimeEvent(AFTER(REAL_MS(Random(500, 1000))), "e_SpawnSoldier", soldierdata, false);
+		}
+	
+	map.SetEvent(MAP_EVENT_OUT_CRITTER, null);
+	
+	PowerOff(map);
+	SpoilGenerator(map);
+	FillLockersByEyes(map);
+	CloseAllElevators(map);
+	seconds = seconds / 60;
+	array<uint> warndata = { map.Id , seconds } ;
+	CreateTimeEvent(AFTER(0), "e_Warning", warndata, true);
+	
+	array<Critter@> robots;
+	if(RobotsHacked)
+	{
+		for(uint8 i = 0; i < maps.length(); i++)
+		{
+			if(!valid(maps[i]))
+				continue;
+			
+			maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_NPC, robots);
+		}
+	
+		for(uint8 i = 0; i < robots.length(); i++)
+		{
+			if(!valid(robots[i]))
+				continue;
+		SetGvar(GVAR_sierra_robotscontrol, 1);
+		RobotsHacked = false;
+		robots[i].SetEvent(CRITTER_EVENT_IDLE, "mob_dynamic@_DontMove");
+		robots[i].SetEvent(CRITTER_EVENT_ATTACKED, "mob_dynamic@_Alert");
+		robots[i].StatBase[ST_NPC_ROLE] = ROLE_MOB_DYNAMIC;
+		robots[i].StatBase[ST_TEAM_ID] = 5001;
+		_CritSetExtMode(robots[i], MODE_EXT_MOB);
+		
+		ClearEnemyStack(robots[i]);
+		array<NpcPlane@> planes;
+		robots[i].GetPlanes(planes);
+			
+		if(planes.length() > 0)
+			robots[i].DropPlanes();
+		}
+		
+		SetGvar(GVAR_sierra_robotscontrol, 1);
+		RobotsHacked = false;
+		SetGvar(GVAR_sierra_accesstoelevator123, 0);
+		AccessToElevator123 = false;
+		SetGvar(GVAR_sierra_accesstoelevator34, 0);
+		AccessToElevator34 = false;
+	}
+	
+	DoorAreBroken = true;
+	CreateTimeEvent(AFTER(REAL_SECOND(5)), "e_TurnOffRobots", map.Id, false);
+}
+
+uint e_TurnOffRobots(array<uint>@ offdata)
+{
+	Map@ map = GetMap(offdata[0]);
+	if(!valid(map)) return 0;
+	
+	SetRobotsOffline(map.GetLocation());
+	return 0;
+}
+
+uint e_Warning(array<uint>@ warndata) // Extermination part!
+{
+	Map@ map = GetMap(warndata[0]);
+	if(!valid(map))
+		return 0;
+		
+	array<Map@> maps;
+	map.GetLocation().GetMaps(maps);
+	
+	array<Critter@> critters;
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		maps[i].GetCritters(0, FIND_ALL, critters);
+	}
+	
+	if(warndata[1] == 0)
+	{
+		for(uint8 i = 0; i < critters.length(); i++)
+		{
+			if(critters[i].GetMap().GetProtoId() != MAP_SierraArmyDepot_TheBattlefield &&
+			critters[i].GetMap().GetProtoId() != MAP_SierraArmyDepot_Powersub)
+			{
+				if(critters[i].IsPlayer()) critters[i].Say(SAY_NETMSG, "You were killed by unknown virus sprayed via vents.");
+				if(critters[i].Stat[ST_BODY_TYPE] != BT_ROBOT) critters[i].ToDead(ANIM2_DEAD_FUSED, null);
+			}
+		}
+	}
+	else
+	{
+		for(uint8 i = 0; i < critters.length(); i++)
+		{
+			if(critters[i].IsPlayer()) critters[i].Say(SAY_NETMSG, "Message from megaphones: Alert! Intruders inside the base! Extermination in " + warndata[1] + (warndata[1] == 1 ? " minute!" : " minutes!"));
+		}
+		warndata[1]--;
+		CreateTimeEvent(AFTER(REAL_MINUTE(1)), "e_Warning", warndata, true);
+	}
+	
+	return 0;
+}
+
+void FillLockersByEyes(Map& map)
+{
+	Location@ location = map.GetLocation();
+	
+	array<Map@> maps;
+	//Lockers for eyes.
+	//At level 1, for items: Dixon’s Eye, Evacuation Holodisc. Eye's unlocking elevator for 1-2-3 levels
+	array<Item@> lockers_1;
+	//At level 1, 2 and 3, for items: Clifton’s Eye, Sierra Mission Holodisc, Broadcast Holodisc. Eye's unlocking elevator for 3-4 levels
+	array<Item@> lockers_2;
+	
+	location.GetMaps(maps);
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		switch(maps[i].GetProtoId())
+		{
+			case MAP_SierraArmyDepot_Level1 :
+				maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers_1);
+				maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers_2);
+				//if(_MapHasMode(map, MAP_MODE_NO_GRIDS)) _MapUnsetMode(maps[i], MAP_MODE_NO_GRIDS);
+				break;
+			case MAP_SierraArmyDepot_Level2 :
+				maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers_2);
+				break;
+			case MAP_SierraArmyDepot_Level3 :
+				maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers_2);
+				break;
+		}
+	}
+	
+	//lockers_1[Random(0, lockers_1.length()-1)].AddItem(PID_DIXON_EYE, 1, 0);
+	//lockers_2[Random(0, lockers_2.length()-1)].AddItem(PID_CLIFTON_EYE, 1, 0);
+	
+	//Arrays for rewrite
+	//At level 1, for items: Dixon’s Eye, Evacuation Holodisc. Eye's unlocking elevator for 1-2-3 levels
+	array<Item@> lockers_3;
+	//At level 1, 2 and 3, for items: Clifton’s Eye, Sierra Mission Holodisc, Broadcast Holodisc. Eye's unlocking elevator for 3-4 levels
+	array<Item@> lockers_4;
+	uint8 tablelen = 0;
+	
+	for(uint8 i = 0; i < lockers_1.length(); i++)
+	{
+		if(!valid(lockers_1[i]))
+			continue;
+		
+		if(lockers_1[i].GetScriptId() > 0) //if locker is scripted
+		{
+			//get name of script
+			if(GetScriptName(lockers_1[i].GetScriptId()) != "spawner_pve@init_high" &&
+			GetScriptName(lockers_1[i].GetScriptId()) != "spawner_pve@init_low")
+			{
+				tablelen++;
+				lockers_3.resize(tablelen);
+				@lockers_3[tablelen-1] = @lockers_1[i];
+			}
+		}
+	}
+	
+	tablelen = 0;
+	
+	for(uint8 i = 0; i < lockers_2.length(); i++)
+	{
+		if(!valid(lockers_2[i]))
+			continue;
+		
+		if(lockers_2[i].GetScriptId() > 0) //if locker is scripted
+		{
+			//get name of script
+			if(GetScriptName(lockers_2[i].GetScriptId()) != "spawner_pve@init_high" &&
+			GetScriptName(lockers_2[i].GetScriptId()) != "spawner_pve@init_low")
+			{
+				tablelen++;
+				lockers_4.resize(tablelen);
+				@lockers_4[tablelen-1] = @lockers_2[i];
+			}
+		}
+	}
+	
+	
+	lockers_3[Random(0, lockers_3.length()-1)].AddItem(PID_DIXON_EYE, 1, 0);
+	lockers_4[Random(0, lockers_4.length()-1)].AddItem(PID_CLIFTON_EYE, 1, 0);
+}
+
+void CloseAllElevators(Map& map)
+{
+	Location@ location = map.GetLocation();
+	
+	array<Map@> maps;
+	array<Item@> elevatordoors;
+	
+	location.GetMaps(maps);
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		switch(maps[i].GetProtoId())
+		{
+			case MAP_SierraArmyDepot_Level1 :
+				maps[i].GetItemsByType(ITEM_TYPE_DOOR, elevatordoors);
+				break;
+			case MAP_SierraArmyDepot_Level2 :
+				maps[i].GetItemsByType(ITEM_TYPE_DOOR, elevatordoors);
+				break;
+			case MAP_SierraArmyDepot_Level3 :
+				maps[i].GetItemsByType(ITEM_TYPE_DOOR, elevatordoors);
+				break;
+		}
+	}
+	
+	for(uint16 i = 0; i < elevatordoors.length(); i++)
+		if(valid(elevatordoors[i]))
+			if(elevatordoors[i].GetProtoId() == 2421 && FLAG(elevatordoors[i].LockerCondition, LOCKER_ISOPEN))
+				SwitchState(elevatordoors[i]);
+}
+
+void PowerOff(Map& map)
+{
+	PowerON = false;
+	SetGvar(GVAR_sierra_poweron, 0);
+	
+	Location@ location = map.GetLocation();
+	if(!valid(location))
+		return;
+		
+	array<Map@> maps;
+	location.GetMaps(maps);
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		if(!valid(maps[i]))
+			continue;
+			
+		switch(maps[i].GetProtoId())
+		{
+			case MAP_SierraArmyDepot_Powersub :
+			case MAP_SierraArmyDepot_Level1 :
+			case MAP_SierraArmyDepot_Level2 :
+			case MAP_SierraArmyDepot_Level3 :
+			case MAP_SierraArmyDepot_Level4 :
+				maps[i].SetTime(180);
+				break;
+		}
+		
+		if(maps[i].GetProtoId() == MAP_SierraArmyDepot_Powersub)
+		{
+			Item@ powerswitch = maps[i].GetItem(80, 67, 3236);
+			powerswitch.Animate(1, 0);
+			powerswitch.AnimStayBegin = 0;
+			powerswitch.AnimStayEnd = 0;
+			powerswitch.Update();
+		}
+	}
+	SetRobotsOffline(location);
+}
+
+void PowerOn(Map& map)
+{
+	PowerON = true;
+	SetGvar(GVAR_sierra_poweron, 1);
+	
+	Location@ location = map.GetLocation();
+	if(!valid(location))
+		return;
+		
+	array<Map@> maps;
+	location.GetMaps(maps);
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		if(!valid(maps[i]))
+			continue;
+			
+		switch(maps[i].GetProtoId())
+		{
+			case MAP_SierraArmyDepot_TheBattlefield :
+				map.SetEvent(MAP_EVENT_IN_CRITTER, null);
+				break;
+			case MAP_SierraArmyDepot_Powersub :
+			case MAP_SierraArmyDepot_Level1 :
+			case MAP_SierraArmyDepot_Level2 :
+			case MAP_SierraArmyDepot_Level3 :
+			case MAP_SierraArmyDepot_Level4 :
+				maps[i].SetTime(720);
+				map.SetEvent(MAP_EVENT_IN_CRITTER, null);
+				break;
+		}
+		
+		if(maps[i].GetProtoId() == MAP_SierraArmyDepot_Powersub)
+		{
+			Item@ powerswitch = map.GetItem(80, 67, 3236);
+			powerswitch.Animate(0, 1);
+			powerswitch.AnimStayBegin = 1;
+			powerswitch.AnimStayEnd = 1;
+			powerswitch.Update();
+		}
+	}
+	
+	SetRobotsOnline();
+}
+
+void SpoilGenerator(Map& map)
+{
+	uint8 brokengen;
+	uint16 hexX = 0, hexY = 0;
+	do
+	{
+		brokengen = 1;
+		switch(Random(1, 6))
+		{
+			case 1 :
+				hexX = 59; hexY = 47;
+				PowerGen1Working = false;
+				SetGvar(GVAR_sierra_powergen1working, 0);
+				brokengen = 1;
+				break;
+			case 2 :
+				hexX = 59; hexY = 44;
+				PowerGen2Working = false;
+				SetGvar(GVAR_sierra_powergen2working, 0);
+				brokengen = 2;
+				break;
+			case 3 :
+				hexX = 59; hexY = 41;
+				PowerGen3Working = false;
+				SetGvar(GVAR_sierra_powergen3working, 0);
+				brokengen = 3;
+				break;
+			case 4 :
+				hexX = 59; hexY = 38;
+				PowerGen4Working = false;
+				SetGvar(GVAR_sierra_powergen4working, 0);
+				brokengen = 4;
+				break;
+			case 5 :
+				hexX = 59; hexY = 35;
+				PowerGen5Working = false;
+				SetGvar(GVAR_sierra_powergen5working, 0);
+				brokengen = 5;
+				break;
+			case 6 :
+				hexX = 71; hexY = 47;
+				PowerGen6Working = false;
+				SetGvar(GVAR_sierra_powergen6working, 0);
+				brokengen = 6;
+				break;	
+		}
+		
+		array<uint> generatordata = {map.Id, hexX, hexY, brokengen};
+		CreateTimeEvent(AFTER(0), "e_RunGeneratorEffect", generatordata, true);
+		brokengen = Random(1,10);
+	}while(brokengen == 1);
+}
+
+uint e_RunGeneratorEffect(array<uint>@ values)
+{
+	Map@ map = GetMap(values[0]);
+	if(!valid(map))
+		return 0;
+	
+	if(values[3] == 1 && PowerGen1Working) return 0;
+	if(values[3] == 2 && PowerGen2Working) return 0;
+	if(values[3] == 3 && PowerGen3Working) return 0;
+	if(values[3] == 4 && PowerGen4Working) return 0;
+	if(values[3] == 5 && PowerGen5Working) return 0;
+	if(values[3] == 6 && PowerGen6Working) return 0;
+	
+	map.RunEffect(PID_EXPLODE_EMP, values[1], values[2], 3);
+
+	return REAL_MS(Random(700, 2500));
+}
+
+bool AllGeneratorsWorking()
+{
+	return PowerGen1Working && PowerGen2Working && PowerGen3Working && PowerGen4Working && PowerGen5Working && PowerGen6Working;
+}
+
+uint e_SpawnSoldier(array<uint>@ soldierdata)
+{
+	
+	Map@ map = GetMap(soldierdata[0]);
+	if(!valid(map))
+		return 0;
+	array<uint> mobdata = { map.Id , SPAWN_DUNGEON_MOB } ;
+	CreateTimeEvent(AFTER(REAL_MS(Random(500, 1000))), "mob_dynamic@e_TrySpawnMob", mobdata, false);
+	
+	switch(map.GetProtoId())
+	{
+		case MAP_SierraArmyDepot_TheBattlefield :
+			if(soldierdata[1] >= MAX_ENTRANCE_SOLDIERS)
+				return 0;
+			break;
+		case MAP_SierraArmyDepot_Level1 :
+			if(soldierdata[1] >= MAX_LEVEL1_SOLDIERS)
+				return 0;
+			break;
+		case MAP_SierraArmyDepot_Level2 :
+			if(soldierdata[1] >= MAX_LEVEL2_SOLDIERS)
+				return 0;
+			break;
+		case MAP_SierraArmyDepot_Level3 :
+			if(soldierdata[1] >= MAX_LEVEL3_SOLDIERS)
+				return 0;
+			break;
+		case MAP_SierraArmyDepot_Level4 :
+			if(soldierdata[1] >= MAX_LEVEL4_SOLDIERS)
+				return 0;
+			break;
+	}
+	
+	soldierdata[1]++;
+	
+	CreateTimeEvent(AFTER(REAL_MS(Random(500, 1000))), "e_SpawnSoldier", soldierdata, false);
+	return 0;
+}
+	
+uint e_EndSierraEvent(array<uint>@ values)
+{
+	Map@ map = GetMap(values[0]);
+	if(!valid(map))
+		return 0;
+		
+	Item@ deleteDoor = null;
+	
+	@deleteDoor = map.GetItem(100, 41, PID_SIERRA_BROKEN_DOOR);
+	if(valid(deleteDoor))
+		DeleteItem(deleteDoor);
+	else
+		return 0;
+	@deleteDoor = map.GetItem(100, 41, PID_SIERRA_DOOR_DEBRIS);
+	if(valid(deleteDoor))
+		DeleteItem(deleteDoor);
+	else
+		return 0;
+	
+	SpawnSierraDoor(map);
+	
+	map.SetEvent(MAP_EVENT_OUT_CRITTER, "_DeleteEyes");
+	
+	Location@ location = map.GetLocation();
+	if(!valid(location))
+		return 0;
+		
+	array<Map@> maps;
+	array<Critter@> players;
+	
+	location.GetMaps(maps);
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		if(valid(maps[i]))
+			switch(maps[i].GetProtoId())
+			{
+				case MAP_SierraArmyDepot_Level1 :
+					//if(!_MapHasMode(map, MAP_MODE_NO_GRIDS)) _MapSetMode(maps[i], MAP_MODE_NO_GRIDS);
+					maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_PLAYERS , players);
+					break;
+				case MAP_SierraArmyDepot_Level2 :
+					maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_PLAYERS , players);
+					break;
+				case MAP_SierraArmyDepot_Level3 :
+					maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_PLAYERS , players);
+					break;
+				case MAP_SierraArmyDepot_Level4 :
+					maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_PLAYERS , players);
+					break;
+			}
+	}
+	
+	/*for(uint8 i = 0; i < players.length(); i++)
+		if(valid(players[i]))
+			players[i].Say(SAY_NETMSG, "You are stuck here now...");*/
+	
+	return 0;
+}
+
+void _DeleteEyes(Map& map, Critter& cr)
+{
+    array<Item@> items;
+	cr.GetItems(-1, items);
+	
+	for(uint i = 0; i < items.length(); i++)
+	{
+		if(!valid(items[i]))
+			continue;
+			
+		if(items[i].GetProtoId() == PID_DIXON_EYE || items[i].GetProtoId() == PID_CLIFTON_EYE)
+			DeleteItem(items[i]);
+	}
+}
+
+void SetRobotsOffline(Location& location)
+{
+	array<Map@> maps;
+	location.GetMaps(maps);
+	
+	SierraRobots.resize(0);
+	uint16 robotindexes = 0;
+	
+	array<Critter@> crits;
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		if(!valid(maps[i]))
+			continue;
+			
+		maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_NPC, crits);
+		maps[i].SetEvent(MAP_EVENT_IN_CRITTER, "_SetNewRobotToOff");
+	}
+	
+	for(uint8 i = 0; i < crits.length(); i++)
+	{
+		if(!valid(crits[i]))
+			continue;
+			
+		if(crits[i].Stat[ST_BODY_TYPE] == BT_ROBOT)
+		{
+			uint mapid = 0; //temp data, for lost...
+			uint16 hexX = 0, hexY = 0;
+			uint8 dir = 0;
+
+			robotindexes = robotindexes + 4;
+			SierraRobots.resize(robotindexes);
+			
+			SierraRobots[robotindexes - 4] = crits[i].Id;
+			crits[i].GetHomePos(mapid, hexX, hexY, dir);
+			SierraRobots[robotindexes - 3] = hexX;
+			SierraRobots[robotindexes - 2] = hexY;
+			SierraRobots[robotindexes - 1] = dir;
+			
+			crits[i].SetHomePos(crits[i].HexX, crits[i].HexY, crits[i].Dir);
+			crits[i].Say(SAY_NORM_ON_HEAD, "Connection lost...");
+			crits[i].SetEvent(CRITTER_EVENT_IDLE, null);
+			crits[i].SetEvent(CRITTER_EVENT_ATTACKED, "_DontAttack");
+			
+			ClearEnemyStack(crits[i]);
+			array<NpcPlane@> planes;
+			crits[i].GetPlanes(planes);
+			
+			if(planes.length() > 0)
+				crits[i].DropPlanes();
+		}
+	}
+	RobotsOnline = false;
+	SetGvar(GVAR_sierra_robotsonline, 0);
+}
+
+void _SetNewRobotToOff(Map& map, Critter& SierraRobot)
+{
+    if(SierraRobot.Stat[ST_BODY_TYPE] == BT_ROBOT)
+	{
+		SierraRobot.SetEvent(CRITTER_EVENT_IDLE, null);
+		SierraRobot.SetEvent(CRITTER_EVENT_ATTACKED, "_DontAttack");
+		
+		uint16 CurRobotsLen = SierraRobots.length();
+		SierraRobots.resize(CurRobotsLen + 4);
+		
+		SierraRobots[CurRobotsLen] = SierraRobot.Id;
+		SierraRobots[CurRobotsLen + 1] = SierraRobot.HexX;
+		SierraRobots[CurRobotsLen + 2] = SierraRobot.HexY;
+		SierraRobots[CurRobotsLen + 3] = SierraRobot.Dir;
+	}
+}
+
+bool _DontAttack(Critter& cr, Critter& attacker)
+{
+	return true;
+}
+
+void _HackedRobots(Critter& mob)
+{
+	if(!valid(mob))
+		return;
+	// the great optimizer
+    if(!mob.IsLife())
+    {
+		mob.Wait(IDLE_ALERTED);
+        return;
+    }
+	
+	// check critters in sight
+     array<Critter@> crits;
+    // get visible players
+    uint            num = mob.GetCritters(false, FIND_LIFE_AND_KO, crits);
+	// get visible players and their followers
+	//uint            num = CritterGetPlayersAndFollowers(mob, false, FIND_LIFE_AND_KO, crits);
+
+    // mob.Say(SAY_NORM_ON_HEAD, ""+num);
+    // check distance
+    uint dist = GetDistance(mob);
+    for(uint i = 0; i < num; i++)
+    {
+		//if(GetCrittersDistantion(mob, crits[i]) > dist)
+			//mob.Say(SAY_NORM_ON_HEAD, "Idling, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+            // continue;
+        //else
+        //{
+            if(crits[i].Stat[ST_TEAM_ID] != GetGvar(GVAR_sierra_robotscontrolby))
+			{
+				// attack
+				//mob.Say(SAY_NORM_ON_HEAD, "Attack, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+		
+				NpcPlane@ plane = mob.GetCurPlane();
+				if((valid(plane)) && (plane.Identifier != AI_PLANE_ATTACK))
+					mob.DropPlanes();
+
+				mob.AddEnemyInStack(crits[i].Id);
+				AddAttackPlane(mob, 0, crits[i]);
+				return;
+			}
+        //}
+    }
+	
+    if(crits.length() > 0)
+    {
+        //MoveMob(mob, false);
+		mob.Wait(IDLE_ALERTED_2);
+		// mob.Say(SAY_NORM_ON_HEAD, "Found player but not attack yet! Distance: " + dist + ", ");
+    }
+    else
+	// NpcPlane@ plane = mob.GetCurPlane();
+	
+	// if((Random(1, 100) == 1) && mob.IsNoPlanes())
+    {
+        //MoveMob(mob, false);
+        //mob.Say(SAY_NORM_ON_HEAD, "Don't care");
+        mob.Wait(IDLE_ALERTED_2);
+    }
+	
+}
+
+void SetRobotsOnline()
+{
+	
+	for(uint16 i = 0; i < SierraRobots.length(); i = i + 4)
+	{
+		Critter@ SierraRobot = GetCritter(SierraRobots[i]);
+		
+		if(!valid(SierraRobot))
+			continue;
+		
+		SierraRobot.Say(SAY_NORM_ON_HEAD, "Connection established...");
+		//MoveMobToFreeHex(SierraRobot);
+		
+		uint16 hexX = SierraRobots[i + 1], hexY = SierraRobots[i + 2];
+		uint8 dir = SierraRobots[i + 3];
+
+		SierraRobot.SetHomePos(hexX, hexY, dir);
+		if(RobotsHacked)
+		{
+			SierraRobot.SetEvent(CRITTER_EVENT_IDLE, "_HackedRobots");
+			SierraRobot.SetEvent(CRITTER_EVENT_ATTACKED, null);
+		}
+		else
+		{
+			SierraRobot.SetEvent(CRITTER_EVENT_IDLE, "mob_dynamic@_DontMove");
+			SierraRobot.SetEvent(CRITTER_EVENT_ATTACKED, "mob_dynamic@_Alert");
+		}
+	}
+	RobotsOnline = true;
+	SetGvar(GVAR_sierra_robotsonline, 1);
+}
+/*
+void ______Dialogues_Part()
+{
+
+}
+*/
+
+bool d_PowerOn(Critter& player, Critter@ npc)
+{
+	return PowerON;
+}
+
+bool d_PowerOff(Critter& player, Critter@ npc)
+{
+	return !PowerON;
+}
+
+bool d_BrokenGenerator(Critter& player, Critter@ npc)
+{
+	return !AllGeneratorsWorking();
+}
+
+void dlg_BrokenGenerator(Critter& player, Critter@ npc, string@ text)
+{
+	if(!IS_DIALOG_GENERATED(text))
+        return;
+	
+	text += "$failgen" + (PowerGen1Working ? "" : "Generator 1\n") + (PowerGen2Working ? "" : "Generator 2\n") + (PowerGen3Working ? "" : "Generator 3\n") + (PowerGen4Working ? "" : "Generator 4\n") + (PowerGen5Working ? "" : "Generator 5\n") + (PowerGen6Working ? "" : "Generator 6\n");
+}
+
+void dlg_RandomErrorMsg(Critter& player, Critter@ npc, string@ text)
+{
+	if(!IS_DIALOG_GENERATED(text))
+        return;
+	
+	switch(Random(1, 14)) //Bcs worldremaker likes Commodore 64's error messages :D
+	{
+		case 1 : text += "$error" + "?BAD DATA"; break;
+		case 2 : text += "$error" + "?BAD SUBSCRIPT"; break;
+		case 3 : text += "$error" + "?CAN'T CONTINUE"; break;
+		case 4 : text += "$error" + "?DEVICE NOT PRESENT"; break;
+		case 5 : text += "$error" + "?DIVISION BY ZERO"; break;
+		case 6 : text += "$error" + "?EXTRA IGNORED"; break;
+		case 7 : text += "$error" + "?FILE NOT FOUND"; break;
+		case 8 : text += "$error" + "?FILE NOT OPEN"; break;
+		case 9 : text += "$error" + "?FORMULA TOO COMPLEX"; break;
+		case 10 : text += "$error" + "?ILLEGAL DIRECT"; break;
+		case 11 : text += "$error" + "?ILLEGAL QUANTITY"; break;
+		case 12 : text += "$error" + "?LOAD NEXT WITHOUT FOR"; break;
+		case 13 : text += "$error" + "?SYNTAX ERROR"; break;
+		case 14 : text += "$error" + "?UNDEF'D STATEMENT ERROR IN " + Random(1 , 30) * 10; break;
+	}
+}
+
+uint r_HackTheElevators(Critter& player, Critter@ npc)
+{
+	uint16 scienceSkill = player.Skill[SK_SCIENCE];
+	scienceSkill = CLAMP(scienceSkill, 1, 200);
+	
+	if(Random(scienceSkill, 500) >= 470)
+	{
+		array<Map@> maps;
+		player.GetMap().GetLocation().GetMaps(maps);
+	
+		array<Item@> elevatorDoors;
+	
+		for(uint8 i = 0; i < maps.length(); i++)
+		{
+			if(!valid(maps[i]))
+				continue;
+			if(maps[i].GetProtoId() == MAP_SierraArmyDepot_Level1)
+			{
+				elevatorDoors.resize(1);
+				@elevatorDoors[0] = maps[i].GetItem(76, 73, 2421);
+			}
+			if(maps[i].GetProtoId() == MAP_SierraArmyDepot_Level2)
+			{
+				elevatorDoors.resize(2);
+				@elevatorDoors[1] = maps[i].GetItem(86, 77, 2421);
+			}
+			if(maps[i].GetProtoId() == MAP_SierraArmyDepot_Level3)
+			{
+				elevatorDoors.resize(3);
+				@elevatorDoors[2] = maps[i].GetItem(98, 79, 2421);
+			}
+		}
+	
+		for(uint8 i = 0; i < elevatorDoors.length(); i++)
+		{
+			if(!valid(elevatorDoors[i]))
+				continue;
+			
+			if(!FLAG(elevatorDoors[i].LockerCondition, LOCKER_ISOPEN))
+					SwitchState(elevatorDoors[i]);
+		}
+		AccessToElevator123 = true;
+		SetGvar(GVAR_sierra_accesstoelevator123, 1);
+	}
+	
+	if(Random(scienceSkill, 500) >= 495)
+	{
+		array<Map@> maps;
+		player.GetMap().GetLocation().GetMaps(maps);
+	
+		array<Item@> elevatorDoors;
+	
+		for(uint8 i = 0; i < maps.length(); i++)
+		{
+			if(!valid(maps[i]))
+				continue;
+			if(maps[i].GetProtoId() == MAP_SierraArmyDepot_Level3)
+			{
+				elevatorDoors.resize(1);
+				@elevatorDoors[0] = maps[i].GetItem(90, 79, 2421);
+			}
+			if(maps[i].GetProtoId() == MAP_SierraArmyDepot_Level4)
+			{
+				elevatorDoors.resize(2);
+				@elevatorDoors[1] = maps[i].GetItem(84, 75, 2421);
+			}
+		}
+	
+		for(uint8 i = 0; i < elevatorDoors.length(); i++)
+		{
+			if(!valid(elevatorDoors[i]))
+				continue;
+			
+			if(!FLAG(elevatorDoors[i].LockerCondition, LOCKER_ISOPEN))
+					SwitchState(elevatorDoors[i]);
+		}
+		AccessToElevator34 = true;
+		SetGvar(GVAR_sierra_accesstoelevator34, 1);
+	}
+	
+	if(AccessToElevator123 || AccessToElevator34)
+		return ELEV_HACK_SUCC;
+	else
+		return ELEV_HACK_FAIL;
+}
+
+void dlg_ElevatorsHacked(Critter& player, Critter@ npc, string@ text)
+{
+	if(!IS_DIALOG_GENERATED(text))
+        return;
+	
+	if(AccessToElevator123 && AccessToElevator34)
+	{
+		text += "$shafts" + "elevator 1-2-3 and elevator 3-4.";
+	}
+	else if(AccessToElevator123)
+	{
+		text += "$shafts" + "elevator 1-2-3.";
+	}
+	else if(AccessToElevator34)
+	{
+		text += "$shafts" + "elevator 3-4.";
+	}
+	
+	if(AccessToElevator123)
+	{
+		text += "$access123" + "UNSECURED!!!";
+	}
+	else
+	{
+		text += "$access123" + "SECURED";
+	}
+	
+	if(AccessToElevator34)
+	{
+		text += "$access34" + "UNSECURED!!!";
+	}
+	else
+	{
+		text += "$access34" + "SECURED";
+	}
+}
+
+bool d_ElevatorsNotHacked(Critter& player, Critter@ npc)
+{
+	return !AccessToElevator123 && !AccessToElevator34;
+}
+
+void dlg_RobotsSettings(Critter& player, Critter@ npc, string@ text)
+{
+	if(!IS_DIALOG_GENERATED(text))
+        return;
+	
+	text += "$active" + (RobotsOnline ? "Control computer: ONLINE" : "Control computer: OFFLINE");
+	
+	uint8 settings = GetGvar(GVAR_sierra_robotscontrol);
+	string factionname;
+	switch(settings)
+	{
+		case 1: text += "$process" + "PROTECT SIERRA ARMY DEPOT"; break;
+		case 2:
+		if(GetGvar(GVAR_sierra_robotscontrolby) <= 1)
+		{
+			text += "$process" + "PROTECT FACTION: !FATAL ERROR"; break;
+		}
+		else
+		{
+			GetFactionNameStr(GetGvar(GVAR_sierra_robotscontrolby), factionname);
+			text += "$process" + "PROTECT FACTION: " + factionname;
+			break;
+		}
+		default: text += "$process" + "UNKNOWN CODE"; break;
+	}
+	
+	if(RobotsAreOnline)
+		text += "$process" + "?SYSTEM FAILURE";
+}
+
+bool d_RobotsCanBeHacked(Critter& player, Critter@ npc)
+{
+	return RobotsHacked && GetGvar(GVAR_sierra_robotscontrolby) != player.Stat[ST_TEAM_ID];
+}
+
+uint r_TryHackRobots(Critter& player, Critter@ npc)
+{
+	uint16 scienceSkill = player.Skill[SK_SCIENCE];
+	scienceSkill = CLAMP(scienceSkill, 1, 200);
+	
+	if(Random(scienceSkill, 500) >= 480)
+	{
+		array<Map@> maps;
+		player.GetMap().GetLocation().GetMaps(maps);
+	
+		array<Critter@> crits;
+	
+		for(uint8 i = 0; i < maps.length(); i++)
+		{
+			if(!valid(maps[i]))
+				continue;
+			
+			maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_NPC, crits);
+		}
+	
+		for(uint8 i = 0; i < crits.length(); i++)
+		{
+			if(!valid(crits[i]))
+				continue;
+			
+			if(crits[i].Stat[ST_BODY_TYPE] == BT_ROBOT)
+			{
+				crits[i].SetEvent(CRITTER_EVENT_IDLE, "_HackedRobots");
+				crits[i].SetEvent(CRITTER_EVENT_ATTACKED, null);
+				crits[i].StatBase[ST_NPC_ROLE] = 0;
+				crits[i].StatBase[ST_TEAM_ID] = player.Stat[ST_TEAM_ID];
+				_CritUnsetExtMode(crits[i], MODE_EXT_MOB);
+			
+				ClearEnemyStack(crits[i]);
+				array<NpcPlane@> planes;
+				crits[i].GetPlanes(planes);
+			
+				if(planes.length() > 0)
+					crits[i].DropPlanes();
+			}
+		}
+		RobotsHacked = true;
+		SetGvar(GVAR_sierra_robotscontrol, 2);
+		SetGvar(GVAR_sierra_robotscontrolby, player.Stat[ST_TEAM_ID]);
+		return ROBOT_HACK_SUCC;
+	}
+	return ROBOT_HACK_FAIL;
+}
+
+uint r_TryDisableRobots(Critter& player, Critter@ npc)
+{
+	uint16 scienceSkill = player.Skill[SK_SCIENCE];
+	scienceSkill = CLAMP(scienceSkill, 1, 200);
+	
+	if(Random(scienceSkill, 500) >= 425)
+	{
+		array<Map@> maps;
+		player.GetMap().GetLocation().GetMaps(maps);
+	
+		array<Critter@> crits;
+	
+		for(uint8 i = 0; i < maps.length(); i++)
+		{
+			if(!valid(maps[i]))
+				continue;
+			
+			maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_NPC, crits);
+		}
+	
+		for(uint8 i = 0; i < crits.length(); i++)
+		{
+			if(!valid(crits[i]))
+				continue;
+			
+			if(crits[i].Stat[ST_BODY_TYPE] == BT_ROBOT)
+			{
+				crits[i].SetEvent(CRITTER_EVENT_IDLE, null);
+				crits[i].SetEvent(CRITTER_EVENT_ATTACKED, "_DontAttack");
+			
+				ClearEnemyStack(crits[i]);
+				array<NpcPlane@> planes;
+				crits[i].GetPlanes(planes);
+			
+				if(planes.length() > 0)
+					crits[i].DropPlanes();
+			}
+		}
+		RobotsAreOnline = false;
+		return ROBOT_HACK_STAND;
+	}
+	return ROBOT_HACK_FAIL;
+}
+
+uint r_SetRobotsOffline(Critter& player, Critter@ npc)
+{
+	uint16 scienceSkill = player.Skill[SK_SCIENCE];
+	scienceSkill = CLAMP(scienceSkill, 1, 200);
+	
+	if(Random(scienceSkill, 500) >= 450)
+	{
+		Location@ location = player.GetMap().GetLocation();
+		SetRobotsOffline(location);
+		return ROBOT_OFF;
+	}
+	return ROBOT_HACK_FAIL;
+}
+
+uint r_SetRobotsOnline(Critter& player, Critter@ npc)
+{
+	uint16 scienceSkill = player.Skill[SK_SCIENCE];
+	scienceSkill = CLAMP(scienceSkill, 1, 200);
+	
+	if(Random(scienceSkill, 500) >= 85)
+	{
+		SetRobotsOnline();
+		return ROBOT_ON;
+	}
+	return ROBOT_HACK_FAIL;
+}
+
+uint r_TryDestroyRobots(Critter& player, Critter@ npc)
+{
+	uint16 scienceSkill = player.Skill[SK_SCIENCE];
+	scienceSkill = CLAMP(scienceSkill, 1, 200);
+	
+	if(Random(scienceSkill, 500) >= 475)
+	{
+		array<Map@> maps;
+		player.GetMap().GetLocation().GetMaps(maps);
+	
+		array<Critter@> crits;
+	
+		for(uint8 i = 0; i < maps.length(); i++)
+		{
+			if(!valid(maps[i]))
+				continue;
+			
+			maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_NPC, crits);
+		}
+	
+		for(uint8 i = 0; i < crits.length(); i++)
+		{
+			if(!valid(crits[i]))
+				continue;
+			
+			if(crits[i].Stat[ST_BODY_TYPE] == BT_ROBOT)
+			{
+				crits[i].ToDead(ANIM2_DEAD_EXPLODE, null);
+			}
+		}
+		return ROBOT_DESTROY;
+	}
+	return ROBOT_HACK_FAIL;
+}
+
+bool d_FoundRobot(Critter& player, Critter@ npc)
+{
+	bool foundRobot = false;
+	
+	
+	array<Map@> maps;
+	player.GetMap().GetLocation().GetMaps(maps);
+	
+	array<Critter@> crits;
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		if(!valid(maps[i]))
+			continue;
+		
+		maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_NPC, crits);
+	}
+	
+	for(uint8 i = 0; i < crits.length(); i++)
+	{
+		if(!valid(crits[i]))
+			continue;
+		
+		if(crits[i].Stat[ST_BODY_TYPE] == BT_ROBOT)
+		{
+			foundRobot = true;
+		}
+			
+		if(foundRobot)
+			break;
+	}
+		
+	return foundRobot;
+}
+
+bool d_RobotsAreNotDisabled(Critter& player, Critter@ npc)
+{
+	return RobotsAreOnline;
+}
+
+
+bool d_RobotsAreOn(Critter& player, Critter@ npc)
+{
+	return RobotsOnline;
+}
+
+
+bool d_RobotsAreOff(Critter& player, Critter@ npc)
+{
+	return !RobotsOnline;
+}
+
+bool d_PowerOffOnly(Critter& player, Critter@ npc)
+{
+	return !PowerON && AllGeneratorsWorking();
+}
+
+bool d_EventIsRunning(Critter& player, Critter@ npc)
+{
+	return DoorAreBroken;
+}
+
+void r_OpenRewardDoor(Critter& player, Critter@ npc)
+{
+	Location@ location = player.GetMap().GetLocation();
+	
+	array<Map@> maps;
+	
+	location.GetMaps(maps);
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+		if(valid(maps[i]))
+			if(maps[i].GetProtoId() == MAP_SierraArmyDepot_TheBattlefield)
+			{
+				Item@ rewarddoor = maps[i].GetItem(130, 83, 3358);
+				if(!FLAG(rewarddoor.LockerCondition, LOCKER_ISOPEN))
+					SwitchState(rewarddoor);
+					
+				CreateTimeEvent(AFTER(REAL_SECOND(30)), "e_CloseRewardDoor", rewarddoor.Id, true);
+			}
+}
+
+uint e_CloseRewardDoor(array<uint>@ values)
+{
+	Item@ rewarddoor = GetItem(values[0]);
+	if(!valid(rewarddoor))
+		return 0;
+	
+	// collecting blocking critters
+	array<Critter@> critters;
+		
+	Map@ map = GetMap(rewarddoor.MapId);
+	if(!valid(map)) return 0;
+	
+	map.GetCrittersHex(130, 83, 0, FIND_LIFE_AND_KO, critters);
+	// and now kill them all
+	for(uint i = 0, j = critters.length(); i < j; i++)
+	{
+		if(valid(critters[i]))
+		{
+			critters[i].Say(SAY_NETMSG, "You were squeezed by door.");
+			critters[i].ToDead(ANIM2_DEAD_EXPLODE, null);
+		}
+	}
+		
+	if(FLAG(rewarddoor.LockerCondition, LOCKER_ISOPEN))
+		SwitchState(rewarddoor);
+		
+	CreateTimeEvent(AFTER(REAL_SECOND(10)), "e_ElectricShock", map.Id, true);
+		
+	return 0;
+}
+
+uint e_ElectricShock(array<uint>@ values)
+{
+	Map@ map = GetMap(values[0]);
+	if(!valid(map)) return 0;
+	
+	// collecting blocking critters
+	array<Critter@> critters;
+		
+	map.GetCritters(0, FIND_LIFE_AND_KO, critters);
+	// and now kill them all
+	for(uint i = 0, j = critters.length(); i < j; i++)
+	{
+		if(valid(critters[i]))
+		{
+			if(IsInExternalMagazine(critters[i], map))
+			{				
+				if(critters[i].IsPlayer())
+					critters[i].Say(SAY_NETMSG, "You were electrocuted by security system.");
+				map.RunEffect(PID_EXPLODE_EMP, critters[i].HexX, critters[i].HexY, 3);
+				critters[i].ToDead(Random(0, 1) == 0 ? ANIM2_DEAD_PULSE : ANIM2_DEAD_PULSE_DUST, null);
+			}
+		}
+	}
+		
+	return 0;
+}
+
+/*
+void ______Crafting_machinery_Part()
+{
+
+}
+*/
+
+
+void CraftingMachine(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseMachine");
+}
+
+bool _UseMachine(Item& item, Critter& player, int skill)
+{
+	player.Animate(ANIM1_UNARMED, ANIM2_USE, item, true, true);
+	
+    if(skill == SKILL_PICK_ON_GROUND)
+    {
+		if(PowerON)
+        {
+			// refresh fixboy list
+			player.DropTimers();
+
+			GiveWorkbench(player, PID_MACHINERY_SMALL_GUNS);
+			player.ShowScreen(SCREEN_FIXBOY, 0, "");
+        }
+		else
+		{
+			player.Say(SAY_NETMSG, "You see flashing LOADING... text on the screen.");
+		}
+		return true;
+        
+    }
+	if(skill == SK_REPAIR)
+	{
+		if(PowerON)
+        	player.Say(SAY_NETMSG, "Machinery is working really good. Just use it.");
+		else
+			player.Say(SAY_NETMSG, "It looks like running on low power.");
+        return true;
+    }
+	if(skill == SK_SCIENCE)
+	{
+		if(PowerON)
+        	player.Say(SAY_NETMSG, "Nothing is complicated here. Follow the instructions on the screen.");
+		else
+			player.Say(SAY_NETMSG, "Machinery is still rebooting itself.");
+        return true;
+	}
+    return false;
+}
+
+/*
+void ______Polygons_Part()
+{
+
+}
+*/
+
+IPolygon@ ExternalMagazine = null;
+IPolygon@ TheMainGate = null;
+
+void InitExternalMagazine(Map& map)
+{
+    if(!valid(ExternalMagazine))
+        @ExternalMagazine = ::LoadShapeFromEntires(map, SIERRA_EXT_MAGAZINE_START, SIERRA_EXT_MAGAZINE_STOP);
+}
+
+bool IsInExternalMagazine(Critter& cr, Map& map)
+{
+    if(!valid(ExternalMagazine))
+        @ExternalMagazine = ::LoadShapeFromEntires(map, SIERRA_EXT_MAGAZINE_START, SIERRA_EXT_MAGAZINE_STOP);
+	return ExternalMagazine.IsWithin(cr);
+}
+
+void InitTheMainGate(Map& map)
+{
+    if(!valid(TheMainGate))
+        @TheMainGate = ::LoadShapeFromEntires(map, SIERRA_EXT_MAINGATE_START, SIERRA_EXT_MAINGATE_STOP);
+}
+
+bool IsInTheMainGate(Critter& cr, Map& map)
+{
+    if(!valid(TheMainGate))
+        @TheMainGate = ::LoadShapeFromEntires(map, SIERRA_EXT_MAINGATE_START, SIERRA_EXT_MAINGATE_STOP);
+	return TheMainGate.IsWithin(cr);
+}
+
+/*
+void ______Notes_Are_Here()
+{
+
+}
+*/
+	
+//if(use shell on Howitzer)
+//remove gate
+//remove blockers
+//spawn destroyed gate
+//spawn gate's frags/shadows (flat)
+
+//Count dynamic mobs on entrance map
+//set CreateTimeEvent, set countermob = countedmobs
+//and spawn mobs 1 by one in 500-1000ms at door (inside) (this module, mobs spawned by e_TrySpawnMob from mob_dynamic)
+//and mobs must run to players, attack them (mob_dynamic part)
+//set CreateTimeEvent to rebuild
+//broadcast like in v13?
+//what to do with players and their followers when they will stuck inside?!  
+
+
+//
+// Eyes's part
+//
+// Find and RemoveAllEyes from game (antiabuse)
+// Block the elevators.
+// Look for lockers to fill lockers_1 and lockers_2 arrays - FillLockers
+// Make an exception for special item in spawner_container.fos for special items (new boolean function)
+// Use that eye on scanner, unblock elevator and remove it from game.
+// Find and RemoveAllEyes from game with end of event (antiabuse)
+
+//
+// Power switch
+//
+// Set off the power switch with message or effect near some power generator.
+// Break random generator
+// Set day time to all inside maps
+// Repair generator
+// When generator(s) is(are) repaired power switch can be used
+// Set day time to all inside maps and power on scanners, elevators, computers, ROBOTS ARE ONLINE...
+
+//dont use dynamic here - make another ai
+//turrets cant attack mobs and vice versa (this should be placed in mob_dynamic)
+//any other showcrit in range >> attack

@@ -1,0 +1,145 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+void PlaySound(Critter&cr,string&soundName)
+{
+	if(cr.IsPlayer())
+	cr.RunClientScript("_PlaySound",0,0,0,soundName,null);
+}
+
+void PlayMusic(Critter&cr,string&musicName,uint pos,uint repeat)
+{
+	if(cr.IsPlayer())
+	cr.RunClientScript("_PlayMusic",int(pos),int(repeat),0,musicName,null);
+}
+
+void PlayMusic(Map&map,string&musicName,uint pos,uint repeat)
+{
+	array<Critter@>critters;
+	map.GetCritters(0,(0x0F)|(0x10),critters);
+	for(uint i=0,j=critters.length();i<j;i++)
+	critters[i].RunClientScript("_PlayMusic",int(pos),int(repeat),0,musicName,null);
+}
+
+void PlayVideo(Critter&cr,string&videoName,bool canStop)
+{
+	if(cr.IsPlayer())
+	cr.RunClientScript("_PlayVideo",canStop?1:0,0,0,videoName,null);
+}
+
+void PlayVideo(Map&map,string&videoName,bool canStop)
+{
+	array<Critter@>critters;
+	map.GetCritters(0,(0x0F)|(0x10),critters);
+	for(uint i=0,j=critters.length();i<j;i++)
+	critters[i].RunClientScript("_PlayVideo",canStop?1:0,0,0,videoName,null);
+}
+
+string PrepareSound_Pick(Item&item)
+{
+	if(!(@item!=null)||item.IsNotValid)
+	return("");
+	
+	string sound="";
+	switch(item.GetProtoId())
+	{
+		
+		case(113):
+		case(524):
+		case(750):
+		sound="robe.acm";
+		break;
+		case(1):
+		case(379):
+		sound="ltharmor.acm";
+		break;
+		case(2):
+		case(380):
+		case(240):
+		sound="mtlarmor.acm";
+		break;
+		case(3):
+		case(232):
+		case(348):
+		case(349):
+		sound="pwrarmor.acm";
+		break;
+		
+		case(300):
+		case(122):
+		case(8):
+		case(22):
+		case(18):
+		case(404):
+		case(241):
+		case(313):
+		case(398):
+		case(388):
+		case(394):
+		sound="pistol.acm";
+		break;
+		case(10):
+		case(287):
+		case(299):
+		case(23):
+		case(405):
+		case(143):
+		case(351):
+		case(403):
+		case(500):
+		case(161):
+		case(162):
+		case(261):
+		case(353):
+		case(392):
+		sound="rifle.acm";
+		break;
+		case(9):
+		case(296):
+		case(283):
+		case(352):
+		case(391):
+		case(332):
+		sound="uzi.acm";
+		break;
+		case(13):
+		sound="rlaunch.acm";
+		break;
+		case(6):
+		case(115):
+		sound="sledge.acm";
+		break;
+		case(7):
+		case(280):
+		case(320):
+		sound="spear.acm";
+		break;
+		case(79):
+		case(9721):
+		case(9723):
+		case(9725):
+		case(205):
+		case(9722):
+		case(9724):
+		case(9726):
+		sound="flare.acm";
+		break;
+		
+		case(82):
+		case(83):
+		case(41):
+		case(9601):
+		sound="pickkeys.acm";
+		break;
+		case(127):
+		sound="rope.acm";
+		break;
+	}
+	
+	if(sound.length()<=4)
+	{
+		if(item.GetType()==(4))
+		sound="ammo.acm";
+	}
+	
+	return(sound);
+}

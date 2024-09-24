@@ -1,0 +1,512 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// spawner_pve.fos
+//
+// Reworked spawner_pvp.fos script from FOnline: Reloaded S2
+//
+
+#include "utils.fos"
+#include "_macros.fos"
+#include "_colors.fos"
+#include "npc_roles_h.fos"
+
+import bool LockerClose(Item& item) from "lockers";
+import void AddSpecialBonus(Item@ it) from "item_bonus";
+
+void init_high(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseRewardContainer");
+	CreateTimeEvent(AFTER(REAL_MINUTE(Random(10,30))), "e_SpawnHigh", item.Id, false);
+}
+
+void init_low(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseRewardContainer");		
+	CreateTimeEvent(AFTER(REAL_MINUTE(Random(10,30))), "e_SpawnLow", item.Id, false);
+}
+
+// Executed when opening reward chest
+bool _UseRewardContainer(Item& item, Critter& crit, int skill)
+{
+	// Opening / Closing
+    if((skill == -1) || (skill == SK_STEAL))
+    {
+		if(!isMobsKilled(crit))
+        {
+			uint16 hexX = 0;
+			uint16 hexY = 0;
+			Map@   map = item.GetMapPosition(hexX, hexY);
+			map.SetText(hexX, hexY, COLOR_WHITE,  "The locker looks guarded.");		
+            return true;
+        }
+		
+        // open it if closed
+        if(_LockerIsClose(item))
+        {
+			//item.LockerId = 0;
+			//item.LockerId = Random(98989, 989898);
+			//item.LockerComplexity = Random(50,50);			
+            return false;
+        }
+    }
+    return false;
+}
+
+bool isMobsKilled(Critter& player)
+{
+	bool ThereAreMobs = false;
+	
+	uint numLifeMobs = player.GetMap().GetNpcCount(ROLE_MOB_AGRESSIVE, FIND_ONLY_NPC | FIND_LIFE);
+	
+	if(numLifeMobs!=0)
+	{
+		for(uint i = 0; i < numLifeMobs; i++)
+		{
+			Critter@ mob = player.GetMap().GetNpc(ROLE_MOB_AGRESSIVE, FIND_ONLY_NPC | FIND_LIFE, i);
+			//mob.Say(SAY_SHOUT_ON_HEAD, "DON'T TOUCH IT!");
+			CritterShout(mob);
+		}	
+		ThereAreMobs = true;
+	}
+	
+	numLifeMobs = player.GetMap().GetNpcCount(ROLE_MOB_PASSIVE, FIND_ONLY_NPC | FIND_LIFE);
+	
+	if(numLifeMobs!=0)
+	{
+		for(uint i = 0; i < numLifeMobs; i++)
+		{
+			Critter@ mob = player.GetMap().GetNpc(ROLE_MOB_PASSIVE, FIND_ONLY_NPC | FIND_LIFE, i);
+			//mob.Say(SAY_SHOUT_ON_HEAD, "DON'T TOUCH IT!");
+			CritterShout(mob);
+		}
+		ThereAreMobs = true;
+	}
+	
+	numLifeMobs = player.GetMap().GetNpcCount(ROLE_MOB_ISTOWN_AGRESSIVE, FIND_ONLY_NPC | FIND_LIFE);
+	
+	if(numLifeMobs!=0)
+	{
+		for(uint i = 0; i < numLifeMobs; i++)
+		{
+			Critter@ mob = player.GetMap().GetNpc(ROLE_MOB_ISTOWN_AGRESSIVE, FIND_ONLY_NPC | FIND_LIFE, i);
+			//mob.Say(SAY_SHOUT_ON_HEAD, "DON'T TOUCH IT!");
+			CritterShout(mob);
+		}	
+		ThereAreMobs = true;
+	}
+	
+	numLifeMobs = player.GetMap().GetNpcCount(ROLE_MOB_ISTOWN_PASSIVE, FIND_ONLY_NPC | FIND_LIFE);
+	
+	if(numLifeMobs!=0)
+	{
+		for(uint i = 0; i < numLifeMobs; i++)
+		{
+			Critter@ mob = player.GetMap().GetNpc(ROLE_MOB_ISTOWN_PASSIVE, FIND_ONLY_NPC | FIND_LIFE, i);
+			//mob.Say(SAY_SHOUT_ON_HEAD, "DON'T TOUCH IT!");
+			CritterShout(mob);
+		}	
+		ThereAreMobs = true;
+	}
+	
+	numLifeMobs = player.GetMap().GetNpcCount(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_LIFE);
+	
+	if(numLifeMobs!=0)
+	{
+		for(uint i = 0; i < numLifeMobs; i++)
+		{
+			Critter@ mob = player.GetMap().GetNpc(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_LIFE, i);
+			//mob.Say(SAY_SHOUT_ON_HEAD, "DON'T TOUCH IT!");
+			CritterShout(mob);
+		}	
+		ThereAreMobs = true;
+	}
+	
+	if(ThereAreMobs)
+		return false;
+	else
+		return true;
+
+}
+
+uint e_SpawnHigh(array<uint>@ values)
+{
+	Item@ item = GetItem(values[0]);
+    if(!valid(item))
+        return 0;
+	ClearContainer(item);
+
+	if(Random(0,99)<50)
+		{
+		switch (Random(1,8))
+			{			
+			case 1: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR_MK_II); break;}
+			case 2: 	{SpawnBuffItem(item, PID_COMBAT_HELMET_MK_II); break;}
+			case 3: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
+			case 4: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
+			case 5: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}			
+			case 6: 	{item.AddItem(PID_MOTION_SENSOR, 1, 0); break;}
+			case 7: 	{item.AddItem(PID_STEALTH_BOY, 1, 0); break;}
+			case 8: 	{item.AddItem(PID_PULSE_GRENADE, 1, 0); break;}			
+			}
+		}
+		
+	if(Random(0,99) == 0)
+		{
+		switch (Random(1,6))
+			{
+			case 1: 	{SpawnBuffItem(item, PID_DESERT_COMBAT_ARMOR); break;}
+			case 2: 	{SpawnBuffItem(item, PID_DESERT_COMBAT_HELMET); break;}				
+			case 3: 	{SpawnBuffItem(item, PID_ENCLAVE_COMBAT_ARMOR); break;}		
+			case 4: 	{SpawnBuffItem(item, PID_ENCLAVE_COMBAT_HELMET); break;}
+			case 5: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
+			case 6: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}			
+			}
+		}
+		
+	if(Random(0,99)<2)
+		{
+		switch (Random(1,13))
+			{			
+			case 1: 	{item.AddItem(PID_ABSORBER, 1, 0); break;}
+			case 2: 	{item.AddItem(PID_ADVANCED_SHELL, 1, 0); break;}
+			case 3: 	{item.AddItem(PID_CARBON_POLYMER, 1, 0); break;}
+			case 4: 	{item.AddItem(PID_CYLINDRICAL_LOCK, 1, 0); break;}
+			case 5: 	{item.AddItem(PID_ELECTRIC_AMPLIFIER, 1, 0); break;}
+			case 6: 	{item.AddItem(PID_ELECTROMAGNETIC, 1, 0); break;}
+			case 7: 	{item.AddItem(PID_HIFLO, 1, 0); break;}
+			case 8: 	{item.AddItem(PID_PA_FUEL, 1, 0); break;}
+			case 9: 	{item.AddItem(PID_PLASMA_ACCELERATOR, 1, 0); break;}
+			case 10: 	{item.AddItem(PID_PLASMA_PARTS, 1, 0); break;}
+			case 11: 	{item.AddItem(PID_ROTARY_CHAMBER, 1, 0); break;}
+			case 12: 	{item.AddItem(PID_SERVOMOTORS, 1, 0); break;}
+			case 13: 	{item.AddItem(PID_PA_SHELL, 1, 0); break;}			
+			}
+		}
+	
+	if(Random(0,1000)<2)
+		{
+		switch (Random(1,41))
+			{
+			case 1: 	{item.AddItem(PID_BLUEPRINT_SOLAR_SCORCHER, 1, 0); break;}
+			case 2: 	{item.AddItem(PID_BLUEPRINT_SHOTGUN_DRAGON_BREATH_SHELLS, 1, 0); break;}
+			case 3: 	{item.AddItem(PID_BLUEPRINT_4_7MM_CASELESS, 1, 0); break;}	
+			case 4: 	{item.AddItem(PID_BLUEPRINT_2MM_EC_AMMO, 1, 0); break;}
+			case 5: 	{item.AddItem(PID_BLUEPRINT_METAL_ARMOR_MK_III, 1, 0); break;}			
+			case 6: 	{item.AddItem(PID_BLUEPRINT_PULSE_GRENADE, 1, 0); break;}				
+			case 7: 	{item.AddItem(PID_BLUEPRINT_GATLING_LASER, 1, 0); break;}			
+			case 8: 	{item.AddItem(PID_BLUEPRINT_COMBAT_HELMET_MK_II, 1, 0); break;}		
+			case 9: 	{item.AddItem(PID_BLUEPRINT_PID_HYPO, 1, 0); break;}
+			case 10: 	{item.AddItem(PID_BLUEPRINT_JET_ANTIDOTE, 1, 0); break;}	
+			case 11: 	{item.AddItem(PID_BLUEPRINT_COMBAT_ARMOR_MK_II, 1, 0); break;}
+			case 12: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}			
+			case 13: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
+			case 14: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_ARMOR, 1, 0); break;}			
+			case 15: 	{item.AddItem(PID_BLUEPRINT_NCR_ARMOR, 1, 0); break;}			
+			case 16: 	{item.AddItem(PID_BLUEPRINT_POWERED_ARMOR, 1, 0); break;}
+			case 17: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 1, 0); break;}
+			case 18: 	{item.AddItem(PID_BLUEPRINT_TURBO_PLASMA_RIFLE, 1, 0); break;}
+			case 19: 	{item.AddItem(PID_BLUEPRINT_INDEPENDENT, 1, 0); break;}	
+			case 20: 	{item.AddItem(PID_BLUEPRINT_AVENGER_MINIGUN, 1, 0); break;}
+			case 21: 	{item.AddItem(PID_BLUEPRINT_BOZAR, 1, 0); break;}			
+			case 22: 	{item.AddItem(PID_BLUEPRINT_M203, 1, 0); break;}				
+			case 23: 	{item.AddItem(PID_BLUEPRINT_VINDICATOR_MINIGUN, 1, 0); break;}			
+			case 24: 	{item.AddItem(PID_BLUEPRINT_YK42B_PULSE_RIFLE, 1, 0); break;}
+			case 25: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_HELMET, 1, 0); break;}			
+			case 26: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET, 1, 0); break;}				
+			case 27: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II, 1, 0); break;}			
+			case 28: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_HELMET, 1, 0); break;}		
+			case 29: 	{item.AddItem(PID_BLUEPRINT_NCR_HELMET, 1, 0); break;}
+			case 30: 	{item.AddItem(PID_BLUEPRINT_POWER_HELMET, 1, 0); break;}	
+			case 31: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 1, 0); break;}
+			case 32: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET, 1, 0); break;}			
+			case 33: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2, 1, 0); break;}
+			case 34: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}			
+			case 35: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}			
+			case 36: 	{item.AddItem(PID_BLUEPRINT_HK_G11, 1, 0); break;}
+			case 37: 	{item.AddItem(PID_BLUEPRINT_HK_G11E, 1, 0); break;}
+			case 38: 	{item.AddItem(PID_BLUEPRINT_YK32_PULSE_PISTOL, 1, 0); break;}
+			case 39: 	{item.AddItem(PID_BLUEPRINT_FN_FAL_NIGHT_SCOPE, 1, 0); break;}	
+			case 40: 	{item.AddItem(PID_BLUEPRINT_PK12_GAUSS_PISTOL, 1, 0); break;}
+			case 41: 	{item.AddItem(PID_BLUEPRINT_M72_GAUSS_RIFLE, 1, 0); break;}
+			case 42: 	{item.AddItem(PID_IMPLANT_DERMAL, 1, 0); break;}			
+			case 43: 	{item.AddItem(PID_IMPLANT_PHOENIX, 1, 0); break;}
+			case 44: 	{item.AddItem(PID_IMPLANT_NEMEAN, 1, 0); break;}
+			case 45: 	{item.AddItem(PID_IMPLANT_STRENGTH, 1, 0); break;}
+			case 46: 	{item.AddItem(PID_IMPLANT_PERCEPTION, 1, 0); break;}	
+			case 47: 	{item.AddItem(PID_IMPLANT_ENDURANCE, 1, 0); break;}
+			case 48: 	{item.AddItem(PID_IMPLANT_CHARISMA, 1, 0); break;}			
+			case 49: 	{item.AddItem(PID_IMPLANT_INTELLIGENCE, 1, 0); break;}				
+			case 50: 	{item.AddItem(PID_IMPLANT_AGILITY, 1, 0); break;}			
+			case 51: 	{item.AddItem(PID_IMPLANT_LUCK, 1, 0); break;}
+			}
+		}
+
+	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
+
+    //item.LockerId = Random(98989, 989898);
+    //item.LockerComplexity = Random(50,50);
+    	
+    return REAL_MINUTE(Random(10,30));	
+}
+
+
+uint e_SpawnLow(array<uint>@ values)
+{
+	Item@ item = GetItem(values[0]);
+    if(!valid(item))
+        return 0;
+	ClearContainer(item);
+
+	if(Random(0,99)<50)
+		{
+		switch (Random(1,4))
+			{
+			case 1: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR); break;}
+			case 2: 	{SpawnBuffItem(item, PID_COMBAT_HELMET); break;}			
+			case 3: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR_MK_II); break;}
+			case 4: 	{SpawnBuffItem(item, PID_COMBAT_HELMET_MK_II); break;}		
+			}
+		}
+	else
+		{
+		switch (Random(1,15))
+			{
+			case 1: 	{SpawnBuffItem(item, PID_ROCKET_LAUNCHER); break;}
+			case 2: 	{SpawnBuffItem(item, PID_PLASMA_RIFLE); break;}
+			case 3: 	{SpawnBuffItem(item, PID_SUPER_CATTLE_PROD); break;}
+			case 4: 	{SpawnBuffItem(item, PID_SUPER_SLEDGE); break;}
+			case 5: 	{SpawnBuffItem(item, PID_SNIPER_RIFLE); break;}
+			case 6: 	{SpawnBuffItem(item, PID_223_PISTOL); break;}
+			case 7: 	{SpawnBuffItem(item, PID_HK_P90C); break;}	
+			case 8: 	{SpawnBuffItem(item, PID_HK_CAWS); break;}
+			case 9: 	{SpawnBuffItem(item, PID_LIGHT_SUPPORT_WEAPON); break;}
+			case 10: 	{SpawnBuffItem(item, PID_SNIPER_RIFLE); break;}		
+			case 11: 	{SpawnBuffItem(item, PID_AVENGER_MINIGUN); break;}
+			case 12: 	{SpawnBuffItem(item, PID_IMPROVED_FLAMETHROWER); break;}
+			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE_EXT_CAP); break;}
+			case 14: 	{SpawnBuffItem(item, PID_WAKIZASHI_BLADE); break;}
+			case 15: 	{SpawnBuffItem(item, PID_GRENADE_LAUNCHER); break;}
+			}
+		}
+		
+	if(Random(0,99)==1)
+		{
+		switch (Random(1,10))
+			{
+			case 1: 	{SpawnBuffItem(item, PID_BROTHERHOOD_COMBAT_ARMOR); break;}	
+			case 2: 	{SpawnBuffItem(item, PID_BROTHERHOOD_HELMET); break;}
+			case 3: 	{SpawnBuffItem(item, PID_NCR_ARMOR); break;}			
+			case 4: 	{SpawnBuffItem(item, PID_NCR_HELMET); break;}			
+			case 5: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
+			case 6: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
+			case 7: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}
+			case 8:		{item.AddItem(PID_HYPO, 1, 3); break;}
+			case 9: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
+			case 10: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}
+			}
+		}
+
+	if(Random(0,99)<2)
+		{
+		switch (Random(1,23))
+			{			
+			/*case 1: 	{item.AddItem(PID_IMPLANT_DERMAL, 1, 0); break;}			
+			case 2: 	{item.AddItem(PID_IMPLANT_PHOENIX, 1, 0); break;}
+			case 3: 	{item.AddItem(PID_IMPLANT_NEMEAN, 1, 0); break;}
+			case 4: 	{item.AddItem(PID_IMPLANT_STRENGTH, 1, 0); break;}
+			case 5: 	{item.AddItem(PID_IMPLANT_PERCEPTION, 1, 0); break;}	
+			case 6: 	{item.AddItem(PID_IMPLANT_ENDURANCE, 1, 0); break;}
+			case 7: 	{item.AddItem(PID_IMPLANT_CHARISMA, 1, 0); break;}			
+			case 8: 	{item.AddItem(PID_IMPLANT_INTELLIGENCE, 1, 0); break;}				
+			case 9: 	{item.AddItem(PID_IMPLANT_AGILITY, 1, 0); break;}			
+			case 10: 	{item.AddItem(PID_IMPLANT_LUCK, 1, 0); break;}*/
+			case 1: 	{item.AddItem(PID_ABSORBER, 1, 0); break;}
+			case 2: 	{item.AddItem(PID_ADVANCED_SHELL, 1, 0); break;}
+			case 3: 	{item.AddItem(PID_CARBON_POLYMER, 1, 0); break;}
+			case 4: 	{item.AddItem(PID_CYLINDRICAL_LOCK, 1, 0); break;}
+			case 5: 	{item.AddItem(PID_ELECTRIC_AMPLIFIER, 1, 0); break;}
+			case 6: 	{item.AddItem(PID_ELECTROMAGNETIC, 1, 0); break;}
+			case 7: 	{item.AddItem(PID_HIFLO, 1, 0); break;}
+			case 8: 	{item.AddItem(PID_PA_FUEL, 1, 0); break;}
+			case 9: 	{item.AddItem(PID_PLASMA_ACCELERATOR, 1, 0); break;}
+			case 10: 	{item.AddItem(PID_PLASMA_PARTS, 1, 0); break;}
+			case 11: 	{item.AddItem(PID_ROTARY_CHAMBER, 1, 0); break;}
+			case 12: 	{item.AddItem(PID_SERVOMOTORS, 1, 0); break;}
+			case 13: 	{item.AddItem(PID_PA_SHELL, 1, 0); break;}			
+			}
+		}
+	
+	/*if(Random(0,99)<2)
+		{
+		switch (Random(1,41))
+			{
+			case 1: 	{item.AddItem(PID_BLUEPRINT_SOLAR_SCORCHER, 1, 0); break;}
+			case 2: 	{item.AddItem(PID_BLUEPRINT_SHOTGUN_DRAGON_BREATH_SHELLS, 1, 0); break;}
+			case 3: 	{item.AddItem(PID_BLUEPRINT_4_7MM_CASELESS, 1, 0); break;}	
+			case 4: 	{item.AddItem(PID_BLUEPRINT_2MM_EC_AMMO, 1, 0); break;}
+			case 5: 	{item.AddItem(PID_BLUEPRINT_METAL_ARMOR_MK_III, 1, 0); break;}			
+			case 6: 	{item.AddItem(PID_BLUEPRINT_PULSE_GRENADE, 1, 0); break;}				
+			case 7: 	{item.AddItem(PID_BLUEPRINT_GATLING_LASER, 1, 0); break;}			
+			case 8: 	{item.AddItem(PID_BLUEPRINT_COMBAT_HELMET_MK_II, 1, 0); break;}		
+			case 9: 	{item.AddItem(PID_BLUEPRINT_PID_HYPO, 1, 0); break;}
+			case 10: 	{item.AddItem(PID_BLUEPRINT_JET_ANTIDOTE, 1, 0); break;}	
+			case 11: 	{item.AddItem(PID_BLUEPRINT_COMBAT_ARMOR_MK_II, 1, 0); break;}
+			case 12: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}			
+			case 13: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
+			case 14: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_ARMOR, 1, 0); break;}			
+			case 15: 	{item.AddItem(PID_BLUEPRINT_NCR_ARMOR, 1, 0); break;}			
+			case 16: 	{item.AddItem(PID_BLUEPRINT_POWERED_ARMOR, 1, 0); break;}
+			case 17: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 1, 0); break;}
+			case 18: 	{item.AddItem(PID_BLUEPRINT_TURBO_PLASMA_RIFLE, 1, 0); break;}
+			case 19: 	{item.AddItem(PID_BLUEPRINT_INDEPENDENT, 1, 0); break;}	
+			case 20: 	{item.AddItem(PID_BLUEPRINT_AVENGER_MINIGUN, 1, 0); break;}
+			case 21: 	{item.AddItem(PID_BLUEPRINT_BOZAR, 1, 0); break;}			
+			case 22: 	{item.AddItem(PID_BLUEPRINT_M203, 1, 0); break;}				
+			case 23: 	{item.AddItem(PID_BLUEPRINT_VINDICATOR_MINIGUN, 1, 0); break;}			
+			case 24: 	{item.AddItem(PID_BLUEPRINT_YK42B_PULSE_RIFLE, 1, 0); break;}
+			case 25: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_HELMET, 1, 0); break;}			
+			case 26: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET, 1, 0); break;}				
+			case 27: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II, 1, 0); break;}			
+			case 28: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_HELMET, 1, 0); break;}		
+			case 29: 	{item.AddItem(PID_BLUEPRINT_NCR_HELMET, 1, 0); break;}
+			case 30: 	{item.AddItem(PID_BLUEPRINT_POWER_HELMET, 1, 0); break;}	
+			case 31: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 1, 0); break;}
+			case 32: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET, 1, 0); break;}			
+			case 33: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2, 1, 0); break;}
+			case 34: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}			
+			case 35: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}			
+			case 36: 	{item.AddItem(PID_BLUEPRINT_HK_G11, 1, 0); break;}
+			case 37: 	{item.AddItem(PID_BLUEPRINT_HK_G11E, 1, 0); break;}
+			case 38: 	{item.AddItem(PID_BLUEPRINT_YK32_PULSE_PISTOL, 1, 0); break;}
+			case 39: 	{item.AddItem(PID_BLUEPRINT_FN_FAL_NIGHT_SCOPE, 1, 0); break;}	
+			case 40: 	{item.AddItem(PID_BLUEPRINT_PK12_GAUSS_PISTOL, 1, 0); break;}
+			case 41: 	{item.AddItem(PID_BLUEPRINT_M72_GAUSS_RIFLE, 1, 0); break;}
+			}
+		}	*/	
+
+	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
+
+    //item.LockerId = Random(98989, 989898);
+    //item.LockerComplexity = Random(50,50);
+    	
+    return REAL_MINUTE(Random(10,30));	
+}
+
+
+void SpawnBuffItem(Item& container, uint16 pid)
+{
+	Item@ it = container.AddItem(pid, 1, 0);
+	AddSpecialBonus(it);
+}
+
+void CritterShout(Critter& mob)
+{
+	switch(mob.Stat[ST_BODY_TYPE])
+	{
+		case BT_MEN :
+		case BT_WOMEN :
+		case BT_CHILDREN :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "DON'T TOUCH IT!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "PUT YOUR HANDS AWAY!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "GET AWAY FROM THE LOCKER!"); break;}				
+			}
+			break;
+		case BT_SUPER_MUTANT :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "NO HUMAN!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "DIE HUMAN FIRST!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "GET THIS HUMAN!"); break;}				
+			}
+			break;
+		case BT_GHOUL :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "I'M SO HUNGRY!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "EAT HIM!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "MMMMM... A FRESH MEAT!"); break;}				
+			}
+			break;
+		case BT_BRAHMIN :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "MOOO!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "MOOOO! MOOOO!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "MOO! MOO! MOO! MOOOOOOOO!"); break;}				
+			}
+			break;
+		case BT_RADSCORPION :
+			mob.Say(SAY_EMOTE_ON_HEAD, "Crackling with the stitches.");
+			break;
+		case BT_RAT :
+			mob.Say(SAY_EMOTE_ON_HEAD, "Rat squeaking.");
+			break;
+		case BT_FLOATER :
+		case BT_CENTAUR :
+			mob.Say(SAY_EMOTE_ON_HEAD, "The sound of splashing.");
+			break;
+		case BT_ROBOT :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "BAD INTERRUPT!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "DEFENSE PROGRAM: INITIALIZED!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "EXTERMINATE THE CURRENT SURFACE!"); break;}				
+			}
+			break;
+		case BT_DOG :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "Wooof! Wooof!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "GRRRRRR!!!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "ANGGRRRRR!!!"); break;}				
+			}
+			break;
+		case BT_MANTI :
+			break;
+		case BT_DEADCLAW :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "HRRRR!!!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "GRRRRRR!!!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "ANGGRRRRR!!!"); break;}				
+			}
+			break;
+		case BT_PLANT :
+			break;
+		case BT_GECKO :
+			break;
+		case BT_ALIEN :
+			mob.Say(SAY_EMOTE_ON_HEAD, "It's trying say something...");
+			break;
+		case BT_GIANT_ANT :
+			break;
+		case BT_BIG_BAD_BOSS :
+			break;
+		case BT_DESERT_STALKER :
+			break;
+		case BT_MAN_TRAP :
+			break;
+		case BT_RAD_TOAD :
+			break;
+		case BT_THORNSLINGER :
+			break;
+		case BT_PASHTSHUUR :
+			break;
+		default :
+			switch(Random(1,3))
+			{
+				case 1: {mob.Say(SAY_SHOUT_ON_HEAD, "DON'T TOUCH IT!"); break;}
+				case 2: {mob.Say(SAY_SHOUT_ON_HEAD, "PUT YOUR HANDS AWAY!"); break;}
+				case 3: {mob.Say(SAY_SHOUT_ON_HEAD, "GET AWAY FROM THE LOCKER!"); break;}				
+			}
+			break;
+	}
+	
+	
+	
+	
+}

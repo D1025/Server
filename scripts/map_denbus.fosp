@@ -1,0 +1,59 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+
+int GetRootMapData(Map&map,uint index)
+{
+	return map.GetLocation().GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Map&map,uint index,int val)
+{
+	map.GetLocation().GetMapByIndex(0).SetData(index,val);
+}   
+
+int GetRootMapData(Location&loc,uint index)
+{
+	return loc.GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Location&loc,uint index,int val)
+{
+	loc.GetMapByIndex(0).SetData(index,val);
+}  
+
+import bool AddMilitia(Map@map)from"town";
+import void SpawnInitMilitia(Map@map)from"town";
+
+void map_init(Map&map,bool firstTime)
+{
+	map.SetData((3),(5));
+	
+	if(firstTime)
+	SpawnInitMilitia(map);
+}  
+
+bool s_GamingTable(Critter&player,Scenery&table,int skill,Item@item)
+{
+	if(skill==(213))
+	{
+		GameVar@var=GetLocalVar((6200),player.Id);
+		if(!(@var!=null))
+		return false;
+		
+		if(var.GetValue()!=1)
+		return false;
+		
+		int chance=(((player.Skill[(213)])>(95))?(95):(((player.Skill[(213)])<(5))?(5):(player.Skill[(213)])));
+		if(chance>Random(0,99))
+		{
+			var=2;
+			player.SayMsg((11),(6),var.GetQuestStr());
+		}
+		else
+		{
+			var=3;
+			player.SayMsg((11),(6),var.GetQuestStr());
+		}
+		return true;
+	}
+	return false;
+}

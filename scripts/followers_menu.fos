@@ -1,0 +1,480 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// followers_menu.fos
+//
+
+#include "_macros.fos"
+#include "follower_common_h.fos"
+#include "follower_h.fos"
+#include "npc_planes_h.fos"
+#include "_maps.fos"
+#include "_defines.fos"
+
+import void SetMode(Critter& master, Critter& follower, uint mode) from "follower" ;
+import void   UseDrug(Critter& cr, Item& drug) from "drugs";
+
+// The code in this file handles the functions from the follower menu (alt + mouse 1)
+
+void unsafe_Attack(Critter& player, int crId, int high, int param2, string@ param3, array<int>@ param4)
+{
+    Critter@ cr = GetCritter(crId);
+    if(!valid(cr))
+        return;
+    if(!player.IsSee(cr))
+        return;
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+        if(player.IsSee(crits[i]))
+        {
+            uint priority = 0;
+            if(high == 1)
+            {
+                array<NpcPlane@> crPlanes(0);
+                if(crits[i].GetPlanes(crPlanes) > 0)
+                    priority = crPlanes[0].Priority + 1;
+            }
+            AddAttackPlane(crits[i], priority, cr);
+        }
+}
+
+void MoveTo(Critter& player, int high, int hexX, int hexY, bool clearPlanes, bool manualMode)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits, true);
+    if(n < 0)
+        return;
+
+    array<uint16> coordsX;
+    array<uint16> coordsY;
+
+    FindFreeHexes(map, hexX, hexY, n, coordsX, coordsY);   // k can be changed here
+
+    int i = 0;                                             // processed
+    int j = 0;                                             // index
+
+    while(i < n && j < n)
+    {
+        if(@crits[j] == null)
+        {
+            j++;
+            continue;
+        }
+        uint priority = 0;
+        if(high == 1)
+        {
+            array<NpcPlane@> crPlanes(0);
+            if(crits[j].GetPlanes(crPlanes) > 0)
+                priority = crPlanes[0].Priority + 1;
+        }
+        crits[j].ModeBase[MODE_GECK] = 1;
+        if(manualMode)
+            crits[j].FollowerVarBase[FV_MODE] = FOLLOWMODE_FOLLOW_CONTROL;
+        else
+            crits[j].FollowerVarBase[FV_MODE] = FOLLOWMODE_FOLLOW;
+
+        if(clearPlanes)
+        {
+            crits[j].ErasePlane(AI_PLANE_WALK, true);
+            crits[j].ErasePlane(AI_PLANE_ATTACK, true);
+        }
+        AddWalkPlane(crits[j], priority, coordsX[i], coordsY[i], GetDirection(crits[j].HexX, crits[j].HexY, hexX, hexY), true, 0);
+        crits[j].SetHomePos(coordsX[i], coordsY[i], GetDirection(crits[j].HexX, crits[j].HexY, hexX, hexY));
+        i++;
+        j++;
+    }
+}
+
+void unsafe_MoveTo(Critter& player, int high, int hexX, int hexY, string@ param3, array<int>@ param4)
+{
+    MoveTo(player, high, hexX, hexY, false, true);
+}
+
+void unsafe_Regroup(Critter& player, int, int, int, string@, array<int>@)
+{
+    MoveTo(player, 1, player.HexX, player.HexY, true, false);
+}
+
+void unsafe_SwitchMode(Critter& player, int mode, int param1, int param2, string@ param3, array<int>@ param4)
+{
+    if((mode > 1) || (mode < 0))
+        return;
+
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+    for(int i = 0; i < n; i++)
+        if(player.IsSee(crits[i]))
+        {
+            if(crits[i].FollowerVar[FV_MODE] < FOLLOWMODE_GUARD)   // Only if following
+                crits[i].FollowerVarBase[FV_MODE] = mode;
+        }
+
+}
+
+void unsafe_Flee(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+        if(player.IsSee(crits[i]))
+			{
+				if(IsDungeon(player.GetMap()))
+				/* if(player.GetMapProtoId() == MAP_Ares_level4 || player.GetMapProtoId() == MAP_Ares_level3
+				|| player.GetMapProtoId() == MAP_Glow_Floor1 || player.GetMapProtoId() == MAP_Glow_Floor2
+				|| player.GetMapProtoId() == MAP_Glow_Floor3 || player.GetMapProtoId() == MAP_Glow_Floor4
+				|| player.GetMapProtoId() == MAP_Glow_Floor5 || player.GetMapProtoId() == MAP_Glow_Floor6
+				|| player.GetMapProtoId() == MAP_KlamathToxicCaves1 || player.GetMapProtoId() == MAP_KlamathToxicCaves2
+				|| player.GetMapProtoId() == MAP_KlamathToxicCaves3 || player.GetMapProtoId() == MAP_VaultCityVaultLevel1
+				|| player.GetMapProtoId() == MAP_VaultCityVaultLevel2 || player.GetMapProtoId() == MAP_VaultCityVaultLevel3
+				|| player.GetMapProtoId() == MAP_SierraArmyDepot_Level1 || player.GetMapProtoId() == MAP_SierraArmyDepot_Level2
+				|| player.GetMapProtoId() == MAP_SierraArmyDepot_Level3 || player.GetMapProtoId() == MAP_SierraArmyDepot_Level4
+				|| player.GetMapProtoId() == MAP_Vault15Level1 || player.GetMapProtoId() == MAP_Vault15Level2
+				|| player.GetMapProtoId() == MAP_Vault15Level3 || player.GetMapProtoId() == MAP_QCathedralBasement1
+				|| player.GetMapProtoId() == MAP_QCathedralBasement2 || player.GetMapProtoId() == MAP_QCathedralBasement3
+				|| player.GetMapProtoId() == MAP_MilitaryBaseLevel1 || player.GetMapProtoId() == MAP_MilitaryBaseLevel2
+				|| player.GetMapProtoId() == MAP_MilitaryBaseLevel3 || player.GetMapProtoId() == MAP_MilitaryBaseLevel4
+				|| player.GetMapProtoId() == MAP_LostHills_Level1 || player.GetMapProtoId() == MAP_LostHills_Level2
+				|| player.GetMapProtoId() == MAP_LostHills_Level3 || player.GetMapProtoId() == MAP_LostHills_Level4
+				|| player.GetMapProtoId() == MAP_Vault13Level1 || player.GetMapProtoId() == MAP_Vault13Level2
+				|| player.GetMapProtoId() == MAP_Vault13Level3 || player.GetMapProtoId() == MAP_Vault13Level4
+				|| player.GetMapProtoId() == MAP_AresMilitaryBase_Level1 || player.GetMapProtoId() == MAP_AresMilitaryBase_Level2
+				|| player.GetMapProtoId() == MAP_NecropolisSewer || player.GetMapProtoId() == MAP_NecropolisVaultLevel1
+				|| player.GetMapProtoId() == MAP_NecropolisVaultLevel2 || player.GetMapProtoId() == MAP_NecropolisVaultLevel3
+				|| player.GetMapProtoId() == MAP_Klamath_rat1 || player.GetMapProtoId() == MAP_Klamath_rat2
+				|| player.GetMapProtoId() == MAP_Klamath_rat3 || player.GetMapProtoId() == MAP_Talchem_1
+				|| player.GetMapProtoId() == MAP_Talchem_2 || player.GetMapProtoId() == MAP_RaidersCave1
+				|| player.GetMapProtoId() == MAP_RaidersCave2 || player.GetMapProtoId() == MAP_RaidersCave3
+				|| player.GetMapProtoId() == MAP_SlaveryVault2 || player.GetMapProtoId() == MAP_SlaveryVault3
+				|| player.GetMapProtoId() == MAP_Vault14Level1 || player.GetMapProtoId() == MAP_Vault14Level2
+				|| player.GetMapProtoId() == MAP_Vault14Level3 || player.GetMapProtoId() == MAP_SanFranTanker_2
+				|| player.GetMapProtoId() == MAP_SanFranTanker_3 || player.GetMapProtoId() == MAP_Gecko_dungeon) */
+					{
+						if(crits[i].Stat[ST_BODY_TYPE] == BT_SUPER_MUTANT)
+							crits[i].Say(SAY_NORM_ON_HEAD, "No, human!");
+						if(crits[i].Stat[ST_BODY_TYPE] == BT_MEN || crits[i].Stat[ST_BODY_TYPE] == BT_WOMEN
+						|| crits[i].Stat[ST_BODY_TYPE] == BT_CHILDREN || crits[i].Stat[ST_BODY_TYPE] == BT_GHOUL)
+							crits[i].Say(SAY_NORM_ON_HEAD, "I can't leave you now!");
+						if(crits[i].Stat[ST_BODY_TYPE] == BT_BRAHMIN)
+							crits[i].Say(SAY_NORM_ON_HEAD, "Moooooo! Mooooooo! Moooooo!");
+						if(crits[i].Stat[ST_BODY_TYPE] == BT_ROBOT)
+							crits[i].Say(SAY_NORM_ON_HEAD, "Fatal error!");
+						if(crits[i].Stat[ST_BODY_TYPE] == BT_DOG)
+							crits[i].Say(SAY_NORM_ON_HEAD, "Grrrrr! Woooof!");
+						if(i == n)
+							return;
+					}
+				else
+					{
+				SetMode(player, crits[i], FOLLOWMODE_FOLLOW); 
+				crits[i].ModeBase[MODE_GECK] = 1;
+				Flee(crits[i]);
+					}
+			}
+}
+
+void unsafe_Stop(Critter& player, int param0, int param1, int param2, string@ param3, array<int>@ param4)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+        if(player.IsSee(crits[i]))
+        {
+            crits[i].DropPlanes();
+        }
+}
+
+void unsafe_UseJet(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+	
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].Timeout[TO_JET] > 0) return;
+		if(crits[i].CountItem(PID_JET)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_JET, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Jet!");
+	}
+	}
+}
+				
+void unsafe_UseBuffout(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].Timeout[TO_BUFFOUT] > 0) return;
+		if(crits[i].CountItem(PID_BUFFOUT)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_BUFFOUT, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Buffout!");
+	}
+	}
+}
+
+void unsafe_UseNuka(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].Timeout[TO_NUKA_COLA] > 0) return;
+		if(crits[i].CountItem(PID_NUKA_COLA)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_NUKA_COLA, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Nukacola!");
+	}
+	}
+}
+
+void unsafe_UseCigs(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].Timeout[TO_CIGARETTES] > 0) return;
+		if(crits[i].CountItem(PID_CIGARETTES)>0)
+		{
+			if(crits[i].CountItem(PID_LIGHTER)>0)
+			{
+				Item @ item = crits[i].GetItem(PID_CIGARETTES, -1);
+				UseDrug(crits[i], item);
+				_CritAnimateUse(crits[i]);
+			}
+			else crits[i].Say(SAY_NORM_ON_HEAD, "Give me Lighter!");
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Cigarettes!");
+	}
+	}
+}
+
+void unsafe_UsePsycho(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].Timeout[TO_PSYCHO] > 0) return;
+		if(crits[i].CountItem(PID_PSYCHO)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_PSYCHO, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Psycho!");
+	}
+	}
+}
+
+void unsafe_UseBeer(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].Timeout[TO_BEER] > 0) return;
+		if(crits[i].CountItem(PID_BEER)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_BEER, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Beer!");
+	}
+	}
+}
+
+void unsafe_UseRadX(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].CountItem(PID_RAD_X)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_RAD_X, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Rad X!");
+	}
+	}
+}
+
+void unsafe_UseRadAway(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].CountItem(PID_RADAWAY)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_RADAWAY, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Rad Away!");
+	}
+	}
+}
+
+void unsafe_UseJetAntidote(Critter& player, int, int, int, string@, array<int>@)
+{
+    Map@ map = player.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    int             n = GetFollowers(player, map, crits);
+
+    if(n < 0)
+        return;
+    for(int i = 0; i < n; i++)
+	{
+    if(player.IsSee(crits[i]))
+	{
+		if(crits[i].CountItem(PID_JET_ANTIDOTE)>0)
+		{
+			Item @ item = crits[i].GetItem(PID_JET_ANTIDOTE, -1);
+			UseDrug(crits[i], item);
+			_CritAnimateUse(crits[i]);
+		}
+		else crits[i].Say(SAY_NORM_ON_HEAD, "Give me some Jet Antidote!");
+	}
+	}
+}
+
+//Can be also added check for ST_FACTION_RANK from officer (4) and leader (5)
+void unsafe_Command(Critter& player, int command, int hexX, int hexY, string@, int[]@)
+{
+	Map@ map = player.GetMap();
+	    if(!valid(map))
+        return;
+	player.StatBase[ST_COMMAND]=command;
+	player.StatBase[ST_COMMAND_X]=hexX;
+	player.StatBase[ST_COMMAND_Y]=hexY;
+	array<Critter@> crits;
+	map.GetCritters(0,FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO,crits);
+	for(uint i = 0; i < crits.length(); i++)
+	{
+		if((crits[i].Stat[ST_TEAM_ID] == player.Stat[ST_TEAM_ID]) && player.Stat[ST_TEAM_ID] >= 200)
+		{
+			crits[i].StatBase[ST_COMMAND] = player.Stat[ST_COMMAND];
+			crits[i].StatBase[ST_COMMAND_X] = player.Stat[ST_COMMAND_X];
+			crits[i].StatBase[ST_COMMAND_Y] = player.Stat[ST_COMMAND_Y];
+		}
+	}
+}

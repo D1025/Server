@@ -1,0 +1,28 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 #
+65507 2010 #
+65507 2020 #
+65507 2030 #
+65507 2040 &
+
+[engl]
+{100}{}{Vault 13 Dweller}
+{200}{}{You see a vault dweller.}
+{210}{}{He is more scared than you.}
+{1000}{}{Predialogue installations}
+{1010}{}{Answer text}
+{2000}{}{You shouldn't be here!@@I told to our overseer - don't send this signal.@@Leave this vault, now!@@Call for vault guards!@@Red alert! We have intruders here!@@We are raided! Send help signal to other vaults!@@I don't want to die!@@Good bye!@@Cover me!}
+{2010}{}{Aw, crap.}
+{2020}{}{Shoot.}
+{2030}{}{Dang.}
+{2040}{}{YOU WANT SOME OF THIS? WELL COME AND GET IT MOTHERF-}
+

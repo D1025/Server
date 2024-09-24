@@ -1,0 +1,111 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// Header file for scenery pids, global functions and others related with Scenery class.
+//
+
+#include "_defines.fos"
+#include "Itempid.h"
+#include "_macros.fos"
+#include "_msgstr.fos"
+
+//
+// PID define constants
+// Example: #define PID_SCENERY_STACKOFTIRES                        (2007)
+//
+
+#define PID_SCENERY_STACKOFTIRES                        (2007)
+#define PID_SCENERY_WORKING_COMP_NE                     (2009)
+#define PID_SCENERY_WORKING_COMP_SE                     (2010)
+#define PID_SCENERY_WORKING_COMP_SW                     (2011)
+#define _IsWorkingComp                                  # (comp) (comp.ProtoId == PID_SCENERY_WORKING_COMP_NE || comp.ProtoId == PID_SCENERY_WORKING_COMP_SE  || comp.ProtoId == PID_SCENERY_WORKING_COMP_SW)
+#define PID_SCENERY_RECHARGING_BAY_SE                   (2830)
+#define PID_SCENERY_RECHARGING_BAY_SE                   (2830)
+#define PID_SCENERY_RECHARGING_BAY_SW_1                 (2831)
+#define PID_SCENERY_RECHARGING_BAY_SW_2                 (2832)
+#define PID_SCENERY_RECHARGING_BAY_NW                   (2833)
+#define PID_SCENERY_NUCACOLA_MACHINE                    (2194)
+
+
+//
+// Use skill on scenery functions
+//
+// Target function:
+// bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetItem, Scenery@ targetScen)
+// in main.fos module
+//
+// Usefully arguments:
+// Critter& cr, int skill, Scenery@ targetScen
+// 
+
+// Example function:
+void WorkingComputer(Critter& player, int skill, Scenery@ computer)
+{
+	if(!_IsWorkingComp(computer))
+		return;
+		
+	switch(skill)
+	{
+		case SKILL_PICK_ON_GROUND : player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING); break;
+		case SK_FIRST_AID : player.Say(SAY_NETMSG, "This is computer machine, not alive critter."); break;
+		case SK_DOCTOR :  player.Say(SAY_NETMSG, "This is computer machine, not alive critter."); break;
+		case SK_LOCKPICK : player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USED_SKILL_INVALID_SKILL); break;
+		case SK_STEAL : player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USED_SKILL_INVALID_SKILL); break;
+		case SK_TRAPS : player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USED_SKILL_TRAPS_NOT_FOUND); break;
+		case SK_SCIENCE : player.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USED_SKILL_LEARN_FAIL); break;
+		case SK_REPAIR : player.Say(SAY_NETMSG, "This computer doesn't need to be repaired."); break;
+		default : return;
+	}
+}
+
+//
+// Use item on scenery functions
+// 
+// Target function:
+// bool critter_use_item(Critter& cr, Item& item, Critter@ targetCr, Item@ targetItem, Scenery@ targetScen, uint param)
+// in main.fos module
+//
+// Usefully arguments:
+// Critter& cr, Item& item, Scenery@ targetScen, ???uint param???
+//
+
+
+// Example function:
+void BuyNukaCola(Critter& player, Item& bottleCaps)
+{
+	if(!valid(bottleCaps))
+		return;
+		
+	if(bottleCaps.GetProtoId() == PID_BOTTLE_CAPS)
+	{
+		// Buy it
+		if(bottleCaps.GetCount() >= 10)
+		{
+			Item@ nukaCola = player.GetItem(PID_NUKA_COLA, -1);
+			if(valid(nukaCola))
+			{
+				nukaCola.SetCount(nukaCola.GetCount() + 1);
+			}
+			else
+			{
+				player.AddItem(PID_NUKA_COLA, 1);
+			}
+			player.Say(SAY_NETMSG, "You've bought one bottle of Nuka-Cola.");
+			
+			if(bottleCaps.GetCount() > 10)
+				bottleCaps.SetCount(bottleCaps.GetCount() - 10);
+			else
+				DeleteItem(bottleCaps);
+		}
+		else
+		{
+			player.Say(SAY_NETMSG, "You don't have enough of caps.");
+		}
+    }
+	else
+	{
+		player.Say(SAY_NETMSG, "Although the coin slot was reworked for caps you can't throw this there.");
+	}
+	
+}

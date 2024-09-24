@@ -1,0 +1,1989 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                        
+
+import uint COLOR_RGB_STRING(string&r,string&g,string&b)from"client_utils";
+import uint COLOR_RGBA_STRING(string&r,string&g,string&b,string&a)from"client_utils";
+import void COLOR_RGB_UNPACK(uint color,uint8&r,uint8&g,uint8&b)from"client_utils";
+import void COLOR_RGB_UNPACK(uint color,uint8&r,uint8&g,uint8&b,uint8&a)from"client_utils";
+
+import string RandomString(uint8 length)from"client_utils";
+
+import bool string2bool(string@text)from"client_utils";
+import uint string2uint(string@text)from"client_utils";
+import uint rgb_string2uint(string&text)from"client_utils";
+import uint rgba_string2uint(string&text)from"client_utils";
+
+import int string2int(string&text)from"client_utils";
+import uint font_string2uint(string&text)from"client_utils";
+import uint range_string2int(string&text,int&from,int&to)from"client_utils";
+import uint range_string2uint(string&text,uint&from,uint&to)from"client_utils";
+import void vis_string2bool(string&text,bool&head,bool&msgbox)from"client_utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+shared interface IConfigVar
+{
+	string GetName();
+	string GetValue();
+	array<string>GetValueAsArray();
+	array<string>GetValueAsArray(string&delimeter);
+	void SetValue(int val);
+	void SetValue(uint val);
+	void SetValue(string&val);
+	void SetValue(array<string>&val);
+	void SetValue(array<string>&val,string&delimeter);
+};
+
+shared interface IConfigSection
+{
+	string GetName();
+	bool AddVar(string&var,string&val);
+	bool DeleteVar(string&var);
+	bool DeleteVar(string&var,bool caseSensitive);
+	IConfigVar@GetVar(string&var);
+	IConfigVar@GetVar(string&varname,bool caseSensitive);
+	void GetVars(array<string>&list);
+	bool SetVar(string&varname,string val);
+	bool VarExists(string&var);
+	bool VarExists(string&var,bool caseSensitive);
+};
+
+shared interface IConfigFile
+{
+	bool IsVirtual();
+	string GetName();
+	bool AddSection(string&section);
+	IConfigSection@GetSection(string&section);
+	IConfigSection@GetSection(string&sectioname,bool caseSensitive);
+	void GetSections(array<string>&list);
+	bool SectionExists(string&section);
+	bool SectionExists(string&section,bool caseSensitive);
+};  
+
+import IConfigFile@NewConfig(string&filename)from"config_file";
+import bool LoadConfig(string&filename)from"config_file";
+import bool SaveConfig(string&filename)from"config_file";
+import bool UnloadConfig(string&filename)from"config_file";
+
+import IConfigFile@GetConfigFile(string&filename)from"config_file";
+import IConfigFile@GetConfigFile(string&filename,bool caseSensitive)from"config_file";
+import IConfigSection@GetConfigSection(string&filename,string&sectioname)from"config_file";
+import IConfigSection@GetConfigSection(string&filename,string&sectioname,bool caseSensitive)from"config_file";
+import IConfigVar@GetConfigVar(string&filename,string&sectioname,string@varname)from"config_file";
+import IConfigVar@GetConfigVar(string&filename,string&sectioname,string@varname,bool caseSensitive)from"config_file";
+
+import string@GetConfigValue(string&filename,string&section,string@varname)from"config_file";
+import string@GetConfigValue(string&filename,string&sectioname,string@varname,bool caseSensitive)from"config_file";
+
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,string&value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,bool value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,int value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,uint value)from"config_file";                   
+
+class CGMTQuestion
+{
+	int tick;
+	int timer;
+	bool old;
+	uint type;
+	uint flags;
+	int status;
+	string question_text;
+	string answer_text;
+	array<int>answer_data;
+	
+	CGMTQuestion(uint type,uint flags,string question_text,uint timer)
+	{
+		this.tick=GetTick();
+		this.timer=timer;
+		this.old=false;
+		this.type=type;
+		this.flags=flags;
+		this.status=(0);
+		this.question_text=question_text;
+	}
+};
+array<CGMTQuestion>GMTquestion;
+
+void question(int timer,uint type)
+{
+	question(timer,type,0," ");
+}
+
+void question(uint timer,uint type,uint flags,string&text)
+{
+	if(text=="")
+	text=" "; 
+	
+	for(uint i=0;i<GMTquestion.length();i++)
+	{
+		if(GMTquestion[i].type==type)
+		{
+			if(GMTquestion[i].old)
+			{
+				if(GMTconfig.CSCdebug)
+				Message("GM Tools: Removing old question, type["+GMTquestion[i].type+"]");
+				
+				GMTquestion.removeAt(i);
+				
+				if(GMTconfig.CSCdebug)
+				Message("GM Tools: questions size: "+GMTquestion.length());
+				break;
+			}
+			else
+			Message("GM Tools: still waiting for answer, type["+type+"]");
+			
+			return;
+		}
+	}
+	
+	if(timer>0)
+	timer*=1000;
+	
+	CGMTQuestion new_question(type,flags,text,timer);
+	GMTquestion.insertLast(new_question);
+	
+	RunServerScriptUnsafe("gmtools@unsafe_question",GMTquestion[GMTquestion.length()-1].tick,type,flags,text,null);
+	
+	if(GMTconfig.CSCdebug)
+	{
+		Message("GM Tools: sending question: tick["+GMTquestion[GMTquestion.length()-1].tick+"] type["+type+"] flags["+flags+"] text["+text+"]");
+		Message("GM Tools: questions size: "+GMTquestion.length());
+	}
+};
+
+void answer(int tick,int status,int flags,string@answer_text,array<int>@data)
+{
+	if(GMTconfig.CSCdebug)
+	{
+		string _d="GMT->answer: tick["+tick+"] status["+status+"] flags["+flags+"] answer["+(answer_text==" "?"":answer_text)+"] data[";
+		if((@data!=null)&&data.length()>0)
+		{
+			for(uint d=0;d<data.length();d++)
+			{
+				if(d>0)
+				_d+=",";
+				_d+=""+data[d];
+			}
+		}
+		Message(_d+"]");
+	}
+	
+	int id=-1;
+	if(GMTquestion.length()>0)
+	{
+		for(uint i=0;i<GMTquestion.length();i++)
+		{
+			if(GMTquestion[i].tick==tick)
+			{
+				if(GMTconfig.CSCdebug)
+				Message("GMT->answer->question id: "+i);
+				id=i;
+				break;
+			}
+		}
+	}
+	
+	if(id<0)
+	{
+		if(status==(((0)+1)+1))
+		{
+			if((flags==(8))&&(data.length()==1))
+			{
+				GMTchat.insertLast(CGMTChat(data[0],answer_text));
+				return;
+			}
+			
+			if((status==(((0)+1)+1))&&(flags==(0x42)))
+			{
+				DisableGMTools();
+				return;
+			}
+		}
+		;
+		
+		Message("GMT->answer->question: can't find (data len:"+data.length()+")");
+		return;
+	}
+	
+	if(status==((0)+1))
+	{    
+		
+		if(GMTquestion[id].type==(0))
+		{
+			if(GMTconfig.CSCdebug)
+			Message("GMT->answer->access: "+flags);
+			GMTconfig.Enabled=true;
+			GMTconfig.Access=flags;
+			GMTconfig.AccessCheck=GetTick()+(((1)*60)*1000);
+		}
+		
+		else if(GMTquestion[id].type==(2)&&
+		(flags==((3))||flags==((1))))
+		{
+			if(GMTconfig.Access>(0))
+			{
+				int m=0;
+				if(StrToInt(answer_text,m))
+				{
+					GMTmacro[m].swait==false;
+				}
+			}
+		}
+		
+		if(GMTconfig.CSCdebug)
+		Message("GMT->answer->result: OK");
+	}
+	else if(status==(((0)-1)-1))
+	{
+		if(GMTconfig.CSCdebug)
+		Message("GMT->answer->result: DENIED");
+		
+		if(GMTquestion[id].type==(0))
+		DisableGMTools();
+	}
+	else if(status==((0)-1))
+	{
+		if(GMTconfig.CSCdebug)
+		Message("GMT->answer->result: BAD");
+	}
+	else
+	{
+		if(GMTconfig.CSCdebug)
+		Message("GMT->answer->result: unknown status");
+	}
+	
+	if((@data!=null))
+	{
+		if(GMTconfig.CSCdebug)
+		Message("GMT->result: resizing data: "+data.length());
+		GMTquestion[id].answer_data.resize(data.length());
+		for(uint d=0;d<data.length();d++)
+		{
+			GMTquestion[id].answer_data[d]=data[d];
+			if(GMTconfig.CSCdebug)
+			Message("GMT->result: data["+d+"] = "+data[d]);
+		}
+	}
+	GMTquestion[id].answer_text=answer_text;
+	GMTquestion[id].flags=flags;
+	GMTquestion[id].status=status;
+	GMTquestion[id].tick=GetTick();
+	if(GMTconfig.CSCdebug)
+	Message("GMT->answer: finished");
+}
+
+int get_answer(uint type)
+{
+	if(GMTquestion.length()>0)
+	{ 
+		
+		for(uint i=0;i<GMTquestion.length();i++)
+		{
+			if(GMTquestion[i].type==type)
+			{ 
+				
+				return(i);
+			} 
+			
+		}
+	}
+	return(-1);
+} 
+
+int FindAnswerData(int type,string&identifier)
+{
+	int answer=get_answer(type);
+	if(answer<0)
+	return(-255);
+	
+	return(GetAnswerData(answer,identifier));
+} 
+
+int GetAnswerData(int questionID,string&identifier)
+{
+	if(int(GMTquestion.length())>=(questionID+1))
+	{
+		int pos=findFirst(GMTquestion[questionID].answer_text,identifier);
+		if(pos>=0)
+		{
+			return(GMTquestion[questionID].answer_data[pos]);
+		}
+	}
+	return(-255);
+}                                            
+
+class CGMTMacro
+{
+	string name;
+	array<string>lines;
+	uint all;
+	uint current;
+	bool fixcritter;
+	uint wait;
+	bool swait; 
+	
+	uint critter;
+	uint item;
+	uint hexX;
+	uint hexY;          
+	
+	CGMTMacro(string name,uint critter,uint item,int hexX,int hexY,bool fixcritter)
+	{
+		this.name=name;
+		this.current=0;
+		this.all=0;
+		this.fixcritter=fixcritter;
+		this.wait=0;
+		this.swait=false;
+		
+		this.critter=critter;
+		this.item=item;
+		this.hexX=hexX;
+		this.hexY=hexY;        
+		
+	}   
+	
+	void add(string line)
+	{
+		this.lines.insertLast(line);
+		this.all=this.lines.length();
+	}
+};
+array<CGMTMacro>GMTmacro;  
+
+int GMTmacro_current=-1;             
+
+bool GMToolsAddMacro(string&filename,uint critter,uint item,uint hexX,uint hexY,bool fixcritter)
+{
+	file f;
+	if(f.open(filename+".rec","r")>=0)
+	{
+		string str;
+		
+		f.readString(f.getSize(),str);
+		array<string@>@lines=splitEx(str,"\n"); 
+		
+		if(lines.length()>0)
+		{
+			GMTmacro.insertLast(CGMTMacro(filename,critter,item,hexX,hexY,fixcritter));
+			
+			for(uint i=0,j=lines.length();i<j;i++)
+			{
+				if((@lines[i]!=null)&&lines[i]!=""&&lines[i]!=" ")
+				GMTmacro[GMTmacro.length()-1].add(lines[i]);
+			}
+		}
+		else
+		{
+			Message("GMT: Empty macro, ignoring ("+filename+")");
+			return(false);
+		} 
+		
+		if(GMTmacro[GMTmacro.length()-1].lines.length()==0)
+		{
+			Message("GMT: Empty macro, ignoring ("+filename+")");
+			GMTmacro.removeAt(GMTmacro.length()-1);
+			return(false);
+		}
+		Message("GMT: Added macro ("+filename+")");
+		
+		if(GMTmacro.length()==1)
+		GMTmacro_current=0;
+		
+		return(true);
+	}
+	else
+	{
+		Message("GMT: Can't load macro ("+filename+")");
+		return(false);
+	}
+}   
+
+void GMToolsProcessMacros()
+{
+	if(GMTconfig.Enabled)
+	{
+		if(GMTmacro_current<0)
+		return;
+		
+		if(GMTmacro.length()==0)
+		{
+			GMTmacro_current=-1;
+			return;
+		}
+		
+		for(uint m=0;m<GMTmacro.length();m++)
+		{
+			if(GMTmacro[m].lines.length()==0)
+			{
+				Message("GMT: Macro finished ("+GMTmacro[m].name+")");
+				GMTmacro.removeAt(m);
+			}
+		}
+		
+		if(GMTmacro_current>int(GMTmacro.length()-1))
+		{
+			GMTmacro_current=GMTmacro.length()-1;
+			return;
+		}
+		
+		for(uint q=0;q<GMTquestion.length();q++)
+		{
+			if(GMTquestion[q].type==(2))
+			{
+				if(!GMTquestion[q].old)
+				return;
+				else
+				break;
+			}
+		}
+		
+		CGMTMacro@macro=GMTmacro[GMTmacro_current];
+		string line=macro.lines.first();
+		if(macro.fixcritter)
+		{
+			line=ReplaceText(line,"$[Critter","$[Chosen");
+		}
+		
+		if((line.length()>=6&&substring(line,0,5)=="wait ")||
+		(line.length()>=7&&substring(line,0,6)=="sleep "))
+		{
+			array<string@>@sleep=splitEx(line," ");
+			int delay=-1;
+			if(StrToInt(sleep[1],delay))
+			{
+				Message("GMT: Suspending macro '"+macro.name+"' for "+delay+" second"+(delay==1?"":"s"));
+				macro.wait=GetTick()+(delay*1000);
+				
+				macro.current++;
+				macro.lines.removeFirst();
+			}
+			else
+			{
+				Message("GMT: wrong line: "+line);
+			}
+		}
+		
+		if((GetTick()<macro.wait)||macro.swait)
+		{}
+		else
+		{
+			macro.wait=0;
+			macro.current++;
+			
+			SendCommand(line,
+			macro.critter,macro.item,
+			macro.hexX,macro.hexY);
+			
+			if((line.length()>=10&&substring(line,0,9)=="runscript ")||
+			(line.length()>=17&&substring(line,0,16)=="runscript_unsafe "))
+			{
+				macro.swait=true;
+			}
+			
+			macro.lines.removeFirst();
+		}
+		
+		GMTmacro_current++;
+		if(GMTmacro_current==int(GMTmacro.length()))
+		GMTmacro_current=0;
+	}
+	return;
+}         
+
+int GMToolsDrawMacros(int x,int y)
+{
+	if(GMTconfig.Enabled)
+	{
+		
+		for(uint m=0;m<GMTmacro.length();m++)
+		{
+			CGMTMacro@macro=GMTmacro[m];
+			string text="Macro: "+macro.name+" ["+macro.current+"/"+macro.all+"]"; 
+			
+			if(macro.wait>0&&GetTick()<macro.wait)
+			{
+				uint s=uint((macro.wait-GetTick())/1000)+1;
+				text+=" (suspended for "+s+" second"+(s==1?"":"s")+")";
+			}
+			else if(macro.swait)
+			text+=" (waiting for server)";
+			
+			y=draw(text,x,y);
+		}
+	}
+	return(y);
+}         
+
+void SendCommand(string command,uint&critter,uint&item,uint&hexX,uint&hexY)
+{  
+	
+	command=ReplaceText(command,"\n","");
+	command=ReplaceText(command,"\r","");
+	
+	command=GetVars(command,critter,item,hexX,hexY);
+	;;
+	
+	array<string@>@args=split(command," ");
+	
+	if(args[0]=="internal"&&args.length()==2&&args[1].length()>0)
+	{ 
+		
+		if((args[1]=="givexp")||
+		(args[1]=="spawncritter"))
+		{
+			Message(args[1]+" not implemented");
+		}
+		else if(args[1]=="possess")
+		{
+			if(!GMToolsPossess(critter))
+			Message("GMT: Possess fail: "+critter);
+		}
+		else
+		Message("GMT: Unknown internal action '"+args[1]+"'");
+	}
+	else if(args[0]=="command"&&args.length()>=2&&args[1].length()>0)
+	{
+		;;
+		question(0,(2),0,command);
+	}
+	else if(args[0]=="macro"&&args.length()==2&&args[1].length()>0)
+	{
+		;;
+		Message("GMT: Loading macro '"+args[1]+"'");
+		GMToolsAddMacro(args[1],critter,item,hexX,hexY,false);
+	}
+	else if((args[0]=="runscript"||args[0]=="runscript_unsafe")&&
+	(args.length()>=5&&args.length()<=7))
+	{   
+		
+		int x=0;
+		int y=0;
+		int z=0;
+		if(!StrToInt(args[2],x)||
+		!StrToInt(args[3],y)||
+		!StrToInt(args[4],z))
+		{
+			return;
+		} 
+		
+		string str=" ";
+		if((args.length()>=6)&&(args[5].length()>0))
+		str=args[5]; 
+		
+		array<int>data;
+		if((args.length()>=7)&&(args[6].length()>0))
+		{
+			array<string@>@data_txt=split(args[6],",");
+			for(uint d=0;d<data_txt.length();d++)
+			{
+				int dd=0;
+				if(!StrToInt(data_txt[d],dd))
+				break;
+				else
+				data.insertLast(dd);
+			}
+		}
+		
+		;; 
+		
+		if(args[0]=="runscript")
+		{
+			if(GMTconfig.Access>=((3)))
+			{
+				
+				RunServerScriptUnsafe("unsafe_client@unsafe_ExecCommandEntered",0,0,0,"GMT: "+command,null);
+				RunServerScript(args[1],x,y,z,str,data);
+			}
+		}
+		else if(args[0]=="runscript_unsafe")
+		{
+			if(GMTconfig.Access>=((1)))
+			{
+				
+				RunServerScriptUnsafe("unsafe_client@unsafe_ExecCommandEntered",0,0,0,"GMT: "+command,null);
+				RunServerScriptUnsafe(args[1],x,y,z,str,data);
+			}
+		}
+	}
+	else if(args[0]=="nop"||args[0]=="NOP")
+	{
+		;;
+	}   
+	
+}   
+
+void GMToolsStopMacros()
+{
+	while(GMTmacro.length()>0)
+	{
+		Message("GMTools: removing macro \""+GMTmacro[0].name+"\"");
+		GMTmacro.removeAt(0);
+	}
+	;
+}     
+
+string GetVars(string raw,uint cr,uint it,uint hexX,uint hexY)
+{  
+	
+	CritterCl@chosen=GetChosen();
+	
+	if(!(@chosen!=null))
+	{
+		Message("GetVars: no chosen, panic.");
+		return("nop");
+	}
+	
+	CritterCl@critter;
+	ItemCl@item;
+	
+	if(cr>0)
+	@critter=GetCritter(cr);
+	
+	if(it>0)
+	@item=GetItem(it); 
+	
+	raw=ReplaceText(raw,"\n","");
+	raw=ReplaceText(raw,"\r","");
+	
+	raw=ReplaceText(raw,"$[Chosen.Id]",chosen.Id);
+	raw=ReplaceText(raw,"$[Chosen.Name]",chosen.Name);
+	raw=ReplaceText(raw,"$[Chosen.HexX]",chosen.HexX);
+	raw=ReplaceText(raw,"$[Chosen.HexY]",chosen.HexX);
+	raw=ReplaceTextCalc(raw,"$[Chosen.HexX","]",chosen.HexX);
+	raw=ReplaceTextCalc(raw,"$[Chosen.HexY","]",chosen.HexY);
+	
+	if((@critter!=null))
+	{
+		raw=ReplaceText(raw,"$[Critter.Id]",critter.Id);
+		raw=ReplaceText(raw,"$[Critter.NpcId]",critter.Id-(5000000));
+		raw=ReplaceText(raw,"$[Critter.Name]",critter.Name);
+		raw=ReplaceText(raw,"$[Critter.HexX]",critter.HexX);
+		raw=ReplaceText(raw,"$[Critter.HexY]",critter.HexY);
+		raw=ReplaceTextCalc(raw,"$[Critter.HexX","]",critter.HexX);
+		raw=ReplaceTextCalc(raw,"$[Critter.HexY","]",critter.HexY);
+		raw=ReplaceTextCalc(raw,"$[Critter.Dir","]",critter.Dir);
+	}    
+	
+	if((@item!=null))
+	{
+		raw=ReplaceText(raw,"$[Item.Id]",""+item.Id);
+		
+	}    
+	
+	raw=ReplaceText(raw,"$[HexX]",hexX);
+	raw=ReplaceText(raw,"$[HexY]",hexY);
+	
+	raw=ReplaceTextCalc(raw,"$[HexX","]",hexX);
+	raw=ReplaceTextCalc(raw,"$[HexY","]",hexY);
+	
+	raw=ReplaceText(raw,"$[Possessed.Id]",GMTconfig.Possess);
+	
+	int p;
+	if((p=findFirst(raw,"$["))>0)
+	Message("GMT: GetVars: not all variables was translated <"+raw+">");
+	
+	;;
+	return(raw);
+}        
+
+string ReplaceTextCalc(string text,string begin,string end,int var)
+{
+	int pos=findFirst(text,begin,0);
+	if(pos>0)
+	{
+		if((
+		(substring(text,pos+begin.length(),1)=="+")||
+		(substring(text,pos+begin.length(),1)=="-")||
+		(substring(text,pos+begin.length(),1)=="*")||
+		(substring(text,pos+begin.length(),1)=="/")
+		)
+		&&
+		(
+		(substring(text,pos+begin.length()+1,end.length())==end)||
+		(substring(text,pos+begin.length()+2,end.length())==end)||
+		(substring(text,pos+begin.length()+3,end.length())==end)||
+		(substring(text,pos+begin.length()+4,end.length())==end)
+		)
+		)
+		{
+			int x;
+			for(uint i=1;i<5;i++)
+			{
+				uint z=0;
+				if(!StrToInt(substring(text,pos+begin.length()+1,i),z))
+				break;
+				else
+				x=z;
+			}
+			if(x>0)
+			{
+				text=ReplaceText(text,begin+"+"+x+end,""+(var+x));
+				text=ReplaceText(text,begin+"-"+x+end,""+(var-x));
+				text=ReplaceText(text,begin+"/"+x+end,""+(var/x));
+				text=ReplaceText(text,begin+"*"+x+end,""+(var*x));
+			}
+		}
+	}
+	return(text);
+}                                     
+
+import void IndicatorMouse(bool down,int click)from"client_interface";
+import void ToggleInterfaceShown()from"client_interface";
+import void SetInterfaceShown(bool setting)from"client_interface";
+import bool IsInterfaceShown()from"client_interface";   
+
+import int GUI_GetActiveMainScreen()from"client_gui";
+
+class CGMTChat
+{
+	uint tick;
+	uint access;
+	string text;
+	uint color;      
+	
+	CGMTChat(uint access,string text)
+	{
+		this.tick=GetTick();
+		this.access=access;
+		this.text=text;
+		switch(this.access)
+		{
+			case(1):
+			this.color=((uint((0xFF<<24)|(((0xFF)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF))));
+			break;
+			case(2):
+			this.color=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0x6A)&0xFF)<<8)|((0xD5)&0xFF))));
+			break;
+			case(3):
+			this.color=((uint((0xFF<<24)|(((0xFF)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF))));
+			break;
+			case 1337:
+			this.color=((uint((0xFF<<24)|(((0xFF)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0xFF)&0xFF))));
+			break;
+			default:
+			this.color=((uint((0xFF<<24)|(((0xFF)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF))));
+			break;
+		}
+		
+		this.onCreate();
+	}
+	
+	void onCreate()
+	{
+		Message("|"+this.color+" "+this.text);
+	}
+};
+array<CGMTChat>GMTchat;     
+
+void GMToolsChat(string message)
+{
+	;;
+	if(message.length()>0)
+	question(0,(8),0,message);
+}     
+
+void GMToolsProcessChat()
+{
+	int max=((__ScreenHeight/2)-GMTconfig.ChatBorder-175-45)/10;
+	if(GMTchat.length()>uint(max))
+	{
+		
+		GMTchat.removeFirst();
+	}
+	
+	if(GMTchat.length()>0)
+	{
+		if(GetTick()>(GMTchat.first().tick+(GMTconfig.ChatDelay*1000)))
+		{
+			
+			GMTchat.removeFirst();
+		}
+	}
+}     
+
+void GMToolsDrawChat()
+{
+	if(GMTchat.length()>0)
+	{
+		array<int>background;
+		array<int>frame;
+		int bcolor=int((((((((((((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))))|0xFF000000)^0xFF000000)|((150)&0xFF)<<24)))|0xFF000000)^0xFF000000)|((150)&0xFF)<<24));
+		int fcolor=int(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))));
+		
+		int left=GMTconfig.ChatBorder;
+		int right=__ScreenWidth-left;
+		
+		int down=__ScreenHeight-GMTconfig.ChatBorder;
+		
+		if(GUI_GetActiveMainScreen()==(6))
+		{
+			left+=180;
+		}
+		else
+		{
+			if(IsInterfaceShown())
+			down-=175;
+			
+			if(__ConsoleActive)
+			down-=45;
+		}
+		int up=down;
+		
+		int unused=0;
+		int lines=0;
+		for(uint c=0;c<GMTchat.length();c++)
+		{
+			GetTextInfo(GMTchat[c].text,(right-10)-(left+10),0,(5),0,unused,unused,lines);
+			up-=lines*10;
+		} 
+		
+		background.insertLast(left);
+		background.insertLast(up-5);
+		background.insertLast(bcolor);
+		
+		frame.insertLast(left);
+		frame.insertLast(up-5);
+		frame.insertLast(fcolor); 
+		
+		background.insertLast(left);
+		background.insertLast(down);
+		background.insertLast(bcolor);
+		
+		frame.insertLast(left);
+		frame.insertLast(down);
+		frame.insertLast(fcolor); 
+		
+		background.insertLast(right);
+		background.insertLast(down);
+		background.insertLast(bcolor);
+		
+		frame.insertLast(right);
+		frame.insertLast(down);
+		frame.insertLast(fcolor); 
+		
+		background.insertLast(right);
+		background.insertLast(up-5);
+		background.insertLast(bcolor);
+		
+		frame.insertLast(right);
+		frame.insertLast(up-5);
+		frame.insertLast(fcolor); 
+		
+		frame.insertLast(left);
+		frame.insertLast(up-5);
+		frame.insertLast(fcolor);
+		
+		DrawPrimitive((5),background);
+		DrawPrimitive((2),frame);
+		
+		lines=0;
+		for(uint c=0,cLen=GMTchat.length();c<cLen;c++)
+		{
+			int tw=0;
+			int tlines=0;
+			GetTextInfo(GMTchat[c].text,(right-10)-(left+10),0,(5),0,tw,unused,tlines);
+			DrawText(GMTchat[c].text,left+10,up+(lines*10),tw,tlines*10,GMTchat[c].color,(5),0);
+			lines+=tlines;
+		}
+	}
+}      
+
+import bool IsGMTEnabled()from"client_main";
+
+import int GUI_GetActiveScreen()from"client_gui";
+import bool GUI_IsKeyPressed(uint8 key)from"client_gui";
+
+import bool GMToolsLoadMenu()from"client_gmtools_menu";
+import bool GMToolsLoadMenu(string filename)from"client_gmtools_menu";
+
+import string@GetTimeString(const string&format,uint fullMinute)from"time";
+
+class CGMTConfig
+{
+	bool Enabled;
+	uint Access;
+	uint AccessCheck;
+	uint OSD;
+	bool Draw;
+	bool Menu;
+	string Motto;
+	uint ChatX;
+	uint ChatY;
+	uint ChatDelay;
+	uint ChatBorder;
+	string ButtonsFile;
+	
+	uint CritterInfo;
+	uint ItemInfo;
+	uint MapInfo;
+	uint LocationInfo;
+	
+	int LastMapPid;
+	int LastLocationPid;
+	
+	uint Possess; 
+	
+	bool CSCdebug;  
+	
+	CGMTConfig()
+	{
+		this.Enabled=false;
+		this.Access=(0);
+		this.OSD=0;
+		((this.OSD)=(this.OSD)|((0x01)|(0x02)));
+		this.Draw=true;
+		this.Menu=true;
+		this.Motto="Mercenaries don't die - they just go to hell to regroup";
+		this.ChatDelay=30;
+		this.ChatBorder=5;
+		
+		this.CritterInfo=0;
+		this.ItemInfo=0;
+		this.MapInfo=0;
+		this.LocationInfo=0;
+		
+		this.CSCdebug=false;   
+		
+		this.LastMapPid=-1;
+		this.LastLocationPid=-1;
+		this.AccessCheck=0;
+		this.Possess=0;
+	}
+};
+CGMTConfig GMTconfig;
+
+void GMToolsLoadConfig()
+{
+	IConfigSection@section=GetConfigSection("FOnlineAT.cfg","GMT");
+	
+	if((@section!=null))
+	{
+		;;
+		array<string>vars;
+		section.GetVars(vars);
+		
+		if(vars.length()==0)
+		return;
+		
+		for(uint v=0;v<vars.length();v++)
+		{
+			IConfigVar@var=section.GetVar(vars[v]);
+			if(!(@var!=null))
+			continue;
+			
+			if(var.GetName()=="ButtonsFile")
+			GMTconfig.ButtonsFile==var.GetValue();
+			else if(var.GetName()=="Enabled")
+			GMTconfig.Enabled=string2bool(var.GetValue());
+			else if(var.GetName()=="Draw")
+			GMTconfig.Draw=string2bool(var.GetValue());
+			else if(var.GetName()=="OSD")
+			GMTconfig.OSD=string2uint(var.GetValue());
+			else if(var.GetName()=="Menu")
+			GMTconfig.Menu=string2bool(var.GetValue());
+			else if(var.GetName()=="Motto")
+			GMTconfig.Motto=var.GetValue();
+			else if(var.GetName()=="ChatDelay")
+			GMTconfig.ChatDelay=string2uint(var.GetValue());
+			else if(var.GetName()=="ChatBorder")
+			GMTconfig.ChatBorder=string2uint(var.GetValue());
+			else if(var.GetName()=="CritterInfo")
+			{
+				array<string@>@flags=split(var.GetValue(),",");
+				for(uint f=0;f<flags.length();f++)
+				{
+					if(flags[f]=="Extra")
+					((GMTconfig.CritterInfo)=(GMTconfig.CritterInfo)|((0x01)));
+				}
+			}
+			else if(var.GetName()=="ItemInfo")
+			{
+				array<string@>@flags=split(var.GetValue(),",");
+				for(uint f=0;f<flags.length();f++)
+				{
+					if(flags[f]=="Extra")
+					((GMTconfig.ItemInfo)=(GMTconfig.ItemInfo)|((0x01)));
+				}
+			}
+			else if(var.GetName()=="LocationInfo")
+			{
+				array<string@>@flags=split(var.GetValue(),",");
+				for(uint f=0;f<flags.length();f++)
+				{
+					if(flags[f]=="Extra")
+					((GMTconfig.ItemInfo)=(GMTconfig.ItemInfo)|((0x01)));
+					else if(flags[f]=="Position")
+					((GMTconfig.LocationInfo)=(GMTconfig.LocationInfo)|((0x02)));
+					else if(flags[f]=="Type")
+					((GMTconfig.LocationInfo)=(GMTconfig.LocationInfo)|((0x04)));
+				}
+			}
+			else if(var.GetName()=="MapInfo")
+			{
+				array<string@>@flags=split(var.GetValue(),",");
+				for(uint f=0;f<flags.length();f++)
+				{
+					if(flags[f]=="Extra")
+					((GMTconfig.MapInfo)=(GMTconfig.MapInfo)|((0x01)));
+					else if(flags[f]=="Faction")
+					((GMTconfig.MapInfo)=(GMTconfig.MapInfo)|((0x04)));
+					else if(flags[f]=="Size")
+					((GMTconfig.MapInfo)=(GMTconfig.MapInfo)|((0x02)));
+				}
+			}
+			;;
+		}
+	}
+	else
+	{
+		;;
+	}
+	
+}        
+
+void GMToolsProcess()
+{
+	check_timers();
+	
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return;
+	
+	if(GMTconfig.AccessCheck>0&&GetTick()>=GMTconfig.AccessCheck)
+	{
+		;;
+		int q=get_answer((0));
+		if((q<0)||((q>=0)&&GMTquestion[q].old))
+		{
+			question(0,(0));
+			GMTconfig.AccessCheck=GetTick()+(((1)*60)*1000);
+		}
+	}
+	
+	GMToolsProcessChat();
+	GMToolsProcessMacros();
+};
+
+bool GMToolsProcessKey(uint8 key,string&keyText)
+{
+	switch(key)
+	{
+		case 0x01:
+		if(IsGMTEnabled()&&GMToolsPossess()>0)
+		{
+			GMToolsUnPossess();
+			return(true);
+		}
+		break;
+		case 0x33:
+		if(IsGMTEnabled()&&GMToolsPossess()>0&&GUI_IsKeyPressed(0x2A))
+		{
+			GMToolsPossessRotate(false);
+			return(true);
+		}
+		break;
+		case 0x34:
+		if(IsGMTEnabled()&&GMToolsPossess()>0&&GUI_IsKeyPressed(0x2A))
+		{
+			GMToolsPossessRotate(true);
+			return(true);
+		}
+		break;
+	}
+	return(false);
+}            
+
+void GMToolsDraw(uint layer,int mouseX,int mouseY)
+{
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return;
+	
+	GMToolsDrawChat();
+	
+	if(GMTconfig.Access==(0))
+	return;
+	
+	if(GMToolsPossess()>0)
+	{
+		CritterCl@mob=GetCritter(GMToolsPossess());
+		if(!(@mob!=null))
+		GMToolsUnPossess();
+		else
+		DrawText("Possess mode on: "+mob.Name+" ("+mob.Id+")",0,10,__ScreenWidth,60,((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0004)|(0x0200));
+	} 
+	
+	int x=(10);
+	int y=(10);
+	
+	int map_q=-1;
+	
+	string text="";
+	
+	bool Worldmap=(GetCurrentMapPid()==0); 
+	
+	if(Worldmap)
+	{
+		x=(8);
+		y=(90);
+	}
+	else if(
+	chosen.Mode[(510)]!=0||
+	chosen.IsOverweight()||
+	chosen.IsInjured()||
+	chosen.Damage[(500)]!=0||
+	chosen.Damage[(501)]!=0||
+	chosen.Timeout[(239)]>0||
+	chosen.IsAddicted()||
+	IsTurnBased())
+	{
+		y=(30);
+	}
+	;     
+	
+	if(GMTconfig.Access>(0)&&GMTconfig.Motto.length()>0)
+	DrawText(GMTconfig.Motto,0,20+(Worldmap?5:0),__ScreenWidth,60,((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xC8)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0004)|(0x0200));
+	
+	if((((GMTconfig.OSD)&((0x01)))!=0))
+	{
+		
+		text=__Host;
+		if(text=="94.23.237.127")
+		text="paris.fonline2238.net";
+		else if(text=="176.9.105.171")
+		text="berlin.fonline2238.net";
+		
+		text=text+":"+__Port;
+		
+		if(!Worldmap)
+		{
+			switch(GMTconfig.Access)
+			{
+				case(1):
+				text=text+" (Tester)";
+				break;
+				case(2):
+				text=text+" (Game Master)";
+				break;
+				case(3):
+				text=text+" (Administrator)";
+				break;
+				default:
+				text=text+" (!Unknown!)";
+				break; 
+				
+			}
+		}  
+		
+		y=draw(chosen.Name+"@"+text,x,y,10);
+		
+		text="";
+		int q=-1;
+		if(Worldmap)
+		{
+			y=draw("Worldmap, "+__GlobalMapWidth+"x"+__GlobalMapHeight,x,y,10);
+		}
+		else
+		{
+			
+			int location_pid=-1;
+			q=get_answer((7));
+			if(q>=0&&GMTquestion[q].old)
+			{
+				
+				location_pid=GetAnswerData(q,"I");
+				int location_id=GetAnswerData(q,"i");
+				int location_x=GetAnswerData(q,"x");
+				int location_y=GetAnswerData(q,"y");
+				int location_maps=GetAnswerData(q,"?");
+				text="Location: "+GetMsgStr((4),((location_pid+100)*1000+0))+
+				" ("+location_id+") <"+location_pid+">"+
+				(location_x>0&&location_y>0?" ["+location_x+","+location_y+"]":"")+
+				": "+location_maps+" map"+(location_maps==1?"":"s");
+				
+				if(GetAnswerData(q,"v")>0)
+				text+=", visible";
+				if(GetAnswerData(q,"T")>0)
+				{
+					if(GetAnswerData(q,"*")>0)
+					text+=", TC town";
+					else
+					text+=", town";
+				}
+				if(GetAnswerData(q,"e")>0)
+				{
+					if(GetAnswerData(q,"E")>0)
+					text+=", city encounter";
+					else
+					text+=", encounter";
+				}
+				if(GetAnswerData(q,"q")>0)
+				text+=", quest";
+				if(GetAnswerData(q,"c")>0)
+				text+=", cave";
+				if(GetAnswerData(q,"b")>0)
+				text+=", base";
+				if(GetAnswerData(q,"t")>0)
+				text+=", tent";
+				if(GetAnswerData(q,"m")>0)
+				text+=", mine";
+				if(GetAnswerData(q,"r")>0)
+				text+=", replication";
+				if(GetAnswerData(q,"d")>0)
+				text+=", dungeon";
+				
+				y=draw(text,x,y);
+			} 
+			
+			text="";
+			q=get_answer((6));
+			int map_id=-1;
+			if(q>=0&&GMTquestion[q].old)
+			{
+				int map_width=GetAnswerData(q,"w");
+				int map_height=GetAnswerData(q,"h");
+				
+				if((map_width>0)&&(map_height>0))
+				text+=", "+map_width+"x"+map_height;
+				
+				map_id=GetAnswerData(q,"i");
+				if(map_id>0)
+				text+=" ("+map_id+")";
+			}
+			
+			if((q<0)||(q>=0&&map_id>=0&&GMTquestion[q].old&&(GMTconfig.LastMapPid!=int(GetCurrentMapPid()))))
+			{
+				question(0,(7),GMTconfig.LocationInfo,"");
+				question(0,(6),GMTconfig.MapInfo,"");
+			}
+			
+			y=draw("Map: "+GetMsgStr((4),(GetCurrentMapPid()+1)*10)+text+" <"+GetCurrentMapPid()+">",x,y,10);
+			if(q>=0)
+			{
+				int map_faction=GetAnswerData(q,"f");
+				int map_fname=GetAnswerData(q,"F");
+				int map_fmembers=GetAnswerData(q,"M");
+				if((map_faction>0)&&(map_fname>0))
+				{
+					y=draw(
+					(map_faction>=200?"":"NPC ")+"Faction:"+
+					(map_fname>=1000004?" "+GetMsgStr((0),map_fname):"")+
+					" ("+map_faction+")"+
+					(map_fmembers==0?"":": "+map_fmembers+" member"+(map_fmembers==1?"":"s")),
+					x,y,10);
+				}
+				
+				int map_owner=GetAnswerData(q,"o");
+				if(map_owner>0)
+				{
+					CritterCl@_owner=GetCritter(map_owner);
+					string owner="";
+					if((@_owner!=null))
+					owner=_owner.Name;
+					else
+					owner="("+map_owner+")";
+					y=draw("Owner: "+owner,x,y);
+				}
+				
+				int map_created=GetAnswerData(q,"c");
+				if(map_created>0)
+				{
+					y=draw("Created: "+GetTimeString("%DAY% %MONTH-STR% %YEAR%, %HOUR%:%MINUTE%",map_created),x,y);
+				}
+			}
+		}
+		GMTconfig.LastMapPid=GetCurrentMapPid(); 
+		
+		uint16 hX=0,hY=0;
+		GetMonitorHex(mouseX,mouseY,hX,hY);
+		if((mouseX<=__ScreenWidth)&&(mouseY<=__ScreenHeight)&&(hX+hY>0))
+		y=draw("Hex: "+hX+","+hY+" Mouse: "+mouseX+","+mouseY,x,y,10);
+	}
+	
+	if(!Worldmap)
+	{
+		CritterCl@critter=GetMonitorCritter(mouseX,mouseY,false);
+		ItemCl@item=GetMonitorItem(mouseX,mouseY,false);
+		
+		if((((GMTconfig.OSD)&((0x01)))!=0))
+		{
+			if((@critter!=null))
+			y=draw((critter.IsPlayer()==true?"Player":"NPC")+" "+critter.Id+(critter.IsNpc()==true?" <"+critter.Pid+"> ["+critter.Param[(104)]+"]":"")+" ("+critter.HexX+","+critter.HexY+")",x,y);
+			else if((@item!=null))
+			y=draw("Item "+item.Id+" <"+item.GetProtoId()+"> ("+item.HexX+","+item.HexY+")",x,y);   
+			
+		}
+		if((((GMTconfig.OSD)&((0x02)))!=0))
+		{
+			if((@critter!=null))
+			{
+				y=draw("{\n\t"+critter.Name+(critter.Id==chosen.Id?" (yes, it's you!)":""),x,y,20);
+					
+					if(GMTconfig.Draw)
+					{
+						int _x1=x+20;
+						int _y1=y+5;
+						int _x2=x+120;
+						int _y2=y+70;
+						
+						if(critter.IsAnim3d())
+						{
+							array<float>position;
+							position.resize(14);
+							position[0]=_x1+(_x2-_x1)/3;
+							position[1]=_y2-10;
+							position[2]=5.0f;
+							position[3]=115.f;
+							position[4]=0.0f;
+							position[5]=0.8f;
+							position[6]=0.8f;
+							position[7]=0.8f;
+							position[8]=1.0f;
+							position[9]=0.0f;
+							position[10]=_x1;
+							position[11]=_y1;
+							position[12]=_x2-_x1;
+							position[13]=_y2-_y1;
+							DrawCritter3d(1,critter.CrType,critter.GetAnim1(),(1),critter.Anim3dLayer,
+							position,
+							(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF))))));
+						}
+						else
+						{
+							DrawCritter2d(critter.CrType,critter.GetAnim1(),(1),2,
+							_x1,_y1,_x2,_y2,
+							false,false,(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF))))));
+						}
+						y+=70;
+					}
+					else
+					{
+						y+=10;
+					}                                 
+					
+					y=draw("\tcrtype: "+critter.CrType+", alias: "+critter.CrTypeAlias,x,y); 
+					
+					if(critter.ItemsCount()>0)
+					y=draw("\titems: "+critter.ItemsCount()+" (weight: "+critter.ItemsWeight()/1000+"kg, volume: "+critter.ItemsVolume()+")",x,y);
+					
+					if(critter.Lexems.length()>0)
+					y=draw("\tlexems: "+critter.Lexems,x,y);
+					
+					y=draw("}",x,y);
+			}
+			else if((@item!=null))
+			{
+				y=draw("{\n\t"+GetMsgStr((2),(item.GetProtoId()*100+item.Info)),x,y,20);
+					
+					if(GMTconfig.Draw)
+					{
+						uint from;
+						switch(item.GetType())
+						{
+							case(8):
+							case(9):
+							case(11):
+							case(10):
+							case(12):
+							from=item.Proto.PicMap;
+							break;
+							default:
+							from=item.Proto.PicInv;
+							break;
+						}
+						int sprite=LoadSprite(from,0);
+						DrawSprite(sprite,-1,x+16,y+3,int(GetSpriteWidth(sprite,-1)/2),int(GetSpriteHeight(sprite,-1)/2),false,false,(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF))))));
+						y+=int(GetSpriteHeight(sprite,0)/2)+7;
+						y+=10;
+					}  
+					
+					text="";
+					switch(item.GetType())
+					{
+						case(0):
+						text="tile";
+						break;
+						case(1):
+						text="armor";
+						break;
+						case(2):
+						text="drug";
+						break;
+						case(3):
+						text="weapon";
+						break;
+						case(4):
+						text="ammo";
+						break;
+						case(5):
+						text="misc";
+						break;
+						case(7):
+						text="key";
+						break;
+						case(8):
+						text="container";
+						break;
+						case(9):
+						text="door";
+						break;
+						case(10):
+						text="grid";
+						break;
+						case(11):
+						text="generic";
+						break;
+						case(12):
+						text="wall";
+						break;
+						case(13):
+						text="car";
+						break;
+						case(20):
+						text="blueprint";
+						break;
+						default:
+						text="unknown";
+						break;
+					}
+					y=draw("\ttype: "+text,x,y);
+					
+					switch(item.GetType())
+					{
+						case(4):
+						y=draw("\tammo:"+
+						" acmod "+item.Proto.Ammo_AcMod+
+						", caliber "+item.Proto.Ammo_Caliber+
+						", dmgdiv "+item.Proto.Ammo_DmgDiv+
+						", dmgmult "+item.Proto.Ammo_DmgMult+
+						", drmod "+item.Proto.Ammo_DrMod,
+						x,y);
+						break;
+						case(1):
+						y=draw("\tarmor:"+
+						" ac "+item.Proto.Armor_AC+
+						", crtype "+item.Proto.Armor_CrTypeMale+","+item.Proto.Armor_CrTypeFemale,
+						x,y);
+						y=draw("\tdr"+
+						" normal:"+item.Proto.Armor_DRNormal+
+						" laser:"+item.Proto.Armor_DRLaser+
+						" fire:"+item.Proto.Armor_DRFire+
+						" plasma:"+item.Proto.Armor_DRPlasma+
+						" electr:"+item.Proto.Armor_DRElectr+
+						" emp:"+item.Proto.Armor_DREmp+
+						" explode:"+item.Proto.Armor_DRExplode,
+						x,y);
+						y=draw("\tdt"+
+						" normal:"+item.Proto.Armor_DTNormal+
+						" laser:"+item.Proto.Armor_DTLaser+
+						" fire:"+item.Proto.Armor_DTFire+
+						" plasma:"+item.Proto.Armor_DTPlasma+
+						" electr:"+item.Proto.Armor_DTElectr+
+						" emp:"+item.Proto.Armor_DTEmp+
+						" explode:"+item.Proto.Armor_DTExplode,
+						x,y);
+						break;
+						
+					}
+					
+					if(item.GetCount()>1)
+					y=draw("\tcount: "+item.GetCount(),x,y);
+					
+					if(item.Flags>0)
+					{
+						text="";  
+						
+						if((((item.Flags)&((0x00000001)))!=0)) text+=" "+"hidden";
+						if((((item.Flags)&((0x00000002)))!=0)) text+=" "+"flat";
+						if((((item.Flags)&((0x00000004)))!=0)) text+=" "+"no_block";
+						if((((item.Flags)&((0x00000008)))!=0)) text+=" "+"shoot_thru";
+						if((((item.Flags)&((0x00000010)))!=0)) text+=" "+"light_thru";
+						if((((item.Flags)&((0x00000020)))!=0)) text+=" "+"multi_hex";
+						if((((item.Flags)&((0x00000040)))!=0)) text+=" "+"wall_trans_end";
+						if((((item.Flags)&((0x00000080)))!=0)) text+=" "+"two_hands";
+						if((((item.Flags)&((0x00000100)))!=0)) text+=" "+"big_gun";
+						if((((item.Flags)&((0x00000200)))!=0)) text+=" "+"always_view";
+						if((((item.Flags)&((0x00000400)))!=0)) text+=" "+"has_timer";
+						if((((item.Flags)&((0x00000800)))!=0)) text+=" "+"bad_item";
+						if((((item.Flags)&((0x00001000)))!=0)) text+=" "+"no_highlight";
+						if((((item.Flags)&((0x00002000)))!=0)) text+=" "+"show_anim";
+						if((((item.Flags)&((0x00004000)))!=0)) text+=" "+"show_anim_ext";
+						if((((item.Flags)&((0x00008000)))!=0)) text+=" "+"light";
+						if((((item.Flags)&((0x00010000)))!=0)) text+=" "+"geck";
+						if((((item.Flags)&((0x00020000)))!=0)) text+=" "+"trap";
+						if((((item.Flags)&((0x00040000)))!=0)) text+=" "+"no_light_influence";
+						if((((item.Flags)&((0x00080000)))!=0)) text+=" "+"no_loot";
+						if((((item.Flags)&((0x00100000)))!=0)) text+=" "+"no_steal";
+						if((((item.Flags)&((0x00200000)))!=0)) text+=" "+"gag";
+						if((((item.Flags)&((0x00400000)))!=0)) text+=" "+"colorize";
+						if((((item.Flags)&((0x00800000)))!=0)) text+=" "+"colorize_inv";
+						if((((item.Flags)&((0x01000000)))!=0)) text+=" "+"can_use_on_smth";
+						if((((item.Flags)&((0x02000000)))!=0)) text+=" "+"can_look";
+						if((((item.Flags)&((0x04000000)))!=0)) text+=" "+"can_talk";
+						if((((item.Flags)&((0x08000000)))!=0)) text+=" "+"can_pickup";
+						if((((item.Flags)&((0x10000000)))!=0)) text+=" "+"can_use";
+						if((((item.Flags)&((0x20000000)))!=0)) text+=" "+"holodisk";
+						if((((item.Flags)&((0x40000000)))!=0)) text+=" "+"radio";
+						if((((item.Flags)&((0x80000000)))!=0)) text+=" "+"cached";
+						y=draw("\tflags:"+text,x,y);
+					}
+					
+					if(item.Info>0)
+					y=draw("\tinfo: "+item.Info,x,y);
+					
+					if(item.Proto.Material>0)
+					{
+						text="";
+						switch(item.Proto.Material)
+						{
+							case 0:
+							text="glass";
+							break;
+							case 1:
+							text="metal";
+							break;
+							case 2:
+							text="plastic";
+							break;
+							case 3:
+							text="wood";
+							break;
+							case 4:
+							text="dirt";
+							break;
+							case 5:
+							text="stone";
+							break;
+							case 6:
+							text="cement";
+							break;
+							case 7:
+							text="leather";
+							break;
+							default:
+							text="unknown:"+item.Proto.Material;
+							break;
+						}
+						y=draw("\tmaterial: "+text,x,y);
+					}    
+					
+					if(item.GetScriptId()>0)
+					y=draw("\tscript: "+item.GetScriptId(),x,y);
+					
+					if(item.SortValue>0)
+					y=draw("\tsortvalue: "+item.SortValue,x,y);
+					
+					if((item.Val1+item.Val2+item.Val3+item.Val4+item.Val5)>0)
+					y=draw("\tvars: "+item.Val1+" "+item.Val2+" "+item.Val3+" "+item.Val4+" "+item.Val5,x,y);
+					
+					if(item.Proto.Weight>0)
+					{
+						if(item.GetCount()>1)
+						y=draw("\tweight: "+item.Proto.Weight+"g (total: "+item.Proto.Weight*item.GetCount()+"g)",x,y);
+						else
+						y=draw("\tweight: "+item.Proto.Weight+"g",x,y);
+					}
+					
+					if(item.Lexems.length()>0)
+					y=draw("\tlexems: "+item.Lexems,x,y);
+					
+					y=draw("}",x,y);
+				
+			}  
+			
+		} 
+		
+		if((@critter!=null))
+		{
+			if((((GMTconfig.OSD)&((0x04)))!=0))
+			{
+				draw_critterinfo_screen(critter);
+			}
+		}    
+		
+	}
+	
+	y=GMToolsDrawMacros(x,y);  
+	
+}
+
+void check_timers()
+{
+	for(uint i=0;i<GMTquestion.length();i++)
+	{
+		if(!GMTconfig.Enabled&&(GMTquestion[i].type!=(0)&&GMTquestion[i].type!=(8)))
+		{
+			GMTquestion.removeAt(i);
+			if(GMTconfig.CSCdebug)
+			Message("GM Tools: question ["+i+"] deleted");
+			return;
+		}
+		if(GMTquestion[i].status!=(0)&&!GMTquestion[i].old&&
+		(GetTick()>(uint(GMTquestion[i].tick+GMTquestion[i].timer))))
+		{
+			GMTquestion[i].old=true;
+			if(GMTconfig.CSCdebug)
+			Message("GM Tools: question ["+i+"]: marked as old");
+			return;
+		}
+	}
+}         
+
+int draw(string&text,int x,int y)
+{
+	return(draw(text,x,y,10,(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))))));
+}
+
+int draw(string&text,int x,int y,int y_fix)
+{
+	return(draw(text,x,y,y_fix,(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))))));
+}
+
+int draw(string&text,int x,int y,int y_fix,uint color)
+{
+	DrawText(text,x,y,__ScreenWidth,(y_fix>10?y_fix:10),color,(5),0);
+	
+	if(y_fix>0)
+	return(y+y_fix);
+	else if(y_fix<0)
+	return(y-y_fix);
+	else
+	return(y);
+}
+
+void draw_critterinfo_screen(CritterCl&critter)
+{
+	if(!(@critter!=null))
+	{
+		Message("GMT->DCI: critter not valid");
+		return;
+	}
+	
+	int critter_x=0;
+	int critter_y=0;
+	if(GetHexPos(critter.HexX,critter.HexY,critter_x,critter_y))
+	{
+		if(critter_x>=__ScreenWidth||critter_y>=__ScreenHeight||
+		critter_x<0||critter_y<0)
+		return;
+		
+		uint color=(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))));
+		
+		if(critter.IsPlayer())
+		color=(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))));
+		else if(critter.IsNpc())
+		color=(((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xC8)&0xFF)<<8)|((0)&0xFF)))));
+		
+		critter_x-=12;
+		critter_y+=6;
+		
+		critter_y=draw(critter.Name+" ("+critter.Id+")",critter_x,critter_y,10,color);
+		critter_y=draw("HP: "+critter.Param[(72)]+"/"+critter.Param[(7)],critter_x,critter_y,10,color);
+		
+		for(int i=(1);i<=(3);i++)
+		{
+			uint8 mode=0;
+			ProtoItem@proto=critter.GetSlotProto(i,mode);
+			
+			if(((@proto!=null))&&
+			(proto.ProtoId>0)&&
+			(proto.ProtoId<1000)&&
+			(proto.ProtoId>1032)&&
+			(proto.ProtoId!=1100))
+			{
+				string slotname="";
+				switch(i)
+				{
+					case(1):
+					slotname="Left hand";
+					break;
+					case(2):
+					slotname="Right hand";
+					break;
+					case(3):
+					slotname="Armor";
+					break;
+					default:
+					slotname="Slot"+i;
+					break;
+				}
+				ItemCl@item=critter.GetItem(proto.ProtoId,i);
+				if((@item!=null))
+				critter_y=draw(slotname+": "+GetMsgStr((2),(item.GetProtoId()*100+item.Info))+" ("+item.GetCount()+")",critter_x,critter_y,10,color);
+				
+				else
+				critter_y=draw(slotname+": "+proto.ProtoId,critter_x,critter_y,10,color);
+				
+			}
+		}
+	}
+}   
+
+void DisableGMTools()
+{
+	GMToolsUnPossess();
+	GMTconfig.Enabled=false;
+	GMTconfig.Access=(0);
+	GMTconfig.AccessCheck=0;
+	GMTconfig.LastMapPid=-1;
+	GMTconfig.LastLocationPid=-1;
+}    
+
+int GMToolsCommand(string&message)
+{ 
+	
+	if(GMToolsAccess()&&substring(message,0,1)=="#")
+	message="~gmtools macro "+substring(message,1,message.length()-1);
+	
+	array<string@>@options=split(message," ");
+	if(message=="~gmtools"||(options[0]=="~gmtools"&&options[1]==""))
+	{
+		if(GMTconfig.Enabled)
+		{
+			DisableGMTools();
+			Message("GM Tools: "+(GMTconfig.Enabled?"ON":"OFF"));
+		}
+		else
+		question(0,(0));
+		
+		return(0);
+	}
+	
+	if(options[0]=="~gmtools")
+	{
+		
+		if(options[1]=="__deleteQ")
+		{
+			if(GMTquestion.length()>0)
+			GMTquestion.removeAt(0);
+			
+			Message("GMT Q: "+GMTquestion.length());
+			return(0);
+		}
+		
+		if(!GMTconfig.Enabled)
+		return(0); 
+		
+		if(options[1]=="__deleteM")
+		{
+			if(GMTmacro.length()>0)
+			GMTmacro.removeAt(0);
+			
+			Message("GMT M: "+GMTmacro.length());
+			return(0);
+		}
+		else if(options[1]=="__deleteC")
+		{
+			if(GMTchat.length()>0)
+			GMTchat.removeAt(0);
+			
+			Message("GMT C: "+GMTchat.length());
+			return(0);
+		}
+		else if(options[1]=="__showA")
+		{
+			Message("GMT a: "+((1)));
+			Message("GMT p: "+((1)));
+			Message("GMT c: "+((2)));
+			Message("GMT R: "+((3)));
+			Message("GMT r: "+((1)));
+			Message("GMT C: "+((2)));
+			Message("GMT I: "+((1)));
+			Message("GMT M: "+((1)));
+			Message("GMT L: "+(((1))));
+			Message("GMT x: "+((1)));
+			
+			return(0);
+		}
+		
+		if(options[1]=="csc")
+		{
+			if(options.length()>2&&options[2].length()>0)
+			{
+				if(options[2]=="debug")
+				{
+					GMTconfig.CSCdebug=!GMTconfig.CSCdebug;
+					Message("GMT: "+"CSC Debug"+": "+(GMTconfig.CSCdebug?"on":"off"));
+				}
+			}
+			return(0);
+		}
+		else if(options[1]=="lockscreen"&&options.length()>2)
+		{
+			int crid=0;
+			if(options[2]=="off")
+			{}
+			else
+			{
+				StrToInt(options[2],crid);
+				if(crid>0)
+				{
+					CritterCl@critter=GetCritter(crid);
+					if((@critter!=null))
+					{
+						LockScreenScroll(critter);
+						Message("GMT: screen locked on "+critter.Name);
+					}
+				}
+			}
+			return(0);
+		}
+		else if(options[1]=="osd")
+		{
+			if(options.length()==2||options[2]=="")
+			Message("GMT: missing arguments");
+			else if(options[2]=="info")
+			{
+				((GMTconfig.OSD)^=((0x01)));
+				Message("GMT: "+"OSD->info"+": "+((((GMTconfig.OSD)&((0x01)))!=0)?"on":"off"));
+			}
+			else if(options[2]=="infoex")
+			{
+				((GMTconfig.OSD)^=((0x02)));
+				Message("GMT: "+"OSD->info->extended"+": "+((((GMTconfig.OSD)&((0x02)))!=0)?"on":"off"));
+			}
+			else if(options[2]=="critter")
+			{
+				((GMTconfig.OSD)^=((0x04)));
+				Message("GMT: "+"OSD->critter"+": "+((((GMTconfig.OSD)&((0x04)))!=0)?"on":"off"));
+			}
+			return(0);
+		}
+		else if(options[1]=="menu")
+		{
+			if(options.length()>2&&options[2]!="")
+			{
+				if(options[2]=="load"&&options.length()>3&&options[3]!="")
+				{
+					Message("GM Tools: loading menu ("+options[3]+")");
+					GMToolsLoadMenu(options[3]);
+				}
+				else if(options[2]=="reload")
+				{
+					Message("GM Tools: reloading menu");
+					GMToolsLoadMenu();
+				}
+			}
+			else
+			{
+				GMTconfig.Menu=!GMTconfig.Menu;
+				Message("GMT: "+"Menu"+": "+(GMTconfig.Menu?"on":"off"));
+			}
+			return(0);
+		}
+		else if(options[1]=="macro")
+		{
+			if(options[2]=="stop")
+			{
+				GMToolsStopMacros();
+			}
+			else
+			{
+				CritterCl@critter=GetChosen();
+				GMToolsAddMacro(options[2],critter.Id,0,critter.HexX,critter.HexY,true);
+			}
+			return(0);
+		}
+		else
+		{
+			Message("GMT: unknown switch");
+			return(0);
+		}
+	}
+	
+	else if(options.length()>=3&&options[0]=="~getaccess")
+	{ 
+		
+		if(options[1]=="client")
+		{
+			DisableGMTools();
+		}
+		else
+		{
+			GMTconfig.AccessCheck=GetTick();
+			;;
+		}
+		return(2);
+	}
+	
+	else if(GMToolsAccess()&&message.length()>=2&&substring(message,0,1)=="@")
+	{
+		GMToolsChat(substring(message,1,message.length()-1));
+		return(0);
+	} 
+	
+	return(2);
+}   
+
+int GMToolsPossess()
+{
+	return(GMTconfig.Possess);
+}        
+
+bool GMToolsPossess(int critter)
+{ 
+	
+	CritterCl@cr=GetCritter(critter);
+	if((@cr!=null))
+	{
+		GMTconfig.Possess=critter;
+		return(true);
+	}
+	;
+	return(false);
+}
+
+void GMToolsPossessRotate(bool a)
+{
+	CritterCl@cr=GetCritter(GMToolsPossess());
+	if((@cr!=null))
+	{
+		int dir=cr.Dir;
+		if(dir==5&&a)
+		dir=0;
+		else if(cr.Dir==0&&!a)
+		dir=5;
+		else if(a)
+		dir++;
+		else if(!a)
+		dir--;
+		
+		if(dir!=int(cr.Dir))
+		question(0,(2),0,"command rotate -p "+cr.Id+" -dir "+dir);
+	}
+}     
+
+void GMToolsUnPossess()
+{
+	GMTconfig.Possess=0;
+};    
+
+bool GMToolsAccess()
+{
+	return((GMTconfig.Access>(0)));
+}    
+
+bool GMToolsMenu()
+{
+	if(!GMToolsAccess())
+	return(false);
+	
+	return(GMTconfig.Menu);
+} 
+

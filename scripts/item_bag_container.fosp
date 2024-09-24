@@ -1,0 +1,182 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
+import bool LockerClose(Item&item)from"lockers";   
+
+CItemBag@AddItemBag(uint id)
+{
+	CItemBag@itembag=GetItemBag(id);
+	if((@itembag!=null))
+	return itembag;
+	@itembag=@CItemBag(id);
+	
+	switch(id)
+	{
+		case 1:    
+		
+		itembag.RateMin(20).RateMax(30).AddBag(440,50).AddBag(441,50).AddBag(446,50);
+		break;
+		case 2:
+		
+		itembag.RateMin(20).RateMax(30).AddBag(446,50).AddBag(453,50).AddBag(454,50);
+		break;
+		case 3:
+		
+		itembag.RateMin(20).RateMax(30).AddBag(457,50).AddBag(456,50).AddBag(455,50);
+		break;
+	}
+	
+	ItemBags.insertLast(itembag);
+	
+	return itembag;
+}     
+
+void item_init(Item&item,bool firstTime)
+{ 
+	
+	CItemBag@itembag=AddItemBag((item.Val4));
+	Log(""+(item.Val4)+" at "+item.MapId+","+item.HexX+","+item.HexY);
+	
+	CreateTimeEvent(((__FullSecond)+(itembag.GetSpawnTime())),"item_bag_container@e_Spawn",item.Id,false);
+}
+
+uint e_Spawn(array<uint>@values)
+{
+	{;};
+	Item@container=GetItem(values[0]);
+	if(!(@container!=null)||container.IsNotValid)
+	return 0;
+	
+	CItemBag@itembag=GetItemBag((container.Val4));
+	if(!(@itembag!=null))
+	{
+		Log("Couldn't obtain itembag object");
+		return 0;
+	}
+	itembag.Spawn(container);
+	return itembag.GetSpawnTime();
+}
+
+array<CItemBag@>ItemBags;
+
+CItemBag@GetItemBag(uint id)
+{
+	CItemBag@itembag;
+	for(uint i=0,j=ItemBags.length();i<j;i++)
+	{
+		if(ItemBags[i].id==id)
+		return ItemBags[i];
+	}
+	return null;
+}
+
+class CItemBag
+{
+	uint id; 
+	
+	uint ratemin;
+	uint ratemax;
+	
+	uint lockermin;
+	uint lockermax;
+	
+	array<uint>bags;
+	array<uint>chances;
+	
+	uint totalChance;
+	
+	CItemBag(uint id)
+	{
+		this.id=id;    
+		
+		ratemin=60;
+		ratemax=120;
+		lockermin=0;
+		lockermax=0;
+		totalChance=0;
+	}   
+	
+	CItemBag@RateMin(uint min)
+	{
+		this.ratemin=min;
+		return this;
+	}  
+	
+	CItemBag@RateMax(uint max)
+	{
+		this.ratemax=max;
+		return this;
+	}
+	CItemBag@LockerMin(uint min)
+	{
+		this.lockermin=min;
+		return this;
+	}  
+	
+	CItemBag@LockerMax(uint max)
+	{
+		this.lockermax=max;
+		return this;
+	}  
+	
+	CItemBag@AddBag(uint bagId,uint chance)
+	{
+		bags.insertLast(bagId);
+		totalChance+=chance;
+		chances.insertLast(totalChance);
+		return this;
+	}  
+	
+	uint GetSpawnTime()
+	{
+		return((Random(ratemin,ratemax))*__TimeMultiplier*60);
+	}  
+	
+	void Spawn(Item&cont)
+	{
+		array<Item@>items;
+		if(cont.GetItems(0,items)>0)
+		return;
+		uint r=Random(0,totalChance);
+		uint bagIdx=0; 
+		
+		if(chances.length()>1)
+		{
+			for(uint i=0,j=chances.length();i<j;i++)
+			{
+				if(r<chances[i])
+				{
+					bagIdx=i;
+					{;};
+					break;
+				}
+			}
+		}
+		SpawnItems(cont,bags[bagIdx]);
+		
+		if(lockermin!=0)
+		{
+			LockerClose(cont);
+			cont.LockerId=Random(0,0x7FFFFFFF);
+			cont.LockerComplexity=Random(lockermin,lockermax);
+		}
+	}  
+	
+	void SpawnItems(Item&cont,uint bagId)
+	{
+		
+		array<uint16>pids;
+		array<uint>minCounts;
+		array<uint>maxCounts;
+		array<int>slots;
+		
+		uint num=GetBagItems(bagId,pids,minCounts,maxCounts,slots);
+		
+		for(uint i=0;i<num;i++)
+		{
+			if(slots[i]==(0))
+			{
+				Item@it=cont.AddItem(pids[i],Random(minCounts[i],maxCounts[i]),0);
+			}
+		}
+	}
+};

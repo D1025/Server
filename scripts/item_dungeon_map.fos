@@ -1,0 +1,347 @@
+//Private dungeons maps for groups
+//Vice Dice
+//Fonline:Forever
+//2017
+//WIP NEED TO ADD MORE MAPS FOR TIERS RANDOM ROTATION, interface and macro getter for map item is bounded to used PID
+//inits an item as dungeon map, mech is below, 
+//using val3 as tier representation from 1 to 3
+//using val4 as location representation, Locations PIDS
+//using LVAR_dungeon_running to determine if dungeon is running for player
+//using 100-102 map hex entires to determine where to spawn mobs from the prepared arrays
+
+#include "_macros.fos"
+#include "MsgStr.h"
+#include "utils.fos"
+#include "_colors.fos"
+#include "_time.fos"
+#include "npc_roles_h.fos"
+#include "_npc_pids.fos"
+#include "_ai.fos"
+#include "_bags.fos"
+
+#define DUNGEON_GARBAGE_TIME 	(5)
+
+#define DUNGEONS_SPECIAL_START  (10)
+
+#define MOBTABLES 				(8)  // amount should be equal to Mob entires below
+
+#define MONSTER_MOB_ENTIRE		(100) // used to search for these entire ids at map to spawn there refering mobs
+#define HUMANOIDS_MOB_ENTIRE	(101)
+#define BOSSES_MOB_ENTIRE		(102)
+
+#define SCORPS_MOB_ENTIRE		(103)
+#define DEATHCLAWS_MOB_ENTIRE	(104)
+#define ALIENS_MOB_ENTIRE		(105)
+#define GECKOS_MOB_ENTIRE		(106)
+#define MOLERATS_MOB_ENTIRE		(107)
+
+#define T1_ITEM_SPAWNER 		(110) // unused for now
+#define T2_ITEM_SPAWNER			(111)
+#define T2_ITEM_SPAWNER			(112)
+
+#define DUNGEONS_QUEST_BROWNIE (900)  // loc
+#define DUNGEONS_MAPS_BROWNIE1 (1000) // map
+
+#define DUNGEONS_PIDS_START    (900) // entry for dungeon locations pids
+
+#define DUNGEONS_TIER1_START   (70)
+#define DUNGEONS_TIER1_END     (70) //WIP, locations.cfg
+
+#define DUNGEONS_TIER2_START   (64)
+#define DUNGEONS_TIER2_END     (64)
+
+#define DUNGEONS_TIER3_START   (79)
+#define DUNGEONS_TIER3_END     (79)
+
+#define ROLE_MOB_DUNGEON		(1)
+
+#define DUNGEON_RAIDERS_CAVE		(93)
+#define DUNGEON_MUTANTS_HIDEOUT		(64)
+#define DUNGEON_MILITARY_BASE		(79)
+#define DUNGEON_FAKE_VAULT			(374)
+
+
+// TODO : separate monsters from each other since claws eat scorpions but they might spawn together currently
+
+array<uint> ScorpsMobsPids    = {NPC_PID_Radscorpion2, NPC_PID_Radscorpion};
+array<uint> DeathClawsMobsPids= {NPC_PID_Deathclaw, NPC_PID_Deathclaw2};
+array<uint> AliensMobsPids	  = {NPC_PID_ToughAlien, NPC_PID_Alien};
+array<uint> GeckosMobsPids	  = {NPC_PID_ToughFireGecko, NPC_PID_FireGecko, NPC_PID_ToughGoldenGecko, NPC_PID_GoldenGecko, NPC_PID_ToughLilGecko};
+array<uint> MoleratsMobsPids  = {NPC_PID_MoleRat,NPC_PID_GreaterMoleRat,NPC_PID_MutatedMoleRat, NPC_PID_PigRat, NPC_PID_ToughPigRat}; 
+
+
+array<uint> MonstersMobsPids  =	{NPC_PID_Radscorpion,NPC_PID_Radscorpion2,NPC_PID_Deathclaw,NPC_PID_Deathclaw2,NPC_PID_Mantis,NPC_PID_ToughAlien,NPC_PID_ToughFireGecko}; // mutant animals only
+array<uint> HumanoidsMobsPids = {NPC_PID_Raider,NPC_PID_Raider2,NPC_PID_Mercenary,NPC_PID_Mercenary2,NPC_PID_Nightkin,NPC_PID_Marauder,NPC_PID_Marauder2}; 				  // humanoids only
+array<uint> BossesMobsPids 	  = {NPC_PID_Raider,NPC_PID_Raider2,NPC_PID_Mercenary,NPC_PID_Mercenary2,NPC_PID_Nightkin,NPC_PID_Marauder,NPC_PID_Marauder2}; 				  
+
+array<array<uint>@> Mobs = {MonstersMobsPids, HumanoidsMobsPids, BossesMobsPids, ScorpsMobsPids, DeathClawsMobsPids, AliensMobsPids, GeckosMobsPids,MoleratsMobsPids};
+/* 
+void _DungeonMapInit(Item& item, bool firstTime) 														//used for dungeon maps items, that will create private dungeon location for a group of players
+{
+	item.SetEvent(ITEM_EVENT_USE, "_ReadDungeonMap"); 													// set the script that will be called when someone is using this item
+	if(item.Val4==0)
+	{
+		if(item.Val3==0)
+			item.Val3 = Random(1,3);																		// val3 for tier randomizing
+		
+		RandomizeLocation(item.Val3, item);
+	}
+}
+*/
+void _MapInit_RaidersCave(Item& item, bool firstTime)
+{
+	item.Val4 = DUNGEON_RAIDERS_CAVE;
+	item.SetEvent(ITEM_EVENT_USE, "_ReadDungeonMap"); 
+}
+
+void _MapInit_MutantsHideout(Item& item, bool firstTime)
+{
+	item.Val4 = DUNGEON_MUTANTS_HIDEOUT;
+	item.SetEvent(ITEM_EVENT_USE, "_ReadDungeonMap"); 
+}
+
+void _MapInit_RuinedMilitaryBase(Item& item, bool firstTime)
+{
+	item.Val4 = DUNGEON_MILITARY_BASE;
+	item.SetEvent(ITEM_EVENT_USE, "_ReadDungeonMap"); 
+}
+
+void _MapInit_FakeVault(Item& item, bool firstTime)
+{
+	item.Val4 = DUNGEON_FAKE_VAULT;
+	item.SetEvent(ITEM_EVENT_USE, "_ReadDungeonMap"); 
+}
+
+bool _ReadDungeonMap(Item& item, Critter& crit, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)
+{	
+	array<Critter@> group; 	// changed to the user only
+	array<Map@> maps;
+	array<uint> dungeonInfo;
+	array<Critter@> dungeonCrits;
+	//if ((valid(onScenery)) || (valid(onItem)) || (@onCritter!=null))
+	//	return false;
+	// If player is not on a dungeon run
+																											// val4 for location pids randomizing, derived from val3 which is tier, using the defined ranges.
+//	uint locId = CreateLocationForGroup(crit, item.Val4, Random(600,1950), Random(400,1700), group); 		// modifies group, group will contain each critter and leader added at last.
+
+	uint locId = CreateLocation(item.Val4, Random(600,1950), Random(400,1700), null);
+
+	Location@ loc = GetLocation(locId);
+	
+	Log("Created a dungeon for player " + crit.Name + " with location PID " + item.Val4);
+	dungeonInfo.resize(0);
+		
+	
+/*
+	for(uint i = 0; i<group.length; i++)
+	{
+		GetLocalVar(LVAR_dungeon_running, group[i].Id).opAssign(1);											// let the game know that this character is on dungeon run
+		dungeonInfo.insertLast(group[i].Id); 																// insert group critters ID's
+		group[i].Say(SAY_NETMSG, "|10990000 You've discovered an unknown location coordinates");
+	}
+*/
+
+	dungeonInfo.insertLast(crit.Id);
+	crit.Say(SAY_NETMSG, "|10990000 You mark the location in your PipBoy");
+	
+	dungeonInfo.insertLast(locId);																    		 // lastly insert the location ID
+		
+
+	loc.Color = COLOR_WHITE;
+	maps.resize(0);
+	loc.GetMaps(maps);
+		
+	crit.SetKnownLoc(true, loc.Id);
+	
+/*
+	for(uint i = 0; i<maps.length;i++)
+	{
+		// Disabled
+			maps[i].SetEvent(MAP_EVENT_CRITTER_DEAD, "_OnCritDiedDungeon");
+		maps[i].SetEvent(MAP_EVENT_OUT_CRITTER, "_OnCritExitDungeonMap");
+				
+		if(item.Val3!=0)
+		{
+			SpawnDungeonMobs(item.Val3, maps[i]); 						      // tier and the map itself
+			SpawnDungeonItems(item.Val3, maps[i]);							  // tier and map itself
+		}
+		
+		maps[i].GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, dungeonCrits);
+		for(uint i = 0; i<dungeonCrits.length; i++)
+		{
+			dungeonCrits[i].StatBase[ST_NPC_ROLE] = ROLE_MOB_DUNGEON;
+			dungeonCrits[i].ModeBase[MODE_NO_HOME] = 1;		
+		}
+	}
+*/	
+	DeleteItem(item);
+	CreateTimeEvent(AFTER(REAL_MINUTE(DUNGEON_GARBAGE_TIME)),"e_GarbageDungeon",  dungeonInfo, true);		 // dungeoninfo contains critters IDs and lastly the group leader ID and location ID
+	return true;
+
+}
+
+
+uint e_GarbageDungeon(uint[]@ values) 											
+{
+	GameVar@ var;
+	Location@ loc = GetLocation(values[values.length-1]); 								// get the loc ID from the last index, -1 because the indexing is starting from 0										
+	if(valid(loc))
+	{	
+		loc.AutoGarbage=true; 																// make it delete itself when everyone quits the location	
+		loc.Visible = false;
+		loc.Update();	
+		return 0;
+	}	
+	return 0;
+}
+/*
+void _OnCritDiedDungeon(Map& map, Critter& cr, Critter@ killer)
+{
+	uint mobsCount = 0;
+	array<Critter@> dungeonCrits;
+	GameVar@ var;
+	//Player
+	if(cr.IsPlayer())
+	{
+		if(cr.IsKnownLoc(true, map.GetLocation().Id))	
+			cr.UnsetKnownLoc(true, map.GetLocation().Id);									// make critter forget about this location coords.
+		GetLocalVar(LVAR_dungeon_running, cr.Id).opAssign(0);							// make the game know that each player from this group is not on a dungeon run anymore
+				
+		cr.Say(SAY_NETMSG, "|10990000 You've died on dungeon run and can't remember the way back");	// if someone dies he forgets the location coordinates
+		return;
+	}
+	//NPC
+	else
+	{
+		map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, dungeonCrits);
+		for(uint i = 0; i<dungeonCrits.length; i++)
+		{
+			if(dungeonCrits[i].Stat[ST_NPC_ROLE] == ROLE_MOB_DUNGEON)					// count dungeon mobs npcs
+				mobsCount +=1;
+		}
+		
+		dungeonCrits.resize(0);
+		
+		if(mobsCount == 0)
+		{
+			map.GetCritters(0, FIND_ONLY_PLAYERS  | FIND_LIFE, dungeonCrits);
+			for(uint i = 0; i<dungeonCrits.length;i++)
+			{
+				dungeonCrits[i].Say(SAY_NETMSG, "|10990000 You've cleaned this place");	// tell players in the dungeon that its cleared
+				
+ 				if(map.GetProtoId()==DUNGEONS_MAPS_BROWNIE1)
+					GetLocalVar(LVAR_q_marauders,dungeonCrits[i].Id).opAssign(4);  		// if all dungeon mobs are dead and its a quest location from brownie - set the param to successfully cleared the dungeon
+			}
+		}
+	}
+	
+}
+*/
+/*
+void _OnCritExitDungeonMap(Map& map, Critter& cr)
+{
+ 	GameVar@ varHand;
+	if(map.GetProtoId() == DUNGEONS_MAPS_BROWNIE1 && GetLocalVar(LVAR_q_marauders,cr.Id) != 4 && map.GetLocation().AutoGarbage==true) // if the map is a quest map, the time runned out and player didnt finished the quest
+	{
+		@varHand = GetLocalVar(LVAR_q_marauders,cr.Id);	// find the quest val and set it to failed status
+		varHand.opAssign(3);		
+		return;
+	} 
+}
+*/
+
+// unused for now
+void RandomizeLocation(uint tier, Item@ map)
+{
+	switch(tier)
+	{
+		case 1:
+		map.Val4 = Random(DUNGEONS_TIER1_START,DUNGEONS_TIER1_END); //WIP all WIP
+		break;
+		case 2:
+		map.Val4 = Random(DUNGEONS_TIER2_START,DUNGEONS_TIER2_END);
+		break;
+		case 3:
+		map.Val4 = Random(DUNGEONS_TIER3_START,DUNGEONS_TIER3_END);
+		break;
+	}
+}
+
+// unused for now
+void SpawnDungeonMobs(uint8 tier, Map@ map) // search for all entires that are defined as T1+n for mobs tiers randomiizing and spawn there related mobs taken from global mobs array.
+{
+	Critter@ mob;
+	uint16 hx = 0,hy = 0;
+	uint mobBag;
+	uint npcPid;
+	
+	for(uint i = 0; i<MOBTABLES; i++) // currently 8 entires, 8 steps
+	{
+		array<uint> mobs; 
+		mobs = Mobs[i]; 						    // get our Mobs array
+		uint8 entireId = MONSTER_MOB_ENTIRE+i;	    // 100-101-102 etc respectively to seek for the entire id
+		uint entires = map.CountEntire(entireId);	//count all entires with this id we just rolled
+		
+		for(uint j = 0; j < entires; j++)			//now for each entire we look for indexed entires(entire ID is a entire group, and engine somehow sorts those in some kind of array, so we have to count them and then access by index)
+		{
+			uint skills = 25+(Random(10,50)*(tier+1));		//tier multiplier
+			uint hpRnd  = (Random(30,80)*(tier+1));
+			
+			npcPid = mobs[Random(0,mobs.length()-1)];
+			if(i!=0) //if type is not 1(0) which is animals with no loot in them anyway
+			{
+				switch (npcPid)	
+				{
+					case NPC_PID_Raider:
+						mobBag = BAG_RDRC_Raiders_RaiderMale2;
+					break;
+					case NPC_PID_Raider2:
+						mobBag = BAG_RDRC_Raiders_RaiderFemale2;
+					break;
+					case NPC_PID_Mercenary:
+						mobBag = BAG_SF_Band1_MercenaryMale2;
+					break;
+					case NPC_PID_Mercenary2:
+						mobBag = BAG_SF_Band1_MercenearyFemale2;
+					break;
+					case NPC_PID_Nightkin:
+						mobBag = BAG_All_Unity_Nightkin;
+					break;
+					case NPC_PID_Marauder:
+						mobBag = BAG_NCR_Marauders_MauraderMale2;
+					break;
+					case NPC_PID_Marauder2:
+						mobBag = BAG_NCR_Marauders_MauraderFemale2;
+					break;
+				}
+			}
+			map.GetEntireCoords(entireId,j,hx,hy);	//id, index in group and cooridantes to write in them the position
+			@mob = AddNpc(map, npcPid,hx,hy, Random(0,6), 0, "mob@critter_init_aggr", AIPACKET_DEATHCLAW, mobBag, 0, true, 24); // spawning here
+			mob.StatBase[ST_REPLICATION_TIME] = -1;
+			mob.StatBase[ST_NPC_ROLE] = ROLE_MOB_DUNGEON;
+			mob.StatBase[ST_MAX_LIFE] += hpRnd;
+			mob.StatBase[ST_CURRENT_HP] += hpRnd;
+			mob.StatBase[ST_PERCEPTION] = 2*(tier+1);
+			mob.SkillBase[SK_SMALL_GUNS] += skills;
+			mob.SkillBase[SK_THROWING] += skills;
+			mob.SkillBase[SK_BIG_GUNS] += skills;
+			mob.SkillBase[SK_ENERGY_WEAPONS] += skills;
+		}	
+	}
+}
+
+// unused for now
+void SpawnDungeonItems(uint8 tier, Map@ map) // tier for loot quality, map... for map.
+{
+	uint mapContAmount;
+	array<Item@> mapContainer;
+	
+	mapContAmount = map.GetItemsByType(ITEM_TYPE_CONTAINER, mapContainer);
+	
+	for(uint i = 0; i<mapContAmount; i++)
+	{
+		mapContainer[i].Val4 = (110+tier-1);
+		mapContainer[i].SetScript("item_spawner_container@item_init");
+	}
+
+}

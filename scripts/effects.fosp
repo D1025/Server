@@ -1,0 +1,112 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+import bool IsNight()from"world_common";
+import bool IsDay()from"world_common";
+import bool IsMorning()from"world_common";
+import bool IsAfternoon()from"world_common";
+import bool IsEvening()from"world_common";
+import bool IsHospital(Map@map)from"world_common";
+import bool IsCave(Map@map)from"world_common";
+import bool IsMine(Map@map)from"world_common";
+import bool IsJail(Map@map)from"world_common";
+import bool IsBase(Map@map)from"world_common";
+import bool IsTent(Map@map)from"world_common";
+import bool IsWarzone(Map@map)from"world_common";                  
+
+void FlushScreen(Critter&cr,bool fadeOut,uint timeMs)
+{
+	if(cr.IsPlayer())
+	cr.RunClientScript("_FlushScreen",fadeOut?int(0xFF000000):0,fadeOut?0:int(0xFF000000),int(timeMs),null,null);
+}
+
+void FlushScreen(Critter&cr,uint fromColor,uint toColor,uint timeMs)
+{
+	if(cr.IsPlayer())
+	cr.RunClientScript("_FlushScreen",int(fromColor),int(toColor),int(timeMs),null,null);
+}
+
+void FlushScreen(Map&map,bool fadeOut,uint timeMs)
+{
+	array<Critter@>critters;
+	map.GetCritters(0,(0x0F)|(0x10),critters);
+	for(uint i=0,j=critters.length();i<j;i++)
+	critters[i].RunClientScript("_FlushScreen",fadeOut?int(0xFF000000):0,fadeOut?0:int(0xFF000000),int(timeMs),null,null);
+}
+
+void FlushScreen(Map&map,uint fromColor,uint toColor,uint timeMs)
+{
+	array<Critter@>critters;
+	map.GetCritters(0,(0x0F)|(0x10),critters);
+	for(uint i=0,j=critters.length();i<j;i++)
+	critters[i].RunClientScript("_FlushScreen",int(fromColor),int(toColor),int(timeMs),null,null);
+}
+
+void QuakeScreen(Critter&cr)
+{
+	if(cr.IsPlayer())
+	cr.RunClientScript("_QuakeScreen",(8),(800),0,null,null);
+}
+
+void QuakeScreen(Critter&cr,uint noise,uint timeMs)
+{
+	if(cr.IsPlayer())
+	cr.RunClientScript("_QuakeScreen",int(noise),int(timeMs),0,null,null);
+}
+
+void QuakeScreen(Map&map)
+{
+	array<Critter@>critters;
+	map.GetCritters(0,(0x0F)|(0x10),critters);
+	for(uint i=0,j=critters.length();i<j;i++)
+	critters[i].RunClientScript("_QuakeScreen",(8),(800),0,null,null);
+}
+
+void QuakeScreen(Map&map,uint noise,uint timeMs)
+{
+	array<Critter@>critters;
+	map.GetCritters(0,(0x0F)|(0x10),critters);
+	for(uint i=0,j=critters.length();i<j;i++)
+	critters[i].RunClientScript("_QuakeScreen",int(noise),int(timeMs),0,null,null);
+}   
+
+void TattooSignLights(Item&item,bool firstTime)
+{
+	uint[]values={item.Id,0};
+	CreateTimeEvent(((__FullSecond)+(((5)*__TimeMultiplier))),"e_SwitchSign",values,false);
+}
+
+uint e_SwitchSign(array<uint>@values)
+{
+	Item@item=GetItem(values[0]);
+	if(!(@item!=null))
+	return 0;
+	
+	uint16 pid=item.GetProtoId();
+	
+	if(!IsNight()&&(((item.Flags)&((0x00008000)))!=0))
+	{
+		(item.Flags=((item.Flags)&(~((0x00008000)))));
+		if(pid==9922)
+		item.PicMap=GetStrHash("art\\items\\tattoo_sign_day.fofrm");
+		else if(pid==9923)
+		item.PicMap=GetStrHash("art\\items\\tattoo_sign_day_w.fofrm");
+		
+		item.Update();
+		return((1)*__TimeMultiplier*60);
+	}
+	
+	if(IsNight()&&!(((item.Flags)&((0x00008000)))!=0))
+	{
+		((item.Flags)=(item.Flags)|((0x00008000)));
+		if(pid==9922)
+		item.PicMap=GetStrHash("art\\items\\tattoo_sign_night.frm");
+		else if(pid==9923)
+		item.PicMap=GetStrHash("art\\items\\tattoo_sign_night_w.frm");
+		
+		item.Update();
+		return((1)*__TimeMultiplier*60);
+	} 
+	
+	return((1)*__TimeMultiplier*60);
+}
+

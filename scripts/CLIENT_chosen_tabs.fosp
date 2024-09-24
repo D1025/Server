@@ -1,0 +1,291 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+shared class Sprite
+{
+	Sprite()
+	{
+		Id=0;
+		Width=0;
+		Height=0;
+		FrmCount=0;
+	}
+	
+	bool Load(string&name,int path)
+	{
+		if(name.length()>0)
+		{
+			Id=LoadSprite(name,path);
+			Filename=name;
+		}
+		else
+		Id=0;
+		RefreshData();
+		return Id!=0;
+	}
+	
+	void LoadHash(uint nameHash,uint8 dir)
+	{
+		Id=LoadSprite(nameHash,dir);
+		RefreshData();
+	}
+	
+	void LoadByIni(string&iniKey,int path)
+	{
+		string@name=GetIfaceIniStr(iniKey);
+		if(@name!=null&&name.length()>0)
+		Id=LoadSprite(name,path);
+		else
+		Id=0;
+		RefreshData();
+	}
+	
+	void Draw(int x,int y)
+	{
+		if(Id!=0)
+		DrawSprite(Id,-1,x,y,0);
+	}
+	
+	private void RefreshData()
+	{
+		if(Id!=0)
+		{
+			Width=GetSpriteWidth(Id,0);
+			Height=GetSpriteHeight(Id,0);
+			FrmCount=GetSpriteCount(Id);
+		}
+		else
+		{
+			Width=0;
+			Height=0;
+			FrmCount=0;
+			Filename="";
+		}
+	}
+	
+	uint Id;
+	int Width;
+	int Height;
+	uint FrmCount;
+	string Filename;
+};    
+
+import int GUI_GetActiveMainScreen()from"client_gui";
+import int GUI_GetActiveScreen()from"client_gui";
+import int GetIniValue(string&iniKey,int defaultValue)from"ini_parser";
+import array<int>@GetIniValues2(string&iniKey,array<int>@defaultValues)from"ini_parser";
+
+import uint8 GetCurrentAim()from"client_keybinds"; 
+
+Sprite TabPic;
+array<int>Position;
+int StepX;
+int StepY;
+bool LevelUp;
+int CurTab; 
+
+void InitChosenTabs()
+{
+	TabPic.LoadByIni("ChosenTabPic",(4));
+	Position=GetIniValues2("ChosenTab",null);
+	StepX=GetIniValue("ChosenTabStepX",0);
+	StepY=GetIniValue("ChosenTabStepY",5);
+	if(StepX!=0)
+	StepX+=TabPic.Width;
+	if(StepY!=0)
+	StepY+=TabPic.Height;
+	LevelUp=false;
+	CurTab=0;
+}
+
+Sprite ChosenTabSprite()
+{
+	return(TabPic);
+}
+
+int ChosenTabsDrawn()
+{
+	return(CurTab);
+}
+
+void SetChosenTabLevelUp(bool enable)
+{
+	LevelUp=enable;
+}
+
+uint PercentColor(uint percent,bool clamp=true)
+{
+	if(!clamp||(clamp&&percent<100))
+	return((uint((0xFF<<24)|((((0xFF*percent)/100)&0xFF)<<16)|((((0xFF*(100-percent))/100)&0xFF)<<8)|((0)&0xFF))));
+	else
+	return((uint((0xFF<<24)|(((0xFF)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF))));
+}
+
+uint PercentColorReverse(uint percent,bool clamp=true)
+{
+	if(!clamp||(clamp&&percent<100))
+	return((uint((0xFF<<24)|((((0xFF*(100-percent))/100)&0xFF)<<16)|((((0xFF*percent)/100)&0xFF)<<8)|((0)&0xFF))));
+	else
+	return((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF))));
+}  
+
+void DrawChosenTabs()
+{
+	if(GUI_GetActiveMainScreen()!=(5))
+	return;
+	
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return; 
+	
+	if(chosen.Stat[(79)]>0||chosen.Stat[(78)]>0)
+	LevelUp=true;
+	else
+	LevelUp=false;
+	
+	if(LevelUp&&(GUI_GetActiveMainScreen()!=(5)||
+	GUI_GetActiveScreen()==(13)||GUI_GetActiveScreen()==(32)))
+	LevelUp=false;
+	
+	CurTab=0;
+	
+	if(chosen.Mode[(510)]!=0)
+	DrawTab(GetMsgStr((3),(441)),((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xAA)&0xFF)<<8)|((0)&0xFF)))));
+	
+	if(LevelUp)
+	{
+		string ex=""; 
+		
+		for(uint u=(78);u<=(79);u++)
+		{
+			if(chosen.Stat[u]>0)
+			ex+=GetMsgStr((3),100000+(u*10)+1)+": "+chosen.Stat[u]+"\n";
+		}
+		
+		DrawTab(GetMsgStr((3),(442)),((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xAA)&0xFF)<<8)|((0)&0xFF)))),ex);
+	}
+	
+	if(chosen.IsOverweight())
+	DrawTab(GetMsgStr((3),(440)),((uint((0xFF<<24)|(((0xAA)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))));  
+	
+	if(GetCurrentAim()!=(9))
+	{
+		DrawTab("Aim "+GetMsgStr((5),1109+GetCurrentAim()),(uint((0xFF<<24)|(((0)&0xFF)<<16)|(((255)&0xFF)<<8)|((0)&0xFF))));
+		
+	}
+	
+	if(chosen.Damage[(500)]!=0)
+	{
+		string@ex="";
+		uint color=((uint((0xFF<<24)|(((0xAA)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),percent=0;
+		
+		if((percent=chosen.Stat[(73)])>0)
+		{
+			ex="Poisoning level: "+percent+"%";
+			color=PercentColor(percent);
+		}
+		
+		DrawTab(GetMsgStr((3),(443)),color,ex);
+	}
+	
+	if(chosen.Damage[(501)]!=0)
+	{
+		string ex="";
+		uint color=((uint((0xFF<<24)|(((0xAA)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),percent=0;
+		
+		if((percent=(chosen.Stat[(74)]*100)/(1800))>0)
+		{
+			ex="Radiation level: "+percent+"%";
+			color=PercentColor(percent);
+		}
+		
+		DrawTab(GetMsgStr((3),(444)),color,ex);
+	}
+	
+	if(chosen.IsInjured())
+	{
+		string ex="";
+		
+		for(uint d=(502);d<=(506);d++)
+		{
+			if(chosen.Damage[d]>0)
+			ex+=GetMsgStr((3),100000+(d*10)+1)+"\n";
+		}
+		
+		DrawTab(GetMsgStr((3),(445)),((uint((0xFF<<24)|(((0xAA)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),ex);
+	}
+	
+	if(chosen.IsAddicted())
+	{
+		string ex="";
+		
+		for(uint a=(__AddictionBegin);a<(__AddictionEnd);a++)
+		{
+			if(chosen.Addiction[a]>0)
+			ex+=GetMsgStr((3),100000+(a*10)+1)+"\n";
+		}
+		
+		DrawTab(GetMsgStr((3),(446)),((uint((0xFF<<24)|(((0xAA)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),ex);
+	}       
+	
+	ItemCl@armor=chosen.GetItem(0,(3));
+	
+	uint16 condition;
+	
+	if((@armor!=null))condition=100-(armor.Deterioration*100)/(10000);
+	
+	if((@armor!=null)&&condition<=50)
+	{
+		string@ex="";
+		uint color=((uint((0xFF<<24)|(((0xAA)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),percent=0;
+		
+		ex="Condition: "+condition+"%/"+(100-armor.BrokenCount)+"%";
+		color=PercentColorReverse(condition);
+		
+		DrawTab("Armor",color,ex);
+		
+	} 
+	
+	if(IsTurnBased())
+	{
+		if(chosen.IsTurnBasedTurn())
+		DrawTab(GetMsgStr((3),(449)),int(GetTurnBasedTime()/1000),((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xAA)&0xFF)<<8)|((0)&0xFF)))));
+		else
+		DrawTab(GetMsgStr((3),(450)),((uint((0xFF<<24)|(((0xAA)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))));
+	}
+}
+
+void DrawTab(string@text,uint color,string@onText=null,uint onColor=0)
+{
+	int x1=Position[0]+CurTab*StepX,y1=Position[1]+CurTab*StepY,
+	x2=x1+TabPic.Width,y2=y1+TabPic.Height;
+	
+	TabPic.Draw(x1,y1);
+	DrawText((@text!=null)?text:"",x1,y1,x2-x1,y2-y1,color,(5),(0x000C));
+	
+	if((@onText!=null)&&onText.length()>0&&
+	GetCurrentCursor()==(0)&&
+	(__MouseX>x1&&__MouseX<x2)&&(__MouseY>y1&&__MouseY<y2))
+	{
+		int w=0,h=0,l=0;
+		GetTextInfo(onText,0,0,(5),(0x0200),w,h,l);
+		DrawText(onText,__MouseX+30,__MouseY+18,w,h,onColor,(5),(0x0200));
+	}
+	
+	CurTab++;
+}
+
+void DrawTab(string@text,int value,uint color,string@onText=null,uint onColor=0)
+{
+	if((@text!=null))
+	text=ReplaceText(text,"VALUE",value);
+	DrawTab(text,color,onText,onColor);
+}

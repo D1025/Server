@@ -1,0 +1,5379 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+
+shared class Entire
+{
+	int Number;
+	uint16 HexX;
+	uint16 HexY;
+	uint8 Direction;
+};
+
+uint ParseEntires(Map&map,array<Entire>&entires,int number)
+{
+	uint oldCount=entires.length();
+	uint count=map.CountEntire(number);
+	entires.resize(oldCount+count);
+	
+	for(uint i=0;i<count;i++)
+	{
+		Entire@ent=entires[oldCount+i];
+		if(map.GetEntireCoords(number,i,ent.HexX,ent.HexY,ent.Direction)==false)
+		return 0;
+		ent.Number=number;
+	}
+	
+	return count;
+}
+
+bool IsEntireFree(uint mappid,int number)
+{
+	Map@map=GetMapByPid(mappid,0);
+	return IsEntireFree(map,number);
+}
+
+bool IsEntireFree(Map&map,int number)
+{
+	uint16 x,y;
+	x=0;
+	y=0;
+	return GetEntireFreeHex(map,number,x,y);
+}
+
+bool GetEntireFreeHex(Map&map,int number,uint16&hx,uint16&hy,uint skip=0)
+{
+	uint count=map.CountEntire(number); 
+	
+	for(uint i=skip;i<count;i++)
+	{
+		if(map.GetEntireCoords(number,i,hx,hy)&&map.IsHexPassed(hx,hy))
+		return true;
+	}
+	
+	if(hx==0||hy==0||hx>=map.GetWidth()-1||hy>=map.GetHeight()-1)
+	return false; 
+	
+	for(uint i=0;i<count;i++)
+	{
+		if(map.GetEntireCoords(number,i,hx,hy))
+		{
+			for(int x=-1;x<=1;x++)
+			{
+				for(int y=-1;y<=1;y++)
+				{
+					if(x==0&&y==0)
+					continue;
+					if(__MapHexagonal)
+					{
+						if((hx%2)==1&&((x==-1&&y==1)||(x==1&&y==1)))
+						continue;
+						if((hx%2)==0&&((x==-1&&y==-1)||(x==1&&y==-1)))
+						continue;
+					}
+					
+					if(map.IsHexPassed(hx+x,hy+y))
+					{
+						hx+=x;
+						hy+=y;
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool GetNearEntire(Map&map,int number,uint16&hx,uint16&hy)
+{
+	uint16 hxBase=hx;
+	uint16 hyBase=hy;
+	
+	array<Entire>entires;
+	uint count=ParseEntires(map,entires,number);
+	if(count==0)
+	return false;
+	
+	hx=entires[0].HexX;
+	hy=entires[0].HexY;
+	for(uint i=1;i<count;i++)
+	{
+		Entire@ent=entires[i];
+		if(GetDistantion(hxBase,hyBase,ent.HexX,ent.HexY)<GetDistantion(hxBase,hyBase,hx,hy))
+		{
+			hx=ent.HexX;
+			hy=ent.HexY;
+		}
+	}
+	
+	return true;
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+import bool AddMiscPlane(Critter&npc,uint priority,uint waitMinute,string@funcName)from"npc_planes";
+import bool AddMiscPlane(Critter&npc,uint priority,int identifier,uint identifierExt,uint waitSecond,string@funcName)from"npc_planes";
+import bool AddWalkPlane(Critter&npc,uint priority,uint16 hexX,uint16 hexY,uint8 dir,bool run,uint cut)from"npc_planes";
+import bool AddWalkPlane(Critter&npc,uint priority,int identifier,uint identifierExt,uint16 hexX,uint16 hexY,uint8 dir,bool run,uint cut)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,uint critId)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target,int minHp)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,uint critId,int minHp)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target,bool run)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,uint16 hexX,uint16 hexY,uint16 protoId,uint useItemId,bool toOpen)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,Item@item,uint useItemId,bool toOpen)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,Item@item,uint useItemId,bool toOpen,bool run)from"npc_planes";
+import bool AddHealCritterPlane(Critter&npc,uint priority,Critter@target,bool run)from"npc_planes";
+import bool AddDoctorCritterPlane(Critter&npc,uint priority,Critter@target,bool run)from"npc_planes";
+
+import uint EraseAttackPlane(Critter&npc,uint priority,Critter&target)from"npc_planes";
+import uint EraseAttackPlane(Critter&npc,uint priority,uint critId)from"npc_planes";                                                                                                                                                                                                                                                                                                                                                                            
+
+import Location@GetLocationOf(Critter&critter)from"utils";
+import string GetLocationName(uint locId)from"utils";
+import string GetLocationName(Location@loc)from"utils";
+import bool ReadPids(array<int>&out pids,bool removeinvalid)from"utils";
+import void ReadDefines(string@fileName,dictionary&items,array<string>@defines)from"utils";
+import bool ParseDefine(const string&in line,string&out spid,int&out id)from"utils";
+import int SkipWhitespaces(const string&in str,int start)from"utils";
+import int SkipNonWhitespaces(const string&in str,int start)from"utils";
+import bool IsParameterTag(string&str)from"utils";
+import string GetParameterString(array<string@>@arr,string&parameter)from"utils";
+import int GetIndexOfString(array<string@>@arr,string&str)from"utils";
+import string GetConcatenatedString(array<string@>@arr,uint startindex,int stopindex)from"utils";
+import string GetConditionOfCritter(Critter@cr)from"utils";
+import string GetExtConditionOfCritter(Critter@cr)from"utils";
+import uint GetAllOnlinePlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players,bool ignorePriviledges)from"utils";
+import uint GetNumberOfPlayersOnline()from"utils";
+import void SetTurnBasedAvailability(Location@loc)from"utils";
+import bool IsGuarded(Map@map)from"utils";
+import bool IsPublic(Map@map)from"utils";
+import bool IsEncounterMap(Map@map)from"utils";
+import bool IsTown(Map@map)from"utils";
+import bool IsDungeon(Map@map)from"utils";
+import bool IsBaseControl(Map@map)from"utils";
+
+import uint GetMapType(Map@map)from"utils";
+import void LockDoor(uint x,uint y,Map@map,uint complexity,uint lockid)from"utils";
+import void UnlockDoor(uint x,uint y,Map@map)from"utils";
+import void ClearContainer(Item@container)from"utils";
+import void MoveItemsCritterToCont(Critter&crFrom,Item&contTo,uint specid)from"utils";
+import string GetCritterInfo(Critter&cr)from"utils";
+import bool AddExpTeam(Critter&critter,int xp)from"utils";
+import void ClearEnemyStack(Critter&critter)from"utils";
+import void ClearEnemyStacksOnMap(Map@map)from"utils";
+import bool IsCurrentEnemy(Critter&cr,uint targetId)from"utils";
+import string@GetSafePlayerName(uint id)from"utils";
+import string GetSafePlayerName(uint id,string&onSuccess,string&onError)from"utils";
+import IDateTime@GetCurrentDateTime()from"utils";
+import string GetCurrentDateTimeString()from"utils";
+import string GetCurrentDateTimeString(bool date,bool time)from"utils";
+import Critter@GetMostSkilled(array<Critter@>@group,int skill)from"utils";
+import string GetAuthString(Critter&player)from"utils";
+import string GetAuthString(int accesslevel)from"utils";
+import bool CanRequestHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player,int minutes)from"utils";
+import Critter@GetOnlineGM()from"utils";
+import void Preprocess(Critter&player,string&commandString)from"utils";
+import bool IsHumanoid(Critter@cr)from"utils";
+import uint GetGroupIndex(Critter&cr)from"utils";
+import uint GetGroupIndex(int st)from"utils";
+import void SetGroupIndex(Critter&cr,uint val)from"utils";
+import uint GetGroupRank(Critter&cr)from"utils";
+import void SetGroupRank(Critter&cr,uint val)from"utils";
+import uint GetGroupMode(Critter&cr)from"utils";
+import void SetGroupMode(Critter&cr,uint val)from"utils";
+import void SetGroupInfo(Critter&cr,uint faction,uint rank,uint mode)from"utils";
+import void SetGroupInfoPack(Critter&cr,uint packInfo)from"utils";
+import void ClearEvents(Critter&cr)from"utils";
+
+import int GetGvar(uint gvar)from"utils";
+import void SetGvar(uint gvar,uint value)from"utils";
+import int GetLLvar(Location&location,uint llvar)from"utils";
+import int GetLLvar(uint locationId,uint llvar)from"utils";
+import void SetLLvar(Location&location,uint llvar,uint value)from"utils";
+import int GetLMvar(Map&map,uint llvar)from"utils";
+import int GetLMvar(uint mapId,uint llvar)from"utils";
+import void SetLMvar(Map&map,uint llvar,uint value)from"utils";
+import int GetLIvar(Item&item,uint llvar)from"utils";
+import int GetLIvar(uint itemId,uint llvar)from"utils";
+import void SetLIvar(Item&item,uint llvar,uint value)from"utils";
+import int GetLvar(Critter&critter,uint lvar)from"utils";
+import int GetLvar(uint id,uint lvar)from"utils";
+import void SetLvar(Critter&critter,uint lvar,uint value)from"utils";
+import void SetLvar(uint id,uint lvar,uint value)from"utils";
+import int GetUvar(uint uvar,uint key,uint index)from"utils";
+import void SetUvar(uint uvar,uint key,uint index,uint value)from"utils";
+
+import uint GetContainerValue(Item@container)from"utils";
+import uint BaseItemValue(uint pid,bool ammo)from"utils";
+import uint BaseItemValue(uint pid,uint broken,uint det,bool ammo)from"utils";
+import uint BaseItemValue(Item@item)from"utils";
+import uint BaseItemValue(Item@item,uint proc)from"utils";
+import uint BaseSingleItemValue(Item@item)from"utils";
+import uint BaseSingleItemValue(Item@item,uint proc)from"utils";
+
+import void SetBloodType(Critter@cr)from"utils";
+import string GetBloodType(Critter@cr)from"utils";
+import string GetBloodRandom()from"utils";
+
+import void LogCommandUsage(Critter&player,string&commandString)from"utils";
+import void DropTimeouts(Critter&cr)from"utils";
+
+import bool HasItem(Critter@cr,uint pid)from"utils";
+import bool HasSomeWeapon(Critter@cr)from"utils";
+import uint GetBestWeaponSkill(Critter@cr)from"utils";
+import void GiveBag(uint bag,Critter@cr)from"utils";
+import void SetQuestGarbager(uint time,uint playerid,uint locid,uint var,uint val)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import void AddScore(Critter@cr,uint score,uint points)from"utils";
+
+import bool ReloadWeapon(Critter&cr)from"utils";
+import Item@GetRadio(Critter&cr)from"utils";
+import Item@GetRepairTool(Critter&cr)from"utils";
+import Item@GetEquippedItem(Critter&cr,uint Pid)from"utils";
+import Item@GetEquippedItem(Critter&cr,array<uint>&Pids)from"utils";
+import Item@GetEquippedItemByType(Critter&cr,uint ItemType)from"utils"; 
+
+import bool SkillRoll(Critter@cr,int skill,int bonus)from"utils";
+import int SkillCheck(Critter&cr,int skill,int skillused,Item@item,int bonus)from"utils";
+import string SkillName(uint8 skill)from"utils";
+import void ChangeCrTypeSafe(Critter&cr,uint8 crType)from"utils";
+
+import bool Pickable(Item@item)from"utils";
+
+import void TransferItemsToContOnMap(Critter&cr,Map@map,int entid,int contpid,int itemtypes)from"utils";
+import void TransferItemsFromContOnMap(Critter&cr,Map@map,int entid,int contpid)from"utils";
+
+import string IpToString(uint ip)from"utils";
+
+import void VerboseAction(Critter&cr,string&text)from"utils";
+import void VerboseAction(Critter&cr,Critter&target,string&text)from"utils";
+import void VerboseExperience(Critter&cr,int xpDiff,int levelDiff)from"utils";
+
+import void SetChosenActions(Critter&cr,array<int>&actions)from"utils";
+
+import void HexLine(uint16 x0,uint16 y0,uint16 x1,uint16 y1,array<uint16>@xList,array<uint16>@yList)from"utils";
+import void HexCircle(uint16 x0,uint16 y0,uint16 radius,array<uint16>@xList,array<uint16>@yList)from"utils";
+
+import void StartPersonalDataCleanup()from"utils";
+
+import bool IsPersonalData(Location&location,string&name)from"utils";
+import bool GetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Location&location,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Location&location,string&name)from"utils";
+
+import bool IsPersonalData(Map&map,string&name)from"utils";
+import bool GetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Map&map,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Map&map,string&name)from"utils";
+
+import bool IsPersonalData(Critter&critter,string&name)from"utils";
+import bool GetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Critter&critter,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Critter&critter,string&name)from"utils";
+
+import bool IsPersonalData(Item&item,string&name)from"utils";
+import bool GetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Item&item,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Item&item,string&name)from"utils";
+
+import bool FindPreferredGridApprox(Map&map,uint16&hx,uint16&hy)from"utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";    
+
+import int FindInArray(array<int>&arr,int value)from"utils";
+import int FindInArray(array<uint>&arr,uint value)from"utils";
+import int FindInArray(array<uint16>&arr,uint16 value)from"utils";
+import int FindInArray(array<uint8>&arr,uint8 value)from"utils";
+import bool FindInArray(array<int>&arr,int id,int&index)from"utils";
+import bool FindInArray(array<uint>&arr,uint id,int&index)from"utils";
+import bool FindInArray(array<uint8>&arr,uint8 id,int&index)from"utils";
+import int FindInArray(array<string>&arr,string&value)from"utils";
+import int FindInArray(array<string@>@arr,string&value)from"utils";
+import bool Present(int what,array<int>&where)from"utils";
+import bool Present(uint what,array<uint>&where)from"utils";
+import bool Present(uint16 what,array<uint16>&where)from"utils";
+import bool Present(string&what,array<string>&where)from"utils";
+import bool Present(string&what,array<string@>@where)from"utils";
+
+import uint CreateLocationForGroup(Critter&player,uint16 pid,uint16 worldX,uint16 worldY,array<Critter@>&)from"utils";
+import bool FindFirstFreeHex(Map@map,uint16&x,uint16&y,uint8 dir,uint16 maxSteps)from"utils";
+import bool FindNearestFreeHex(Map&map,uint16&x,uint16&y,uint radius)from"utils";
+
+import bool GetItemCoordinates(Item&item,uint&mapID,uint16&x,uint16&y)from"utils";
+import bool ItemOnHex(uint16 pid,Map@map,uint16 x,uint16 y)from"utils";
+
+import void PrintCallstack()from"utils";
+import void PrintCallstack(int level)from"utils";
+
+import bool LocationHasCritters(Location&loc,uint findType)from"utils";
+import uint LocationGetCritters(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint LocationGetPlayersAndFollowers(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint MapGetPlayersAndFollowers(Map&map,uint findType,array<Critter@>@critters)from"utils";
+import uint CritterGetPlayersAndFollowers(Critter&critter,bool lookOnMe,uint findType,array<Critter@>@critters)from"utils";
+import bool LocationHasItems(Location&loc,uint16 protoId)from"utils";
+import uint LocationGetItems(Location&loc,uint16 protoId,array<Item@>@items)from"utils";
+import void LocationDeleteItems(Location&loc,uint16 protoId)from"utils";
+
+import bool IsDisposableEncounter(Location@loc)from"utils";
+
+import bool IsT4Item(Item&item)from"utils";
+import bool IsT3Item(Item&item)from"utils";
+import uint16 AddT3Item()from"utils";
+import uint16 AddT4Item()from"utils";
+import uint16 AddImplant()from"utils";
+import uint16 AddT4BP()from"utils";
+import uint16 AddRareAmmo()from"utils";
+import uint16 AddTypicalAmmo()from"utils";
+
+import void SetDeterioration(Item&item)from"utils";  
+
+shared class CPosition
+{
+	uint x;
+	uint y;
+	uint dir;
+};
+
+shared interface IRect
+{
+	bool IsWithin(Critter&cr);
+};
+
+shared class Rect:IRect
+{
+	uint x1;
+	uint y1;
+	uint x2;
+	uint y2;
+	
+	Rect(uint x1,uint y1,uint x2,uint y2)
+	{
+		this.x1=x1;
+		this.y1=y1;
+		this.x2=x2;
+		this.y2=y2;
+	}
+	
+	bool IsWithin(Critter&cr)
+	{
+		return((cr.HexX>=this.x1&&cr.HexX<=this.x2)&&(cr.HexY>=this.y1&&cr.HexY<=this.y2));
+	}
+};
+
+shared interface IDateTime
+{
+	uint16 get_Year();
+	uint16 get_Month();
+	uint16 get_DayOfWeek();
+	uint16 get_Day();
+	uint16 get_Hour();
+	uint16 get_Minute();
+	uint16 get_Second();
+	uint16 get_Milliseconds();
+	string@ToString();
+};                                                                                                                                     
+
+shared interface IBroadcastBuffer
+{
+	string GetString();
+	
+	void SetType(int type);
+	int GetType();
+	void SetTime(int time);
+	int GetTime();
+	void SetSetup(int setup);
+	int GetSetup();
+	void SetMessage(string message);
+	void AppendMessage(string message);
+	string GetMessage();
+	void SetData(array<int>data);
+	
+	void SetStart(int time);
+	void ResetStart();
+	
+	void SetLifetime(int lifetime);
+	
+	void SetFilters(int filters);
+	void SetFilter(int filter);
+	void SetFilter(int filter,int data);
+	void UnsetFilter(int filter);
+	bool Filter(int filter);
+	bool CheckFilters(Critter@player);
+	
+	bool Send(Critter@player);
+	uint SendToAll();
+	
+	void SetGM(int id);
+	void UnsetGM();
+	
+	void ToDelete();
+};  
+
+import void UpdateBroadcast()from"broadcast";
+
+import IBroadcastBuffer@AddBroadcastBuffer(int type,int time,int setup,string&message,array<int>&data,int lifetime,int flags)from"broadcast";
+import void DumpBroadcastBuffer(Critter@player)from"broadcast";
+import uint FindBroadcastBufferByType(int type,array<IBroadcastBuffer@>&buf)from"broadcast";
+import uint FindBroadcastBufferByGM(int id,array<IBroadcastBuffer@>&buf)from"broadcast"; 
+
+import IBroadcastBuffer@Broadcast_Message(string&message,int time,int filters,bool send)from"broadcast";
+import IBroadcastBuffer@Broadcast_Message(string&message,int time,int filters)from"broadcast";
+import IBroadcastBuffer@Broadcast_Message(string&message,int&time)from"broadcast";
+import IBroadcastBuffer@Broadcast_Message(string&message,bool send)from"broadcast";
+import IBroadcastBuffer@Broadcast_Message(string&message)from"broadcast"; 
+
+import void Broadcast_TownControl_Set(string&message,int location,int time,int faction)from"broadcast";
+import void Broadcast_TownControl_Set(int location,int time,int faction,Critter&player)from"broadcast";
+import void Broadcast_TownControl_Stop(int location)from"broadcast"; 
+
+import IBroadcastBuffer@Broadcast_Influence(int location,int time,string&message)from"broadcast"; 
+
+import uint Broadcast_RequestHelp(Critter@player,string&message)from"broadcast";
+import void Broadcast_CheckRequestHelpBuffer(Critter@gm)from"broadcast";
+import void Broadcast_DumpRequestHelpBuffer(Critter@gm)from"broadcast"; 
+
+import void baseControl(string msg,int mapId,uint time)from"broadcast";
+import void baseControlRadio(string msg,uint time,int mapId,uint factionId)from"broadcast"; 
+
+import void ServerEventMSG(uint time,string msg)from"broadcast"; 
+
+import IBroadcastBuffer@GetEventCountDownBuffer(int location,int type)from"broadcast";
+import void ServerEventCNTSet(string message,uint location,uint type,uint time)from"broadcast";
+import void ServerEventCNTSet(uint location,uint type,uint time)from"broadcast";
+import void ServerEventCNTStop(uint location,uint type)from"broadcast";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+import void SetLexem(Item&item,string&lex,string&value)from"lexems";
+
+uint BonusNumber(Item@it)
+{
+	uint number=0;
+	if(it.Val5!=0)return 5;
+	else if(it.Val4!=0)return 4;
+	else if(it.Val3!=0)return 3;
+	else if(it.Val2!=0)return 2;
+	else if(it.Val1!=0)return 1;
+	else return 0;
+}
+
+void AddBonusOrNot(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>=50)AddWeaponBonus(it,1);
+		if(roll>=60)AddWeaponBonus(it,2);
+		if(roll>=70)AddWeaponBonus(it,3);
+		if(roll>=80)AddWeaponBonus(it,4);
+		if(roll>=90)AddWeaponBonus(it,5);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>=50)AddArmorBonus(it,1);
+		if(roll>=60)AddArmorBonus(it,2);
+		if(roll>=70)AddArmorBonus(it,3);
+		if(roll>=80)AddArmorBonus(it,4);
+		if(roll>=90)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddSpecialBonusLow(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddWeaponBonus(it,1);
+		if(roll>34)AddWeaponBonus(it,2);
+		if(roll>59)AddWeaponBonus(it,3);
+		if(roll>74)AddWeaponBonus(it,4);
+		if(roll>84)AddWeaponBonus(it,5);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddArmorBonus(it,1);
+		if(roll>34)AddArmorBonus(it,2);
+		if(roll>59)AddArmorBonus(it,3);
+		if(roll>74)AddArmorBonus(it,4);
+		if(roll>84)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddSpecialBonus(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		AddWeaponBonus(it,1);
+		AddWeaponBonus(it,2);
+		AddWeaponBonus(it,3);
+		AddWeaponBonus(it,4);
+		if(Random(0,1)==0)AddWeaponBonus(it,5);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		AddArmorBonus(it,1);
+		AddArmorBonus(it,2);
+		AddArmorBonus(it,3);
+		AddArmorBonus(it,4);
+		if(Random(0,1)==0)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddBonuses(Item@it,string@crafter)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>55)AddWeaponBonus(it,1,true);
+		if(roll>76)AddWeaponBonus(it,2,true);
+		if(roll>88)AddWeaponBonus(it,3,true);
+		if(roll>95)AddWeaponBonus(it,4,true);
+		if(roll==99)AddWeaponBonus(it,5,true);
+		SetLexem(it,"$crafter",crafter);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>55)AddArmorBonus(it,1);
+		if(roll>76)AddArmorBonus(it,2);
+		if(roll>88)AddArmorBonus(it,3);
+		if(roll>95)AddArmorBonus(it,4);
+		if(roll==99)AddArmorBonus(it,5);
+		SetLexem(it,"$crafter",crafter);
+	}
+	return;
+} 
+
+void AddBonusHinkley(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddWeaponBonus(it,1);
+		if(roll>34)AddWeaponBonus(it,2);
+		if(roll>59)AddWeaponBonus(it,3);
+		if(roll>74)AddWeaponBonus(it,4);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddArmorBonus(it,1);
+		if(roll>34)AddArmorBonus(it,2);
+		if(roll>59)AddArmorBonus(it,3);
+		if(roll>74)AddArmorBonus(it,4);
+	}
+	return;
+}
+
+void AddBonuses(Item@it,int magic)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		if(magic>=1)AddWeaponBonus(it,1,true);
+		if(magic>=2)AddWeaponBonus(it,2,true);
+		if(magic>=3)AddWeaponBonus(it,3,true);
+		if(magic>=4)AddWeaponBonus(it,4,true);
+		if(magic>=5)AddWeaponBonus(it,5,true);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		if(magic>=1)AddArmorBonus(it,1);
+		if(magic>=2)AddArmorBonus(it,2);
+		if(magic>=3)AddArmorBonus(it,3);
+		if(magic>=4)AddArmorBonus(it,4);
+		if(magic>=5)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddArmorBonus(Item@it,int number)
+{
+	int minRoll=1;
+	int maxRoll=1;
+	
+	uint bonusType=0;
+	uint maxBonusType=(123); 
+	
+	if(it.GetProtoId()>=725&&it.GetProtoId()<=741)maxBonusType=(111); 
+	
+	do
+	{
+		bonusType=Random(100,maxBonusType);
+	}
+	while(HasBonusAlready(it,bonusType));
+	
+	switch(bonusType)
+	{
+		
+		case(100):{maxRoll=5;break;}
+		case(101):{maxRoll=5;break;}
+		case(102):{maxRoll=5;break;}
+		case(103):{maxRoll=5;break;}
+		case(104):{maxRoll=5;break;}
+		case(105):{maxRoll=10;break;}
+		case(106):{maxRoll=10;break;}
+		case(107):{maxRoll=10;break;}
+		case(108):{maxRoll=10;break;}
+		case(109):{maxRoll=10;break;}
+		case(110):{minRoll=-7;maxRoll=-1;break;}
+		case(111):{minRoll=-7;maxRoll=-1;break;}
+		
+		case(112):break;
+		case(113):{minRoll=10;maxRoll=30;break;}
+		case(114):{minRoll=10;maxRoll=30;break;}
+		case(115):break;
+		case(116):break;
+		case(117):break;
+		case(118):break;
+		case(119):break;
+		case(120):break;
+		case(121):break;
+		case(122):{minRoll=5;maxRoll=20;break;}
+		case(123):{minRoll=1;maxRoll=5;break;}
+		default:break;
+	} 
+	
+	int roll=Random(minRoll,maxRoll); 
+	
+	switch(number)
+	{
+		case 1:{it.Val0=bonusType;it.Val5=roll;break;}
+		case 2:{it.Val1=bonusType;it.Val6=roll;break;}
+		case 3:{it.Val2=bonusType;it.Val7=roll;break;}
+		case 4:{it.Val3=bonusType;it.Val8=roll;break;}
+		case 5:{it.Val4=bonusType;it.Val9=roll;break;}
+		default:break;
+	}
+	
+	it.Update();
+	return;
+} 
+
+void AddWeaponBonus(Item@it,int number,bool isCrafting=false)
+{
+	
+	uint minRoll=1;
+	uint maxRoll=1;
+	
+	uint bonusType=0;
+	
+	int skillNum=it.Proto.Weapon_Skill_0;
+	bool isRangeWeapon=(skillNum==(200)||skillNum==(201)||skillNum==(202));
+	
+	do
+	{
+		if(isRangeWeapon)
+		bonusType=Random(100,(106));
+		else
+		bonusType=Random(100,(105));
+	}
+	while(HasBonusAlready(it,bonusType)||IsBonusExcluded(isCrafting,bonusType));
+	
+	switch(bonusType)
+	{
+		case(100):{maxRoll=7;break;}
+		case(101):{maxRoll=7;break;}
+		case(102):{minRoll=10;maxRoll=25;break;}
+		case(103):{minRoll=10;maxRoll=25;break;}
+		case(104):{minRoll=5;maxRoll=25;break;}
+		case(106):{minRoll=1;maxRoll=4;break;}
+		case(105):break;
+		default:break;
+	} 
+	
+	uint roll=Random(minRoll,maxRoll); 
+	
+	switch(number)
+	{
+		case 1:{it.Val0=bonusType;it.Val5=roll;break;}
+		case 2:{it.Val1=bonusType;it.Val6=roll;break;}
+		case 3:{it.Val2=bonusType;it.Val7=roll;break;}
+		case 4:{it.Val3=bonusType;it.Val8=roll;break;}
+		case 5:{it.Val4=bonusType;it.Val9=roll;break;}
+		default:break;
+	}
+	
+	it.Update();
+	return;
+} 
+
+bool IsBonusExcluded(bool isCrafting,int bonusType)
+{
+	if(!isCrafting)
+	return false;
+	
+	if(bonusType==(105))
+	return true;
+	
+	return false;
+} 
+
+bool HasBonusAlready(Item@it,int bonusType)
+{
+	if(it.Val0==bonusType)return true;
+	if(it.Val1==bonusType)return true;
+	if(it.Val2==bonusType)return true;
+	if(it.Val3==bonusType)return true;
+	if(it.Val4==bonusType)return true;
+	return false;
+}  
+
+int checkBonus(Item@it,int bonusType)
+{
+	if(it.Val0==bonusType)return it.Val5;
+	if(it.Val1==bonusType)return it.Val6;
+	if(it.Val2==bonusType)return it.Val7;
+	if(it.Val3==bonusType)return it.Val8;
+	if(it.Val4==bonusType)return it.Val9;
+	return 0;
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+
+shared interface IPolygon
+{
+	IPolygon@AddVertex(uint16 x,uint16 y);
+	IPolygon@AddVertices(array<uint16>&hexes);   
+	
+	bool IsWithin(Critter&cr);
+	bool IsWithin(Item&item);  
+	
+	bool IsWithin(uint16 x,uint16 y);
+};  
+
+import IPolygon@NewPolygon()from"polygon"; 
+
+import IPolygon@LoadShapeFromEntires(Map&map,uint first,uint last)from"polygon";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
+const string@FD_Result2String(int res)
+{
+	if(res==(0))
+	return"FD_RESULT_SUCCESS";
+	else if(res==(1))
+	return"FD_RESULT_ALREADY_EXISTS";
+	else if(res==(2))
+	return"FD_RESULT_NOT_FOUND";
+	else if(res==(3))
+	return"FD_RESULT_ANY_DATA_ERROR";
+	else if(res==(4))
+	return"FD_RESULT_INVALID_ARGUMENT";
+	else if(res==(5))
+	return"FD_RESULT_LVAR_ERROR";
+	else if(res==(6))
+	return"FD_RESULT_DB_NOT_FOUND";
+	else if(res==(7))
+	return"FD_RESULT_DB_FULL";
+	else if(res==(8))
+	return"FD_RESULT_DB_EMPTY";
+	else
+	return"FD_Result: Unknown error code";
+}      
+
+import bool IsBigFaction(uint faction)from"factions";
+import bool IsTheSameFaction(uint player1Id,uint player2Id)from"factions";
+import void _Resign(uint playerId)from"factions"; 
+
+import int RegisterFaction(uint id,const string@name,bool playerDriven)from"factions";
+import int RegisterFaction(const string@name,bool playerDriven,uint&out id)from"factions";
+
+import bool RemoveFaction(uint faction)from"factions"; 
+
+import bool GetFactionNameStr(uint faction,string&out name)from"factions";
+import bool GetFactionId(const string@name,uint&out id)from"factions"; 
+
+import bool IsFactionNameFree(const string&)from"factions";
+import bool IsFactionNameValid(const string&)from"factions";
+
+import bool IsGang(uint faction)from"factions";
+
+import uint16 GetFactionRadioChannel(uint faction)from"factions";
+import void SetFactionRadioChannel(uint faction,uint16 channel)from"factions"; 
+
+import int AddPlayer(uint faction,uint id)from"factions";
+import int AddPlayer(uint faction,uint id,uint playerFaction)from"factions";
+import int AddPlayer(uint faction,uint id,uint playerFaction,uint rank)from"factions";
+import int AddPlayer(uint faction,uint id,uint playerFaction,uint rank,uint status)from"factions"; 
+
+import int RemovePlayer(uint faction,uint id)from"factions"; 
+
+import int GetFaction(uint faction,uint id)from"factions";
+import int GetStatus(uint faction,uint id)from"factions";
+import int GetRank(uint faction,uint id)from"factions";
+import bool IsMember(uint faction,Critter&cr)from"factions";
+import bool IsMemberOffline(uint faction,uint id)from"factions";
+import bool StoredInDB(uint faction,uint id)from"factions";
+import uint GetRecordsCount(uint faction)from"factions";
+import uint GetMembersCount(uint faction)from"factions";
+import uint GetMembers(uint faction,array<uint>&ids)from"factions";
+import uint GetLeaderId(uint faction)from"factions";
+import void SetLeaderId(uint faction,uint id)from"factions";
+import uint GetClaimId(uint faction)from"factions";
+import void SetClaimId(uint faction,uint id)from"factions";
+import uint GetLeaderTime(uint faction)from"factions";
+import void SetLeaderTime(uint faction,uint time)from"factions";
+import uint GetClaimTime(uint faction)from"factions";
+import void SetClaimTime(uint faction,uint time)from"factions";
+import uint GetFactionLocationId(uint faction)from"factions";
+import bool GetFactionLocation(uint faction,uint&out locId,uint&out pid,uint&out x,uint&out y)from"factions";
+
+import void GetFactionLocationCoords(uint faction,uint&out x,uint&out y)from"factions";
+
+import uint GetFactionScore(uint faction)from"factions";
+import void ModifyFactionScore(uint faction,int amount)from"factions";
+import void UpdateLastUsed(uint faction)from"factions";
+import uint GetFactionsCount()from"factions"; 
+
+import int GetPrevId(uint faction,uint currId,bool members,uint&out prevId)from"factions";
+import int GetNextId(uint faction,uint currId,bool members,uint&out nextId)from"factions";
+import int GetFirstId(uint faction,bool members,uint&out id)from"factions"; 
+
+import int ModifyRank(uint faction,uint id,uint newRank)from"factions";
+import int ModifyStatus(uint faction,uint id,uint newStatus)from"factions";
+import int ModifyFaction(uint faction,uint id,uint newFaction)from"factions"; 
+
+import int InvitePlayer(uint faction,uint playerId)from"factions";
+import int ConfirmInvitation(uint faction,uint playerId)from"factions";
+import int AddMember(uint faction,uint playerId)from"factions";
+import int AddMember(uint faction,uint playerId,bool applyModifiers)from"factions";
+import int ChangeRank(uint faction,uint playerId,uint newRank)from"factions";
+import int ExpelMember(uint faction,uint playerId)from"factions";
+import int ExpelMember(uint faction,uint playerId,bool applyModifiers)from"factions";
+
+import uint GetPlayerFaction(uint playerId)from"factions";
+import uint GetPlayerRank(uint playerId)from"factions"; 
+
+import void AddFactionNews(uint faction,uint master,uint slave,uint type)from"factions";
+import bool GetFactionNews(uint faction,uint index,uint&out master,uint&out slave,uint&out type,uint16&out year,uint8&out month,uint8&out day,uint8&out hour,uint8&out minute)from"factions";
+import uint GetFactionNewsCount(uint faction)from"factions"; 
+
+import uint CheckFactionBaseCoords(uint x,uint y)from"factions";
+
+import bool SaveFactionData(uint faction)from"factions";
+import bool FactionExists(uint faction)from"factions"; 
+
+import uint GetFactionLog(uint faction,bool fullLog,array<string>&strings,uint begin,uint end)from"factions";   
+
+import void InitFactions()from"factions";
+import void UpdateFactionsInfo(Critter&cr)from"factions";
+import IFaction@GetFaction(int)from"factions";
+import IFaction@GetFaction(const string&)from"factions";
+import IFaction@GetFactionByIdx(int idx)from"factions";
+import void UpdateGroupVars(Critter&player)from"factions";     
+
+shared interface IFaction
+{
+	int get_Id()const;
+	string get_Name()const;
+	int get_StringId()const;
+	string get_Database()const;
+	int get_UpdateSeq()const;
+	void set_UpdateSeq(int);
+	
+	int GetStatus(int id)const;
+	void SetStatus(int id,int status);
+	int GetRank(int id)const;
+	void SetRank(int id,int rank);   
+	
+	int GetMembers(array<uint>&)const;
+	int GetRecords(array<uint>&)const;  
+	
+	void AddKnownFaction(int);   
+	
+	int GetKnownFactions(array<int>&)const;
+	void Remove();
+};  
+
+import string GetLexem(Item&item,string&lex)from"lexems";
+import bool IsLexem(Item&it,string&lex)from"lexems";
+import void UnsetLexem(Item&item,string&lex)from"lexems";
+import bool BaseIsTakingByMobs(Location&loc)from"base_control";  
+
+string groupname="NOT SPECIFIED";
+uint16 statteamid=5003,dialog=0,aiid=0;
+
+void InitializeDynamicMob(Map&map)
+{
+	InitializeDynamicMob(map,false,1);
+}
+
+void InitializeDynamicMob(Map&map,bool withBoss)
+{
+	InitializeDynamicMob(map,withBoss,1);
+}
+
+void InitializeDynamicMob(Map&map,bool withBoss,int8 howmanybosses)
+{
+	uint8 reqNumMobs;
+	uint8 numMobs=map.GetNpcCount((203),(0x20)|(0x03));
+	
+	Location@loc=map.GetLocation();
+	
+	switch(map.GetProtoId())
+	{
+		case(606):reqNumMobs=10;break;
+		
+		case(285):reqNumMobs=20;break;
+		case(286):reqNumMobs=10;break;
+		
+		case(661):reqNumMobs=25;break;
+		case(662):
+		case(663):reqNumMobs=12;break;
+		case(100):reqNumMobs=25;break;
+		case(101):
+		case(102):
+		case(575):
+		case(576):reqNumMobs=12;break;
+		
+		case(578):reqNumMobs=20;break;
+		case(579):reqNumMobs=20;break;
+		
+		case(687):reqNumMobs=15;break;
+		case(688):reqNumMobs=25;break;
+		case(689):reqNumMobs=6;break;
+		
+		case(565):reqNumMobs=15;break;
+		
+		case(590):reqNumMobs=10;break;
+		case(591):reqNumMobs=20;break;
+		case(592):reqNumMobs=15;break;
+		
+		case(145):reqNumMobs=5;break;
+		case(146):reqNumMobs=20;break;
+		case(147):reqNumMobs=20;break;
+		
+		case(586):reqNumMobs=4;break;
+		case(587):reqNumMobs=10;break;
+		case(588):reqNumMobs=15;break;
+		case(589):reqNumMobs=15;break;
+		
+		case(690):reqNumMobs=10;break;
+		case(691):reqNumMobs=25;break; 
+		
+		case(692):reqNumMobs=20;break;
+		case(693):reqNumMobs=15;break;
+		case(694):reqNumMobs=15;break; 
+		
+		case(241):reqNumMobs=5;break;
+		case(242):reqNumMobs=8;break;
+		case(243):reqNumMobs=10;break;
+		case(244):reqNumMobs=10;break;
+		case(245):reqNumMobs=15;break;
+		case(246):reqNumMobs=5;break;
+		
+		case(695):reqNumMobs=15;break;
+		case(696):reqNumMobs=50;break;
+		
+		case(702):reqNumMobs=8;break;
+		case(703):reqNumMobs=15;break;
+		
+		case(49):reqNumMobs=10;break;
+		case(50):reqNumMobs=15;break;
+		case(51):reqNumMobs=15;break;
+		case(52):reqNumMobs=15;break;
+		case(53):reqNumMobs=8;break;
+		
+		case(34):reqNumMobs=8;break;
+		case(35):reqNumMobs=12;break;
+		case(36):reqNumMobs=10;break;
+		case(37):reqNumMobs=10;break;
+		
+		case(664):reqNumMobs=25;break;
+		case(665):reqNumMobs=5;break;
+		case(666):reqNumMobs=15;break; 
+		
+		case(583):reqNumMobs=25;break;
+		case(90):reqNumMobs=10;break;
+		case(99):reqNumMobs=10;break;
+		case(56):reqNumMobs=5;break;
+		default:reqNumMobs=5;break;
+	}
+	
+	if(loc.IsGuarded()&&IsNotDungInGuardedLoc(map))
+	{
+		
+		if((@map!=null))
+		{
+			uint16 timeinminutes=Random(10,2885);
+			CreateTimeEvent(((__FullSecond)+(((timeinminutes-5)*__TimeMultiplier*60))),"e_SetCountDownToRide",map.Id,true);
+		}
+	}      
+	
+	else
+	{
+		
+		if(withBoss)
+		{
+			array<Critter@>bosses;
+			map.GetCritters(0,(0x20)|(0x0F),bosses);
+			
+			for(uint16 i=0;i<bosses.length();i++)
+			{
+				if((@bosses[i]!=null))
+				{
+					if(bosses[i].Stat[(187)]==(1))
+					howmanybosses--;
+				}
+			}
+			
+			for(uint8 i=0;i<howmanybosses;i++)
+			{
+				array<uint>bossdata={map.Id,0,(4)};
+				CreateTimeEvent(((__FullSecond)+(((Random(1,10))*__TimeMultiplier*60))),"e_TrySpawnMob",bossdata,true);
+				reqNumMobs--;
+			}
+			
+		}
+		for(uint8 i=0;i<numMobs;i++)
+		{
+			Critter@thiscanbeturret=map.GetNpc((203),(0x20)|(0x03),i);
+			if(thiscanbeturret.GetProtoId()==480||thiscanbeturret.GetProtoId()==474||thiscanbeturret.GetProtoId()==470)
+			reqNumMobs++;
+		}
+		if(map.GetProtoId()==(606))
+		for(uint8 i=0;i<numMobs;i++)
+		{
+			Critter@nukacolaworker=map.GetNpc((203),(0x20)|(0x03),i);
+			if(IsNukaColaWorker(nukacolaworker))
+			reqNumMobs++;
+		}
+		if(numMobs<reqNumMobs)
+		{
+			uint8 mobsToSpawn=reqNumMobs-numMobs;
+			for(uint8 i=1;i<mobsToSpawn;i++)
+			{
+				if((@map!=null))
+				{
+					array<uint>mobdata={map.Id,0,(3)};
+					CreateTimeEvent(((__FullSecond)+(((Random(1,10))*__TimeMultiplier*60))),"e_TrySpawnMob",mobdata,true);
+				}
+			}
+		}
+	}
+}
+
+uint e_SetCountDownToRide(array<uint>@ctdata)
+{
+	Map@map=GetMap(ctdata[0]);
+	if(!(@map!=null))
+	return 0;
+	Location@loc=map.GetLocation();
+	string locationName=GetLocationName(loc.Id);
+	ServerEventCNTSet("Some larger group is preparing to attack "+locationName+". They will be there in %COUNTDOWN%.",loc.GetProtoId(),(15),((5)*__TimeMultiplier*60));
+	
+	CreateTimeEvent(((__FullSecond)+(((5)*__TimeMultiplier*60))),"e_TryRaidTown",map.Id,true);
+	return 0;
+}  
+
+uint e_TryRaidTown(array<uint>@mobdata)
+{
+	Map@map=GetMap(mobdata[0]);
+	if(!(@map!=null))
+	return 0;
+	
+	uint8 reqNumMobs;
+	
+	array<Critter@>mobs;
+	map.GetCritters(0,(0x20),mobs);
+	
+	for(uint16 i=0;i<mobs.length();i++)
+	{
+		if((@mobs[i]!=null)&&mobs[i].Stat[(106)]==5003)
+		statteamid=5004;
+		if((@mobs[i]!=null)&&mobs[i].Stat[(106)]==5004)
+		statteamid=5005;
+		if((@mobs[i]!=null)&&mobs[i].Stat[(106)]==5005)
+		statteamid=5006;
+		if((@mobs[i]!=null)&&mobs[i].Stat[(106)]==5006)
+		statteamid=5007;
+		if((@mobs[i]!=null)&&mobs[i].Stat[(106)]==5007)
+		statteamid=5008;
+		if((@mobs[i]!=null)&&mobs[i].Stat[(106)]==5008)
+		statteamid=5009;
+		if((@mobs[i]!=null)&&mobs[i].Stat[(106)]==5009)
+		statteamid=5003;
+	}
+	
+	switch(map.GetProtoId())
+	{
+		case(45):reqNumMobs=Random(10,15);break;
+		default:reqNumMobs=Random(10,15);break;
+	}
+	
+	array<uint>townraiddata={map.Id,reqNumMobs,(0)};
+	CreateTimeEvent(((__FullSecond)+(0)),"e_TrySpawnMob",townraiddata,true);
+	
+	CreateTimeEvent(((__FullSecond)+(((Random(60,2885))*__TimeMultiplier*60))),"e_SetCountDownToRide",map.Id,true); 
+	
+	return 0;
+} 
+
+void SpawnMobs(Critter&cr,int howmany,int whatkind,int whattype)
+{
+	Map@map=cr.GetMap();
+	if(!(@map!=null))
+	{
+		cr.Say((11),"You are not on valid map.");
+		return;
+	}
+	
+	if(!map.GetLocation().IsGuarded()&&map.GetLocation().GetProtoId()!=(23))
+	{
+		cr.Say((11),"You are not on valid map.");
+		return;
+	}
+	
+	if(howmany>30)cr.Say((11),"Number of mobs "+howmany+" is too high! Setting to 30...");
+	if(howmany<2)cr.Say((11),"Number of mobs "+howmany+" is too low! Setting to 2...");
+	
+	howmany=(((howmany)>(30))?(30):(((howmany)<(2))?(2):(howmany)));
+	
+	if(map.GetLocation().IsGuarded()&&map.GetLocation().IsTown())
+	{
+		switch(map.GetProtoId())
+		{
+			case(45):
+			case(280):  
+			
+			case(221):
+			case(70):
+			case(137):
+			case(16):
+			
+			if(map.GetNpcCount((203),(0x03)|(0x20))!=0)
+			{
+				cr.Say((11),"Town is already raided.");
+			}
+			else
+			{
+				cr.Say((11),"Raiding the town by "+howmany+" mobs.");
+				array<uint>filldata={map.Id,howmany,(2),whatkind,whattype};
+				CreateTimeEvent(((__FullSecond)+(0)),"e_TrySpawnMob",filldata,false);
+			}
+			break;
+			default:
+			cr.Say((11),"This map is not ready to be raided.");
+		}
+		return;
+	}
+	
+	if(map.GetLocation().GetProtoId()==(23))
+	{
+		cr.Say((11),"Spawning "+howmany+" in Vault 13.");
+		array<uint>filldata={map.Id,howmany,(2),whatkind,whattype};
+		CreateTimeEvent(((__FullSecond)+(0)),"e_TrySpawnMob",filldata,false);
+		return;
+	}
+	
+	cr.Say((11),"Unknown exception or error.");
+}
+
+void CallMobs(Critter&cr,int howmany,int whatkind,int whattype)
+{
+	Map@map=cr.GetMap();
+	if(!(@map!=null))
+	{
+		cr.Say((11),"You are not on valid map.");
+		return;
+	}
+	
+	if(howmany>10)cr.Say((11),"Number of mobs "+howmany+" is too high! Setting to 10...");
+	if(howmany<1)cr.Say((11),"Number of mobs "+howmany+" is too low! Setting to 1...");
+	
+	howmany=(((howmany)>(10))?(10):(((howmany)<(1))?(1):(howmany)));
+	
+	cr.Say((11),"Spawning "+howmany+" event mobs.");
+	array<uint>filldata={map.Id,howmany,(5),whatkind,whattype,cr.HexX,cr.HexY};
+	CreateTimeEvent(((__FullSecond)+(0)),"e_TrySpawnMob",filldata,false);
+}
+
+void FillMapByMobs(Map&map,uint8 reqNumMobs,uint8 kindof,uint8 subtype,uint8 weapgroup)
+{
+	if(!(@map!=null))
+	{
+		Log("Map is not valid.");
+		return;
+	}
+	
+	array<uint>filldata={map.Id,reqNumMobs,(1),kindof,subtype,weapgroup};
+	CreateTimeEvent(((__FullSecond)+(0)),"e_TrySpawnMob",filldata,false);
+}            
+
+array<uint16>leatherjackets={30,31,32,33,472};
+array<uint16>leatherarmors={70,71,69,891,892,897};
+array<uint16>metalarmors={40,41,827,828,829,890};
+array<uint16>eca={888,889};
+array<uint16>bca={886,887};
+array<uint16>rca={475,476};
+array<uint16>v13={898,899,900};
+array<uint16>pca={894,895};
+array<uint16>carmor={134,135};
+array<uint16>carmormk2={261,262};
+array<uint16>parmor={122};
+array<uint16>hpa={893};
+array<uint16>apa={250};
+array<uint16>apamk2={250};
+array<uint16>vaultx={884,885};
+array<uint16>dca={590,591};
+array<uint16>mutants={549,550};
+array<uint16>melchiorpets={562,563,564,565};
+array<uint16>aliens={242,243,517};
+array<uint16>robots={576,577,578,579,580,581,582,583,584};
+array<uint16>rats={588,587,586};
+array<uint16>scavengers={60,
+	64,
+	59,
+	63,
+	65,
+	68};
+
+array<uint16>@GenerateGroup(Map&map,uint8 kindofmob=0,uint8 subtypemob=0)
+{
+	array<uint16>GroupOfMobs;
+	dialog=0;
+	aiid=0; 
+	
+	if(kindofmob==0)
+	switch(Random(1,21))
+	{
+		case 1:groupname="Slag bandits";break;
+		case 2:groupname="Vipers raiders";break;
+		case 3:groupname="Jackals raiders";break;
+		case 4:
+		if(map.GetProtoId()==(16)||map.GetProtoId()==(109))
+		groupname="NCR Soldiers and Rangers";
+		else
+		groupname="Enclave Soldiers";
+		break;
+		case 5:groupname="Renegades";break;
+		case 6:groupname="Slavers";break;
+		case 7:groupname="Aliens";break;
+		case 8:groupname="Deathclaws";break;
+		case 9:groupname="Centaurs";break;
+		case 10:groupname="Floaters";break;
+		case 11:groupname="Floaters and Centaurs";break;
+		case 12:groupname="Mercenaries";break;
+		case 13:groupname="Super Mutant remnants";break;
+		case 14:groupname="Master's Elite Crew";break;
+		case 15:groupname="Endless Walkers";break;
+		case 16:groupname="Spiders";break;
+		case 17:groupname="Dogs";break;
+		case 18:groupname="Radscorpions";break;
+		case 19:groupname="Melchior's pets";break;
+		case 20:groupname="Melchior with his pets";break;
+		case 21:groupname="Robots";break;
+		case 22:groupname="Rats";break;
+	}  
+	
+	if(kindofmob!=0)
+	{
+		Log("Trying to generate one mob kindofmob = "+kindofmob+", subtypemob = "+subtypemob+" for mapId <"+map.Id+">, ProtoId <"+map.GetProtoId()+">.");
+	}
+	else
+	{
+		Location@loc=map.GetLocation();
+		
+		Log("Trying to generate group of mobs <"+groupname+">, subtypemob = "+subtypemob+" for mapId <"+map.Id+">, location name <"+GetLocationName(loc.Id)+">.");
+	}
+	
+	if(groupname=="Slag bandits"||kindofmob==1)
+	{
+		groupname="Slag bandits";
+		
+		uint8 tablelenght=0;
+		uint8 getrangeofmob=3;
+		
+		if(subtypemob==1)
+		getrangeofmob=2;
+		
+		if(subtypemob==2)
+		getrangeofmob=1;
+		
+		for(uint8 n=0;n<3;n++)
+		{
+			switch(Random(1,getrangeofmob))
+			{
+				case 1:
+				for(uint8 i=0;i<metalarmors.length();i++)
+				{
+					tablelenght++;
+					GroupOfMobs.resize(tablelenght);
+					GroupOfMobs[tablelenght-1]=metalarmors[i];
+					
+				}
+				break;
+				case 2:
+				for(uint8 i=0;i<leatherarmors.length();i++)
+				{
+					tablelenght++;
+					GroupOfMobs.resize(tablelenght);
+					GroupOfMobs[tablelenght-1]=leatherarmors[i];
+					
+				}
+				break;
+				case 3:
+				for(uint8 i=0;i<leatherjackets.length();i++)
+				{
+					tablelenght++;
+					GroupOfMobs.resize(tablelenght);
+					GroupOfMobs[tablelenght-1]=leatherjackets[i];
+				}
+				break;
+			}
+			
+		}
+		if(Random(1,2)==1)
+		for(uint8 i=0;i<carmor.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmor[i];
+		}
+		
+		if(Random(1,3)==1)
+		for(uint8 i=0;i<carmormk2.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmormk2[i];
+		}
+		
+		if(Random(1,5)==1)
+		for(uint8 i=0;i<eca.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=eca[i];
+		}
+		
+		if(Random(1,5)==1)
+		for(uint8 i=0;i<bca.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=bca[i];
+		}
+		
+		dialog=(9479);
+		aiid=(13);
+	}
+	
+	if(groupname=="Vipers raiders"||groupname=="Jackals raiders"||kindofmob==2||kindofmob==3)
+	{
+		
+		if(kindofmob==2)groupname="Vipers raiders";
+		if(kindofmob==3)groupname="Jackals raiders";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<leatherjackets.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=leatherjackets[i];
+		}
+		
+		if(Random(1,2)==1)
+		for(uint8 i=0;i<leatherarmors.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=leatherarmors[i];
+		}
+		
+		if(Random(1,3)==1)
+		for(uint8 i=0;i<metalarmors.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=metalarmors[i];
+		}
+		
+		if(Random(1,4)==1)
+		for(uint8 i=0;i<carmor.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmor[i];
+		}
+		
+		if(Random(1,5)==1)
+		for(uint8 i=0;i<carmormk2.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmormk2[i];
+		}
+		
+		if(Random(1,10)==1)
+		for(uint8 i=0;i<eca.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=eca[i];
+		}
+		
+		if(Random(1,10)==1)
+		for(uint8 i=0;i<bca.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=bca[i];
+		}
+		
+		dialog=(63);
+		aiid=(13);
+	}
+	
+	if(groupname=="NCR Soldiers and Rangers"||kindofmob==22)
+	{
+		groupname="NCR Soldiers and Rangers";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<carmormk2.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmormk2[i];
+		}
+		
+		if(Random(1,5)==1)
+		for(uint8 i=0;i<rca.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=rca[i];
+		}
+		
+		if(Random(1,10)==1)
+		for(uint8 i=0;i<bca.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=bca[i];
+		}
+		
+		dialog=(11000);
+		
+		aiid=(127);
+	}
+	
+	if(groupname=="Enclave Soldiers"||kindofmob==4)
+	{
+		groupname="Enclave Soldiers";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<carmormk2.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmormk2[i];
+		}
+		
+		if(Random(1,2)==1)
+		for(uint8 i=0;i<eca.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=eca[i];
+		}
+		
+		if(Random(1,10)==1)
+		for(uint8 i=0;i<apa.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=apa[i];
+		}
+		
+		dialog=(11003);
+		aiid=(134);
+	} 
+	
+	if(groupname=="Renegades"||kindofmob==5)
+	{
+		groupname="Renegades";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<carmor.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmor[i];
+		}
+		
+		if(Random(1,2)==1)
+		for(uint8 i=0;i<carmormk2.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmormk2[i];
+		}
+		
+		dialog=(11004);
+		aiid=(13);
+	}
+	
+	if(groupname=="Slavers"||kindofmob==6)
+	{
+		groupname="Slavers";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<leatherjackets.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=leatherjackets[i];
+		}
+		
+		for(uint8 i=0;i<leatherarmors.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=leatherarmors[i];
+		}
+		
+		if(Random(1,3)==1)
+		for(uint8 i=0;i<carmor.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmor[i];
+		}
+		
+		dialog=(43);
+		aiid=(16);
+	}
+	
+	if(groupname=="Aliens"||kindofmob==7)
+	{
+		groupname="Aliens";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<aliens.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=aliens[i];
+		}
+		
+		dialog=(5056);
+		aiid=(130);
+	}
+	
+	if(groupname=="Deathclaws"||kindofmob==8)
+	{
+		groupname="Deathclaws";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0]=244;
+		GroupOfMobs[1]=245;
+		
+		if(subtypemob==1)
+		{
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=506;
+		}
+		
+		aiid=(10);
+	} 
+	
+	if(groupname=="Centaurs"||kindofmob==9)
+	{
+		groupname="Centaurs";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0]=248;
+		GroupOfMobs[1]=249;
+		
+		aiid=(133);
+	}
+	
+	if(groupname=="Floaters"||kindofmob==10)
+	{
+		groupname="Floaters";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0]=246;
+		GroupOfMobs[1]=247;
+		
+		aiid=(132);
+	}
+	
+	if(groupname=="Floaters and Centaurs"||kindofmob==11)
+	{
+		groupname="Floaters and Centaurs";
+		
+		GroupOfMobs.resize(4);
+		GroupOfMobs[0]=246;
+		GroupOfMobs[1]=247;
+		GroupOfMobs[2]=248;
+		GroupOfMobs[3]=249;
+	}
+	
+	if(groupname=="Mercenaries"||kindofmob==12)
+	{
+		groupname="Mercenaries";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<carmor.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmor[i];
+		}
+		
+		for(uint8 i=0;i<carmormk2.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=carmormk2[i];
+		}
+		aiid=(13);
+		dialog=(67);
+	}
+	
+	if(groupname=="Super Mutant remnants"||kindofmob==13)
+	{
+		groupname="Super Mutant remnants";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<mutants.length()-1;i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=mutants[i];
+		}
+		dialog=(99);
+		aiid=(47);
+	}
+	
+	if(groupname=="Master's Elite Crew"||kindofmob==14)
+	{
+		groupname="Master's Elite Crew";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<mutants.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=mutants[i];
+		}
+		dialog=0;
+		aiid=(47);
+	}
+	
+	if(groupname=="Endless Walkers"||kindofmob==15)
+	{
+		groupname="Endless Walkers";
+		
+		GroupOfMobs.resize(4);
+		GroupOfMobs[0]=572;
+		GroupOfMobs[1]=573;
+		GroupOfMobs[2]=574;
+		GroupOfMobs[3]=575;
+		
+		if(subtypemob==1)
+		{
+			GroupOfMobs.resize(5);
+			GroupOfMobs[4]=178;
+		}
+		
+		if(subtypemob==2)
+		{
+			GroupOfMobs.resize(5);
+			GroupOfMobs[4]=258;
+		}
+		
+		if(subtypemob==3)
+		{
+			GroupOfMobs.resize(6);
+			GroupOfMobs[4]=179;
+			GroupOfMobs[5]=258;
+		}
+		
+		if(subtypemob==(4))
+		{
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=178;
+		}
+		
+		dialog=(92);
+	}
+	
+	if(groupname=="Spiders"||kindofmob==16)
+	{
+		groupname="Spiders";
+		
+		GroupOfMobs.resize(1);
+		GroupOfMobs[0]=883;
+		
+		aiid=(133);
+	}
+	
+	if(groupname=="Dogs"||kindofmob==17)
+	{
+		groupname="Dogs";
+		
+		GroupOfMobs.resize(1);
+		GroupOfMobs[0]=9;
+		dialog=(5054);
+	}
+	
+	if(groupname=="Radscorpions"||kindofmob==18)
+	{
+		groupname="Radscorpions";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0]=5;
+		GroupOfMobs[1]=6;
+		
+		aiid=(8);
+	}
+	
+	if(groupname=="Melchior's pets"||groupname=="Melchior with his pets"||kindofmob==19)
+	{
+		
+		if(kindofmob==19&&subtypemob==0&&groupname!="Melchior with his pets")groupname="Melchior's pets";
+		if(kindofmob==19&&subtypemob==1)groupname="Melchior with his pets";
+		
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<melchiorpets.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=melchiorpets[i];
+		}
+	}
+	
+	if(groupname=="Robots"||kindofmob==20)
+	{
+		groupname="Robots";
+		
+		uint8 tablelenght=0;
+		
+		switch(subtypemob)
+		{
+			case(0):
+			for(uint8 i=0;i<robots.length();i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1]=robots[i];
+			}
+			break;
+			case(1):
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=576;
+			if(Random(1,10)==10)
+			{
+				GroupOfMobs.resize(2);
+				GroupOfMobs[1]=577;
+			}
+			aiid=(30);
+			break;
+			case(2):
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=578;
+			if(Random(1,10)==10)
+			{
+				GroupOfMobs.resize(2);
+				GroupOfMobs[1]=579;
+			}
+			aiid=(32);
+			break;
+			case(3):
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=580;
+			if(Random(1,10)==10)
+			{
+				GroupOfMobs.resize(2);
+				GroupOfMobs[1]=581;
+			}
+			aiid=(145);
+			break;
+			case(4):
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=582;
+			if(Random(1,10)==10)
+			{
+				GroupOfMobs.resize(2);
+				GroupOfMobs[1]=583;
+				if(Random(1,2)==2)
+				{
+					GroupOfMobs.resize(3);
+					GroupOfMobs[2]=584;
+				}
+			}
+			aiid=(31);
+			break;
+		}
+		
+		if(aiid==0)aiid=(258);
+	} 
+	
+	if(kindofmob==21)
+	{
+		groupname="Vault 13 Dwellers";
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<v13.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=v13[i];
+		}
+		aiid=(278);
+		dialog=(12000);
+	}
+	
+	if(groupname=="Rats"||kindofmob==23)
+	{
+		groupname="Rats";
+		
+		uint8 tablelenght=0;
+		
+		switch(subtypemob)
+		{
+			case(0):
+			for(uint8 i=0;i<rats.length();i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1]=rats[i];
+			}
+			aiid=(199);
+			break;
+			case(1):
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=586;
+			aiid=(200);
+			break;
+			case(2):
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=588;
+			aiid=(199);
+			break;
+			case(3):
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0]=587;
+			aiid=(200);
+			break;
+			case(4):
+			GroupOfMobs.resize(2);
+			GroupOfMobs[0]=588;
+			GroupOfMobs[1]=587;
+			aiid=(48);
+			break;
+			case(5):
+			GroupOfMobs.resize(2);
+			GroupOfMobs[0]=588;
+			GroupOfMobs[1]=586;
+			aiid=(48);
+			break;
+			case(6):
+			GroupOfMobs.resize(2);
+			GroupOfMobs[0]=587;
+			GroupOfMobs[1]=586;
+			aiid=(48);
+			break;
+		}
+		
+		dialog=0;
+	}
+	
+	if(kindofmob==(24))
+	{
+		groupname="Reno Scavengers";
+		uint8 tablelenght=0;
+		
+		for(uint8 i=0;i<scavengers.length();i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1]=scavengers[i];
+		}
+		aiid=(13);
+		dialog=(779);
+	}    
+	
+	if(kindofmob==0)
+	Log("Generating mobs's group: "+groupname);
+	
+	if(kindofmob!=0)
+	Log("Generating mob from group with params: kindofmob = "+kindofmob+", subtypemob = "+subtypemob);    
+	
+	return GroupOfMobs;
+}
+
+uint16 GenerateBoss()
+{
+	uint16 BossPid=0;
+	
+	if(groupname=="Aliens")
+	{
+		BossPid=354;
+		dialog=0;
+	}
+	else if(groupname=="Deathclaws")
+	{
+		BossPid=275;
+		dialog=0;
+	}
+	else if(groupname=="Super Mutant remnants")
+	{
+		BossPid=551;
+		dialog=(99);
+	}
+	else if(groupname=="Master's Elite Crew")
+	{
+		BossPid=551;
+		dialog=0;
+	}
+	else if(groupname=="Melchior with his pets")
+	{
+		BossPid=566;
+		dialog=0;
+	}
+	else if(groupname=="Rats")
+	{
+		BossPid=585;
+		dialog=0;
+		aiid=(146);
+	}
+	
+	return BossPid;
+}
+
+bool BossCanBeGenerated()
+{
+	return GenerateBoss()!=0;
+}            
+
+array<uint8>entireSaltLake={0,1,2,3,10,17};
+array<uint8>entireLARipper={0,11,12,13};
+array<uint8>entireA51entrance={10};
+array<uint8>entireAresMilitaryBase={3};
+array<uint8>entireTunnel={0,1};
+array<uint8>entireTypicalent={4};
+array<uint8>entireWaterWorks={0};
+array<uint8>entireGlow={5};
+array<uint8>entireSierra={8};
+array<uint8>entireRenoSewer={5}; 
+
+IPolygon@AresLevel1Area1=null;
+IPolygon@AresLevel1Area2=null;
+IPolygon@AresLevel1Area3=null;
+IPolygon@AresLevel2Area1=null;
+IPolygon@AresLevel2Area2=null;
+IPolygon@AresLevel2Area3=null;
+IPolygon@AresLevel3Area1=null;
+IPolygon@AresLevel3Area2=null;
+IPolygon@AresLevel3Area3=null;
+IPolygon@AresLevel4Area1=null;
+IPolygon@AresLevel4Area2=null;
+IPolygon@AresLevel4Area3=null;
+
+IPolygon@HawthorneMilitaryBase=null;
+IPolygon@NukaColaBottlePlant=null;                                            
+
+array<uint8>entireNCR={0,10};
+array<uint8>entireAdytum={0};  
+
+array<uint8>entireHubDowntown={0};
+array<uint8>entireJunktown={1};
+array<uint8>entireSanFran={0,10};
+array<uint8>entireVaultCityDowntown={0};
+array<uint8>entireVegas={0};
+
+uint e_TrySpawnMob(array<uint>@mobdata)
+{
+	groupname="NOT SPECIFIED";
+	
+	Map@map=GetMap(mobdata[0]);
+	if(!(@map!=null))
+	return 0; 
+	
+	uint16 pid;
+	uint16 bag=1;
+	uint8 level=Random(1,4),spawndirection=Random(0,5),howmanyspawns=1,weaponforgroup=0,kindof=0,subtype=0; 
+	
+	bool MobIsBoss=false;
+	array<uint8>entireNumbers;
+	
+	Location@loc=map.GetLocation();
+	
+	if(mobdata.length()==2)
+	{
+		mobdata.resize(3);
+		mobdata[2]=(3);
+		howmanyspawns=1;
+	}
+	
+	if(mobdata[2]==(5))
+	{
+		howmanyspawns=mobdata[1];
+		kindof=mobdata[3];
+		subtype=mobdata[4];
+	}
+	
+	else if(mobdata[2]==(0)||mobdata[2]==(1)||mobdata[2]==(2))
+	{
+		howmanyspawns=mobdata[1];
+		if(mobdata[2]==(1)||mobdata[2]==(2))
+		{
+			if(howmanyspawns==0)return 0;
+			kindof=mobdata[3];
+			subtype=mobdata[4];
+		}
+		if(mobdata[2]==(1))
+		weaponforgroup=mobdata[5];
+	}
+	
+	else if(mobdata.length()==1)
+	{
+		mobdata.resize(2);
+		mobdata[1]=(3);
+		Log("Special exception applied...");
+	}
+	
+	else
+	{
+		if(mobdata[2]==(4))
+		MobIsBoss=true;
+	}
+	
+	if(mobdata[2]!=(5))
+	switch(map.GetProtoId())
+	{
+		case(606):
+		entireNumbers.resize(entireSaltLake.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireSaltLake[i];
+		break;
+		case(285):
+		entireNumbers.resize(entireLARipper.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireLARipper[i];
+		break;
+		case(286):
+		entireNumbers.resize(1);
+		entireNumbers[0]=12;
+		break;
+		case(661):
+		case(662):
+		case(663):
+		entireNumbers.resize(entireA51entrance.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireA51entrance[i];
+		break;
+		case(100):
+		case(101):
+		case(102):
+		case(575):
+		case(576):
+		entireNumbers.resize(entireAresMilitaryBase.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireAresMilitaryBase[i];
+		break;
+		case(45):
+		entireNumbers.resize(entireNCR.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireNCR[i];
+		break;
+		case(280):
+		entireNumbers.resize(entireAdytum.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireAdytum[i];
+		break;              
+		
+		case(221):
+		entireNumbers.resize(entireHubDowntown.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireHubDowntown[i];
+		break;
+		case(70):
+		entireNumbers.resize(entireJunktown.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireJunktown[i];
+		break;
+		case(137):
+		entireNumbers.resize(entireSanFran.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireSanFran[i];
+		break;
+		case(16):
+		entireNumbers.resize(entireVaultCityDowntown.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireVaultCityDowntown[i];
+		break;
+		case(599):
+		entireNumbers.resize(entireVegas.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireVegas[i];
+		break;
+		case(578):
+		case(579):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(687):
+		case(688):
+		case(689):
+		entireNumbers.resize(entireTunnel.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTunnel[i];
+		break;
+		case(565):
+		entireNumbers.resize(entireWaterWorks.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireWaterWorks[i];
+		break;
+		case(590):
+		case(591):
+		case(592):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(145):
+		case(146):
+		case(147):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(586):
+		case(587):
+		case(588):
+		case(589):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(690):
+		case(691):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(692):
+		case(693):
+		case(694):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(241):
+		case(242):
+		case(243):
+		case(244):
+		case(245):
+		case(246):
+		entireNumbers.resize(entireGlow.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireGlow[i];
+		break;
+		case(25):
+		case(27):
+		case(28):
+		case(29):
+		case(30):
+		entireNumbers.resize(entireSierra.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireSierra[i];
+		break;
+		case(695):
+		case(696):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(702):
+		case(703):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(49):
+		case(50):
+		case(51):
+		case(52):
+		case(53):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(34):
+		case(35):
+		case(36):
+		case(37):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(664):
+		
+		case(666):
+		case(665):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(583):
+		entireNumbers.resize(entireTypicalent.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireTypicalent[i];
+		break;
+		case(90):
+		if(mobdata[2]==(3))
+		{
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i=0;i<entireNumbers.length();i++)
+			entireNumbers[i]=entireTypicalent[i];
+			
+		}
+		if(mobdata[2]==(1))
+		{
+			entireNumbers.resize(1);
+			entireNumbers[0]=5;
+		}
+		break;
+		case(91):
+		case(92):
+		entireNumbers.resize(1);
+		entireNumbers[0]=5;
+		break;
+		case(698):
+		case(699):
+		case(700):
+		entireNumbers.resize(1);
+		entireNumbers[0]=90;
+		break;
+		case(99):
+		entireNumbers.resize(entireRenoSewer.length());
+		for(uint i=0;i<entireNumbers.length();i++)
+		entireNumbers[i]=entireRenoSewer[i];
+		break;
+		case(56):
+		entireNumbers.resize(2);
+		entireNumbers[0]=1;
+		entireNumbers[1]=2;
+		break;
+		default:return 0;
+	}
+	
+	uint8 entireNumber;
+	if(mobdata[2]!=(5))
+	entireNumber=entireNumbers[(Random(0,entireNumbers.length()-1))];
+	
+	array<Entire>enter_entires;
+	if(mobdata[2]!=(5))
+	if(ParseEntires(map,enter_entires,entireNumber)==0)
+	return((Random(1,10))*__TimeMultiplier*60); 
+	
+	array<uint16>TownRaiders;
+	if(mobdata[2]!=(3)&&mobdata[2]!=(4))
+	{
+		array<uint16>Mobs=GenerateGroup(map,kindof,subtype);
+		if(Mobs.length()==0)
+		return 0;
+		
+		uint8 tablelenght=0;
+		for(uint8 i=0;i<Mobs.length();i++)
+		{
+			tablelenght++;
+			TownRaiders.resize(tablelenght);
+			TownRaiders[tablelenght-1]=Mobs[i];
+		}
+	}
+	
+	for(uint8 i=1;i<=howmanyspawns;i++)
+	{ 
+		
+		if(mobdata[2]==(3)||mobdata[2]==(4))
+		{
+			if(map.GetProtoId()==(606))
+			{
+				array<uint16>Mobs=GenerateGroup(map,1,1);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=1;
+			}
+			
+			if(loc.GetProtoId()==(37))
+			{
+				array<uint16>Mobs=GenerateGroup(map,8);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				
+			}
+			
+			if(loc.GetProtoId()==(98))
+			{
+				array<uint16>Mobs=GenerateGroup(map,7);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(loc.GetProtoId()==(28))
+			{
+				array<uint16>Mobs=GenerateGroup(map,13);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=13;
+			}
+			
+			if(loc.GetProtoId()==(371))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(15),(4));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=(0);
+			}
+			
+			if(loc.GetProtoId()==(394))
+			{
+				array<uint16>Mobs=GenerateGroup(map,15,1);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(loc.GetProtoId()==(362))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(1),(2));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=1;
+			}
+			
+			if(loc.GetProtoId()==(9))
+			{
+				array<uint16>Mobs;
+				
+				if(Random(1,20)!=20)
+				{
+					Mobs=GenerateGroup(map,(1),(0));
+					weaponforgroup=1;
+				}
+				
+				else if(!MobIsBoss)
+				{
+					Mobs=GenerateGroup(map,(17));
+				}
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(loc.GetProtoId()==(91))
+			{
+				array<uint16>Mobs=GenerateGroup(map,6);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=1;
+			}
+			
+			if(loc.GetProtoId()==(24))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(15),(1));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=1;
+			} 
+			
+			if(map.GetProtoId()==(586))
+			{
+				array<uint16>Mobs=GenerateGroup(map,13);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=13;
+			}
+			
+			if(map.GetProtoId()==(587)||map.GetProtoId()==(588))
+			{
+				uint8 CentOrMut;
+				
+				if(Random(1,2)==1)
+				{
+					CentOrMut=13;
+					weaponforgroup=13;
+				}
+				else
+				{
+					CentOrMut=11;
+				}
+				array<uint16>Mobs=GenerateGroup(map,CentOrMut);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(map.GetProtoId()==(589))
+			{
+				uint8 CentOrMutOrEnc=Random(1,3);
+				
+				switch(CentOrMutOrEnc)
+				{
+					case 1:
+					CentOrMutOrEnc=13;
+					weaponforgroup=13;
+					break;
+					case 2:
+					CentOrMutOrEnc=11;
+					break;
+					case 3:
+					CentOrMutOrEnc=4;
+					weaponforgroup=7;
+					break;
+				}
+				array<uint16>Mobs=GenerateGroup(map,CentOrMutOrEnc);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(loc.GetProtoId()==(395))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(8),(1));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				
+			}
+			
+			if(loc.GetProtoId()==(396)&&map.GetProtoId()!=(692))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(15),(2));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				
+			}
+			else if(loc.GetProtoId()==(396)&&map.GetProtoId()==(692))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(23),(4));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(loc.GetProtoId()==(19))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(20),Random((1),(4)));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				
+			}
+			
+			if(map.GetProtoId()==(25))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(4));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=(1);
+				groupname="Sierra Soldiers";
+				dialog=(801);
+			}
+			
+			if(map.GetProtoId()==(27)||map.GetProtoId()==(28)||
+			map.GetProtoId()==(29)||map.GetProtoId()==(30))
+			{
+				if(Random(1,3)!=1)
+				{
+					array<uint16>Mobs=GenerateGroup(map,(4));
+					if(Mobs.length()==0)
+					return 0;
+					pid=Mobs[Random(0,Mobs.length()-1)];
+					weaponforgroup=(1);
+					groupname="Sierra Soldiers";
+					dialog=(801);
+				}
+				else
+				{
+					array<uint16>Mobs=GenerateGroup(map,(20),Random((2),(4)));
+					if(Mobs.length()==0)
+					return 0;
+					groupname="Sierra Robots";
+					pid=Mobs[Random(0,Mobs.length()-1)];
+				}
+			}
+			
+			if(loc.GetProtoId()==(397))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(7));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				
+			}
+			
+			if(loc.GetProtoId()==(398))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(23));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(loc.GetProtoId()==(12))
+			{
+				array<uint16>Mobs=GenerateGroup(map,14);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				weaponforgroup=13;
+			}
+			
+			if(loc.GetProtoId()==(99))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(12));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				groupname="Army of Hawthorne";
+				dialog=(9002);
+				weaponforgroup=7;
+			}
+			
+			if(map.GetProtoId()==(583))
+			{
+				uint8 AliOrFlo;
+				
+				if(Random(1,2)==1)
+				{
+					AliOrFlo=7;
+				}
+				else
+				{
+					AliOrFlo=11;
+				}
+				array<uint16>Mobs=GenerateGroup(map,AliOrFlo);
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(map.GetProtoId()==(90)&&mobdata[2]==(3))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(23),(2));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(map.GetProtoId()==(99))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(24));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+			}
+			
+			if(map.GetProtoId()==(56))
+			{
+				array<uint16>Mobs=GenerateGroup(map,(1));
+				if(Mobs.length()==0)
+				return 0;
+				pid=Mobs[Random(0,Mobs.length()-1)];
+				dialog=(779);
+			}
+		} 
+		
+		if(mobdata[2]!=(3)&&mobdata[2]!=(4))
+		{
+			pid=TownRaiders[Random(0,TownRaiders.length()-1)]; 
+			
+			if(groupname=="NCR Soldiers and Rangers")
+			{
+				if(pid==261||pid==262)
+				dialog=(11000);
+				if(pid==475||pid==476)
+				dialog=(83);
+				if(pid==886||pid==887)
+				switch(Random(1,2))
+				{
+					case 1:dialog=(83);break;
+					case 2:dialog=(11000);break;
+				}
+			} 
+			
+			if(groupname=="Radscorpions")
+			{
+				if(pid==5)
+				dialog=(5010);
+				if(pid==6)
+				dialog=(5011);
+			} 
+			
+			if(groupname=="Floaters and Centaurs")
+			{
+				if(pid==246||pid==247)
+				aiid=(132);
+				if(pid==248||pid==249)
+				aiid=(133);
+			} 
+			
+			if(groupname=="Melchior's pets"||groupname=="Melchior with his pets")
+			{
+				if(pid==562)
+				aiid=(10);
+				if(pid==563)
+				aiid=(144);
+				if(pid==564)
+				aiid=(133);
+				if(pid==565)
+				aiid=(132);
+				if(pid==566)
+				aiid=(47);
+			}
+			
+			if(i==1&&mobdata[2]!=(5)&&mobdata[2]!=(1))MobIsBoss=true;
+			else MobIsBoss=false;
+		}                                           
+		
+		Entire@entire=null;
+		if(mobdata[2]!=(5))
+		{
+			@entire=enter_entires[Random(0,(enter_entires.length()-1))];
+			
+			if(!(@entire!=null)&&loc.IsGuarded())
+			continue;
+			
+			if(!(@entire!=null))
+			return((Random(1,10))*__TimeMultiplier*60);
+			
+			spawndirection=entire.Direction;
+		}            
+		
+		if(MobIsBoss&&BossCanBeGenerated())pid=GenerateBoss(); 
+		
+		uint8 S=1,P=1,E=1,C=1,I=1,A=1,L=1,MaxStats=(MobIsBoss?53:33),MaxStat=(MobIsBoss?2:1);
+		if(IsHumanMob(pid))
+		for(uint8 i=1;i<MaxStats;i++)
+		{
+			switch(Random(1,7))
+			{
+				case 1:if(S==10*MaxStat)i--;else S++;break;
+				case 2:if(P==10*MaxStat)i--;else P++;break;
+				case 3:if(E==10*MaxStat)i--;else E++;break;
+				case 4:if(C==10*MaxStat)i--;else C++;break;
+				case 5:if(I==10*MaxStat)i--;else I++;break;
+				case 6:if(A==10*MaxStat)i--;else A++;break;
+				case 7:if(L==10*MaxStat)i--;else L++;break;
+			}
+		}
+		else
+		for(uint8 i=1;i<MaxStats;i++)
+		{
+			switch(Random(1,7))
+			{
+				case 1:if(S==10*MaxStat)i--;else S++;break;
+				case 2:if(P==10*MaxStat)i--;else P++;break;
+				case 3:if(E==10*MaxStat)i--;else E++;break;
+				case 4:if(C==4*MaxStat)i--;else C++;break;
+				case 5:if(I==3*MaxStat)i--;else I++;break;
+				case 6:if(A==10*MaxStat)i--;else A++;break;
+				case 7:if(L==10*MaxStat)i--;else L++;break;
+			}
+		} 
+		
+		uint16 maxmoblife=Random(250,400)*(MobIsBoss?2:1),expoints=(500+((level-1)*50))*(MobIsBoss?2:1);
+		
+		if(pid==883||pid==9||pid==5||pid==6||pid==242||pid==243||pid==517)
+		{
+			maxmoblife=Random(100,150);
+			expoints=300;
+			level=Random(1,10);
+			expoints=expoints+((level-1)*50);
+		}
+		
+		if(loc.GetProtoId()==(23))
+		{
+			if(pid==898||pid==899||pid==900)
+			{
+				aiid=(278);
+				dialog=(12000);
+			}
+			if(pid==588)
+			{
+				maxmoblife=Random(10,15);
+				expoints=maxmoblife;
+			}
+			if(pid!=898&&pid!=899&&pid!=900&&pid!=588)return((1)*__TimeMultiplier*60);
+		}
+		
+		if(IsHumanMob(pid))
+		{
+			maxmoblife=Random(200,300);
+			expoints=1000;
+			level=Random(1,5);
+			expoints=expoints+((level-1)*100);
+		}
+		
+		if(loc.GetProtoId()==(19))
+		{
+			maxmoblife=Random(50,100);
+			expoints=200;
+			level=Random(1,5);
+			expoints=expoints+((level-1)*100);
+		}
+		
+		if(IsMutantMob(pid))
+		{
+			maxmoblife=Random(450,550);
+			expoints=1500;
+			level=Random(1,7);
+			expoints=expoints+((level-1)*100);
+		} 
+		
+		if(loc.GetProtoId()==(398)||map.GetProtoId()==(692))
+		{
+			switch(pid)
+			{
+				case 586:maxmoblife=Random(70,80);break;
+				case 587:maxmoblife=Random(40,50);break;
+				case 588:maxmoblife=Random(10,15);break;
+			}
+			
+			if(MobIsBoss)
+			{
+				maxmoblife=maxmoblife*2;
+			}
+			expoints=maxmoblife;
+		} 
+		
+		if(pid==576||pid==577)
+		aiid=(30);
+		else if(pid==578||pid==579||pid==580||pid==581||pid==582||pid==583||pid==584)
+		aiid=(31);
+		
+		if(howmanyspawns==1)
+		{
+			if(loc.GetProtoId()==(8))
+			statteamid=5001;
+			else
+			statteamid=Random(5000,5002);
+		} 
+		
+		if(IsBaseControl(map)&&mobdata[2]!=(5))
+		{
+			switch(loc.GetProtoId())
+			{
+				case(362):
+				statteamid=(10);
+				break;
+				case(98):
+				statteamid=(98);
+				break;  
+				
+				case(12):
+				statteamid=(97);
+				break;
+				case(99):
+				statteamid=(99);
+				break;
+				default:
+				statteamid=Random(5000,5002);
+				break;
+			}
+		}
+		
+		uint8 FactionRank=Random(1,100);
+		if(MobIsBoss)FactionRank=(5);
+		else if(FactionRank<=10)FactionRank=(4);
+		else if(FactionRank<=25)FactionRank=(3);
+		else if(FactionRank<=35)FactionRank=(2);
+		else if(FactionRank<=55)FactionRank=(1);
+		else FactionRank=(0); 
+		
+		int[]params=
+		{
+			(0),S,
+			(1),P,
+			(2),E,
+			(3),C,
+			(4),I,
+			(5),A,
+			(6),L,
+			(66),expoints,
+			(7),maxmoblife,
+			(70),Random(14,80),
+			(105),aiid,
+			(106),statteamid,
+			
+			(84),(-1), 
+			
+			(77),level,
+			(89),(203),
+			(104),dialog,
+			(121),FactionRank
+		}; 
+		
+		if(pid==122||pid==893||pid==250)
+		{
+			uint8 tablelenght=params.length();
+			params.resize(tablelenght+4);
+			params[tablelenght]=(67);
+			params[tablelenght+2]=(71);
+			
+			if(Random(1,2)==1)
+			{
+				params[tablelenght+1]=(0);
+				params[tablelenght+3]=(0);
+			}
+			else
+			{
+				params[tablelenght+1]=(1);
+				params[tablelenght+3]=(1);
+			}
+		} 
+		
+		if(pid==883)
+		{
+			uint8 tablelenght=params.length();
+			params.resize(tablelenght+4);
+			params[tablelenght]=(67);
+			params[tablelenght+1]=(9);
+			params[tablelenght+2]=(71);
+			params[tablelenght+3]=(2);
+		} 
+		
+		if(IsHumanMob(pid))
+		{
+			uint8 tablelenght=params.length();
+			params.resize(tablelenght+28);
+			params[tablelenght]=(16);
+			params[tablelenght+1]=0;
+			params[tablelenght+2]=(17);
+			params[tablelenght+3]=0;
+			params[tablelenght+4]=(18);
+			params[tablelenght+5]=0;
+			params[tablelenght+6]=(19);
+			params[tablelenght+7]=0;
+			params[tablelenght+8]=(20);
+			params[tablelenght+9]=0;
+			params[tablelenght+10]=(22);
+			params[tablelenght+11]=0;
+			params[tablelenght+12]=(23);
+			params[tablelenght+13]=0;
+			params[tablelenght+14]=(24);
+			params[tablelenght+15]=0;
+			params[tablelenght+16]=(25);
+			params[tablelenght+17]=0;
+			params[tablelenght+18]=(26);
+			params[tablelenght+19]=0;
+			params[tablelenght+20]=(27);
+			params[tablelenght+21]=0;
+			params[tablelenght+22]=(28);
+			params[tablelenght+23]=0;
+			params[tablelenght+24]=(29);
+			params[tablelenght+25]=0;
+			params[tablelenght+26]=(31);
+			params[tablelenght+27]=0;
+		}
+		
+		if(MobIsBoss)
+		{
+			uint8 tablelenght=params.length();
+			params.resize(tablelenght+2);
+			params[tablelenght]=(187);
+			params[tablelenght+1]=(1);
+		}
+		else if(mobdata[2]==(5))
+		{
+			uint8 tablelenght=params.length();
+			params.resize(tablelenght+2);
+			params[tablelenght]=(187);
+			params[tablelenght+1]=(2);
+		} 
+		
+		if(howmanyspawns==1)
+		Log("Trying to add mob pid <"+pid+"> to map <"+map.Id+"> at entire number <"+entire.Number+">."); 
+		
+		Critter@mob=null;
+		if(mobdata[2]==(5))@mob=map.AddNpc(pid,Random(mobdata[5]-2,mobdata[5]+2),Random(mobdata[6]-2,mobdata[6]+2),Random(0,5),params,null,"init_mob");
+		else@mob=map.AddNpc(pid,entire.HexX,entire.HexY,spawndirection,params,null,"init_mob");
+		SetParatersToMob(mob,map,MobIsBoss);
+		RemoveItems(mob);
+		SetArmor(mob);
+		SetWeapon(mob,weaponforgroup);
+	}
+	
+	if(howmanyspawns>1)
+	{
+		if(mobdata[2]==(0)||(mobdata[2]==(2)&&loc.IsGuarded()))
+		{
+			string locationName=GetLocationName(loc.Id);
+			
+			if(locationName=="")locationName="NOT RECOGNIZED!";
+			
+			ServerEventMSG((30),groupname+" have raided "+locationName+"!");
+		}
+	} 
+	
+	return 0;
+}                                                                                            
+
+void SetParatersToMob(Critter&mob,Map&map,bool MobIsBoss)
+{
+	if(MobIsBoss)
+	{
+		
+		mob.SkillBase[(200)]=Random(250,300);
+		mob.SkillBase[(201)]=Random(250,300);
+		mob.SkillBase[(202)]=Random(250,300);
+		mob.SkillBase[(203)]=Random(250,300);
+		
+		mob.SkillBase[(207)]=Random(150,250);
+		mob.SkillBase[(206)]=Random(150,250);  
+		
+	}
+	else
+	{
+		
+		mob.SkillBase[(200)]=Random(100,200);
+		mob.SkillBase[(201)]=Random(100,200);
+		mob.SkillBase[(202)]=Random(100,200);
+		mob.SkillBase[(203)]=Random(100,200);
+		
+		mob.SkillBase[(207)]=Random(50,150);
+		mob.SkillBase[(206)]=Random(50,150);  
+		
+	} 
+	
+	mob.PerkBase[(327)]=Random(0,2);
+	mob.PerkBase[(380)]=Random(0,1);
+	mob.PerkBase[(302)]=Random(0,1);
+	mob.PerkBase[(304)]=Random(0,1);
+	mob.PerkBase[(305)]=Random(0,2);
+	mob.PerkBase[(306)]=Random(0,1);
+	mob.PerkBase[(461)]=Random(0,1);
+	mob.PerkBase[(438)]=Random(0,1);
+	mob.PerkBase[(439)]=Random(0,1);
+	mob.PerkBase[(445)]=Random(0,1);
+	mob.PerkBase[(446)]=Random(0,1);
+	mob.PerkBase[(422)]=Random(0,1);
+	mob.PerkBase[(398)]=Random(0,1);
+	mob.PerkBase[(423)]=Random(0,1);
+	mob.PerkBase[(428)]=Random(0,1);
+	mob.PerkBase[(349)]=Random(0,1);
+	mob.PerkBase[(403)]=Random(0,1);
+	mob.PerkBase[(315)]=Random(0,1);
+	mob.PerkBase[(405)]=Random(0,1);
+	mob.PerkBase[(333)]=Random(0,1);
+}
+
+void init_mob(Critter&mob,bool firstTime)
+{
+	Map@map=mob.GetMap();
+	if(!(@map!=null))
+	return;    
+	
+	Location@loc=map.GetLocation();
+	
+	bool MobIsBoss=(mob.Stat[(187)]==(1)?true:false),MobForEvent=(mob.Stat[(187)]==(2)?true:false);
+	
+	if(loc.IsGuarded()&&IsNotDungInGuardedLoc(map)&&!MobForEvent)
+	{
+		
+		mob.SetEvent((2),"_DeleteMob"); 
+		
+		array<uint>keeppushing={map.Id,170};
+		CreateTimeEvent(((__FullSecond)+(((1)*__TimeMultiplier*60))),"e_PushForward",keeppushing,true); 
+		
+	}
+	else if(loc.GetProtoId()==(23)||loc.GetProtoId()==(8))
+	{
+		mob.SetEvent((2),"_DeleteMob");
+		mob.SetEvent((16),"_Alert");
+		
+		if(map.GetProtoId()==(25))
+		ImmaAttack(map,mob);
+	}
+	else
+	{
+		
+		if(MobIsBoss)
+		mob.SetEvent((2),"_ClearEnemyStack");
+		else if(MobForEvent)
+		mob.SetEvent((2),"_DeleteEventMob");
+		else
+		mob.SetEvent((2),"_MakeAnotherMob");
+		mob.SetEvent((16),"_Alert");
+	}
+	
+	if(loc.GetProtoId()==(394))
+	mob.StatBase[(65)]=10;
+	
+	if(loc.GetProtoId()==(371))
+	mob.StatBase[(64)]=10;
+	
+	mob.SetEvent((0),"_MobIdle");
+	
+	mob.ModeBase[(511)]=1;
+	mob.ModeBase[(523)]=1;
+	mob.ModeBase[(532)]=1;
+	mob.ModeBase[(522)]=1;
+	mob.ModeBase[(541)]=1;
+	mob.ModeBase[(512)]=1;
+	mob.ModeBase[(524)]=0;  
+	
+	(mob.ModeBase[(534)]=mob.Mode[(534)]|((0x00000004)));
+	if(firstTime&&!MobForEvent)
+	{
+		MoveMobToFreeHex(mob);
+	}
+	CreateTimeEvent(((__FullSecond)+(((2)*__TimeMultiplier))),"e_ChangeReplication",mob.Id,false);
+}
+
+void init_turret(Critter&turret,bool firstTime)
+{
+	Map@map=turret.GetMap();
+	if(!(@map!=null))
+	return;
+	
+	Location@loc=map.GetLocation();
+	
+	if(IsBaseControl(map))
+	{
+		switch(loc.GetProtoId())
+		{
+			case(362):
+			turret.ParamBase[(106)]=(10);
+			break;
+			case(98):
+			turret.ParamBase[(106)]=(98);
+			break;
+			case(95):
+			turret.ParamBase[(106)]=(93);
+			break;
+			case(12):
+			turret.ParamBase[(106)]=(97);
+			break;
+			case(99):
+			turret.ParamBase[(106)]=(99);
+			break;
+		}
+	}
+	else
+	{
+		turret.ParamBase[(106)]=Random(5000,5002);
+	}
+	
+	if(firstTime)SetWeapon(turret,0);
+	turret.SetEvent((2),"_ClearEnemyStack");
+	turret.SetEvent((16),"_Alert");
+	turret.SetEvent((0),"_DontMove");
+	
+	turret.ModeBase[(511)]=1;
+	turret.ModeBase[(523)]=1;
+	turret.ModeBase[(532)]=1;
+	turret.ModeBase[(522)]=1;
+	turret.ModeBase[(541)]=1;
+	turret.ModeBase[(512)]=1;
+	turret.ModeBase[(524)]=0;
+	(turret.ModeBase[(534)]=turret.Mode[(534)]|((0x00000004)));
+	
+	turret.ParamBase[(105)]=(176);
+	turret.ParamBase[(89)]=(203);
+	turret.ParamBase[(84)]=1800;
+}
+
+void init_static_mob(Critter&mob,bool firstTime)
+{
+	Map@map=mob.GetMap();
+	if(!(@map!=null))
+	return;
+	
+	Location@loc=map.GetLocation();
+	
+	mob.SetEvent((2),"_ClearEnemyStack");
+	mob.SetEvent((16),"_Alert");
+	mob.SetEvent((2),"_ClearEnemyStack");
+	
+	if(loc.GetProtoId()==(394))
+	mob.StatBase[(65)]=10;
+	
+	if(loc.GetProtoId()==(371))
+	mob.StatBase[(64)]=10;
+	
+	if(firstTime&&IsNukaColaWorker(mob))
+	{
+		SetParatersToMob(mob,map,false);
+		SetWeapon(mob,0);
+	}
+	
+	if(!IsNukaColaWorker(mob))mob.SetEvent((0),"_MobIdle");
+	
+	mob.ModeBase[(511)]=1;
+	mob.ModeBase[(523)]=1;
+	mob.ModeBase[(532)]=1;
+	mob.ModeBase[(522)]=1;
+	if(!IsNukaColaWorker(mob))mob.ModeBase[(541)]=1;
+	if(!IsNukaColaWorker(mob))mob.ModeBase[(512)]=1;
+	mob.ModeBase[(524)]=0;  
+	
+	(mob.ModeBase[(534)]=mob.Mode[(534)]|((0x00000004)));
+	if(firstTime&&!IsNukaColaWorker(mob))
+	{
+		MoveMobToFreeHex(mob);
+	}
+}
+
+uint e_ChangeReplication(array<uint>@values)
+{
+	Critter@mob=GetCritter(values[0]);
+	if(!(@mob!=null))return 0;
+	
+	if(mob.Stat[(187)]==1)
+	mob.ParamBase[(84)]=1800;
+	else
+	mob.ParamBase[(84)]=(-1);
+	
+	return 0;
+}
+
+uint e_PushForward(array<uint>@keeppushing)
+{
+	Map@map=GetMap(keeppushing[0]);
+	if(!(@map!=null))
+	return 0;
+	
+	uint numMobs=map.GetNpcCount((203),(0x20)|(0x01));
+	if(numMobs==0)
+	return 0;
+	
+	uint8 entireNumber=keeppushing[1];
+	bool ItsMoveOutTime=false; 
+	
+	array<Entire>moveto_entires;
+	if(ParseEntires(map,moveto_entires,entireNumber)==0)
+	{
+		
+		array<Critter@>mobs;
+		map.GetCritters(0,(0x20)|(0x03),mobs);
+		for(uint16 i=0;i<mobs.length();i++)
+		if((@mobs[i]!=null)&&mobs[i].Stat[(89)]==(203))
+		mobs[i].Say((2),"Lets move out!"); 
+		
+		switch(map.GetProtoId())
+		{
+			case(280):entireNumber=12;break;  
+			
+			case(16):entireNumber=0;break;
+			case(70):entireNumber=0;break;
+			case(45):entireNumber=0;break;
+			case(221):entireNumber=10;break;
+			case(137):entireNumber=220;break;
+			default:entireNumber=0;break;
+		}    
+		
+		if(ParseEntires(map,moveto_entires,entireNumber)==0)
+		return 0;
+		
+		ItsMoveOutTime=true;
+		
+	} 
+	
+	uint8 dir;
+	uint16 x,y;
+	x=y=dir=0;
+	
+	array<Critter@>mobs;
+	map.GetCritters(0,(0x20)|(0x03),mobs);
+	
+	for(uint16 i=0;i<mobs.length();i++)
+	{
+		Entire@entire=moveto_entires[Random(0,(moveto_entires.length()-1))];
+		if(!(@entire!=null))
+		continue;
+		
+		if((@mobs[i]!=null)&&mobs[i].Stat[(89)]==(203))
+		{
+			if(GetEntireFreeHex(mobs[i].GetMap(),entireNumber,x,y,Random(0,(moveto_entires.length()-1))))
+			{
+				mobs[i].SetHomePos(x,y,dir); 
+				
+				mobs[i].SetEvent((4),"_MobShowCritterAggr");
+			}
+			else
+			{
+				i--;
+				
+			}
+			if(ItsMoveOutTime)
+			{
+				uint16 hexX=0,hexY=0;
+				uint8 direction=0;
+				mobs[i].GetHomePos(map.Id,hexX,hexY,direction);
+				
+				array<uint>okletsleave={mobs[i].Id,hexX,hexY};
+				CreateTimeEvent(((__FullSecond)+(((1)*__TimeMultiplier*60))),"e_CheckPosToLeave",okletsleave,true);
+			}
+		}
+	} 
+	
+	if(!ItsMoveOutTime)
+	{
+		entireNumber++;
+		array<uint>justpushthem={map.Id,entireNumber};
+		CreateTimeEvent(((__FullSecond)+(((1)*__TimeMultiplier*60))),"e_PushForward",justpushthem,true);
+	}
+	
+	return 0;
+}
+
+uint e_CheckPosToLeave(array<uint>@leavingmob)
+{
+	Critter@mob=GetCritter(leavingmob[0]);
+	if(!(@mob!=null))
+	return 0;
+	
+	if(mob.IsDead())
+	return 0;
+	
+	if(mob.IsKnockout())
+	return((2)*__TimeMultiplier);
+	
+	uint16 hX=leavingmob[1],hY=leavingmob[2];
+	
+	if(mob.HexX>=hX-5&&mob.HexX<=hX+5&&mob.HexY>=hY-5&&mob.HexY<=hY+5)
+	{
+		mob.Say((2),"Bye!");
+		CreateTimeEvent(((__FullSecond)+(((2)*__TimeMultiplier))),"e_MobCanLeave",mob.Id,true);
+		
+		return 0;
+	}
+	return((10)*__TimeMultiplier);
+}
+
+uint e_MobCanLeave(array<uint>@mobdata)
+{
+	Critter@mob=GetCritter(mobdata[0]);
+	
+	if(!(@mob!=null))
+	return 0;
+	
+	if(mob.IsDead())
+	return 0;
+	
+	if(!mob.IsKnockout())
+	{
+		DeleteNpc(mob);
+		return 0;
+	}
+	return((2)*__TimeMultiplier);
+}
+
+uint e_deleteMob(array<uint>@mobdata)
+{
+	Critter@mob=GetCritter(mobdata[0]);
+	
+	if((@mob!=null))
+	DeleteNpc(mob);
+	
+	return 0;
+}
+
+void MoveMobToFreeHex(Critter&mob)
+{
+	MoveMobToFreeHex(mob,false);
+}
+
+void MoveMobToFreeHex(Critter&mob,bool DontMove)
+{
+	if(!(@mob!=null))
+	return;
+	
+	Map@map=mob.GetMap();
+	if(!(@map!=null))
+	return;
+	
+	if(IsNukaColaWorker(mob))
+	return;
+	
+	if(mob.Stat[(187)]==(2))
+	return;
+	
+	if(mob.GetProtoId()==882||mob.GetProtoId()==901)
+	return;
+	
+	Location@loc=map.GetLocation();
+	
+	if(!(loc.IsGuarded())||IsDungInGuardedLoc(map))
+	{
+		uint8 dir;
+		uint16 x,y;
+		uint EntireSelector;
+		x=y=dir=0;  
+		
+		if(GetGvar((1162))!=2&&mob.GetMap().GetLocation().GetProtoId()!=(8)&&mob.Stat[(67)]!=(10))
+		mob.SetEvent((4),"_MobShowCritterAggr"); 
+		
+		uint8[]entires;
+		uint8 tablelenght=0;
+		
+		if(IsSierraRobot(mob))
+		for(uint8 i=(171);i<(176);i++)
+		{
+			array<Entire>enter_entires;
+			if(ParseEntires(map,enter_entires,i)>0)
+			{
+				tablelenght++;
+				entires.resize(tablelenght);
+				entires[tablelenght-1]=i;
+			}
+		}
+		else if(map.GetProtoId()==(27)||map.GetProtoId()==(28)||
+		map.GetProtoId()==(29)||map.GetProtoId()==(30))
+		{
+			array<Entire>enter_entires;
+			if(ParseEntires(map,enter_entires,(170))>0)
+			{
+				tablelenght++;
+				entires.resize(tablelenght);
+				entires[tablelenght-1]=(170);
+			}
+		} 
+		
+		else if(IsV13Rat(mob))
+		{
+			array<Entire>enter_entires;
+			if(ParseEntires(map,enter_entires,(170))>0)
+			{
+				tablelenght++;
+				entires.resize(tablelenght);
+				entires[tablelenght-1]=(170)+10;
+			}
+		}
+		
+		else
+		for(uint8 i=(170);i<(176);i++)
+		{
+			array<Entire>enter_entires;
+			if(ParseEntires(map,enter_entires,i)>0)
+			{
+				tablelenght++;
+				entires.resize(tablelenght);
+				entires[tablelenght-1]=i;
+			}
+		}  
+		
+		uint8 entireNumber=entires[(Random(0,(entires.length()-1)))];
+		if(entireNumber==(170))
+		{
+			dir=Random(0,5);
+			mob.SetEvent((0),"_MobIdle");
+		}
+		else
+		{
+			mob.SetEvent((0),"_DontMove");
+			switch(entireNumber)
+			{
+				case(171):dir=0;break;
+				case 172:dir=1;break;
+				case 173:dir=2;break;
+				case 174:dir=3;break;
+				case 175:dir=4;break;
+				case(176):dir=5;break;
+				default:dir=0;mob.SetEvent((0),"_MobIdle");break;
+			}
+		}
+		
+		array<Entire>moveto_entires;
+		if(ParseEntires(map,moveto_entires,entireNumber)==0)
+		return;              
+		
+		Entire@entire=null; 
+		
+		if(map.GetProtoId()==(101)||map.GetProtoId()==(102)||
+		map.GetProtoId()==(575)||map.GetProtoId()==(576))
+		{
+			IPolygon@polygon=null;
+			if(map.GetProtoId()==(101))
+			{
+				if(!(@AresLevel1Area1!=null))
+				@AresLevel1Area1=::LoadShapeFromEntires(map,(41),(48));
+				if(!(@AresLevel1Area2!=null))
+				@AresLevel1Area2=::LoadShapeFromEntires(map,(51),(56));
+				if(!(@AresLevel1Area3!=null))
+				@AresLevel1Area3=::LoadShapeFromEntires(map,(57),(60));
+			}
+			
+			if(map.GetProtoId()==(102))
+			{
+				if(!(@AresLevel2Area1!=null))
+				@AresLevel2Area1=::LoadShapeFromEntires(map,(41),(48));
+				if(!(@AresLevel2Area2!=null))
+				@AresLevel2Area2=::LoadShapeFromEntires(map,(51),(56));
+				if(!(@AresLevel2Area3!=null))
+				@AresLevel2Area3=::LoadShapeFromEntires(map,(57),(60));
+			}
+			
+			if(map.GetProtoId()==(575))
+			{
+				if(!(@AresLevel3Area1!=null))
+				@AresLevel3Area1=::LoadShapeFromEntires(map,(41),(48));
+				if(!(@AresLevel3Area2!=null))
+				@AresLevel3Area2=::LoadShapeFromEntires(map,(51),(56));
+				if(!(@AresLevel3Area3!=null))
+				@AresLevel3Area3=::LoadShapeFromEntires(map,(57),(60));
+			}
+			
+			if(map.GetProtoId()==(576))
+			{
+				if(!(@AresLevel4Area1!=null))
+				@AresLevel4Area1=::LoadShapeFromEntires(map,(41),(48));
+				if(!(@AresLevel4Area2!=null))
+				@AresLevel4Area2=::LoadShapeFromEntires(map,(51),(56));
+				if(!(@AresLevel4Area3!=null))
+				@AresLevel4Area3=::LoadShapeFromEntires(map,(57),(60));
+			}  
+			
+			switch(map.GetProtoId())
+			{
+				case(101):
+				if(AresLevel1Area1.IsWithin(mob))@polygon=@AresLevel1Area1;
+				if(AresLevel1Area2.IsWithin(mob))@polygon=@AresLevel1Area2;
+				if(AresLevel1Area3.IsWithin(mob))@polygon=@AresLevel1Area3;
+				break;
+				case(102):
+				if(AresLevel2Area1.IsWithin(mob))@polygon=@AresLevel2Area1;
+				if(AresLevel2Area2.IsWithin(mob))@polygon=@AresLevel2Area2;
+				if(AresLevel2Area3.IsWithin(mob))@polygon=@AresLevel2Area3;
+				
+				break;
+				case(575):
+				if(AresLevel3Area1.IsWithin(mob))@polygon=@AresLevel3Area1;
+				if(AresLevel3Area2.IsWithin(mob))@polygon=@AresLevel3Area2;
+				if(AresLevel3Area3.IsWithin(mob))@polygon=@AresLevel3Area3;
+				
+				break;
+				case(576):
+				if(AresLevel4Area1.IsWithin(mob))@polygon=@AresLevel4Area1;
+				if(AresLevel4Area2.IsWithin(mob))@polygon=@AresLevel4Area2;
+				if(AresLevel4Area3.IsWithin(mob))@polygon=@AresLevel4Area3;
+				break;
+			}
+			EntireSelector=Random(0,(moveto_entires.length()-1));
+			@entire=moveto_entires[EntireSelector];
+			if(!(@entire!=null))return; 
+			
+			if(!CritterIsKeepedInPolygon(mob,polygon,entire.HexX,entire.HexY))
+			{
+				if(DontMove)
+				mob.SetEvent((0),"_DontMove");
+				else
+				mob.SetEvent((0),"_MobIdle");
+				return;
+			}
+		} 
+		
+		else
+		{
+			EntireSelector=Random(0,(moveto_entires.length()-1));
+			@entire=moveto_entires[EntireSelector];
+			if(!(@entire!=null))
+			return;
+		}     
+		
+		if(GetEntireFreeHex(mob.GetMap(),entireNumber,x,y,EntireSelector))
+		{       
+			
+			mob.SetHomePos(x,y,dir);  
+			
+		}
+		else
+		{
+			mob.Say((2),"Position is currently busy...");
+		}                                
+		
+	}
+}                                                                
+
+bool CritterIsKeepedInPolygon(Critter&mob,IPolygon@polygon,uint16 x,uint16 y)
+{
+	if(!(@polygon!=null))
+	{
+		mob.Say((2),"Area is not valid.");
+		return false;
+	}      
+	
+	if(polygon.IsWithin(mob)&&!polygon.IsWithin(x,y))
+	{
+		mob.Say((2),"Bad place, taking another one.");
+		return false;
+	}
+	
+	mob.Say((2),"Going to: "+x+", "+y+".");
+	return true;
+}
+
+void _MakeAnotherMob(Critter&mob,Critter@killer)
+{
+	if(!(@mob!=null))
+	return;
+	if(mob.Stat[(84)]!=(-1))
+	return;
+	
+	Map@map=mob.GetMap();
+	
+	if(!(@map!=null))
+	return;
+	
+	uint8 neededTime;
+	
+	switch(map.GetProtoId())
+	{
+		case(606):
+		case(285):
+		neededTime=Random(10,20);
+		break;
+		
+		case(661):
+		neededTime=20;
+		break;
+		
+		default:neededTime=Random(15,20);
+	}
+	
+	CreateTimeEvent(((__FullSecond)+(((neededTime)*__TimeMultiplier*60))),"e_deleteMob",mob.Id,true);
+	array<uint>mobdata={map.Id,0,(3)};
+	CreateTimeEvent(((__FullSecond)+(((neededTime)*__TimeMultiplier*60))),"e_TrySpawnMob",mobdata,true);
+}
+
+void _DeleteEventMob(Critter&mob,Critter@killer)
+{
+	CreateTimeEvent(((__FullSecond)+(((5)*__TimeMultiplier))),"e_deleteMob",mob.Id,true);
+}
+
+void _DeleteMob(Critter&mob,Critter@killer)
+{
+	
+	uint playerId=0;
+	if(!(@mob!=null))
+	return;
+	
+	if((@killer!=null)&&killer.IsPlayer()&&mob.GetMap().GetLocation().IsGuarded()&&IsNotDungInGuardedLoc(mob.GetMap()))
+	{
+		AddScore(killer,(14),1);
+		
+		playerId=killer.Id;
+	}
+	
+	if((@killer!=null)&&(((killer.Mode[(534)]&((0x00000020)))!=0))&&killer.FollowerVarBase[(933)]!=0&&mob.GetMap().GetLocation().IsGuarded()&&IsNotDungInGuardedLoc(mob.GetMap()))
+	{
+		Critter@player=GetCritter(killer.FollowerVar[(933)]);
+		if(!(@player!=null))
+		return;
+		
+		playerId=player.Id;
+		
+		AddScore(player,(14),1);
+		
+	}
+	
+	if((@killer!=null)&&(killer.IsPlayer()||((((killer.Mode[(534)]&((0x00000020)))!=0))&&killer.FollowerVarBase[(933)]!=0))&&mob.GetMap().GetLocation().IsGuarded()&&IsNotDungInGuardedLoc(mob.GetMap()))
+	{ 
+		
+		array<Item@>rewards;
+		mob.GetItemsByType((1),rewards);
+		mob.GetItemsByType((3),rewards); 
+		
+		if(rewards.length()>0)
+		{
+			Item@reward=rewards[Random(0,rewards.length()-1)];
+			if(!(@reward!=null))
+			return;
+			
+			if(reward.GetProtoId()!=(270)&&reward.GetProtoId()!=(393)
+			&&reward.GetProtoId()!=(371)&&reward.GetProtoId()!=(372)
+			&&reward.GetProtoId()!=(427)&&reward.GetProtoId()!=(489)
+			&&reward.GetProtoId()!=(498)&&reward.GetProtoId()!=(290)
+			&&reward.GetProtoId()!=(291)&&reward.GetProtoId()!=(518)
+			&&reward.GetProtoId()!=(520)&&reward.GetProtoId()!=(530)
+			&&reward.GetProtoId()!=(531)&&reward.GetProtoId()!=(421)
+			&&reward.GetProtoId()!=(753))
+			{
+				
+				Critter@player=GetCritter(playerId);
+				if(!(@player!=null))
+				return;
+				
+				SetLexem(reward,"$rewardfor",player.Name);  
+				
+				Map@map=mob.GetMap();
+				if(!(@map!=null))
+				return;
+				
+				Critter@rewardgiver=map.GetNpc((205),(0x0F)|(0x20),0);
+				if(!(@rewardgiver!=null))
+				return;
+				MoveItem(reward,1,rewardgiver);
+				
+			}
+		}
+	}  
+	
+	CreateTimeEvent(((__FullSecond)+(((5)*__TimeMultiplier))),"e_deleteMob",mob.Id,true);
+}
+
+void _ClearEnemyStack(Critter&mob,Critter@killer)
+{
+	if(IsNukaColaWorker(mob))
+	{
+		RemoveItems(mob);
+		SetWeapon(mob,0);
+	}
+	
+	mob.ClearEnemyStack();
+}
+
+bool d_DoesHeHaveReward(Critter&player,Critter@npc)
+{
+	array<Item@>rewards;
+	npc.GetItemsByType((1),rewards);
+	npc.GetItemsByType((3),rewards);
+	
+	uint8 rewardscount=0;
+	
+	if(rewards.length()>0)
+	{
+		for(uint16 i=0;i<rewards.length();i++)
+		{
+			if(IsLexem(rewards[i],"$rewardfor")&&GetLexem(rewards[i],"$rewardfor")==player.Name)
+			{
+				rewardscount++;
+			}
+		}
+	}
+	
+	if(rewardscount==0)
+	return false;
+	else
+	return true;
+}
+
+void r_GiveRewardToPlayer(Critter&player,Critter@npc)
+{
+	array<Item@>rewards;
+	npc.GetItemsByType((1),rewards);
+	npc.GetItemsByType((3),rewards);
+	
+	uint8 rewardscount=0;
+	
+	if(rewards.length()>0)
+	{
+		for(uint16 i=0;i<rewards.length();i++)
+		{
+			if(IsLexem(rewards[i],"$rewardfor")&&GetLexem(rewards[i],"$rewardfor")==player.Name)
+			{
+				MoveItem(rewards[i],1,player);
+				UnsetLexem(rewards[i],"$rewardfor");
+				rewardscount++;
+			}
+		}
+	}
+	
+	if(rewardscount==1)
+	player.Say((11),"You've received your reward.");
+	
+	if(rewardscount>1)
+	player.Say((11),"You've received your rewards.");
+} 
+
+void _MobIdle(Critter&mob)
+{
+	if(!(@mob!=null))
+	return;
+	
+	if(!mob.IsLife())
+	{
+		mob.Wait((1000));
+		return;
+	}
+	
+	bool MobForEvent=(mob.Stat[(187)]==(2)?true:false);
+	
+	mob.SetEvent((4),null);
+	
+	if(Random(0,200)==0&&!IsSierraRobot(mob)||
+	(Random(0,25)==0&&
+	(mob.GetMap().GetProtoId()==(101)||mob.GetMap().GetProtoId()==(102)||
+	mob.GetMap().GetProtoId()==(575)||mob.GetMap().GetProtoId()==(576))))
+	{ 
+		
+		if(!MobForEvent)MoveMobToFreeHex(mob);
+	}         
+	
+	array<Critter@>crits;
+	
+	uint num=mob.GetCritters(false,(0x03),crits);    
+	
+	uint dist=GetDistance(mob);
+	for(uint i=0;i<num;i++)
+	{    
+		
+		if(TryAttack(mob,crits[i]))return;                 
+		
+	}
+	
+	if(crits.length()>0)
+	{
+		MoveMob(mob,false);
+		mob.Wait((200));
+		
+	}
+	else  
+	
+	{
+		MoveMob(mob,false);
+		
+		mob.Wait((200));
+	}
+	
+}
+
+bool _Alert(Critter&mob,Critter&attacker)
+{
+	if(!(@mob!=null))
+	return true;
+	
+	if(!(@attacker!=null))
+	return true;
+	
+	if(attacker.Stat[(89)]==(203))
+	return true;
+	
+	uint radius=(mob.Param[(0)]+mob.Param[(2)])*2;
+	
+	array<Critter@>mobstoalert;
+	mob.GetMap().GetCrittersHex(mob.HexX,mob.HexY,radius,(0x03)|(0x20),mobstoalert);
+	
+	for(uint8 i=0;i<mobstoalert.length();i++)
+	{
+		if(!(@mobstoalert[i]!=null))continue;
+		if(mobstoalert[i].Param[(89)]==(203))
+		{
+			mobstoalert[i].AddEnemyInStack(attacker.Id);
+			AddAttackPlane(mobstoalert[i],0,attacker);
+		}
+		
+	}
+	
+	return false;
+}
+
+void _DontMove(Critter&mob)
+{
+	if(!(@mob!=null))
+	return;
+	
+	if(!mob.IsLife())
+	{
+		mob.Wait((1000));
+		return;
+	}
+	
+	mob.SetEvent((4),null);
+	
+	if((Random(0,200)==0&&!IsSierraRobot(mob)||
+	(Random(0,25)==0&&
+	(mob.GetMap().GetProtoId()==(101)||mob.GetMap().GetProtoId()==(102)||
+	mob.GetMap().GetProtoId()==(575)||mob.GetMap().GetProtoId()==(576))))&&
+	mob.GetProtoId()!=480&&mob.GetProtoId()!=470&&mob.GetProtoId()!=474)
+	
+	{ 
+		
+		MoveMobToFreeHex(mob,true);
+	}     
+	
+	array<Critter@>crits;
+	
+	uint num=mob.GetCritters(false,(0x03),crits);    
+	
+	uint dist=GetDistance(mob);
+	for(uint i=0;i<num;i++)
+	{    
+		
+		if(TryAttack(mob,crits[i]))return;                 
+		
+	}
+	
+	if(crits.length()>0)
+	{
+		
+		mob.Wait((200));
+		
+	}
+	else  
+	
+	{ 
+		
+		mob.Wait((200));
+	}
+	
+}
+
+bool TryAttack(Critter&mob,Critter@targetCr)
+{
+	if(mob.GetMap().GetProtoId()==(664))
+	if(!(@HawthorneMilitaryBase!=null))
+	@HawthorneMilitaryBase=::LoadShapeFromEntires(mob.GetMap(),(41),(45));
+	
+	if(mob.GetMap().GetProtoId()==(606))
+	if(!(@NukaColaBottlePlant!=null))
+	@NukaColaBottlePlant=::LoadShapeFromEntires(mob.GetMap(),(41),(64));
+	
+	if(IsNukaColaWorker(mob))return false;
+	
+	if(mob.GetMap().GetProtoId()==(56)&&(targetCr.IsNpc()&&!(((targetCr.Mode[(534)]&((0x00000020)))!=0))))return false;
+	
+	if((targetCr.Stat[(89)]!=(203))&&
+	((mob.GetMap().GetProtoId()!=(664)&&IsMobFromBase(mob)&&!IsCurrentController(targetCr))
+	||(mob.GetMap().GetProtoId()==(664)&&IsMobFromBase(mob)&&!IsCurrentController(targetCr)&&HawthorneMilitaryBase.IsWithin(targetCr))
+	||!IsMobFromBase(mob)))
+	{ 
+		
+		NpcPlane@plane=mob.GetCurPlane();
+		if(((@plane!=null))&&(plane.Identifier!=(1)))
+		mob.DropPlanes();
+		
+		mob.AddEnemyInStack(targetCr.Id);
+		AddAttackPlane(mob,0,targetCr);
+		return true;
+	}
+	return false;
+}
+
+int GetDistance(Critter&mob)
+{ 
+	
+	int base=__LookNormal+3*mob.Stat[(1)];
+	
+	return base/2;
+}
+
+void MoveMob(Critter&mob,bool run)
+{
+	int dist=Random(0,(mob.Stat[(89)]%100/10));
+	if(dist==0)
+	{
+		mob.MoveRandom();
+	}
+	else
+	{
+		
+		uint16 hexX=mob.HexX;
+		uint16 hexY=mob.HexY;
+		mob.GetMap().MoveHexByDir(hexX,hexY,Random(0,5),dist);
+		AddWalkPlane(mob,0,hexX,hexY,0xff,run,0);
+	}
+}
+
+void ImmaAttack(Map&map,Critter&mob)
+{
+	if(!(@mob!=null))
+	return;
+	
+	array<Critter@>crits; 
+	
+	uint8 num=MapGetPlayersAndFollowers(map,(0x03),crits);
+	
+	if(num>0)
+	{
+		uint8 randomcritter=0;
+		
+		if(num>1)
+		randomcritter=Random(0,num-1);
+		
+		if((@crits[randomcritter]!=null))
+		{
+			NpcPlane@plane=mob.GetCurPlane();
+			if(((@plane!=null))&&(plane.Identifier!=(1)))
+			mob.DropPlanes();
+			
+			mob.AddEnemyInStack(crits[randomcritter].Id);
+			AddAttackPlane(mob,0,crits[randomcritter]);
+			return;
+		}
+	}
+	
+}
+
+bool TryAttackOnWalk(Critter&mob,Critter@targetCr)
+{
+	Map@map=mob.GetMap();
+	if(!(@map!=null))
+	return false;
+	
+	if(mob.GetMap().GetProtoId()==(664))
+	if(!(@HawthorneMilitaryBase!=null))
+	@HawthorneMilitaryBase=::LoadShapeFromEntires(mob.GetMap(),(41),(45));
+	
+	if(mob.GetMap().GetProtoId()==(606))
+	if(!(@NukaColaBottlePlant!=null))
+	@NukaColaBottlePlant=::LoadShapeFromEntires(mob.GetMap(),(41),(64));
+	
+	if(IsNukaColaWorker(mob))return false;     
+	
+	if((targetCr.Stat[(89)]!=(203))&&
+	((mob.GetMap().GetProtoId()!=(664)&&IsMobFromBase(mob)&&!IsCurrentController(targetCr))
+	||(mob.GetMap().GetProtoId()==(664)&&IsMobFromBase(mob)&&!IsCurrentController(targetCr)&&HawthorneMilitaryBase.IsWithin(targetCr))
+	||!IsMobFromBase(mob)))
+	{ 
+		
+		NpcPlane@plane=mob.GetCurPlane();
+		if(((@plane!=null))&&(plane.Identifier!=(1)))
+		mob.DropPlanes();
+		
+		mob.AddEnemyInStack(targetCr.Id);
+		AddAttackPlane(mob,0,targetCr);
+		return true;
+	}
+	return false;
+}
+
+void _MobShowCritterAggr(Critter&mob,Critter&showCrit)
+{
+	Map@map=mob.GetMap();
+	if(!(@map!=null))
+	return;
+	
+	if(map.GetProtoId()==(664))
+	if(!(@HawthorneMilitaryBase!=null))
+	@HawthorneMilitaryBase=::LoadShapeFromEntires(map,(41),(45));
+	
+	Location@loc=map.GetLocation();
+	
+	if(mob.GetMap().GetProtoId()==(56)&&(showCrit.IsNpc()&&!(((showCrit.Mode[(534)]&((0x00000020)))!=0))))return;
+	
+	if(((((!IsTown(map))&&showCrit.IsLife())||(showCrit.IsPlayer()&&showCrit.IsLife())||(loc.IsGuarded()&&showCrit.IsLife()))&&
+	showCrit.Stat[(89)]!=(203)&&
+	((mob.GetMap().GetProtoId()!=(664)&&IsMobFromBase(mob)&&!IsCurrentController(showCrit)
+	||(mob.GetMap().GetProtoId()==(664)&&IsMobFromBase(mob)&&!IsCurrentController(showCrit)&&HawthorneMilitaryBase.IsWithin(showCrit))
+	||!IsMobFromBase(mob))))&&!IsNukaColaWorker(mob))
+	{
+		uint dist=GetDistance(mob);
+		if(GetCrittersDistantion(mob,showCrit)<=dist)
+		{       
+			
+			mob.AddEnemyInStack(showCrit.Id);
+			AddAttackPlane(mob,0,showCrit);
+			
+		}
+	}
+}
+
+bool IsDungInGuardedLoc(Map&map)
+{
+	return map.GetProtoId()==(583)
+	||map.GetProtoId()==(684);
+}
+
+bool IsNotDungInGuardedLoc(Map&map)
+{
+	return!IsDungInGuardedLoc(map);
+}
+
+bool IsMobFromBase(Critter&mob)
+{
+	Map@map=mob.GetMap();
+	Location@loc=map.GetLocation();
+	
+	switch(loc.GetProtoId())
+	{
+		case(362):
+		return true;
+		case(98):
+		return true;
+		case(95):
+		return true;
+		case(12):
+		return true;
+		case(99):
+		return true;
+	}
+	return false;
+}
+
+bool IsCurrentController(Critter&cr)
+{
+	Location@loc=cr.GetMap().GetLocation();
+	
+	IBroadcastBuffer@TakingBase=GetEventCountDownBuffer(loc.GetProtoId(),(13));
+	
+	switch(loc.GetProtoId())
+	{
+		case(362):
+		if(!(@TakingBase!=null))return GetGlobalVar((61011))==cr.Stat[(106)];
+		else return GetGlobalVar((61011))==cr.Stat[(106)]&&!BaseIsTakingByMobs(loc);
+		case(98):
+		if(!(@TakingBase!=null))return GetGlobalVar((61012))==cr.Stat[(106)];
+		else return GetGlobalVar((61012))==cr.Stat[(106)]&&!BaseIsTakingByMobs(loc);
+		case(95):
+		if(!(@TakingBase!=null))return GetGlobalVar((61013))==cr.Stat[(106)];
+		else return GetGlobalVar((61013))==cr.Stat[(106)]&&!BaseIsTakingByMobs(loc);
+		case(12):
+		if(!(@TakingBase!=null))return GetGlobalVar((61014))==cr.Stat[(106)];
+		else return GetGlobalVar((61014))==cr.Stat[(106)]&&!BaseIsTakingByMobs(loc);
+		case(99):
+		if(!(@TakingBase!=null))return GetGlobalVar((61015))==cr.Stat[(106)];
+		else return GetGlobalVar((61015))==cr.Stat[(106)]&&!BaseIsTakingByMobs(loc);
+		default:
+		
+	}
+	return false;
+}
+
+bool IsHtHOnlyMob(uint16 pid)
+{
+	return pid==7||pid==9||pid==246||pid==247||pid==6||pid==5||
+	pid==562||pid==563||pid==564||pid==565||pid==827||
+	pid==242||pid==243||pid==517||
+	pid==244||pid==245||pid==275||
+	pid==248||pid==249||
+	pid==572||pid==573||pid==574||pid==575;
+}
+
+bool IsFromMelchiorGroup(uint16 pid)
+{
+	return pid==566||pid==562||pid==563||pid==564||pid==565;
+}
+
+bool IsMutantMob(uint16 pid)
+{
+	return pid==549||pid==550||pid==551||pid==566;
+}
+
+bool IsHumanMob(uint16 pid)
+{
+	return pid==30||pid==31||pid==32||pid==33||pid==472
+	||pid==40||pid==41||pid==828||pid==829
+	||pid==70||pid==71||pid==69||pid==261||pid==262
+	||pid==475||pid==476||pid==250||pid==251
+	||pid==590||pid==591||pid==884||pid==885
+	||pid==886||pid==887||pid==888||pid==889
+	||pid==890||pid==891||pid==892||pid==893
+	||pid==894||pid==895||pid==897||pid==898
+	||pid==899||pid==900
+	||pid==134||pid==135||pid==827;
+}
+
+bool IsVaultHumanMob(uint16 pid)
+{
+	return pid==884||pid==885||pid==882||pid==898
+	||pid==899||pid==900;
+}
+
+bool IsBaldMan(uint16 pid)
+{
+	return pid==69||pid==829;
+}
+
+bool IsBlackMan(uint16 pid)
+{
+	return pid==890;
+}
+
+bool IsRedHairGirl(uint16 pid)
+{
+	return pid==827;
+}
+
+bool IsGlowingGhoul(uint16 pid)
+{
+	return pid==572||pid==573;
+}
+
+bool IsBrownGhoul(uint16 pid)
+{
+	return pid==574||pid==575||pid==258;
+}
+
+bool IsF2Ghoul(uint16 pid)
+{
+	return pid==258;
+}
+
+bool IsSierraRobot(Critter&mob)
+{
+	return mob.Stat[(67)]==(10)&&mob.GetMap().GetLocation().GetProtoId()==(8);
+}
+
+bool IsV13Rat(Critter&mob)
+{
+	return mob.GetProtoId()==588&&mob.GetMap().GetProtoId()==(90);
+}
+
+bool IsNukaColaWorker(Critter&mob)
+{
+	uint mapid=0;
+	uint16 hexX=0,hexY=0;
+	uint8 dir=0;
+	
+	if(mob.GetMap().GetProtoId()==(606))
+	{
+		if(!(@NukaColaBottlePlant!=null))
+		@NukaColaBottlePlant=::LoadShapeFromEntires(mob.GetMap(),(41),(64));
+		
+		mob.GetHomePos(mapid,hexX,hexY,dir);
+	} 
+	
+	return(((mob.GetMap().GetProtoId()==(606)&&NukaColaBottlePlant.IsWithin(hexX,hexY))||
+	mob.GetMap().GetProtoId()==(607))
+	&&(mob.GetProtoId()==71||
+	mob.GetProtoId()==59||
+	mob.GetProtoId()==60||
+	mob.GetProtoId()==63||
+	mob.GetProtoId()==64||
+	mob.GetProtoId()==65||
+	mob.GetProtoId()==68||
+	mob.GetProtoId()==94||
+	mob.GetProtoId()==295||
+	mob.GetProtoId()==403||
+	mob.GetProtoId()==424||
+	mob.GetProtoId()==451));
+	
+}
+
+void RemoveItems(Critter&mob)
+{
+	array<Item@>items;
+	mob.GetItems(-1,items);
+	for(uint8 i=0;i<items.length();i++)
+	{
+		if((@items[i]!=null))
+		{
+			mob.MoveItem(items[i].Id,1,(0));
+			DeleteItem(items[i]);
+		}
+		
+	}
+	mob.Wait(2000);
+}
+
+array<int>@PrecizeBoss(Map&map,Location&location,uint16 CritterPid)
+{
+	array<int>@PrecizedBoss;
+	if(location.GetProtoId()==(28))
+	{
+		if(map.GetProtoId()==(575))
+		{
+			int[]params=
+			{
+				(0),8,
+				(1),7
+			};
+			@PrecizedBoss=params;
+		}
+		if(map.GetProtoId()==(576))
+		{
+			int[]params=
+			{
+				(3),10,
+				(4),15,
+				(5),8,
+				(6),7
+			};
+			@PrecizedBoss=params;
+		}
+	}
+	return@PrecizedBoss;
+}
+
+void SetArmor(Critter&mob)
+{
+	uint16 armorpid,helmetpid; 
+	
+	if((mob.GetProtoId()>=30&&mob.GetProtoId()<=33)||mob.GetProtoId()==472)
+	{
+		switch(Random(1,2))
+		{
+			case 1:armorpid=(74);helmetpid=(728);break;
+			case 2:armorpid=(265);helmetpid=(729);break;
+		}
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if((mob.GetProtoId()>=40&&mob.GetProtoId()<=42)||(mob.GetProtoId()>=827&&mob.GetProtoId()<=829)||mob.GetProtoId()==890)
+	{
+		switch(Random(1,3))
+		{
+			case 1:armorpid=(2);helmetpid=(732);break;
+			case 2:armorpid=(380);helmetpid=(733);break;
+			case 3:armorpid=(240);helmetpid=(734);break;
+		}
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if((mob.GetProtoId()>=69&&mob.GetProtoId()<=71)||mob.GetProtoId()==897)
+	{
+		armorpid=(1);
+		helmetpid=(730);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=134&&mob.GetProtoId()<=135)
+	{
+		armorpid=(17);
+		helmetpid=(725);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=261&&mob.GetProtoId()<=262)
+	{
+		armorpid=(381);
+		helmetpid=(726);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=475&&mob.GetProtoId()<=476)
+	{
+		armorpid=(9654);
+		helmetpid=(741);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()==122)
+	{
+		armorpid=(3);helmetpid=(721);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()==893)
+	{
+		armorpid=(232);helmetpid=(737);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()==250)
+	{
+		switch(Random(1,2))
+		{
+			case 1:armorpid=(348);helmetpid=(735);break;
+			case 2:armorpid=(349);helmetpid=(736);break;
+		}
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=886&&mob.GetProtoId()<=887)
+	{
+		armorpid=(239);
+		helmetpid=(727);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=888&&mob.GetProtoId()<=889)
+	{
+		armorpid=(752);
+		switch(Random(1,2))
+		{
+			case 1:helmetpid=(738);break;
+			case 2:helmetpid=(739);break;
+		}
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=894&&mob.GetProtoId()<=895)
+	{
+		armorpid=(761);
+		helmetpid=(726);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=891&&mob.GetProtoId()<=892)
+	{
+		armorpid=(379);
+		helmetpid=(731);
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@helmet=mob.AddItem(helmetpid,1);
+		mob.MoveItem(helmet.Id,helmet.GetCount(),(4));
+		AddBonusOrNot(helmet);
+	} 
+	
+	if(mob.GetProtoId()>=898&&mob.GetProtoId()<=900)
+	{
+		armorpid=(753); 
+		
+		Item@armor=mob.AddItem(armorpid,1);
+		mob.MoveItem(armor.Id,armor.GetCount(),(3));
+		mob.SetFavoriteItem((3),armor.GetProtoId());
+		AddBonusOrNot(armor);   
+		
+	}
+}
+
+uint16 GenerateWeapon(uint8 weapontype=0,uint8 weaponlevel=2)
+{
+	uint16 weaponry;
+	array<uint16>fromweaponry={0};
+	
+	switch(weapontype)
+	{
+		case 1:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(6);
+			fromweaponry[0]=(8);
+			fromweaponry[1]=(122);
+			fromweaponry[2]=(300);
+			fromweaponry[3]=(313);
+			fromweaponry[4]=(398);
+			fromweaponry[5]=(404);
+			break;
+			case 2:
+			fromweaponry.resize(4);
+			fromweaponry[0]=(22);
+			fromweaponry[1]=(241);
+			fromweaponry[2]=(388);
+			fromweaponry[3]=(619);
+			break;
+			case 3:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(394);
+			break;
+		}
+		break;
+		case 2:
+		
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(10);
+			fromweaponry[1]=(299);
+			fromweaponry[2]=(287);
+			break;
+			case 2:
+			fromweaponry.resize(5);
+			fromweaponry[0]=(23);
+			fromweaponry[1]=(143);
+			fromweaponry[2]=(351);
+			fromweaponry[3]=(405);
+			fromweaponry[4]=(620);
+			break;
+			case 3:
+			fromweaponry.resize(5);
+			fromweaponry[0]=(143);
+			fromweaponry[1]=(353);
+			fromweaponry[2]=(392);
+			fromweaponry[3]=(403);
+			fromweaponry[4]=(500);
+			break;
+		}
+		break;
+		case 3:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(94);
+			fromweaponry[1]=(242);
+			fromweaponry[2]=(385);
+			break;
+			case 2:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(242);
+			fromweaponry[1]=(354);
+			fromweaponry[2]=(268);
+			break;
+			case 3:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(354);
+			fromweaponry[1]=(25445);
+			fromweaponry[2]=(268);
+			break;
+		}
+		break;
+		case 4:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(9);
+			fromweaponry[1]=(283);
+			fromweaponry[2]=(332);
+			break;
+			case 2:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(296);
+			fromweaponry[1]=(9);
+			break;
+			case 3:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(296);
+			fromweaponry[1]=(352);
+			fromweaponry[2]=(391);
+			break;
+		}
+		break;
+		case 5:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(4);
+			fromweaponry[0]=(11);
+			fromweaponry[1]=(400);
+			fromweaponry[2]=(387);
+			fromweaponry[3]=(13);
+			break;
+			case 2:
+			fromweaponry.resize(5);
+			fromweaponry[0]=(387);
+			fromweaponry[1]=(400);
+			fromweaponry[2]=(13);
+			fromweaponry[3]=(12);
+			fromweaponry[4]=(355);
+			break;
+			case 3:
+			fromweaponry.resize(5);
+			fromweaponry[0]=(355);
+			fromweaponry[1]=(389);
+			fromweaponry[2]=(395);
+			fromweaponry[3]=(22120);
+			fromweaponry[4]=(350);
+			break;
+		}
+		break;
+		case 6:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(16);
+			fromweaponry[1]=(402);
+			break;
+			case 2:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(402);
+			fromweaponry[1]=(24);
+			fromweaponry[2]=(406);
+			break;
+			case 3:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(120);
+			fromweaponry[1]=(390);
+			fromweaponry[2]=(396);
+			break;
+		}
+		break;
+		case 7:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(118);
+			break;
+			case 2:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(15);
+			fromweaponry[1]=(401);
+			break;
+			case 3:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(397);
+			fromweaponry[1]=(233);
+			fromweaponry[2]=(401);
+			break;
+		}
+		break;
+		case 8:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(12);
+			break;
+			case 2:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(28);
+			break;
+			case 3:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(25452);
+			break;
+		}
+		break;
+		case 9:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(25);
+			break;
+			case 2:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(25);
+			fromweaponry[1]=(26);
+			break;
+			case 3:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(26);
+			break;
+		}
+		break;
+		case 10:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(4);
+			fromweaponry[0]=(4);
+			fromweaponry[1]=(236);
+			fromweaponry[2]=(319);
+			fromweaponry[3]=(383);
+			break;
+			case 2:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(517);
+			fromweaponry[1]=(522);
+			fromweaponry[2]=(116);
+			break;
+			case 3:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(517);
+			fromweaponry[1]=(116);
+			break;
+		}
+		break;
+		case 11:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(7);
+			fromweaponry[1]=(280);
+			fromweaponry[2]=(320);
+			break;
+			case 2:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(7);
+			fromweaponry[1]=(280);
+			break;
+			case 3:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(280);
+			break;
+		}
+		break;
+		case 12:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(20);
+			fromweaponry[1]=(384);
+			break;
+			case 2:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(160);
+			fromweaponry[1]=(20);
+			break;
+			case 3:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(399);
+			fromweaponry[1]=(386);
+			break;
+		}
+		break;
+		case 13:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(235);
+			break;
+			case 2:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(235);
+			fromweaponry[1]=(407);
+			break;
+			case 3:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(407);
+			break;
+		}
+		break;
+		case 14:
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(6);
+			break;
+			case 2:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(6);
+			fromweaponry[1]=(115);
+			break;
+			case 3:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(115);
+			break;
+		}
+		break;
+		case 15:        
+		
+		switch(weaponlevel)
+		{
+			case 1:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(371);
+			fromweaponry[1]=(372);
+			break;
+			case 2:
+			fromweaponry.resize(3);
+			fromweaponry[0]=(270);
+			fromweaponry[1]=(518);
+			fromweaponry[2]=(520);
+			break;
+			case 3:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(427);
+			break;
+			case 4:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(518);
+			fromweaponry[1]=(520);
+			break;
+			case 5:
+			fromweaponry.resize(2);
+			fromweaponry[0]=(290);
+			fromweaponry[1]=(291);
+			break;
+			case 6:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(9659);
+			break;
+			case 7:
+			fromweaponry.resize(1);
+			fromweaponry[0]=(498);
+			break;
+		}
+		break;
+	}
+	weaponry=fromweaponry[Random(0,fromweaponry.length()-1)];
+	
+	return weaponry;
+} 
+
+void SetWeapon(Critter&mob,uint8 weaponforgroup)
+{
+	
+	uint8 weapontype=0,weaponlevel=2;                                                                                                
+	
+	if((groupname=="Vipers raiders"||groupname=="Jackals raiders"||groupname=="Slavers"||groupname=="Vault 13 Dwellers"
+	||weaponforgroup==2||weaponforgroup==3||weaponforgroup==6)&&IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,9))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=2;break;
+			case 3:weapontype=3;break;
+			case 4:weapontype=4;break;
+			case 5:weapontype=10;break;
+			case 6:weapontype=11;break;
+			case 7:weapontype=12;break;
+			case 8:weapontype=13;break;
+			case 9:weapontype=14;break;
+		}
+		
+		if(IsBlackMan(mob.GetProtoId()))
+		switch(Random(1,6))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=2;break;
+			case 3:weapontype=3;break;
+			case 4:weapontype=4;break;
+			case 5:weapontype=13;break;
+			case 6:weapontype=14;break;
+		}
+		
+		if(IsBaldMan(mob.GetProtoId()))
+		switch(Random(1,7))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=2;break;
+			case 3:weapontype=3;break;
+			case 4:weapontype=4;break;
+		}
+		
+		if(IsRedHairGirl(mob.GetProtoId()))
+		{
+			switch(Random(1,2))
+			{
+				case 1:weapontype=10;break;
+				case 2:weapontype=13;break;
+				
+			}
+		}
+		
+		switch(Random(1,20))
+		{
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+			case 8:
+			case 9:
+			case 10:weaponlevel=1;break;
+			case 20:weaponlevel=3;break;
+		}
+	}
+	
+	if((groupname=="Enclave Soldiers"||weaponforgroup==7)&&IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,6))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=2;break;
+			case 3:weapontype=5;break;
+			case 4:weapontype=6;break;
+			case 5:weapontype=7;break;
+			case 6:weapontype=8;break;
+		}
+		
+		switch(Random(1,20))
+		{
+			case 1:
+			case 2:weaponlevel=1;break;
+			case 17:
+			case 18:
+			case 19:
+			case 20:weaponlevel=3;break;
+		}
+	}
+	
+	if((groupname=="NCR Soldiers and Rangers"||groupname=="Mercenaries"||groupname=="Renegades"||
+	weaponforgroup==4||weaponforgroup==12||weaponforgroup==5)&&IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,4))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=2;break;
+			case 3:weapontype=3;break;
+			case 4:weapontype=5;break;
+		}
+		
+		if(groupname=="NCR Soldiers and Rangers"||weaponforgroup==4)
+		switch(Random(1,20))
+		{
+			case 1:
+			case 2:weaponlevel=1;break;
+			case 17:
+			case 18:
+			case 19:
+			case 20:weaponlevel=3;break;
+		}
+		
+		if(groupname=="Mercenaries"||weaponforgroup==12)
+		switch(Random(1,20))
+		{
+			case 1:
+			case 2:weaponlevel=1;break;
+			case 20:weaponlevel=3;break;
+		}
+		
+		if(groupname=="Renegades"||weaponforgroup==5)
+		switch(Random(1,20))
+		{
+			case 1:
+			case 2:
+			case 3:
+			case 4:weaponlevel=1;break;
+			case 20:weaponlevel=3;break;
+		}
+	}  
+	
+	if((groupname=="Slag bandits"||weaponforgroup==1)&&IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,7))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=2;break;
+			case 3:weapontype=3;break;
+			case 4:weapontype=4;break;
+			case 5:weapontype=5;break;
+			case 6:weapontype=6;break;
+			case 7:weapontype=7;break;
+		}
+		
+		if(IsBlackMan(mob.GetProtoId()))
+		switch(Random(1,4))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=3;break;
+			case 3:weapontype=4;break;
+			case 4:weapontype=6;break;
+		}
+		
+		if(IsBaldMan(mob.GetProtoId()))
+		switch(Random(1,7))
+		{
+			case 1:weapontype=1;break;
+			case 2:weapontype=2;break;
+			case 3:weapontype=3;break;
+			case 4:weapontype=4;break;
+			case 5:weapontype=5;break;
+			case 6:weapontype=6;break;
+			case 7:weapontype=7;break;
+		}
+		
+		if(IsRedHairGirl(mob.GetProtoId()))
+		{
+			switch(Random(1,2))
+			{
+				case 1:weapontype=10;break;
+				case 2:weapontype=13;break;
+			}
+		}
+		
+		switch(Random(1,20))
+		{
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 5:weaponlevel=1;break;
+			case 20:weaponlevel=3;break;
+		}
+	}
+	
+	if(groupname=="Endless Walkers"&&weaponforgroup!=(0))
+	{
+		if(IsGlowingGhoul(mob.GetProtoId()))
+		{
+			weapontype=15;
+			weaponlevel=1;
+		}
+		
+		if(IsBrownGhoul(mob.GetProtoId()))
+		{
+			if(mob.GetMap().GetLocation().GetProtoId()==(24))
+			{
+				switch(Random(1,2))
+				{
+					case 1:weapontype=(2);break;
+					case 2:weapontype=(3);break;  
+					
+				}
+				weaponlevel=Random((2),(3));
+			}
+			else
+			{
+				weapontype=11;
+				weaponlevel=3;
+			}
+		}
+		
+		if(mob.GetProtoId()==178)
+		{
+			
+		}
+	}   
+	
+	if((groupname=="Melchior with his pets"||groupname=="Super Mutant remnants"||groupname=="Master's Elite Crew"||
+	weaponforgroup==20||weaponforgroup==13||weaponforgroup==14)&&IsMutantMob(mob.GetProtoId()))
+	{
+		
+		switch(Random(1,4))
+		{
+			case 1:weapontype=5;break;
+			case 2:weapontype=7;break;
+			case 3:weapontype=8;break;
+			case 4:weapontype=13;break;
+			
+		}
+		
+		if(groupname=="Master's Elite Crew"||weaponforgroup==14)
+		{
+			switch(Random(1,10))
+			{
+				case 1:
+				case 2:weaponlevel=1;break;
+				case 10:weaponlevel=3;break;
+			}
+		}
+		else
+		{
+			switch(Random(1,20))
+			{
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+				case 5:weaponlevel=1;break;
+				case 20:weaponlevel=3;break;
+			}
+		}
+	} 
+	
+	if(mob.GetProtoId()==244||mob.GetProtoId()==245||mob.GetProtoId()==275||mob.GetProtoId()==562||mob.GetProtoId()==506)
+	{
+		weapontype=15;
+		weaponlevel=1;
+	} 
+	
+	if(mob.GetProtoId()==563)
+	{
+		weapontype=15;
+		weaponlevel=3;
+	}  
+	
+	if(mob.GetProtoId()==578||mob.GetProtoId()==579)
+	{
+		weapontype=Random(2,3);
+		weaponlevel=2;
+		
+		uint8 justforrandom=Random(1,100);
+		
+		if(justforrandom<=20)
+		weaponlevel=1;
+		
+		if(justforrandom>=90)
+		weaponlevel=3;
+	} 
+	
+	if(mob.GetProtoId()==576||mob.GetProtoId()==577)
+	{
+		weaponlevel=2;
+		
+		switch(Random(1,3))
+		{
+			case 1:weapontype=5;break;
+			case 2:weapontype=7;break;
+			case 3:weapontype=8;break;
+		}
+		
+		uint8 justforrandom=Random(1,100);
+		
+		if(justforrandom<=20)
+		weaponlevel=1;
+		
+		if(justforrandom>=90)
+		weaponlevel=3;
+	} 
+	
+	if(mob.GetProtoId()==580||mob.GetProtoId()==581)
+	{
+		weapontype=(15);
+		weaponlevel=(5);
+	} 
+	
+	if(mob.GetProtoId()==582||mob.GetProtoId()==583||mob.GetProtoId()==584)
+	{
+		uint8 justforrandom=Random(1,100); 
+		
+		if(justforrandom<=60)
+		{
+			weapontype=(8);
+			weaponlevel=(1);
+		}
+		else if(justforrandom>95)
+		{
+			weapontype=(8);
+			weaponlevel=(3);
+		}
+		else if(justforrandom>85)
+		{
+			weapontype=(8);
+			weaponlevel=(2);
+		}
+		if(justforrandom>60)
+		{
+			weapontype=(15);
+			weaponlevel=(2);
+		} 
+		
+	} 
+	
+	if(mob.GetProtoId()==474)
+	{
+		weapontype=(15);
+		weaponlevel=(6);
+	}
+	if(mob.GetProtoId()==470)
+	{
+		weapontype=(15);
+		weaponlevel=(7);
+	}
+	if(mob.GetProtoId()==480)
+	{
+		weapontype=(15);
+		weaponlevel=(4);
+	} 
+	
+	if(IsNukaColaWorker(mob)||groupname=="Reno Scavengers")
+	{
+		switch(mob.GetProtoId())
+		{
+			case 94:
+			case 295:
+			case 60:
+			case 64:
+			if(Random(1,2)==2)
+			weapontype=(1);
+			else
+			weapontype=(6);
+			break;
+			case 59:
+			case 63:
+			weapontype=Random((2),(3));
+			break;
+			case 403:
+			case 424:
+			if(Random(1,2)==2)
+			weapontype=Random((2),(3));
+			else if(Random(1,2)==2)
+			weapontype=(1);
+			else
+			weapontype=(6);
+			break;
+			case 65:
+			case 451:
+			weapontype=(13);
+			break;
+			case 68:
+			weapontype=(10);
+			break;
+			case 71:
+			weapontype=Random((1),(7));
+			break;
+		}
+		
+		weaponlevel=Random((2),(3));
+	} 
+	
+	if(mob.GetProtoId()==882||mob.GetProtoId()==901)
+	{
+		weapontype=(15);
+		weaponlevel=(4);
+	}
+	
+	uint16 generatedweapon=0;
+	if(weapontype!=0)
+	generatedweapon=GenerateWeapon(weapontype,weaponlevel);
+	else
+	Log("Can't set weapon for mob.Id <"+mob.Id+">, ProtoId <"+mob.GetProtoId()+">.");
+	
+	if(generatedweapon!=0)
+	{
+		Item@weapon=mob.AddItem(generatedweapon,1);
+		
+		if(!(@weapon!=null))
+		return;
+		
+		weapon.AmmoCount=0;
+		if(!IsNukaColaWorker(mob))
+		{
+			mob.MoveItem(weapon.Id,weapon.GetCount(),(1));
+			mob.SetFavoriteItem((1),weapon.GetProtoId());
+		}
+		AddBonusOrNot(weapon);
+	}  
+	
+	array<Item@>items;
+	mob.GetItemsByType((3),items);
+	
+	if(items.length()>0)
+	for(uint8 i=0;i<items.length();i++)
+	{
+		if((@items[i]!=null))
+		switch(items[i].GetProtoId())
+		{
+			
+			case(8):
+			case(299):
+			case(296):
+			case(300):
+			case(9):
+			switch(Random(1,2))
+			{
+				case 1:mob.AddItem((29),Random(100,500));break;
+				case 2:mob.AddItem((30),Random(100,500));break;
+			}
+			break;
+			
+			case(22):
+			mob.AddItem((33),Random(100,500));break;
+			
+			case(122):
+			switch(Random(1,2))
+			{
+				case 1:mob.AddItem((121),Random(100,500));break;
+				case 2:mob.AddItem((360),Random(100,500));break;
+			}
+			break;
+			
+			case(313):
+			case(398):
+			case(404):
+			switch(Random(1,2))
+			{
+				case 1:mob.AddItem((111),Random(100,500));break;
+				case 2:mob.AddItem((31),Random(100,500));break;
+			}
+			break;
+			
+			case(388):
+			switch(Random(1,2))
+			{
+				case 1:mob.AddItem((361),Random(100,500));break;
+				case 2:mob.AddItem((362),Random(100,500));break;
+			}
+			break;
+			
+			case(241):
+			case(143):
+			case(287):
+			case(10):
+			case(355):
+			case(350):
+			mob.AddItem((34),Random(100,500));break;
+			
+			case(161):
+			case(162):
+			case(261):
+			mob.AddItem((163),Random(100,500));break;
+			
+			case(394):
+			case(392):
+			mob.AddItem((358),Random(100,500));break;
+			
+			case(94):
+			case(242):
+			case(268):
+			case(354):
+			case(385):
+			case(25445):
+			switch(Random(1,4))
+			{
+				case 1:mob.AddItem((95),Random(100,500));break;
+				case 2:mob.AddItem((574),Random(100,500));break;
+				case 3:mob.AddItem((575),Random(100,500));break;
+				case 4:mob.AddItem((850),Random(100,500));break;
+			}
+			break;
+			
+			case(351):
+			case(387):
+			case(500):
+			case(403):
+			mob.AddItem((363),Random(300,500));break;
+			
+			case(283):
+			case(332):
+			mob.AddItem((357),Random(100,500));break;
+			
+			case(11):
+			case(400):
+			switch(Random(1,2))
+			{
+				case 1:mob.AddItem((32),Random(50,100));break;
+				case 2:mob.AddItem((382),Random(50,100));break;
+			}
+			break;
+			
+			case(353):
+			case(23):
+			case(405):
+			case(12):
+			case(389):
+			switch(Random(1,2))
+			{
+				case 1:mob.AddItem((35),Random(1000,1500));break;
+				case 2:mob.AddItem((36),Random(1000,1500));break;
+			}
+			break;
+			
+			case(352):
+			case(391):
+			case(395):
+			mob.AddItem((359),Random(500,1000));break;
+			
+			case(13):
+			case(22120):
+			switch(Random(1,2))
+			{
+				case 1:mob.AddItem((14),Random(20,50));break;
+				case 2:mob.AddItem((37),Random(20,50));break;
+			}
+			break;
+			
+			case(28):
+			case(118):
+			case(401):
+			case(9659):
+			case(15):
+			case(233):
+			case(25452):
+			case(397):
+			case(498):
+			mob.AddItem((39),Random(300,700));break;
+			
+			case(16):
+			case(120):
+			case(402):
+			case(24):
+			case(406):
+			case(396):
+			case(116):
+			case(160):
+			case(399):
+			case(235):
+			case(407):
+			mob.AddItem((38),Random(200,500));break;
+			
+			case(620):
+			case(619):
+			mob.AddItem((621),Random(50,100));break;
+		}
+	}
+}                                                                                                    
+

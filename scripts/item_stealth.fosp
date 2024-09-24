@@ -1,0 +1,213 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+
+void _StealthBoyInit(Item&item,bool firstTime)
+{
+	item.SetEvent((2),"_StealthBoyUse");
+}
+
+bool _StealthBoyUse(Item&item,Critter&crit,Critter@onCritter,Item@onItem,Scenery@onScenery)
+{
+	if((@onCritter!=null)||(@onItem!=null)||(@onScenery!=null))
+	return false;
+	array<uint>indexes;
+	int eff=crit.GetTimeEvents(item.GetProtoId(),indexes,null,null);
+	if(eff>1)
+	{
+		Log("ERR: more than one effect in progress!");
+		crit.SayMsg((11),(0),(4803));
+		return true;
+	}
+	
+	do{if(item.GetCount()>(1)) item.SetCount(item.GetCount()-(1));else DeleteItem(item);}while(false);
+	if(eff==1)
+	{
+		crit.ChangeTimeEvent(indexes[0],(crit.Perk[(454)]>0?((40)*__TimeMultiplier*60):((20)*__TimeMultiplier*60)),0);
+		crit.SayMsg((11),(0),(4801));
+		return true;
+	}
+	
+	crit.SayMsg((11),(0),(4800));
+	crit.AddTimeEvent("cte_StealthBoy",(crit.Perk[(454)]>0?((40)*__TimeMultiplier*60):((20)*__TimeMultiplier*60)),item.GetProtoId());
+	OnStealthBoyActivated(crit);
+	return true;
+}
+
+uint cte_StealthBoy(Critter&cr,int identifier,uint&rate)
+{
+	cr.SayMsg((11),(0),(4802));
+	OnStealthBoyDeactivated(cr);
+	return 0;
+}
+
+void OnStealthBoyActivated(Critter&cr)
+{
+	((cr.StatBase[(137)])=(cr.StatBase[(137)])|(4));
+	cr.RefreshVisible();
+	
+}
+
+void OnStealthBoyDeactivated(Critter&cr)
+{
+	(cr.StatBase[(137)]=((cr.StatBase[(137)])&(~(4))));
+	cr.RefreshVisible();
+	
+}  
+
+void _MotionSensorInit(Item&item,bool firstTime)
+{
+	if(firstTime&&item.Proto.Misc_ChargeMax>0&&item.Proto.Misc_ChargeStart>0)
+	{
+		if(item.Proto.Misc_ChargeStart>item.Proto.Misc_ChargeMax)
+		item.Charge=item.Proto.Misc_ChargeMax;
+		else
+		item.Charge=item.Proto.Misc_ChargeStart;
+	}
+	
+	item.SetEvent((2),"_MotionSensorUse");
+	item.SetEvent((3),"_MotionSensorUseOnMe");
+	item.SetEvent((4),"_MotionSensorSkill");
+}
+
+bool _MotionSensorUse(Item&item,Critter&crit,Critter@onCritter,Item@onItem,Scenery@onScenery)
+{
+	if((@onCritter!=null)||(@onItem!=null)||(@onScenery!=null))
+	return false;
+	if(item.Val1==1)
+	{
+		EraseTimeEvent(item.Val3);
+		OnMotionSensorOff(item);
+		crit.SayMsg((11),(0),(4902));
+		return true;
+	}
+	if(item.Charge==0)
+	{
+		crit.SayMsg((11),(0),(4900));
+		return true;
+	}
+	item.Val3=CreateTimeEvent(((__FullSecond)+(((1)*__TimeMultiplier))),"e_MotionSensor",item.Id,true);
+	OnMotionSensorOn(item);
+	crit.SayMsg((11),(0),(4901));
+	return true;
+}
+
+bool _MotionSensorUseOnMe(Item&item,Critter&cr,Item@usedItem)
+{
+	if(!(@usedItem!=null))
+	return false;
+	uint16 itemPid=usedItem.GetProtoId();
+	if((int(itemPid)==(38)||int(itemPid)==(39))&&item.Charge<item.Proto.Misc_ChargeMax)
+	{
+		uint needCharge=item.Proto.Misc_ChargeMax-item.Charge;
+		uint charge=(itemPid==(38)?(12):(30));
+		uint needItems=needCharge/charge;
+		if((needCharge%charge)!=0)
+		needItems++;
+		if(needItems>usedItem.GetCount())
+		needItems=usedItem.GetCount();
+		item.Charge+=(((needItems*charge)>(item.Proto.Misc_ChargeMax-item.Charge))?(item.Proto.Misc_ChargeMax-item.Charge):(((needItems*charge)<(0))?(0):(needItems*charge)));
+		item.Update();
+		do{if(usedItem.GetCount()>(needItems)) usedItem.SetCount(usedItem.GetCount()-(needItems));else DeleteItem(usedItem);}while(false);
+		cr.SayMsg((11),(0),(4903));
+		return true;
+	}
+	return false;
+}
+
+bool _MotionSensorSkill(Item&geiger,Critter&cr,int skill)
+{
+	if(skill==(212))
+	{
+		cr.SayMsg((11),(0),(4904),"$time"+geiger.Charge+(geiger.Charge!=1?" seconds":" second"));
+		return true;
+	}
+	if(skill==(213))
+	{
+		TryRechargeItem(cr,geiger);
+		return true;
+	}
+	
+	return false;
+}
+
+bool TryRechargeItem(Critter&cr,Item&item)
+{
+	
+	if(item.Charge==item.Proto.Misc_ChargeMax)
+	{
+		cr.Say((11),"Item is fully charged already.");
+		return true;
+	}
+	
+	cr.RunClientScript("client_interface@_RepairSession",item.GetProtoId(),item.Id,0,null,null);
+	cr.StatBase[(90)]=item.Id;
+	cr.ShowScreen((4),0,"RechargeCallback");
+	return true;
+}
+
+void RechargeCallback(Critter&cr,uint n,string&s)
+{
+	Item@item=GetItem(cr.Stat[(90)]);
+	Item@with_item=GetItem(n);  
+	
+	if(!(@item!=null)||!(@with_item!=null))
+	return;
+	
+	if(item.Accessory!=(1)||with_item.Accessory!=(1)||
+	item.CritId!=cr.Id||with_item.CritId!=cr.Id)
+	return;
+	
+	if(!_MotionSensorUseOnMe(item,cr,with_item))
+	{
+		cr.SayMsg((11),(3),(10202));
+	}
+}
+
+uint e_MotionSensor(array<uint>@values)
+{
+	if(!(@values!=null))
+	return(0);
+	Item@item=GetItem(values[0]);
+	if(!(@item!=null))
+	return 0;
+	if(--item.Charge==0)
+	{
+		OnMotionSensorOff(item);
+		return 0;
+	}
+	if((item.Accessory==(1)&&(item.CritSlot==(1)||item.CritSlot==(2)))||
+	item.Charge%10==0)
+	item.Update();
+	
+	return((1)*__TimeMultiplier);
+}
+
+void OnMotionSensorOn(Item&item)
+{
+	item.Val1=1;
+	item.ChangeProto((208));
+	item.Update();
+	if(item.Accessory==(1))
+	{
+		Critter@cr=GetCritter(item.CritId);
+		if((@cr!=null))
+		cr.RefreshVisible();
+	}
+}
+
+void OnMotionSensorOff(Item&item)
+{
+	item.Val1=0;
+	item.ChangeProto((59));
+	item.Update();
+	if(item.Accessory==(1))
+	{
+		Critter@cr=GetCritter(item.CritId);
+		if((@cr!=null))
+		{
+			if((@cr.GetMap()!=null))
+			cr.RefreshVisible();
+			if(item.Charge==0)
+			cr.SayMsg((11),(0),(4900));
+		}
+	}
+}

@@ -1,0 +1,133 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
+import void InitLogs()from"logging";
+import void FLog(uint logindex,string&text)from"logging";
+import void ILog(string&section,string&text)from"logging";
+import void GMLog(Critter&cr,string&text)from"logging";
+import void CloseLogs()from"logging";
+import uint AddLog(string&filename)from"logging";
+import uint AddLog(string&filename,uint index)from"logging";                                                        
+
+import void WLog(string&type,string&message)from"debug";
+import void WLog(string&type,string&message,int level)from"debug";
+import void InitDebug()from"debug";          
+
+import void InitEconomy()from"economy";
+import void SendLevelThresholds(Critter&)from"economy"; 
+
+import bool BankAccountExists(uint bankid,uint account)from"economy";
+import bool BankAccountRemoveMoney(uint bankid,uint account,uint amount)from"economy";
+import bool BankHasAccess(uint bankid,uint account,uint playerid)from"economy";
+import int BankGetAccountBalance(uint bankid,uint account)from"economy";
+import int BankGetAccountID(uint bankid,uint playerid)from"economy";
+import uint BankAddAccess(uint bankid,uint account,uint playerid)from"economy";
+import uint BankCreateAccount(uint bankid,uint playerid)from"economy";
+import uint BankDepositMoney(uint bankid,uint playerid,uint account,int amount)from"economy";
+import uint BankGetAccessCount(uint bankid,uint account)from"economy";
+import uint BankGetAccountOwner(uint bankid,uint account)from"economy";
+import uint BankGetAccountType(uint bankid,uint account)from"economy";
+import uint BankGetCreditRating(uint bankid,uint account)from"economy";
+import uint BankGetLoan(uint bankid,uint account)from"economy";
+import uint BankRemoveAccess(uint bankid,uint account,uint playerid)from"economy";
+import uint BankSetAccountType(uint bankid,uint account,uint accounttype)from"economy";
+import uint BankSetCreditRating(uint bankid,uint account,uint rating)from"economy";
+import uint BankSetLoan(uint bankid,uint account,uint loan)from"economy";
+import uint BankTakeLoan(uint bankid,uint account,uint amount)from"economy";
+import uint BankTransferMoney(uint bankid,uint fromaccount,uint toaccount,uint amount)from"economy";
+import uint BankWithdrawMoney(uint bankid,uint playerid,uint account,int amount)from"economy"; 
+
+import bool BanksTransferFromCritter(Critter&critter,uint amount,uint type,bool virtual)from"economy";
+import bool BanksTransferToCritter(Critter&critter,uint amount,uint type,bool virtual)from"economy";
+import uint BanksGetTotalMoney()from"economy";
+import void BanksAddMoney(uint amount)from"economy";
+import void BanksRemoveMoney(uint amount)from"economy"; 
+
+import bool BankAddMoney(uint bankid,uint amount)from"economy";
+import bool BankRemoveMoney(uint bankid,uint amount)from"economy";
+import bool BankSetMoney(uint bankid,uint amount)from"economy";
+import uint BankGetLoanInterest(uint bankid)from"economy";
+import uint BankGetNumberOfAccounts(uint bankid)from"economy";
+import float BankGetSaveInterest(uint bankid)from"economy";
+import uint BankGetTotalMoney(uint bankid)from"economy";
+import uint BankGetTotalBalance(uint bankid)from"economy";
+import float BankGetReserveRatio(uint bankid)from"economy";
+import uint BankSetLoanInterest(uint bankid,uint interest)from"economy";
+import uint BankSetSaveInterest(uint bankid,float interest)from"economy";
+import bool BankTransferFromCritter(uint bankId,Critter&critter,uint amount,uint type,bool virtual)from"economy";
+
+import void SaveBankData()from"economy";   
+
+import int GetItemSellModifier(Critter&player,Critter&trader)from"economy";
+import int GetItemBuyModifier(Critter&player,Critter&trader)from"economy";
+import uint GetItemCost(Item&item,Critter&cr,Critter&trader,bool sell)from"economy";
+import uint GetItemCostPlain(Item&item,Critter&cr,Critter&trader)from"economy";
+
+import array<int>GetTraderLevels(Critter@npc)from"economy";
+import uint GetTraderLevel(Critter@npc,uint type)from"economy";
+
+import uint ItemLevel(Item&item)from"economy";
+import uint ItemLevel(uint pid)from"economy";
+import uint TraderCapacity(Critter@npc)from"economy";
+import uint TraderCapacity(Critter@npc,uint type,uint level)from"economy";
+import uint TraderMoneyCapacity(Critter@npc)from"economy";
+import uint TradingItemType(Item&item)from"economy";
+import uint TradingItemType(uint pid)from"economy";                                                                                                          
+
+const string@FD_Bank_Result2String(uint res)
+{
+	if(res==(1))
+	return"FD_BANK_RESULT_SUCCESS";
+	else if(res==(2))
+	return"FD_BANK_RESULT_UNKNOWN";
+	else if(res==(3))
+	return"FD_BANK_RESULT_TOO_MANY_ACCOUNTS";
+	else if(res==(4))
+	return"FD_BANK_RESULT_ALREADY_HAS_ACCOUNT";
+	else if(res==(5))
+	return"FD_BANK_RESULT_NOT_ENOUGH_MONEY";
+	else if(res==(6))
+	return"FD_BANK_RESULT_BANK_FULL";
+	else if(res==(7))
+	return"FD_BANK_RESULT_BANK_EMPTY";
+	else if(res==(8))
+	return"FD_BANK_RESULT_DATA_ERROR";
+	else if(res==(9))
+	return"FD_BANK_RESULT_INVALID_PLAYER";
+	else if(res==(10))
+	return"FD_BANK_RESULT_NO_ACCOUNT";
+	else
+	return"FD_Result: Unknown error code";
+}                                                                                                                                                       
+
+int GetRootMapData(Map&map,uint index)
+{
+	return map.GetLocation().GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Map&map,uint index,int val)
+{
+	map.GetLocation().GetMapByIndex(0).SetData(index,val);
+}   
+
+int GetRootMapData(Location&loc,uint index)
+{
+	return loc.GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Location&loc,uint index,int val)
+{
+	loc.GetMapByIndex(0).SetData(index,val);
+}  
+
+import bool AddMilitia(Map@map)from"town";
+import void SpawnInitMilitia(Map@map)from"town";
+
+void map_init(Map&map,bool firstTime)
+{
+	map.SetData((2),(2));
+	map.SetData((3),(4));
+	
+	if(firstTime)
+	SpawnInitMilitia(map);
+	
+}

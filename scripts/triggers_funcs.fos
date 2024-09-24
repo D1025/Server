@@ -1,0 +1,199 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// triggers_funcs.fos
+//
+
+#ifndef __TRIGGERS_FUNCS__
+#define __TRIGGERS_FUNCS__
+
+
+#include "messages_h.fos"
+#include "npc_common_h.fos"
+#include "npc_planes_h.fos"
+#include "npc_roles_h.fos"
+
+
+array<TRIGGER_FUNC@> TriggerFuncs =
+{
+    @Default,
+    @AntiBlock,
+    @Aggravate,
+    @Teleport,
+	@FLCRobbery,
+	@TeleportMap,
+	@TeleportEntMap
+};
+
+//  WARNING: First 4 elements of values array in trigger functions are reserved
+//  to pass tr, cr, dir and count between ticks and should not be changed.
+
+/*******************************************************************************
+* 0: Default - for testing purposes only
+*******************************************************************************/
+
+bool Default(Item& tr, Critter@ cr, uint dir, uint count, array<uint>@ values)
+{
+    cr.Say(SAY_NETMSG, "Default trigger.");
+    cr.Say(SAY_NETMSG, "Trigger function tick #" + count + ".");
+    return true;
+}
+
+
+/*******************************************************************************
+* 1: AntiBlock
+*******************************************************************************/
+
+void _AntiBlock(Item& tr, bool firstTime)
+{
+    TriggerInit(tr, TRIGGER_FUNC_ANTIBLOCK, TRIGGER_IGNORE_TRUE_NPCS, 0, 1);
+}
+
+bool AntiBlock(Item& tr, Critter@ cr, uint dir, uint count, array<uint>@ values)
+{
+    if(count < 15)
+    {
+        if(count > 2)
+            cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, count < 5 ? 4300 : 4301);
+        if(count > 6)
+        {
+            cr.SendMessage(MSG_IM_BLOCKING, MSG_PARAM_WARN, MESSAGE_TO_VISIBLE_ME);
+            SetCritterIllegalFlag(cr, ILLEGAL_FLAG_BLOCKING);
+        }
+        return true;
+    }
+    else
+    {
+        cr.SendMessage(MSG_IM_BLOCKING, MSG_PARAM_PUNISH, MESSAGE_TO_VISIBLE_ME);
+        return false;
+    }
+}
+
+/*******************************************************************************
+* 2: Aggravate
+*******************************************************************************/
+// Makes critters attack player, useful to wake up mobs in quest maps
+// Val2: ST_TEAM_ID of NPCs to aggravate
+void _Aggravate(Item& tr, bool firstTime)
+{
+    TriggerInit(tr, TRIGGER_FUNC_AGGRAVATE, TRIGGER_IGNORE_TRUE_NPCS, 0, 0);
+}
+
+bool Aggravate(Item& tr, Critter@ cr, uint dir, uint count, array<uint>@ values)
+{
+    array<Critter@> critters;
+    cr.GetMap().GetCritters(0, FIND_LIFE | FIND_ONLY_NPC, critters);
+    for(int i = 0, j = critters.length(); i < j; i++)
+    {
+        if(critters[i].Param[ST_TEAM_ID] == tr.Val2)
+        {
+            if(critters[i].IsNoPlanes())
+            {
+                AddAttackPlane(critters[i], AI_PLANE_ATTACK_PRIORITY, cr);
+            }
+        }
+    }
+    return false;
+}
+
+
+/*******************************************************************************
+* 3: Teleports critter to another hex
+*******************************************************************************/
+// Makes critters attack player, useful to wake up mobs in quest maps
+// Val2: HexX, Val3: HexY, Val4: Dir
+void _Teleport(Item& tr, bool firstTime)
+{
+    TriggerInit(tr, TRIGGER_FUNC_TELEPORT, TRIGGER_IGNORE_TRUE_NPCS, 0, 0);
+}
+
+bool Teleport(Item& tr, Critter@ cr, uint dir, uint count, array<uint>@ values)
+{
+    cr.TransitToHex(uint16(tr.Val2), uint16(tr.Val3), uint8(tr.Val4));
+    return false;
+}
+
+void teleport(Critter& cr, int x, int y, int dir)
+{
+    Map@ map = cr.GetMap();
+    if(valid(map))
+    {
+        Item@ trigger = map.AddItem(cr.HexX, cr.HexY, PID_TRIGGER, 1);
+        _Teleport(trigger, true);
+        trigger.Val2 = x;
+        trigger.Val3 = y;
+        trigger.Val4 = dir;
+        cr.Say(SAY_NETMSG, "Placing teleport trigger Id " + trigger.Id + " teleporting to [" + x + "," + y + "].");
+    }
+    else
+    {
+        cr.Say(SAY_NETMSG, "You have to be in a valid map to put a teleport trigger");
+    }
+}
+
+// FOnline: After Times, worldremaker od tego miejsca
+/*******************************************************************************
+* 4: FLC Robbery
+*******************************************************************************/
+// Makes critters attack player, useful to wake up mobs in quest maps
+// Val2: ST_TEAM_ID of NPCs to aggravate
+void _FLCRobbery(Item& tr, bool firstTime)
+{
+    TriggerInit(tr, TRIGGER_FUNC_FLC_ROBBERY, TRIGGER_IGNORE_TRUE_NPCS, 0, 0);
+}
+
+bool FLCRobbery(Item& tr, Critter@ cr, uint dir, uint count, array<uint>@ values)
+{
+	
+	array<Critter@> critters;
+	cr.GetMap().GetCritters(0, FIND_LIFE | FIND_ONLY_NPC, critters);
+    for(int i = 0, j = critters.length(); i < j; i++)
+    {
+        // wiecej dramy! broadcast kurwa!
+		//(player.GetMap().GetNpc(ROLE_FLC_BANKER, FIND_ONLY_NPC | FIND_LIFE, i)).Say(SAY_SHOUT_ON_HEAD, "GUARDS! GUARDS! DON'T LET HIM TAKE MONEY OUT FROM BANK!");
+		if(critters[i].Param[ST_TEAM_ID] == tr.Val2)
+        {
+            if(critters[i].IsNoPlanes())
+            {
+                AddAttackPlane(critters[i], AI_PLANE_ATTACK_PRIORITY, cr);
+	        }
+        }
+    }
+	/* for(int i = 0; i < 2; i++)
+		(cr.GetMap().GetNpc(ROLE_FLC_BANKER, FIND_ONLY_NPC | FIND_LIFE, i)).Say(SAY_SHOUT_ON_HEAD, "GUARDS! GUARDS! DON'T LET HIM TAKE MONEY OUT FROM BANK!"); */
+    return false;
+}
+
+/*******************************************************************************
+* 5: Teleports critter to another hex on another map!
+*******************************************************************************/
+// Makes critters attack player, useful to wake up mobs in quest maps
+// Val1: MapID Val2: HexX, Val3: HexY, Val4: Dir
+void _TeleportMap(Item& tr, bool firstTime)
+{
+    TriggerInit(tr, TRIGGER_FUNC_TELEPORTMAP, TRIGGER_IGNORE_TRUE_NPCS, 0, 0);
+}
+
+bool TeleportMap(Item& tr, Critter@ cr, uint dir, uint count, array<uint>@ values)
+{
+    cr.TransitToMap(uint16(tr.Val1), uint16(tr.Val2), uint16(tr.Val3), uint8(tr.Val4));
+    return false;
+}
+
+/*******************************************************************************
+* 6: Teleports critter to specific entry point on another map!
+*******************************************************************************/
+// Val2: MapID, Val3: EntID,
+void _TeleportEntMap(Item& tr, bool firstTime)
+{
+    TriggerInit(tr, TRIGGER_FUNC_TELEPORTENTMAP, TRIGGER_IGNORE_TRUE_NPCS, 0, 0);
+}
+
+bool TeleportEntMap(Item& tr, Critter@ cr, uint dir, uint count, array<uint>@ values)
+{
+    cr.TransitToMap(uint16(tr.Val2), uint16(tr.Val3));
+    return false;
+}
+
+#endif // __TRIGGERS_FUNCS__

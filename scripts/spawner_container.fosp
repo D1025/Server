@@ -1,0 +1,2471 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+shared interface IItemSpawner
+{
+	IItemSpawner@Lock(uint16 min,uint16 max);
+	IItemSpawner@SpawnTime(uint min,uint max);
+	IItemSpawner@AddItem(uint16 pid,uint chance,uint min,uint max);
+	IItemSpawner@AddItem(uint16 pid,uint chance);
+	IItemSpawner@SetSeparate(bool separate);
+	IItemSpawner@SetBonus(bool bonus);
+	IItemSpawner@SetBonusLow(bool bonus);
+	IItemSpawner@SetBonusOrNot(bool bonus);
+	IItemSpawner@SetClearAtSpawn(bool clearSpawn);
+	IItemSpawner@Clear();
+};                                      
+
+import void WLog(string&type,string&message)from"debug";
+import void WLog(string&type,string&message,int level)from"debug";
+import void InitDebug()from"debug";       
+
+import bool LockerClose(Item&item)from"lockers";
+import void AddBonusOrNot(Item@it)from"item_bonus";
+import void AddSpecialBonus(Item@it)from"item_bonus";
+import void AddSpecialBonusLow(Item@it)from"item_bonus";
+import void ClearContainer(Item@container)from"utils";
+import bool IsLockableContainer(uint pid)from"lockers";
+import void SetDeterioration(Item&item)from"utils";
+import bool IsPublic(Map@map)from"utils"; 
+
+class ItemInstance
+{
+	uint Pid;
+	uint Chance;
+	uint Min;
+	uint Max;
+	ItemInstance(uint16 pid,uint chance,uint min,uint max)
+	{
+		Pid=pid;
+		Chance=chance;
+		Min=min;
+		Max=max;
+	}
+};
+
+class ItemSpawner:IItemSpawner
+{
+	array<ItemInstance@>items;
+	uint SumChance;
+	uint SpawnTimeMin;
+	uint SpawnTimeMax;
+	uint16 LockerMin;
+	uint16 LockerMax;
+	bool Separate;
+	bool Bonus;
+	bool BonusLow;
+	bool BonusOrNot;
+	bool ClearAtSpawn;
+	
+	ItemSpawner()
+	{
+		SumChance=0;
+		SpawnTimeMin=0;
+		SpawnTimeMax=0;
+		LockerMin=0;
+		LockerMax=0;
+		Separate=false;
+		Bonus=false;
+		BonusLow=false;
+		BonusOrNot=false;
+		ClearAtSpawn=false;
+	}
+	
+	uint GetSpawnTime()
+	{
+		return((Random(SpawnTimeMin,SpawnTimeMax))*__TimeMultiplier*60);
+	}
+	uint GetLock()
+	{
+		int lockVal=Random(LockerMin,LockerMax);
+		lockVal=(((lockVal)>((210)))?((210)):(((lockVal)<(0))?(0):(lockVal)));
+		return lockVal;
+	}
+	IItemSpawner@Lock(uint16 min,uint16 max)
+	{
+		LockerMin=min;
+		LockerMax=(((LockerMin)>(max))?(LockerMin):(max));
+		return this;
+	}
+	IItemSpawner@SpawnTime(uint min,uint max)
+	{
+		SpawnTimeMin=min;
+		SpawnTimeMax=(((SpawnTimeMin)>(max))?(SpawnTimeMin):(max));
+		return this;
+	}
+	IItemSpawner@AddItem(uint16 pid,uint chance,uint min,uint max)
+	{
+		ItemInstance@item=@ItemInstance(pid,chance,min,max);
+		items.insertLast(item);
+		SumChance+=chance;
+		return this;
+	}
+	IItemSpawner@AddItem(uint16 pid,uint chance)
+	{
+		return AddItem(pid,chance,1,1);
+	}
+	
+	IItemSpawner@SetSeparate(bool separate)
+	{
+		Separate=separate;
+		return this;
+	}
+	
+	IItemSpawner@SetBonus(bool bonus)
+	{
+		Bonus=bonus;
+		return this;
+	}
+	
+	IItemSpawner@SetBonusLow(bool bonusLow)
+	{
+		BonusLow=bonusLow;
+		return this;
+	}
+	
+	IItemSpawner@SetBonusOrNot(bool bonusornot)
+	{
+		BonusOrNot=bonusornot;
+		return this;
+	}
+	
+	IItemSpawner@SetClearAtSpawn(bool clearSpawn)
+	{
+		ClearAtSpawn=clearSpawn;
+		return this;
+	}
+	
+	IItemSpawner@Clear()
+	{
+		SumChance=0;
+		SpawnTimeMin=0;
+		SpawnTimeMax=0;
+		LockerMin=0;
+		LockerMax=0;
+		items.resize(0);
+		Separate=false;
+		Bonus=false;
+		BonusLow=false;
+		BonusOrNot=false;
+		ClearAtSpawn=false;
+		return this;
+	}
+	uint Spawn(Item&item)
+	{
+		array<Item@>spawneditems;
+		uint HownManyItems=item.GetItems(uint(-1),spawneditems);  
+		
+		if(HownManyItems>=(5)&&IsPublic(GetMap(item.MapId)))
+		{
+			uint8 removed=0;
+			
+			for(uint i=0;i<spawneditems.length();i++)
+			{
+				if((@spawneditems[i]!=null))
+				{
+					if(Random(1,7)==1&&!IsSpecialItem(spawneditems[i]))
+					{
+						
+						DeleteItem(spawneditems[i]);
+						removed++;
+					}
+				}
+			}
+			HownManyItems=HownManyItems-removed;
+			
+		} 
+		
+		if(HownManyItems<(5)||!IsPublic(GetMap(item.MapId)))
+		{
+			if(ClearAtSpawn)
+			{ 
+				
+				ClearContainer(item);
+			}
+			
+			if(!Separate)
+			{
+				uint num=Random(1,SumChance);
+				uint idx=0;
+				while(num>items[idx].Chance)
+				num-=items[idx++].Chance;
+				ItemInstance@spawnitem=items[idx];
+				
+				Item@it=item.AddItem(spawnitem.Pid,Random(spawnitem.Min,spawnitem.Max),0);
+				
+				if(Bonus)
+				AddSpecialBonus(it);
+				
+				else if(BonusLow)
+				AddSpecialBonusLow(it);
+				
+				else if(BonusOrNot)
+				AddBonusOrNot(it);
+				
+				if(item.Val4==(3)||item.Val4==(1)||item.Val4==(2))
+				SetDeterioration(it); 
+				
+			}
+			else
+			{
+				for(uint i=0,j=items.length();i<j;i++)
+				{
+					ItemInstance@spawnitem=items[i];
+					if(Random(1,100)<=int(spawnitem.Chance))
+					{
+						Item@it=item.AddItem(spawnitem.Pid,Random(spawnitem.Min,spawnitem.Max),0);
+						
+						if(Bonus)
+						AddSpecialBonus(it);
+						else
+						if(BonusLow)
+						AddSpecialBonusLow(it);
+						else
+						if(BonusOrNot)
+						AddBonusOrNot(it);
+						
+						if(item.Val4==(3)||item.Val4==(1)||item.Val4==(2))
+						SetDeterioration(it);
+						
+					}
+				}
+			}
+		} 
+		
+		if(LockerMax!=0)
+		{
+			if((((item.LockerCondition)&((0x01)))!=0))
+			LockerClose(item);
+			if(IsLockableContainer(item.GetProtoId()))
+			{
+				item.LockerId=Random(0,0x7fffffff);
+				item.LockerComplexity=GetLock();
+			}
+			else
+			{
+				item.LockerId=0;
+				item.LockerComplexity=0;
+			}
+		}
+		
+		return GetSpawnTime();
+	}
+	
+	uint GetValue()
+	{
+		uint sum=0;
+		if(Separate)
+		{
+			
+			for(uint i=0,j=items.length();i<j;i++)
+			{
+				ItemInstance@item=items[i];
+				ProtoItem@proto=GetProtoItem(item.Pid);
+				if(!(@proto!=null))
+				{
+					Log("ERR: Spawner uses invalid proto: "+item.Pid);
+					continue;
+				}
+				sum+=(((100)<(item.Chance))?(100):(item.Chance))*(item.Min+item.Max)*proto.Cost;
+			}
+			return sum/200;
+		}
+		else
+		{
+			for(uint i=0,j=items.length();i<j;i++)
+			{
+				ItemInstance@item=items[i];
+				ProtoItem@proto=GetProtoItem(item.Pid);
+				if(!(@proto!=null))
+				{
+					Log("ERR: Spawner uses invalid proto: "+item.Pid);
+					continue;
+				}
+				sum+=item.Chance*(item.Min+item.Max)*proto.Cost;
+			}
+		}
+		return sum/(2*SumChance);
+	}
+	
+	void LogValue(string&st)
+	{
+		WLog("spawner_container",st+" spawner value: "+(SpawnTimeMax==0?(GetValue()+" once."):((GetValue()*(2880/(SpawnTimeMin+SpawnTimeMax)))+" daily")),0);
+	}
+};
+
+array<ItemSpawner@>spawners;
+bool Init=false; 
+
+void ItemSpawnInit()
+{
+	if(Init)
+	return;
+	
+	ItemSpawner@FIRST_0=@ItemSpawner();FIRST_0.
+	SpawnTime(720,4320).SetBonusOrNot(true).Lock(0,0).   
+	
+	AddItem((74),26).
+	
+	AddItem((728),40)
+	;spawners.insertLast(FIRST_0);
+	
+	ItemSpawner@FAT_PROTECTED_TOWN_CONTAINER_1=@ItemSpawner();FAT_PROTECTED_TOWN_CONTAINER_1.
+	SpawnTime(10080,20160).SetBonusOrNot(true).Lock(150,250).
+	
+	AddItem((41),50,100,200).
+	AddItem((127),10).
+	AddItem((81),20).
+	
+	AddItem((73),3).
+	AddItem((80),3).
+	AddItem((102),3).
+	AddItem((22050),3).
+	AddItem(((98)),15,1,2).
+	AddItem((1801),1,1,5).
+	AddItem((1802),1,1,5).
+	AddItem((1803),1,1,5).
+	AddItem((1804),1,1,5).
+	AddItem((1824),1,1,5).
+	
+	AddItem((273),20).
+	AddItem((47),6).
+	AddItem((408),6).
+	AddItem((91),6).
+	AddItem((409),6).
+	AddItem((48),10,1,2).
+	AddItem((109),1).
+	AddItem((124),60).
+	AddItem((260),5).
+	AddItem((40),20,1,3).
+	AddItem((318),35,1,5).
+	AddItem((9629),5,1,3).
+	AddItem((106),45,1,3).
+	AddItem((125),60,1,2).
+	AddItem((541),20).
+	AddItem((53),10).
+	AddItem((87),10).
+	
+	AddItem((35),60,1,20).
+	AddItem((363),50,1,20).
+	AddItem((360),70,1,20).
+	AddItem((121),70,1,20).
+	AddItem((29),60,1,20).
+	AddItem((33),40,1,20).
+	AddItem((31),60,1,20).
+	AddItem((111),60,1,20).
+	AddItem((357),60,1,20).
+	AddItem((34),50,1,20).
+	AddItem((95),40,1,20).
+	AddItem((574),30,1,20).
+	AddItem((575),20,1,20).
+	AddItem((621),30,1,5).
+	AddItem((14),15).
+	AddItem((37),10).
+	AddItem((32),40,1,10).
+	AddItem((38),40,1,10).
+	AddItem((39),30,1,10).
+	AddItem((163),80,1,10).
+	AddItem((361),40,1,10).
+	AddItem((362),30,1,10).
+	
+	AddItem((4),70).
+	AddItem((5),60).
+	AddItem((6),50).
+	AddItem((7),70).
+	AddItem((159),50,5,10).
+	AddItem((25),40,5,10).
+	AddItem((522),10).
+	AddItem((116),20).
+	AddItem((8),40).
+	AddItem((18),40).
+	AddItem((332),20).
+	AddItem((9),10).
+	AddItem((94),25).
+	AddItem((242),40).
+	AddItem((10),20).
+	AddItem((122),50).
+	AddItem((23),40).
+	AddItem((351),30).
+	AddItem((16),40).
+	AddItem((24),5).
+	AddItem((11),15).
+	
+	AddItem((74),26).
+	AddItem((265),23).
+	AddItem((1),20).
+	AddItem((379),17).
+	AddItem((2),14).
+	
+	AddItem((728),40).
+	AddItem((729),35).
+	AddItem((730),30).
+	AddItem((731),25).
+	AddItem((732),20)
+	;spawners.insertLast(FAT_PROTECTED_TOWN_CONTAINER_1);
+	
+	ItemSpawner@FAT_ENCOUNTER_STATIC_CONTAINER_2=@ItemSpawner();FAT_ENCOUNTER_STATIC_CONTAINER_2.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(50,100).
+	
+	AddItem((41),10,10,100).
+	
+	AddItem((127),30).
+	AddItem((310),30).
+	AddItem((311),30).
+	AddItem((100),30).
+	AddItem((79),40).
+	AddItem((117),40).
+	AddItem((71),40).
+	AddItem((75),30).
+	AddItem((84),40).
+	AddItem((81),50).
+	AddItem((103),50).
+	AddItem((73),10).
+	AddItem((80),10).
+	AddItem((102),10).
+	AddItem((22050),10).
+	AddItem(((98)),30,1,2).
+	AddItem((1801),30,1,5).
+	AddItem((1802),20,1,5).
+	AddItem((1803),10,1,5).
+	AddItem((1804),20,1,5).
+	AddItem((1824),20,1,5).
+	AddItem((9628),5,1,5).
+	AddItem((9631),5,1,5).
+	AddItem((9633),5,1,5).
+	AddItem((542),5,1,5).
+	
+	AddItem((273),40).
+	AddItem((47),20).
+	AddItem((408),20).
+	AddItem((91),30).
+	AddItem((409),10).
+	AddItem((48),10,1,2).
+	AddItem((109),10,1,2).
+	AddItem((124),50).
+	AddItem((260),5).
+	AddItem((40),30,1,3).
+	AddItem((318),60,5,10).
+	AddItem((9629),5,1,3).
+	AddItem((106),50,1,3).
+	AddItem((125),60,1,2).
+	AddItem((541),50).
+	AddItem((144),50,1,3).
+	AddItem((53),25).
+	AddItem((87),25).
+	
+	AddItem((35),60,5,10).
+	AddItem((36),50,5,10).
+	AddItem((363),50,5,10).
+	AddItem((360),70,15,30).
+	AddItem((121),70,5,10).
+	AddItem((29),60,15,30).
+	AddItem((30),50,5,10).
+	AddItem((33),40,5,10).
+	AddItem((31),60,5,10).
+	AddItem((111),60,5,10).
+	AddItem((357),60,5,10).
+	AddItem((34),50,5,10).
+	AddItem((850),1,1,10).
+	AddItem((95),40,5,10).
+	AddItem((574),30,5,10).
+	AddItem((575),20,5,10).
+	AddItem((576),10,5,10).
+	AddItem((621),30,1,10).
+	AddItem((14),15).
+	AddItem((37),10).
+	AddItem((32),40,5,20).
+	AddItem((382),20,1,10).
+	AddItem((38),40,10,20).
+	AddItem((39),30,5,10).
+	AddItem((163),80,50,100).
+	AddItem((361),40,10,50).
+	AddItem((362),30,1,10).
+	
+	AddItem((4),70).
+	AddItem((5),60).
+	AddItem((6),50).
+	AddItem((7),70).
+	AddItem((159),50,5,10).
+	AddItem((25),40,5,10).
+	AddItem((522),10).
+	AddItem((115),40).
+	AddItem((116),40).
+	AddItem((235),30).
+	AddItem((8),50).
+	AddItem((241),35).
+	AddItem((18),40).
+	AddItem((332),40).
+	AddItem((9),20).
+	AddItem((94),25).
+	AddItem((242),20).
+	AddItem((10),20).
+	AddItem((122),50).
+	AddItem((23),30).
+	AddItem((351),25).
+	AddItem((16),60).
+	AddItem((24),30).
+	AddItem((11),45).
+	AddItem((13),10).
+	
+	AddItem((74),26).
+	AddItem((265),23).
+	AddItem((1),20).
+	AddItem((379),17).
+	AddItem((2),14).
+	
+	AddItem((728),40).
+	AddItem((729),35).
+	AddItem((730),30).
+	AddItem((731),25).
+	AddItem((732),20)
+	;spawners.insertLast(FAT_ENCOUNTER_STATIC_CONTAINER_2);
+	
+	ItemSpawner@FAT_TOWN_CONTAINER_3=@ItemSpawner();FAT_TOWN_CONTAINER_3.
+	SpawnTime(10080,20160).SetBonusOrNot(true).Lock(100,150). 
+	
+	AddItem((41),50,1,100).
+	AddItem((127),10).
+	AddItem((81),30).
+	AddItem((73),3).
+	AddItem((80),3).
+	AddItem((102),3).
+	AddItem((22050),3).
+	AddItem(((98)),15,1,2).
+	AddItem((1801),1,1,5).
+	AddItem((1802),1,1,5).
+	AddItem((1803),1,1,5).
+	AddItem((1804),1,1,5).
+	AddItem((1824),1,1,5).
+	AddItem((9628),1,1,5).
+	AddItem((9631),1,1,5).
+	AddItem((9633),1,1,5).
+	AddItem((542),2,1,5).
+	
+	AddItem((273),30).
+	AddItem((47),5).
+	AddItem((408),5).
+	AddItem((91),5).
+	AddItem((409),5).
+	AddItem((48),5,1,2).
+	AddItem((109),5,1,2).
+	AddItem((124),40).
+	AddItem((260),2).
+	AddItem((40),10,1,3).
+	AddItem((318),15).
+	AddItem((9629),5,1,3).
+	AddItem((106),30,1,3).
+	AddItem((125),50,1,2).
+	AddItem((541),10).
+	AddItem((144),5).
+	AddItem((53),5).
+	AddItem((87),5).
+	
+	AddItem((35),60,1,10).
+	AddItem((36),50,1,10).
+	AddItem((363),50,1,10).
+	AddItem((360),70,1,10).
+	AddItem((121),70,1,10).
+	AddItem((29),60,1,10).
+	AddItem((30),50,1,10).
+	AddItem((33),40,1,10).
+	AddItem((31),60,1,10).
+	AddItem((111),60,1,10).
+	AddItem((357),60,1,10).
+	AddItem((34),50,1,10).
+	AddItem((95),40,1,10).
+	AddItem((574),30,1,10).
+	AddItem((575),20,1,10).
+	AddItem((576),10,1,10).
+	AddItem((621),30,1,5).
+	AddItem((14),15).
+	AddItem((37),10).
+	AddItem((32),40,1,10).
+	AddItem((382),20,1,4).
+	AddItem((38),40,1,10).
+	AddItem((39),30,1,10).
+	AddItem((163),80,1,10).
+	AddItem((361),40,1,10).
+	AddItem((362),30,1,10).
+	
+	AddItem((4),70).
+	AddItem((5),60).
+	AddItem((6),50).
+	AddItem((7),70).
+	AddItem((159),40,5,10).
+	AddItem((25),20,5,10).
+	AddItem((116),20).
+	AddItem((235),10).
+	AddItem((8),40).
+	AddItem((18),40).
+	AddItem((332),20).
+	AddItem((9),10).
+	AddItem((94),25).
+	AddItem((242),20).
+	AddItem((10),20).
+	AddItem((122),50).
+	AddItem((23),10).
+	AddItem((351),5).
+	AddItem((16),10).
+	AddItem((24),5).
+	AddItem((11),15).
+	
+	AddItem((74),26).
+	AddItem((265),23).
+	AddItem((1),20).
+	AddItem((379),17).
+	AddItem((2),14).
+	
+	AddItem((728),40).
+	AddItem((729),35).
+	AddItem((730),30).
+	AddItem((731),25).
+	AddItem((732),20)
+	;spawners.insertLast(FAT_TOWN_CONTAINER_3);
+	
+	ItemSpawner@FAT_VAULT_LOCKER_4=@ItemSpawner();FAT_VAULT_LOCKER_4.SpawnTime(60,120).Lock(0,50).SetBonusOrNot(true).
+	
+	AddItem((100),40).
+	AddItem((79),35).
+	
+	AddItem((408),40).
+	AddItem((409),30).
+	AddItem((110),10,1,4).
+	AddItem((109),15,2,4).
+	AddItem((48),30,2,4).
+	
+	AddItem((29),25,10,50).
+	AddItem((30),15,10,50).
+	AddItem((39),11,20,60).
+	AddItem((38),10,20,60).
+	
+	AddItem((4),40).
+	AddItem((16),30).
+	AddItem((402),10).
+	AddItem((8),30).
+	AddItem((9),10) 
+	
+	;spawners.insertLast(FAT_VAULT_LOCKER_4);
+	
+	ItemSpawner@FAT_BOOKCASE_5=@ItemSpawner();FAT_BOOKCASE_5.SpawnTime(30,60).Lock(100,150).
+	
+	AddItem((41),10,54,234).
+	AddItem((564),5).
+	AddItem((86),10).
+	AddItem((76),10).
+	AddItem((73),10).
+	AddItem((80),10).
+	AddItem((102),10).
+	AddItem((22050),10).
+	AddItem((225),30).
+	
+	AddItem((273),30).
+	AddItem((40),10).
+	AddItem((318),40,1,6).
+	AddItem((541),30).
+	AddItem((124),30,1,3).
+	AddItem((125),30,1,2).
+	AddItem((469),30,1,3).
+	AddItem((310),30).
+	AddItem((311),30).
+	AddItem((469),30,1,2).
+	AddItem((106),30,1,3)   
+	
+	;spawners.insertLast(FAT_BOOKCASE_5);
+	
+	ItemSpawner@FAT_CRAFT_LOW_6=@ItemSpawner();FAT_CRAFT_LOW_6.SpawnTime(30,60).Lock(100,150).
+	
+	AddItem((75),15).
+	AddItem(((98)),60,5,15).
+	AddItem((127),15,1,2).
+	AddItem((278),15,5,15).
+	AddItem((318),50,1,15).
+	AddItem((416),40,1,2).
+	AddItem((532),40,5,15).
+	AddItem((535),40,5,10).
+	AddItem((536),40,1,10).
+	AddItem((537),40,1,10).
+	AddItem((1801),50,1,5).
+	AddItem((1804),50,5,10).
+	AddItem((1802),40,5,10).
+	AddItem((1824),65,2,6).
+	AddItem((605),10,1,2).
+	AddItem((101),10).
+	AddItem((117),10).
+	AddItem((126),10).
+	AddItem((226),10).
+	AddItem((227),10).
+	AddItem((262),10).
+	AddItem((295),10).
+	AddItem((314),10).
+	AddItem((315),10).
+	AddItem((289),10).
+	AddItem((297),10).
+	AddItem((543),10).
+	AddItem((549),10).
+	
+	AddItem((106),25).
+	AddItem((124),35)   
+	
+	;spawners.insertLast(FAT_CRAFT_LOW_6);
+	
+	ItemSpawner@FAT_CRAFT_HIGH_7=@ItemSpawner();FAT_CRAFT_HIGH_7.SpawnTime(60,120).Lock(150,250). 
+	
+	AddItem((75),30).
+	AddItem((308),20).
+	AddItem((84),15).
+	AddItem((549),10).
+	AddItem((52),10).
+	AddItem((9632),10,1,2).
+	AddItem((9918),10,1,2).
+	AddItem((9919),10,1,2).
+	AddItem((22070),10,1,2).
+	AddItem((22071),10,1,2).
+	AddItem((22072),10,1,2).
+	AddItem((22073),10,1,2).
+	AddItem((22074),10,1,2).
+	AddItem((22075),10,1,2).
+	AddItem((22076),10,1,2).
+	AddItem((22077),10,1,2).
+	AddItem((22078),10,1,2).
+	AddItem((22079),10,1,2).
+	AddItem((22080),10,1,2).
+	AddItem((22081),10,1,2).
+	AddItem((22082),10,1,2).
+	AddItem((22083),10,1,2).
+	AddItem((22084),10,1,2).
+	AddItem((22085),10,1,2).
+	AddItem((22086),10,1,2).
+	AddItem((22087),10,1,2).
+	AddItem((22088),10,1,2).
+	AddItem((22089),10,1,2).
+	AddItem((22090),10,1,2).
+	AddItem((22091),10,1,2).
+	AddItem((22092),10,1,2).
+	AddItem((22093),10,1,2).
+	AddItem((22094),10,1,2).
+	
+	AddItem((106),10).
+	AddItem((124),10)   
+	
+	;spawners.insertLast(FAT_CRAFT_HIGH_7);
+	
+	ItemSpawner@FAT_MED_LOW_8=@ItemSpawner();FAT_MED_LOW_8.SpawnTime(90,120).Lock(100,150).
+	AddItem((49),25,1,2).
+	AddItem((106),55,1,3).
+	AddItem((48),40,1,2).
+	AddItem((440),45,1,3).
+	AddItem((109),35,1,5).
+	AddItem((408),10).
+	AddItem((144),55,1,5).
+	AddItem((260),10).
+	AddItem((53),25,1,2).
+	AddItem((409),10)
+	;spawners.insertLast(FAT_MED_LOW_8);
+	
+	ItemSpawner@FAT_MED_HIGH_9=@ItemSpawner();FAT_MED_HIGH_9.SpawnTime(60,120).Lock(175,225).
+	AddItem((91),40).
+	AddItem((109),55,1,5).
+	AddItem((259),70,1,5).
+	AddItem((110),50,1,3).
+	AddItem((87),65,1,3).
+	AddItem((53),30,1,2).
+	AddItem((144),65,2,7).
+	AddItem((48),55,1,4)
+	;spawners.insertLast(FAT_MED_HIGH_9);
+	
+	ItemSpawner@encounter_container_low_10=@ItemSpawner();encounter_container_low_10.SpawnTime(0,0).SetSeparate(true).SetBonusOrNot(true).Lock(25,50). 
+	
+	AddItem((41),100,50,400).
+	AddItem(((98)),35,5,14).
+	AddItem((1802),20,3,13).
+	AddItem((9800),12).
+	AddItem((9631),18,3,9).
+	AddItem((9653),15,1,3).
+	AddItem((412),2).
+	AddItem((544),2,1,2).
+	AddItem((308),8).
+	AddItem((75),15).
+	AddItem((508),3).
+	AddItem((430),1).
+	AddItem((78),5).
+	AddItem((123),3).
+	AddItem((141),3).
+	AddItem((142),3).
+	AddItem((119),5).
+	AddItem((708),10,1,3).
+	AddItem((707),8).
+	AddItem((713),8).
+	AddItem((717),8).
+	AddItem((709),5).
+	AddItem((1801),20,3,8).
+	AddItem((9628),15,1,3).
+	AddItem((564),5,1,2).
+	AddItem((86),17).
+	AddItem((76),15).
+	AddItem((73),13).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((22050),13).
+	AddItem((9629),20,2,8).
+	AddItem((440),15,2,8).
+	AddItem((100),20).
+	
+	AddItem((53),10).
+	AddItem((87),10).
+	AddItem((109),10,1,2).
+	AddItem((144),15,1,4).
+	AddItem((40),16,1,5).
+	AddItem((49),17,2,4).
+	AddItem((48),10,1,2).
+	AddItem((110),5).
+	AddItem((525),1).
+	AddItem((106),20,1,3).
+	AddItem((124),20,1,3).
+	AddItem((541),25,1,3).
+	AddItem((409),10).
+	AddItem((91),13).
+	AddItem((408),10).
+	AddItem((47),13).
+	
+	AddItem((38),10,20,60).
+	AddItem((29),25,24,72).
+	
+	AddItem((16),15).
+	AddItem((8),10).
+	AddItem((20),15).
+	AddItem((384),12).
+	AddItem((522),8).
+	
+	AddItem((74),15).
+	AddItem((2),10).
+	AddItem((380),9).
+	AddItem((240),7).
+	AddItem((17),1).
+	
+	AddItem((725),7).
+	AddItem((726),5).
+	AddItem((734),7).
+	AddItem((733),10)
+	;spawners.insertLast(encounter_container_low_10);
+	
+	ItemSpawner@encounter_container_med_11=@ItemSpawner();encounter_container_med_11.
+	SpawnTime(0,0).SetSeparate(true).SetBonusOrNot(true).Lock(100,150).
+	
+	AddItem((41),100,50,575).
+	AddItem((59),9).
+	AddItem((52),5).
+	AddItem((54),8).
+	AddItem((470),5).
+	AddItem((570),5).
+	AddItem((79),3).
+	AddItem((9721),3).
+	AddItem((9723),3).
+	AddItem((9725),3).
+	AddItem((9801),12).
+	
+	AddItem((106),20,1,3).
+	AddItem((124),20,1,3).
+	AddItem((541),25,1,3).
+	AddItem((144),1,1,4).
+	AddItem((40),5,1,5).
+	
+	AddItem((32),12,10,30).
+	AddItem((35),30,50,350).
+	AddItem((95),25,20,80).
+	AddItem((34),15,20,50).
+	AddItem((33),15,10,25).
+	AddItem((37),10,2,8).
+	AddItem((39),11,20,60).
+	AddItem((382),9,10,30).
+	AddItem((14),10,2,8).
+	
+	AddItem((11),8).
+	AddItem((23),8).
+	AddItem((12),8).
+	AddItem((160),10).
+	AddItem((1834),10,2,4).
+	AddItem((24),6).
+	AddItem((268),12).
+	AddItem((390),1).
+	AddItem((387),8).
+	AddItem((8),11).
+	AddItem((355),9).
+	AddItem((386),3).
+	
+	AddItem((1),13)
+	
+	;spawners.insertLast(encounter_container_med_11);
+	
+	ItemSpawner@encounter_container_high_12=@ItemSpawner();encounter_container_high_12.
+	SpawnTime(0,0).SetSeparate(true).SetBonusOrNot(true).Lock(125,225).
+	
+	AddItem((41),100,240,860).
+	AddItem((9802),6).
+	AddItem((470),8).
+	AddItem((433),1).
+	AddItem((25444),1).
+	AddItem((9632),1,1,2).
+	AddItem((9918),1,1,2).
+	AddItem((9919),1,1,2).
+	AddItem((22070),1,1,2).
+	AddItem((22071),1,1,2).
+	AddItem((22072),1,1,2).
+	AddItem((22073),1,1,2).
+	AddItem((22074),1,1,2).
+	AddItem((22075),1,1,2).
+	AddItem((22076),1,1,2).
+	AddItem((22077),1,1,2).
+	AddItem((22078),1,1,2).
+	AddItem((22079),1,1,2).
+	AddItem((22080),1,1,2).
+	AddItem((22081),1,1,2).
+	AddItem((22082),1,1,2).
+	AddItem((22083),1,1,2).
+	AddItem((22084),1,1,2).
+	AddItem((22085),1,1,2).
+	AddItem((22086),1,1,2).
+	AddItem((22087),1,1,2).
+	AddItem((22088),1,1,2).
+	AddItem((22089),1,1,2).
+	AddItem((22090),1,1,2).
+	AddItem((22091),1,1,2).
+	AddItem((22092),1,1,2).
+	AddItem((22093),1,1,2).
+	AddItem((22094),1,1,2).
+	
+	AddItem((525),1,1,2).
+	
+	AddItem((35),35,60,720).
+	AddItem((39),11,30,90).
+	AddItem((359),1,50,100).
+	AddItem((358),1,10,30).
+	
+	AddItem((389),6).
+	AddItem((23),8).
+	AddItem((143),7).
+	AddItem((118),9).
+	AddItem((235),8).
+	AddItem((13),6).
+	AddItem((296),5).
+	
+	AddItem((2),10).
+	AddItem((239),1).
+	AddItem((9654),1).
+	AddItem((752),1).
+	AddItem((524),1).
+	
+	AddItem((570),8).
+	AddItem((741),1).
+	AddItem((727),1).
+	AddItem((738),1).
+	
+	AddItem((764),1,1,1).
+	AddItem((765),1,1,1).
+	AddItem((766),1,1,1).
+	AddItem((770),1,1,1).
+	AddItem((773),1,1,1).
+	AddItem((775),1,1,1).
+	AddItem((776),1,1,1)
+	;spawners.insertLast(encounter_container_high_12);
+	
+	ItemSpawner@encounter_grave_low_13=@ItemSpawner();encounter_grave_low_13.
+	SpawnTime(0,0).SetSeparate(true).
+	AddItem((9801),10).
+	AddItem((750),20).
+	AddItem((325),5).
+	AddItem((542),20,1,5).
+	AddItem((326),2).
+	AddItem((328),1).
+	AddItem((84),10).
+	AddItem((101),20).
+	AddItem((541),30).
+	AddItem((124),30,1,3).
+	AddItem((125),20,1,2).
+	AddItem((41),80,300,600)
+	;spawners.insertLast(encounter_grave_low_13);
+	
+	ItemSpawner@encounter_grave_high_14=@ItemSpawner();encounter_grave_high_14.
+	AddItem((9802),10).
+	AddItem((750),20).
+	AddItem((325),5).
+	AddItem((326),2).
+	AddItem((433),1).
+	AddItem((328),1).
+	AddItem((84),10).
+	AddItem((309),1).
+	AddItem((101),20).
+	AddItem((541),30).
+	AddItem((124),30,1,3).
+	AddItem((125),20,1,2).
+	AddItem((300),1).
+	AddItem((162),1).
+	AddItem((41),80,500,800)
+	;spawners.insertLast(encounter_grave_high_14);
+	
+	ItemSpawner@blueprint_container_low_15=@ItemSpawner();blueprint_container_low_15.
+	SpawnTime(90,120).SetSeparate(true).Lock(50,125).
+	AddItem((41),100,1,5).
+	AddItem((9800),1).
+	AddItem((9721),3).
+	AddItem((9723),3).
+	AddItem((9725),3)
+	;spawners.insertLast(blueprint_container_low_15);
+	ItemSpawner@blueprint_container_med_16=@ItemSpawner();blueprint_container_med_16.
+	SpawnTime(90,150).SetSeparate(true).Lock(100,150).
+	AddItem((409),2).
+	AddItem((9801),1)
+	;spawners.insertLast(blueprint_container_med_16);
+	ItemSpawner@blueprint_container_high_17=@ItemSpawner();blueprint_container_high_17.
+	SpawnTime(90,240).SetSeparate(true).Lock(150,225).
+	AddItem((35),80,10,20).
+	AddItem((408),2).
+	AddItem((9802),1)
+	;spawners.insertLast(blueprint_container_high_17);
+	
+	ItemSpawner@sewer_trash_container_18=@ItemSpawner();sewer_trash_container_18.
+	SpawnTime(120,240).Lock(0,50).
+	AddItem((41),100,140,430).
+	AddItem(((98)),35,1,5).
+	AddItem((750),20).
+	AddItem((74),10).
+	AddItem((325),5).
+	AddItem((326),2).
+	AddItem((433),1).
+	AddItem((328),1).
+	AddItem((84),10).
+	AddItem((309),1).
+	AddItem((101),20).
+	AddItem((541),25).
+	AddItem((124),30,1,3).
+	AddItem((125),20,1,2).
+	AddItem((79),15).
+	AddItem((9721),15).
+	AddItem((9723),15).
+	AddItem((9725),15).
+	AddItem((278),20).
+	AddItem((475),20).
+	AddItem((609),305).
+	AddItem((408),1)
+	;spawners.insertLast(sewer_trash_container_18);
+	
+	ItemSpawner@ammo_47mm_19=@ItemSpawner();ammo_47mm_19.
+	SpawnTime(300,300).Lock(120,240).
+	AddItem((359),1,10,40)
+	;spawners.insertLast(ammo_47mm_19);
+	
+	ItemSpawner@hole_20=@ItemSpawner();hole_20.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_20);
+	
+	ItemSpawner@hole_21=@ItemSpawner();hole_21.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_21);
+	
+	ItemSpawner@hole_22=@ItemSpawner();hole_22.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_22);
+	
+	ItemSpawner@hole_23=@ItemSpawner();hole_23.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_23);
+	
+	ItemSpawner@hole_24=@ItemSpawner();hole_24.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_24);
+	
+	ItemSpawner@hole_25=@ItemSpawner();hole_25.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_25);
+	
+	ItemSpawner@hole_26=@ItemSpawner();hole_26.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_26);
+	
+	ItemSpawner@hole_27=@ItemSpawner();hole_27.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_27);
+	
+	ItemSpawner@hole_28=@ItemSpawner();hole_28.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_28);
+	
+	ItemSpawner@hole_29=@ItemSpawner();hole_29.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_29);
+	
+	ItemSpawner@hole_30=@ItemSpawner();hole_30.
+	SpawnTime(0,0).SetSeparate(true).Lock(0,0).
+	AddItem(((98)),1)
+	;spawners.insertLast(hole_30);      
+	
+	ItemSpawner@once_container_SG_low_31=@ItemSpawner();once_container_SG_low_31.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(75,125).
+	
+	AddItem((122),30).
+	AddItem((8),20).
+	
+	AddItem((10),15).
+	
+	AddItem((94),30).
+	AddItem((385),30)     
+	
+	;spawners.insertLast(once_container_SG_low_31);
+	
+	ItemSpawner@once_container_SG_med_32=@ItemSpawner();once_container_SG_med_32.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(125,175).
+	
+	AddItem((18),40).
+	AddItem((313),20).
+	
+	AddItem((23),15).
+	AddItem((351),15).
+	
+	AddItem((242),20).
+	AddItem((268),20).
+	
+	AddItem((9),15).
+	AddItem((332),20).
+	AddItem((283),20)         
+	
+	;spawners.insertLast(once_container_SG_med_32);
+	
+	ItemSpawner@once_container_SG_high_33=@ItemSpawner();once_container_SG_high_33.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(150,225).
+	
+	AddItem((22),25).
+	AddItem((241),20).
+	
+	AddItem((405),30).
+	AddItem((143),30). 
+	
+	AddItem((354),25).
+	
+	AddItem((296),25)        
+	
+	;spawners.insertLast(once_container_SG_high_33);
+	
+	ItemSpawner@once_container_BG_med_34=@ItemSpawner();once_container_BG_med_34.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(125,150).
+	
+	AddItem((11),50).
+	AddItem((13),20).
+	AddItem((12),15).
+	AddItem((387),30).
+	AddItem((400),10)       
+	
+	;spawners.insertLast(once_container_BG_med_34);
+	
+	ItemSpawner@once_container_BG_high_35=@ItemSpawner();once_container_BG_high_35.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(140,250).
+	
+	AddItem((355),30).
+	AddItem((389),30).
+	AddItem((13),40,1,2).
+	AddItem((12),40).
+	AddItem((400),60)     
+	
+	;spawners.insertLast(once_container_BG_high_35);
+	
+	ItemSpawner@once_container_EW_med_36=@ItemSpawner();once_container_EW_med_36.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(90,130).
+	
+	AddItem((16),70,1,2).
+	AddItem((118),30).
+	AddItem((24),50,1,2)  
+	
+	;spawners.insertLast(once_container_EW_med_36);
+	
+	ItemSpawner@once_container_EW_high_37=@ItemSpawner();once_container_EW_high_37.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(175,250).
+	
+	AddItem((402),40).
+	AddItem((401),40).
+	AddItem((406),40).
+	AddItem((15),30)  
+	
+	;spawners.insertLast(once_container_EW_high_37);
+	
+	ItemSpawner@once_container_Throwing_lowmed_38=@ItemSpawner();once_container_Throwing_lowmed_38.
+	SpawnTime(0,0).Lock(90,160).
+	
+	AddItem((159),80,5,10).
+	AddItem((25),40,1,10).
+	AddItem((45),50,1,10)
+	;spawners.insertLast(once_container_Throwing_lowmed_38);
+	
+	ItemSpawner@once_container_Throwing_high_39=@ItemSpawner();once_container_Throwing_high_39.
+	SpawnTime(0,0).Lock(130,180).
+	
+	AddItem((26),40,1,10).
+	AddItem((1834),30,1,10).
+	AddItem((25),80,10,15)
+	;spawners.insertLast(once_container_Throwing_high_39);
+	
+	ItemSpawner@once_container_HtH_lowmed_40=@ItemSpawner();once_container_HtH_lowmed_40.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(95,115).
+	
+	AddItem((4),40,1,2).
+	AddItem((236),20).
+	AddItem((7),30,1,5).
+	AddItem((6),30).
+	AddItem((20),15).
+	AddItem((160),15).
+	AddItem((21),30).
+	AddItem((234),20)
+	;spawners.insertLast(once_container_HtH_lowmed_40);
+	
+	ItemSpawner@once_container_HtH_high_41=@ItemSpawner();once_container_HtH_high_41.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(110,190).
+	
+	AddItem((115),20).
+	AddItem((399),30).
+	AddItem((116),20).
+	AddItem((235),30).
+	AddItem((407),15) 
+	
+	;spawners.insertLast(once_container_HtH_high_41);    
+	
+	ItemSpawner@once_container_Meds_low_42=@ItemSpawner();once_container_Meds_low_42.
+	SpawnTime(0,0).SetSeparate(true).Lock(70,90).
+	
+	AddItem((40),20,1,5).
+	AddItem((49),60,1,5).
+	AddItem((273),80,5,10).
+	AddItem((259),40,1,5).
+	AddItem((469),80,1,5)
+	;spawners.insertLast(once_container_Meds_low_42);
+	
+	ItemSpawner@once_container_Meds_med_43=@ItemSpawner();once_container_Meds_med_43.
+	SpawnTime(0,0).Lock(125,150).
+	
+	AddItem((40),100,1,10).
+	AddItem((48),30,1,5).
+	AddItem((144),20,1,5).
+	AddItem((53),30,1,5)
+	;spawners.insertLast(once_container_Meds_med_43);
+	
+	ItemSpawner@once_container_Meds_high_44=@ItemSpawner();once_container_Meds_high_44.
+	SpawnTime(0,0).Lock(140,210).
+	
+	AddItem((87),40,1,5).
+	AddItem((110),40,1,5).
+	AddItem((109),30,1,5).
+	AddItem((440),60,5,10).
+	AddItem((144),60,1,10).
+	AddItem((53),60,1,5)
+	;spawners.insertLast(once_container_Meds_high_44);
+	
+	ItemSpawner@once_container_Meds_tools_45=@ItemSpawner();once_container_Meds_tools_45.
+	SpawnTime(0,0).Lock(120,170).
+	
+	AddItem((47),60,1,3).
+	AddItem((91),60,1,3).
+	AddItem((440),80,1,10).
+	AddItem((52),30,1,2).
+	
+	AddItem((388),40).
+	AddItem((361),40,10,20)
+	;spawners.insertLast(once_container_Meds_tools_45); 
+	
+	ItemSpawner@once_container_Armor_low_46=@ItemSpawner();once_container_Armor_low_46.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(80,120).
+	
+	AddItem((74),50).
+	AddItem((1),30).
+	AddItem((265),30).
+	
+	AddItem((728),50).
+	AddItem((729),30).
+	AddItem((730),30)          
+	
+	;spawners.insertLast(once_container_Armor_low_46);
+	
+	ItemSpawner@once_container_Armor_med_47=@ItemSpawner();once_container_Armor_med_47.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(110,150).
+	
+	AddItem((379),50).
+	AddItem((2),30).
+	AddItem((380),40).
+	
+	AddItem((731),50).
+	AddItem((732),30).
+	AddItem((733),40)              
+	
+	;spawners.insertLast(once_container_Armor_med_47);
+	
+	ItemSpawner@once_container_Armor_high_48=@ItemSpawner();once_container_Armor_high_48.
+	SpawnTime(0,0).SetBonusOrNot(true).Lock(140,230).
+	
+	AddItem((240),40).
+	AddItem((17),50).
+	AddItem((381),20).
+	
+	AddItem((734),40).
+	AddItem((725),50).
+	AddItem((726),20)             
+	
+	;spawners.insertLast(once_container_Armor_high_48);   
+	
+	ItemSpawner@once_container_BP_mech_low_49=@ItemSpawner();once_container_BP_mech_low_49.
+	SpawnTime(0,0).SetSeparate(true).Lock(75,125). 
+	
+	AddItem((Random(1,2)==1?(11010):(11004)),5).
+	
+	AddItem((73),20).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((22050),20).
+	AddItem(((98)),50,1,5)
+	;spawners.insertLast(once_container_BP_mech_low_49);
+	
+	ItemSpawner@once_container_BP_mech_med_50=@ItemSpawner();once_container_BP_mech_med_50.
+	SpawnTime(0,0).SetSeparate(true).Lock(110,165). 
+	
+	AddItem((Random(1,2)==1?(11011):(11005)),5).
+	
+	AddItem((73),20).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((22050),20).
+	AddItem((308),20,1,2).
+	AddItem(((98)),50,1,5)
+	;spawners.insertLast(once_container_BP_mech_med_50);
+	
+	ItemSpawner@once_container_BP_mech_high_51=@ItemSpawner();once_container_BP_mech_high_51.
+	SpawnTime(0,0).SetSeparate(true).Lock(135,200). 
+	
+	AddItem((Random(1,2)==1?(11012):(11006)),5).
+	
+	AddItem((73),20).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((22050),20).
+	AddItem((308),50,1,2).
+	AddItem(((98)),80,1,5)
+	;spawners.insertLast(once_container_BP_mech_high_51);  
+	
+	ItemSpawner@once_container_BP_chem_low_52=@ItemSpawner();once_container_BP_chem_low_52.
+	SpawnTime(0,0).SetSeparate(true).Lock(90,130).
+	
+	AddItem((11007),15).
+	
+	AddItem((73),20).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((22050),20).
+	AddItem((318),20,1,5).
+	AddItem(((98)),20,1,5)
+	;spawners.insertLast(once_container_BP_chem_low_52);
+	
+	ItemSpawner@once_container_BP_chem_med_53=@ItemSpawner();once_container_BP_chem_med_53.
+	SpawnTime(0,0).SetSeparate(true).Lock(115,155).
+	
+	AddItem((11008),15).
+	
+	AddItem((73),20).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((22050),20).
+	AddItem((318),40,1,5).
+	AddItem(((98)),30,1,5)
+	;spawners.insertLast(once_container_BP_chem_med_53);
+	
+	ItemSpawner@once_container_BP_chem_high_54=@ItemSpawner();once_container_BP_chem_high_54.
+	SpawnTime(0,0).SetSeparate(true).Lock(135,190).
+	
+	AddItem((11009),15).
+	
+	AddItem((73),20).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((22050),20).
+	AddItem((318),40,1,5).
+	AddItem((9629),30,1,5).
+	
+	AddItem(((98)),20,1,5)
+	;spawners.insertLast(once_container_BP_chem_high_54);  
+	
+	ItemSpawner@once_container_BP_mech_all_55=@ItemSpawner();once_container_BP_mech_all_55.
+	SpawnTime(0,0).Lock(120,220).
+	
+	AddItem((11010),4).
+	AddItem((11004),4).
+	
+	AddItem((11011),2).
+	AddItem((11005),2).
+	
+	AddItem((11012),1).
+	AddItem((11006),1)      
+	
+	;spawners.insertLast(once_container_BP_mech_all_55); 
+	
+	ItemSpawner@once_container_BP_chem_all_56=@ItemSpawner();once_container_BP_chem_all_56.
+	SpawnTime(0,0).Lock(120,220).
+	
+	AddItem((11007),12).
+	
+	AddItem((11008),6).
+	
+	AddItem((11009),3)       
+	
+	;spawners.insertLast(once_container_BP_chem_all_56);   
+	
+	ItemSpawner@FAT_BATTEL_LOCKER_57=@ItemSpawner();FAT_BATTEL_LOCKER_57.
+	SpawnTime(60,120).SetBonusLow(true).Lock(120,150).  
+	
+	AddItem((36),15,400,1200).
+	AddItem((35),20,400,2000).
+	AddItem((363),15,400,800).
+	AddItem((14),40,4,7).
+	AddItem((37),40,1,5).
+	
+	AddItem((23),30).
+	AddItem((351),15).
+	AddItem((296),20).
+	AddItem((13),10).
+	AddItem((387),30).
+	AddItem((355),5).
+	AddItem((12),15) 
+	
+	;spawners.insertLast(FAT_BATTEL_LOCKER_57);
+	
+	ItemSpawner@FAT_DESK_58=@ItemSpawner();FAT_DESK_58.
+	SpawnTime(60,180).SetBonusOrNot(true).Lock(120,150).
+	
+	AddItem((41),40,10,90).
+	AddItem(((98)),45).
+	AddItem((86),10).
+	AddItem((76),10).
+	AddItem((73),10).
+	AddItem((80),10).
+	AddItem((102),10).
+	
+	AddItem((40),20,1,4).
+	AddItem((49),17,2,4).
+	AddItem((106),20,1,3).
+	AddItem((124),20,1,3).
+	AddItem((541),25,1,3).
+	
+	AddItem((31),40,5,50).
+	AddItem((111),10,1,50).
+	AddItem((357),20,5,20).
+	AddItem((29),20,1,100).
+	AddItem((30),40,1,50).
+	AddItem((36),45,1,10).
+	AddItem((35),20,1,10).
+	
+	AddItem((4),40).
+	AddItem((18),20).
+	AddItem((313),10).
+	AddItem((10),10).
+	AddItem((8),5).
+	AddItem((9),5).
+	AddItem((332),10).
+	AddItem((283),1) 
+	
+	;spawners.insertLast(FAT_DESK_58);
+	
+	ItemSpawner@FAT_FURNITURE_59=@ItemSpawner();FAT_FURNITURE_59.
+	SpawnTime(120,240).SetBonusOrNot(true).Lock(120,150).
+	
+	AddItem((11007),12).
+	AddItem((11008),6).
+	AddItem((11009),3).
+	AddItem((73),20).
+	AddItem((22050),20).
+	AddItem((80),13).
+	AddItem((102),13).
+	AddItem((318),40,1,5).
+	AddItem((9629),30,1,5).
+	
+	AddItem((40),30,1,4).
+	AddItem((106),30,1,3).
+	AddItem((53),20).
+	AddItem((87),20).
+	AddItem((110),1,1,3).
+	AddItem((259),1,1,3).
+	AddItem((49),40,2,4). 
+	
+	AddItem((386),3).
+	AddItem((6),5).
+	AddItem((160),12).
+	AddItem((236),5).
+	AddItem((5),5).
+	AddItem((20),5).
+	AddItem((21),30).
+	AddItem((234),20).
+	AddItem((16),10).
+	AddItem((24),8).
+	AddItem((12),10).
+	
+	AddItem((74),30).
+	AddItem((1),20).
+	AddItem((379),15).
+	AddItem((2),30).
+	
+	AddItem((728),20).
+	AddItem((729),20).
+	AddItem((730),20).
+	AddItem((731),20).
+	AddItem((732),20)
+	;spawners.insertLast(FAT_FURNITURE_59);
+	
+	ItemSpawner@FAT_FOOD_60=@ItemSpawner();FAT_FOOD_60.
+	SpawnTime(60,240).Lock(120,150). 
+	
+	AddItem((110),5,1,3).
+	AddItem((109),10,1,2).
+	AddItem((144),15,1,4).
+	AddItem((125),50).
+	AddItem((106),60).
+	AddItem((310),50).
+	AddItem((311),50).
+	AddItem((469),50).
+	AddItem((71),50).
+	AddItem((81),50).
+	AddItem((103),50).
+	AddItem((284),40).
+	AddItem((285),40). 
+	
+	AddItem((235),30).
+	AddItem((45),30,1,2) 
+	
+	;spawners.insertLast(FAT_FOOD_60);
+	
+	ItemSpawner@FAT_MIX_HTH_61=@ItemSpawner();FAT_MIX_HTH_61.
+	SpawnTime(60,240).SetBonusOrNot(true).Lock(120,150).
+	
+	AddItem((41),100,50,400).
+	AddItem((412),2).
+	AddItem((84),1).
+	AddItem((410),2).
+	
+	AddItem((109),10,1,2).
+	AddItem((144),15,1,4).
+	AddItem((106),20,1,3).
+	AddItem((53),10).
+	AddItem((87),20).
+	AddItem((110),5,1,3).
+	AddItem((259),5,1,3).
+	AddItem((49),17,2,4).
+	
+	AddItem((382),25,10,40).
+	AddItem((37),20,2,8).
+	AddItem((38),55,20,80).
+	AddItem((39),20,20,60).
+	
+	AddItem((406),5).
+	AddItem((115),50).
+	AddItem((399),30).
+	AddItem((116),40).
+	AddItem((407),25).
+	AddItem((143),10).
+	AddItem((296),10).
+	AddItem((25),15,1,10).
+	AddItem((45),30,5,10).
+	
+	AddItem((240),7).
+	AddItem((380),9).
+	
+	AddItem((734),7).
+	AddItem((733),10)
+	;spawners.insertLast(FAT_MIX_HTH_61);
+	
+	ItemSpawner@FAT_MIX_SG_62=@ItemSpawner();FAT_MIX_SG_62.
+	SpawnTime(120,320).SetBonusOrNot(true).Lock(120,250).
+	
+	AddItem((41),30,50,400).
+	AddItem((52),1).
+	AddItem((73),1).
+	AddItem((80),1).
+	AddItem((102),10).
+	AddItem((22050),1).
+	AddItem((544),2,1,2).
+	AddItem((412),2).
+	AddItem((84),10).
+	AddItem((410),20).
+	
+	AddItem((53),15,1,4).
+	AddItem((106),20,2,6).
+	AddItem((144),35,1,4).
+	AddItem((48),20,1,2).
+	AddItem((110),20,1,3).
+	AddItem((259),20,1,2).
+	
+	AddItem((363),70,50,400).
+	AddItem((30),60,150,800).
+	AddItem((36),60,300,1200).
+	AddItem((382),30,50,90).
+	AddItem((34),40,100,300).
+	AddItem((33),50,50,200).
+	AddItem((362),40,5,100).
+	AddItem((361),30,10,100).
+	AddItem((574),60,50,300).
+	AddItem((575),40,50,100).
+	AddItem((576),10,50,100).
+	AddItem((621),30,5,15).
+	
+	AddItem((159),30,5,10).
+	AddItem((405),10).
+	AddItem((388),20).
+	AddItem((296),45).
+	AddItem((22),35).
+	AddItem((241),30).
+	AddItem((143),35).
+	
+	AddItem((13),5).
+	AddItem((402),10).
+	AddItem((268),50).
+	
+	AddItem((240),10).
+	AddItem((380),15).
+	
+	AddItem((734),10).
+	AddItem((733),15)
+	;spawners.insertLast(FAT_MIX_SG_62);
+	
+	ItemSpawner@FAT_MIX_BG_63=@ItemSpawner();FAT_MIX_BG_63.
+	SpawnTime(180,360).SetBonusOrNot(true).Lock(150,250).
+	
+	AddItem((41),40,50,400).
+	AddItem((52),5).
+	AddItem((73),5).
+	AddItem((80),5).
+	AddItem((102),5).
+	AddItem((22050),5).
+	AddItem((308),30,1,2).
+	AddItem((412),2).
+	AddItem((84),1).
+	AddItem((410),2).
+	
+	AddItem((144),20,1,5).
+	AddItem((48),30,1,5).
+	AddItem((87),40,1,5).
+	AddItem((110),20,1,5).
+	AddItem((109),15,1,5).
+	AddItem((259),10,1,3).
+	
+	AddItem((30),25,50,300).
+	AddItem((38),5,10,300).
+	AddItem((39),5,10,200).
+	AddItem((36),40,200,1000).
+	AddItem((35),30,200,500).
+	AddItem((34),40,100,200).
+	AddItem((382),60,20,50).
+	AddItem((37),30,1,10).
+	
+	AddItem((355),40).
+	AddItem((389),30).
+	AddItem((13),40,1,2).
+	AddItem((400),30).
+	AddItem((25),40,1,10).
+	AddItem((236),40).
+	AddItem((401),10).
+	AddItem((15),5).
+	
+	AddItem((381),5).
+	AddItem((17),10).
+	AddItem((240),20).
+	AddItem((380),30).
+	
+	AddItem((726),5).
+	AddItem((725),10).
+	AddItem((734),20).
+	AddItem((733),30)
+	;spawners.insertLast(FAT_MIX_BG_63);
+	
+	ItemSpawner@FAT_MIX_EW_64=@ItemSpawner();FAT_MIX_EW_64.
+	SpawnTime(150,200).SetBonusOrNot(true).Lock(175,240).
+	
+	AddItem((41),100,50,400).
+	
+	AddItem((53),15,1,4).
+	AddItem((106),20,2,6).
+	AddItem((144),15,5,8).
+	AddItem((48),10,1,4).
+	AddItem((110),10,1,3).
+	AddItem((259),10,1,5).
+	AddItem((87),40,1,5).
+	
+	AddItem((38),50,200,400).
+	AddItem((39),50,150,300).
+	AddItem((36),15,100,2000).
+	AddItem((34),10,100,600).
+	AddItem((33),10,50,200).
+	AddItem((382),10,20,50).
+	AddItem((37),30,1,10).
+	AddItem((30),35,50,300). 
+	
+	AddItem((16),5).
+	AddItem((402),5).
+	AddItem((118),15).
+	AddItem((401),50).
+	AddItem((24),10).
+	AddItem((406),40).
+	AddItem((15),60).
+	AddItem((26),35,5,8).
+	AddItem((25),10,5,8).
+	AddItem((27),1).
+	
+	AddItem((381),1).
+	AddItem((17),5).
+	AddItem((240),30).
+	AddItem((380),30).
+	
+	AddItem((726),1).
+	AddItem((725),5).
+	AddItem((734),30).
+	AddItem((733),30)
+	;spawners.insertLast(FAT_MIX_EW_64);
+	
+	ItemSpawner@FAT_MIX_DRUGS_65=@ItemSpawner();FAT_MIX_DRUGS_65.
+	SpawnTime(120,240).SetBonusOrNot(true).Lock(150,230).
+	
+	AddItem((41),100,50,400).
+	
+	AddItem((106),60,3,8).
+	AddItem((259),40,1,4).
+	AddItem((109),50,1,5).
+	AddItem((48),40,2,6).
+	AddItem((87),40,1,5).
+	AddItem((53),45,1,4).
+	AddItem((144),50,5,12).
+	AddItem((110),40,2,4).
+	
+	AddItem((38),10,200,400).
+	AddItem((39),10,150,300).
+	AddItem((36),15,100,2000).
+	AddItem((34),10,100,600).
+	AddItem((33),10,50,200).
+	AddItem((30),10,50,300).
+	
+	AddItem((115),10).
+	AddItem((399),10).
+	AddItem((116),1).
+	AddItem((22),15).
+	AddItem((241),1).
+	AddItem((388),10).
+	
+	AddItem((118),1).
+	
+	AddItem((115),15).
+	AddItem((26),10,1,10).
+	AddItem((355),1).
+	AddItem((25),10,1,10).
+	
+	AddItem((240),30).
+	AddItem((380),30).
+	
+	AddItem((734),30).
+	AddItem((733),30)
+	;spawners.insertLast(FAT_MIX_DRUGS_65);
+	
+	ItemSpawner@FAT_MIX_ARMORS_66=@ItemSpawner();FAT_MIX_ARMORS_66.
+	SpawnTime(90,240).SetBonusOrNot(true).Lock(150,220). 
+	
+	AddItem((106),10,1,3).
+	AddItem((259),10,1,2).
+	AddItem((110),10).
+	
+	AddItem((38),10,100,200).
+	AddItem((39),10,50,100).
+	AddItem((30),15,50,300).
+	
+	AddItem((296),5).
+	AddItem((22),5).
+	AddItem((241),5).
+	AddItem((236),10).
+	
+	AddItem((381),10).
+	AddItem((17),20).
+	AddItem((240),40).
+	AddItem((380),45).
+	
+	AddItem((726),10).
+	AddItem((725),20).
+	AddItem((734),40).
+	AddItem((733),45)
+	;spawners.insertLast(FAT_MIX_ARMORS_66);
+	
+	ItemSpawner@FAT_MIX_AMMO_67=@ItemSpawner();FAT_MIX_AMMO_67.
+	SpawnTime(120,240).Lock(120,170).  
+	
+	AddItem((35),10,50,1200).
+	AddItem((36),55,300,1500).
+	AddItem((363),45,100,400).
+	AddItem((29),5,50,200).
+	AddItem((30),45,70,350).
+	AddItem((33),10,50,200).
+	AddItem((34),20,50,200).
+	AddItem((850),2,50,150).
+	AddItem((95),30,100,500).
+	AddItem((574),25,90,250).
+	AddItem((575),20,100,200).
+	AddItem((576),5,20,60).
+	AddItem((621),30,15,45).
+	AddItem((14),40,5,15).
+	AddItem((37),35,10,20).
+	AddItem((382),40,20,60).
+	AddItem((38),65,50,300).
+	AddItem((39),55,30,200)  
+	
+	;spawners.insertLast(FAT_MIX_AMMO_67);
+	
+	ItemSpawner@ghost_town_high_68=@ItemSpawner();ghost_town_high_68.
+	SpawnTime(720,1440).SetClearAtSpawn(true).Lock(200,250).SetSeparate(true).SetClearAtSpawn(true).
+	AddItem((241),10).
+	AddItem((296),10).
+	AddItem((354),10).
+	AddItem((143),10).
+	AddItem((407),10).
+	AddItem((116),10).
+	AddItem((399),10).
+	AddItem((522),10).
+	AddItem((26),10,5,15).
+	AddItem((25),10,5,15).
+	AddItem((259),10,5,10).
+	AddItem((87),10,5,10).
+	AddItem((110),10,5,10).
+	AddItem((144),10,5,10).
+	AddItem((359),15,20,30).
+	AddItem((358),15,5,10).
+	AddItem((350),5).
+	AddItem((28),5).
+	AddItem((394),5).
+	AddItem((392),5).
+	AddItem((59),5).
+	AddItem((352),5).
+	AddItem((391),5).
+	AddItem((15),5).
+	AddItem((9654),5).
+	AddItem((741),5).
+	AddItem((433),1).
+	AddItem((381),5).
+	AddItem((239),5).
+	AddItem((752),5).
+	AddItem((726),5).
+	AddItem((727),5).
+	AddItem((739),5).
+	AddItem((260),1).
+	AddItem((3),1).
+	AddItem((348),1).
+	AddItem((395),1).
+	AddItem((396),1).
+	AddItem((397),1).
+	AddItem((233),1).
+	AddItem((120),1).
+	AddItem((390),1).
+	AddItem((386),1) 
+	
+	;spawners.insertLast(ghost_town_high_68);  
+	
+	ItemSpawner@GM_BASE_SG_CONTAINER_69=@ItemSpawner();GM_BASE_SG_CONTAINER_69.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((23),95).
+	AddItem((241),95).
+	AddItem((354),95).
+	AddItem((143),95).
+	AddItem((392),95).
+	AddItem((268),95).
+	AddItem((296),95).
+	AddItem((352),95).
+	AddItem((394),95).
+	AddItem((22),95)
+	;spawners.insertLast(GM_BASE_SG_CONTAINER_69);
+	
+	ItemSpawner@GM_BASE_BG_CONTAINER_70=@ItemSpawner();GM_BASE_BG_CONTAINER_70.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((387),95).
+	AddItem((400),95).
+	AddItem((389),95).
+	AddItem((355),95).
+	AddItem((13),95).
+	AddItem((395),95).
+	AddItem((350),95)
+	;spawners.insertLast(GM_BASE_BG_CONTAINER_70);
+	
+	ItemSpawner@GM_BASE_EW_CONTAINER_71=@ItemSpawner();GM_BASE_EW_CONTAINER_71.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((402),95).
+	AddItem((28),95).
+	AddItem((24),95).
+	AddItem((118),95).
+	AddItem((15),95).
+	AddItem((396),95).
+	AddItem((397),95).
+	AddItem((406),95).
+	AddItem((15),95).
+	AddItem((233),95)
+	;spawners.insertLast(GM_BASE_EW_CONTAINER_71);
+	
+	ItemSpawner@GM_BASE_AMMO_CONTAINER_72=@ItemSpawner();GM_BASE_AMMO_CONTAINER_72.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((35),50,1,5).
+	AddItem((36),40,1,5).
+	AddItem((363),40,1,5).
+	AddItem((360),70,1,5).
+	AddItem((121),70,1,5).
+	AddItem((29),50,1,5).
+	AddItem((30),40,1,5).
+	AddItem((33),30,1,5).
+	AddItem((31),50,1,5).
+	AddItem((111),40,1,5).
+	AddItem((357),60,1,5).
+	AddItem((34),30,1,5).
+	AddItem((850),10,1,5).
+	AddItem((95),40,1,5).
+	AddItem((574),30,1,5).
+	AddItem((575),20,1,5).
+	AddItem((576),30,1,5).
+	AddItem((621),30,1,5).
+	AddItem((14),10).
+	AddItem((37),5).
+	AddItem((32),40,1,5).
+	AddItem((382),30,1,5).
+	AddItem((38),20,1,5).
+	AddItem((39),15,1,5).
+	AddItem((163),60,1,5).
+	AddItem((361),40,1,5).
+	AddItem((362),30,1,5)
+	;spawners.insertLast(GM_BASE_AMMO_CONTAINER_72);
+	
+	ItemSpawner@GM_BASE_CC_CONTAINER_73=@ItemSpawner();GM_BASE_CC_CONTAINER_73.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((159),95,10,20).
+	AddItem((115),95).
+	AddItem((399),95).
+	AddItem((116),95).
+	AddItem((407),95).
+	AddItem((522),95).
+	AddItem((115),95).
+	AddItem((160),95).
+	AddItem((610),95)
+	;spawners.insertLast(GM_BASE_CC_CONTAINER_73);
+	
+	ItemSpawner@GM_BASE_ARMOR_CONTAINER_74=@ItemSpawner();GM_BASE_ARMOR_CONTAINER_74.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((726),95).
+	AddItem((381),95).
+	AddItem((740),95).
+	AddItem((778),95).
+	AddItem((725),95).
+	AddItem((17),95).
+	AddItem((738),95).
+	AddItem((739),95).
+	AddItem((752),95).
+	AddItem((721),95).
+	AddItem((3),95).
+	AddItem((737),95).
+	AddItem((232),95).
+	AddItem((735),95).
+	AddItem((348),95).
+	AddItem((736),95).
+	AddItem((349),95).
+	AddItem((380),95).
+	AddItem((734),95).
+	AddItem((240),95).
+	AddItem((727),95).
+	AddItem((239),95).
+	AddItem((741),95).
+	AddItem((9654),95)
+	;spawners.insertLast(GM_BASE_ARMOR_CONTAINER_74);
+	
+	ItemSpawner@GM_BASE_SG_CONTAINER_BONUS_LOW_75=@ItemSpawner();GM_BASE_SG_CONTAINER_BONUS_LOW_75.
+	SpawnTime(1,2).SetBonusLow(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((23),95).
+	AddItem((241),95).
+	AddItem((354),95).
+	AddItem((143),95).
+	AddItem((392),95).
+	AddItem((268),95).
+	AddItem((296),95).
+	AddItem((352),95).
+	AddItem((394),95).
+	AddItem((22),95)
+	;spawners.insertLast(GM_BASE_SG_CONTAINER_BONUS_LOW_75);
+	
+	ItemSpawner@GM_BASE_BG_CONTAINER_BONUS_LOW_76=@ItemSpawner();GM_BASE_BG_CONTAINER_BONUS_LOW_76.
+	SpawnTime(1,2).SetBonusLow(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((387),95).
+	AddItem((400),95).
+	AddItem((389),95).
+	AddItem((355),95).
+	AddItem((13),95).
+	AddItem((395),95).
+	AddItem((350),95)
+	;spawners.insertLast(GM_BASE_BG_CONTAINER_BONUS_LOW_76);
+	
+	ItemSpawner@GM_BASE_EW_CONTAINER_BONUS_LOW_77=@ItemSpawner();GM_BASE_EW_CONTAINER_BONUS_LOW_77.
+	SpawnTime(1,2).SetBonusLow(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((402),95).
+	AddItem((28),95).
+	AddItem((24),95).
+	AddItem((118),95).
+	AddItem((15),95).
+	AddItem((396),95).
+	AddItem((397),95).
+	AddItem((406),95).
+	AddItem((15),95).
+	AddItem((233),95)
+	;spawners.insertLast(GM_BASE_EW_CONTAINER_BONUS_LOW_77);
+	
+	ItemSpawner@GM_BASE_CC_CONTAINER_BONUS_LOW_78=@ItemSpawner();GM_BASE_CC_CONTAINER_BONUS_LOW_78.
+	SpawnTime(1,2).SetBonusLow(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((159),95,10,20).
+	AddItem((115),95).
+	AddItem((399),95).
+	AddItem((116),95).
+	AddItem((407),95).
+	AddItem((522),95).
+	AddItem((115),95).
+	AddItem((160),95).
+	AddItem((610),95)
+	;spawners.insertLast(GM_BASE_CC_CONTAINER_BONUS_LOW_78);
+	
+	ItemSpawner@GM_BASE_ARMOR_CONTAINER_BONUS_LOW_79=@ItemSpawner();GM_BASE_ARMOR_CONTAINER_BONUS_LOW_79.
+	SpawnTime(1,2).SetBonusLow(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((726),95).
+	AddItem((381),95).
+	AddItem((740),95).
+	AddItem((778),95).
+	AddItem((725),95).
+	AddItem((17),95).
+	AddItem((738),95).
+	AddItem((739),95).
+	AddItem((752),95).
+	AddItem((721),95).
+	AddItem((3),95).
+	AddItem((737),95).
+	AddItem((232),95).
+	AddItem((735),95).
+	AddItem((348),95).
+	AddItem((736),95).
+	AddItem((349),95).
+	AddItem((380),95).
+	AddItem((734),95).
+	AddItem((240),95).
+	AddItem((727),95).
+	AddItem((239),95).
+	AddItem((741),95).
+	AddItem((9654),95)
+	;spawners.insertLast(GM_BASE_ARMOR_CONTAINER_BONUS_LOW_79);
+	
+	ItemSpawner@GM_BASE_SG_CONTAINER_BONUS_HI_80=@ItemSpawner();GM_BASE_SG_CONTAINER_BONUS_HI_80.
+	SpawnTime(1,2).SetBonus(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((23),95).
+	AddItem((241),95).
+	AddItem((354),95).
+	AddItem((143),95).
+	AddItem((392),95).
+	AddItem((268),95).
+	AddItem((296),95).
+	AddItem((352),95).
+	AddItem((394),95).
+	AddItem((22),95)
+	;spawners.insertLast(GM_BASE_SG_CONTAINER_BONUS_HI_80);
+	
+	ItemSpawner@GM_BASE_BG_CONTAINER_BONUS_HI_81=@ItemSpawner();GM_BASE_BG_CONTAINER_BONUS_HI_81.
+	SpawnTime(1,2).SetBonus(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((387),95).
+	AddItem((400),95).
+	AddItem((389),95).
+	AddItem((355),95).
+	AddItem((13),95).
+	AddItem((395),95).
+	AddItem((350),95)
+	;spawners.insertLast(GM_BASE_BG_CONTAINER_BONUS_HI_81);
+	
+	ItemSpawner@GM_BASE_EW_CONTAINER_BONUS_HI_82=@ItemSpawner();GM_BASE_EW_CONTAINER_BONUS_HI_82.
+	SpawnTime(1,2).SetBonus(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((402),95).
+	AddItem((28),95).
+	AddItem((24),95).
+	AddItem((118),95).
+	AddItem((15),95).
+	AddItem((396),95).
+	AddItem((397),95).
+	AddItem((406),95).
+	AddItem((15),95).
+	AddItem((233),95)
+	;spawners.insertLast(GM_BASE_EW_CONTAINER_BONUS_HI_82);
+	
+	ItemSpawner@GM_BASE_CC_CONTAINER_BONUS_HI_83=@ItemSpawner();GM_BASE_CC_CONTAINER_BONUS_HI_83.
+	SpawnTime(1,2).SetBonus(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((159),95,10,20).
+	AddItem((115),95).
+	AddItem((399),95).
+	AddItem((116),95).
+	AddItem((407),95).
+	AddItem((522),95).
+	AddItem((115),95).
+	AddItem((160),95).
+	AddItem((610),95)
+	;spawners.insertLast(GM_BASE_CC_CONTAINER_BONUS_HI_83);
+	
+	ItemSpawner@GM_BASE_ARMOR_CONTAINER_BONUS_HI_84=@ItemSpawner();GM_BASE_ARMOR_CONTAINER_BONUS_HI_84.
+	SpawnTime(1,2).SetBonus(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((726),95).
+	AddItem((381),95).
+	AddItem((740),95).
+	AddItem((778),95).
+	AddItem((725),95).
+	AddItem((17),95).
+	AddItem((738),95).
+	AddItem((739),95).
+	AddItem((752),95).
+	AddItem((721),95).
+	AddItem((3),95).
+	AddItem((737),95).
+	AddItem((232),95).
+	AddItem((735),95).
+	AddItem((348),95).
+	AddItem((736),95).
+	AddItem((349),95).
+	AddItem((380),95).
+	AddItem((734),95).
+	AddItem((240),95).
+	AddItem((727),95).
+	AddItem((239),95).
+	AddItem((741),95).
+	AddItem((9654),95)
+	;spawners.insertLast(GM_BASE_ARMOR_CONTAINER_BONUS_HI_84);
+	
+	ItemSpawner@GM_TEST_SG_CONTAINER_85=@ItemSpawner();GM_TEST_SG_CONTAINER_85.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).SetBonusOrNot(true).Lock(0,0).
+	
+	AddItem((23),95).
+	AddItem((241),95).
+	AddItem((354),95).
+	AddItem((143),95).
+	AddItem((10),95)
+	;spawners.insertLast(GM_TEST_SG_CONTAINER_85);
+	
+	ItemSpawner@GM_TEST_BG_CONTAINER_86=@ItemSpawner();GM_TEST_BG_CONTAINER_86.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).SetBonusOrNot(true).Lock(0,0).
+	
+	AddItem((387),95).
+	AddItem((400),95).
+	AddItem((389),95).
+	AddItem((355),95).
+	AddItem((13),95)
+	;spawners.insertLast(GM_TEST_BG_CONTAINER_86);
+	
+	ItemSpawner@GM_TEST_EW_CONTAINER_87=@ItemSpawner();GM_TEST_EW_CONTAINER_87.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).SetBonusOrNot(true).Lock(0,0).
+	
+	AddItem((402),95).
+	AddItem((28),95).
+	AddItem((24),95).
+	AddItem((118),95).
+	AddItem((15),95)
+	;spawners.insertLast(GM_TEST_EW_CONTAINER_87);
+	
+	ItemSpawner@GM_TEST_AMMO_CONTAINER_88=@ItemSpawner();GM_TEST_AMMO_CONTAINER_88.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((33),95,1000,2000).
+	AddItem((36),95,1000,2000).
+	AddItem((34),95,1000,2000).
+	AddItem((38),95,1000,2000).
+	AddItem((30),95,1000,2000).
+	AddItem((39),95,1000,2000).
+	AddItem((95),95,1000,2000).
+	AddItem((382),95,1000,2000).
+	AddItem((363),95,1000,2000).
+	AddItem((14),95,1000,2000).
+	AddItem((37),95,1000,2000)
+	;spawners.insertLast(GM_TEST_AMMO_CONTAINER_88);
+	
+	ItemSpawner@GM_TEST_CC_CONTAINER_89=@ItemSpawner();GM_TEST_CC_CONTAINER_89.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((159),95).
+	AddItem((115),95).
+	AddItem((399),95).
+	AddItem((116),95).
+	AddItem((407),95)
+	;spawners.insertLast(GM_TEST_CC_CONTAINER_89);  
+	
+	ItemSpawner@GM_TEST_ARMOR_CONTAINER_90=@ItemSpawner();GM_TEST_ARMOR_CONTAINER_90.
+	SpawnTime(1,2).SetSeparate(true).SetClearAtSpawn(true).SetBonusOrNot(true).Lock(0,0).
+	
+	AddItem((381),95).
+	AddItem((380),95).
+	AddItem((778),95).
+	AddItem((726),95).
+	AddItem((379),95)
+	;spawners.insertLast(GM_TEST_ARMOR_CONTAINER_90);
+	
+	ItemSpawner@GM_TEST_LOCKER_MED_TEST_91=@ItemSpawner();GM_TEST_LOCKER_MED_TEST_91.
+	SpawnTime(1,2).SetClearAtSpawn(true).SetSeparate(true).Lock(0,0).
+	
+	AddItem((144),95,5,10).
+	AddItem((124),95,5,10).
+	AddItem((106),95,5,10).
+	AddItem((259),95,5,10).
+	AddItem((110),95,5,10).
+	AddItem((87),95,5,10).
+	AddItem((53),95,5,10).
+	AddItem((260),95,5,10).
+	AddItem((541),95,5,10).
+	AddItem((101),95,1,5)
+	;spawners.insertLast(GM_TEST_LOCKER_MED_TEST_91);  
+	
+	ItemSpawner@FAT_BATTEL_CRATE_92=@ItemSpawner();FAT_BATTEL_CRATE_92.
+	SpawnTime(90,120).SetBonusLow(true).Lock(100,150).
+	
+	AddItem((100),50).
+	AddItem((79),30).
+	
+	AddItem((408),30).
+	AddItem((48),10,1,4).
+	AddItem((40),50,1,7).
+	AddItem((144),20,1,4).
+	AddItem((53),10,1,2).
+	AddItem((87),10,1,3).
+	
+	AddItem((621),30,10,50).
+	AddItem((14),30,1,5).
+	AddItem((37),30,1,5).
+	AddItem((32),40,10,100).
+	AddItem((382),20,10,100).
+	AddItem((35),10,50,300).
+	AddItem((36),20,50,300).
+	
+	AddItem((236),50).
+	AddItem((159),30,5,10).
+	AddItem((25),10,5,10).
+	AddItem((16),30).
+	
+	AddItem((1),20).
+	AddItem((379),17).
+	
+	AddItem((730),15).
+	AddItem((731),10)
+	;spawners.insertLast(FAT_BATTEL_CRATE_92);
+	
+	ItemSpawner@FAT_TECH_93=@ItemSpawner();FAT_TECH_93.
+	SpawnTime(0,0).SetBonusLow(true).SetSeparate(true).Lock(50,100).
+	
+	AddItem((11010),32).
+	AddItem((11011),20).
+	AddItem((11012),5).
+	AddItem((11004),32).
+	AddItem((11005),20).
+	AddItem((11006),1).
+	AddItem((11007),32).
+	AddItem((11008),26).
+	AddItem((11009),3).
+	AddItem((54),50).
+	AddItem((59),50).
+	AddItem((52),50).
+	AddItem((51),60,1,5).
+	AddItem((85),50,1,3). 
+	
+	AddItem((358),15,1,20).
+	AddItem((359),15,1,50).
+	
+	AddItem((27),30,1,3).
+	AddItem((26),50,5,15) 
+	
+	;spawners.insertLast(FAT_TECH_93);
+	
+	ItemSpawner@FAT_MED_94=@ItemSpawner();FAT_MED_94.
+	SpawnTime(0,0).SetBonusLow(true).SetSeparate(true).SetClearAtSpawn(true).Lock(50,100).
+	
+	AddItem((11007),24).
+	AddItem((11008),16).
+	AddItem((11009),6).
+	
+	AddItem((525),10,1,3).
+	AddItem((259),40,5,13).
+	AddItem((109),50,4,10).
+	AddItem((48),40,2,15).
+	AddItem((87),40,1,5).
+	AddItem((53),45,3,5).
+	AddItem((144),50,10,15).
+	AddItem((110),40,2,8)   
+	
+	;spawners.insertLast(FAT_MED_94); 
+	
+	ItemSpawner@EOR_CAPS_95=@ItemSpawner();EOR_CAPS_95.
+	SpawnTime(0,0).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((41),100,600000,1200000)
+	;spawners.insertLast(EOR_CAPS_95);
+	ItemSpawner@EOR_CBT_IMPLANTS_96=@ItemSpawner();EOR_CBT_IMPLANTS_96.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(false).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((1810),100)
+	;spawners.insertLast(EOR_CBT_IMPLANTS_96);
+	ItemSpawner@EOR_SPC_IMPLANTS_97=@ItemSpawner();EOR_SPC_IMPLANTS_97.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((22051),2).
+	AddItem((22052),2).
+	AddItem((22053),1).
+	AddItem((22054),10).
+	AddItem((22055),10).
+	AddItem((22056),15).
+	AddItem((22057),15).
+	AddItem((22058),5).
+	AddItem((22059),10).
+	AddItem((22060),10)
+	;spawners.insertLast(EOR_SPC_IMPLANTS_97);
+	ItemSpawner@EOR_T4_AMMO_98=@ItemSpawner();EOR_T4_AMMO_98.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((358),100,100,300).
+	AddItem((359),100,300,1500)
+	;spawners.insertLast(EOR_T4_AMMO_98);
+	ItemSpawner@EOR_T4_PARTS_99=@ItemSpawner();EOR_T4_PARTS_99.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((25476),50).
+	AddItem((25477),30).
+	AddItem((25478),50).
+	AddItem((25479),50).
+	AddItem((25480),50).
+	AddItem((25481),50).
+	AddItem((25482),30).
+	AddItem((25483),30).
+	AddItem((25484),50).
+	AddItem((25485),50).
+	AddItem((25486),50).
+	AddItem((25487),50).
+	AddItem((25488),30)
+	;spawners.insertLast(EOR_T4_PARTS_99);
+	ItemSpawner@EOR_T4_WEAPONS_100=@ItemSpawner();EOR_T4_WEAPONS_100.
+	SpawnTime(0,0).SetBonus(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((13),55).
+	AddItem((3),55).
+	AddItem((15),50).
+	AddItem((28),50).
+	AddItem((143),50).
+	AddItem((620),50).
+	AddItem((401),50).
+	
+	AddItem((400),50).
+	AddItem((353),50).
+	AddItem((389),50).
+	AddItem((391),25).
+	AddItem((268),50)
+	;spawners.insertLast(EOR_T4_WEAPONS_100);
+	ItemSpawner@EOR_T4_ARMORS_101=@ItemSpawner();EOR_T4_ARMORS_101.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((752),100,1,2).
+	AddItem((778),85).
+	AddItem((524),65).
+	AddItem((761),75)
+	;spawners.insertLast(EOR_T4_ARMORS_101);
+	ItemSpawner@EOR_T4_BP_102=@ItemSpawner();EOR_T4_BP_102.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(false).SetClearAtSpawn(true).Lock(0,0).
+	
+	AddItem((9836),100).
+	AddItem((9838),100).
+	AddItem((9835),100).
+	AddItem((9834),100).
+	AddItem((9819),75).
+	AddItem((9820),40).
+	AddItem((9787),100).
+	AddItem((9786),100).
+	AddItem((9785),100).
+	AddItem((9784),100). 
+	
+	AddItem((9831),100)
+	;spawners.insertLast(EOR_T4_BP_102);
+	
+	ItemSpawner@EOR_T4_unstatted_103=@ItemSpawner();EOR_T4_unstatted_103.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(false).SetClearAtSpawn(true).Lock(0,0).      
+	
+	AddItem((390),100).
+	AddItem((391),75)
+	;spawners.insertLast(EOR_T4_unstatted_103);
+	ItemSpawner@EOR_Hypos_104=@ItemSpawner();EOR_Hypos_104.
+	SpawnTime(0,0).SetBonus(false).SetSeparate(true).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((525),100,20,40)
+	;spawners.insertLast(EOR_Hypos_104);
+	ItemSpawner@EOR_T3_T4_105=@ItemSpawner();EOR_T3_T4_105.
+	SpawnTime(0,0).SetBonus(true).SetSeparate(false).SetClearAtSpawn(true).Lock(0,0).
+	AddItem((752),50,1,4).
+	AddItem((22095),50,1,4).
+	AddItem((389),50,1,4).
+	AddItem((268),50,1,4).
+	AddItem((28),50,1,4).
+	AddItem((120),50,1,4).
+	AddItem((396),50,1,4)
+	
+	;spawners.insertLast(EOR_T3_T4_105);    
+	
+	Init=true;
+}
+
+uint e_Spawn(array<uint>@values)
+{
+	Item@item=GetItem(values[0]);
+	if(!(@item!=null))
+	return 0;  
+	
+	return spawners[item.Val4].Spawn(item);
+} 
+
+bool IsSpecialItem(Item&item)
+{
+	uint16 pid=item.GetProtoId();
+	
+	return pid==(281)||pid==(282)
+	||pid==(623)||pid==(82)||pid==(25444);
+} 
+
+bool InvalidIndex(uint num)
+{
+	return(30)<num&&num<spawners.length();
+}  
+
+IItemSpawner@GetSpawner(uint num)
+{
+	if(InvalidIndex(num))
+	return null;
+	return spawners[num];
+}
+
+IItemSpawner@MakeSpawner(uint num)
+{
+	if(num<=(30))
+	return null;
+	if(num>=spawners.length())
+	spawners.resize(num+1);
+	@spawners[num]=@ItemSpawner();
+	return spawners[num];
+}
+
+void MakeSpawnerContainer(Item&item,uint type)
+{
+	if(!Init)
+	ItemSpawnInit();
+	item.Val4=type;
+	spawners[item.Val4].Spawn(item);
+	if(spawners[item.Val4].SpawnTimeMax>0)
+	CreateTimeEvent(((__FullSecond)+(spawners[type].GetSpawnTime())),"e_Spawn",item.Id,false);
+}
+

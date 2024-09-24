@@ -1,0 +1,1964 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+
+import void InitLogs()from"logging";
+import void FLog(uint logindex,string&text)from"logging";
+import void ILog(string&section,string&text)from"logging";
+import void GMLog(Critter&cr,string&text)from"logging";
+import void CloseLogs()from"logging";
+import uint AddLog(string&filename)from"logging";
+import uint AddLog(string&filename,uint index)from"logging";                                                        
+
+import void WLog(string&type,string&message)from"debug";
+import void WLog(string&type,string&message,int level)from"debug";
+import void InitDebug()from"debug";          
+
+import void InitEconomy()from"economy";
+import void SendLevelThresholds(Critter&)from"economy"; 
+
+import bool BankAccountExists(uint bankid,uint account)from"economy";
+import bool BankAccountRemoveMoney(uint bankid,uint account,uint amount)from"economy";
+import bool BankHasAccess(uint bankid,uint account,uint playerid)from"economy";
+import int BankGetAccountBalance(uint bankid,uint account)from"economy";
+import int BankGetAccountID(uint bankid,uint playerid)from"economy";
+import uint BankAddAccess(uint bankid,uint account,uint playerid)from"economy";
+import uint BankCreateAccount(uint bankid,uint playerid)from"economy";
+import uint BankDepositMoney(uint bankid,uint playerid,uint account,int amount)from"economy";
+import uint BankGetAccessCount(uint bankid,uint account)from"economy";
+import uint BankGetAccountOwner(uint bankid,uint account)from"economy";
+import uint BankGetAccountType(uint bankid,uint account)from"economy";
+import uint BankGetCreditRating(uint bankid,uint account)from"economy";
+import uint BankGetLoan(uint bankid,uint account)from"economy";
+import uint BankRemoveAccess(uint bankid,uint account,uint playerid)from"economy";
+import uint BankSetAccountType(uint bankid,uint account,uint accounttype)from"economy";
+import uint BankSetCreditRating(uint bankid,uint account,uint rating)from"economy";
+import uint BankSetLoan(uint bankid,uint account,uint loan)from"economy";
+import uint BankTakeLoan(uint bankid,uint account,uint amount)from"economy";
+import uint BankTransferMoney(uint bankid,uint fromaccount,uint toaccount,uint amount)from"economy";
+import uint BankWithdrawMoney(uint bankid,uint playerid,uint account,int amount)from"economy"; 
+
+import bool BanksTransferFromCritter(Critter&critter,uint amount,uint type,bool virtual)from"economy";
+import bool BanksTransferToCritter(Critter&critter,uint amount,uint type,bool virtual)from"economy";
+import uint BanksGetTotalMoney()from"economy";
+import void BanksAddMoney(uint amount)from"economy";
+import void BanksRemoveMoney(uint amount)from"economy"; 
+
+import bool BankAddMoney(uint bankid,uint amount)from"economy";
+import bool BankRemoveMoney(uint bankid,uint amount)from"economy";
+import bool BankSetMoney(uint bankid,uint amount)from"economy";
+import uint BankGetLoanInterest(uint bankid)from"economy";
+import uint BankGetNumberOfAccounts(uint bankid)from"economy";
+import float BankGetSaveInterest(uint bankid)from"economy";
+import uint BankGetTotalMoney(uint bankid)from"economy";
+import uint BankGetTotalBalance(uint bankid)from"economy";
+import float BankGetReserveRatio(uint bankid)from"economy";
+import uint BankSetLoanInterest(uint bankid,uint interest)from"economy";
+import uint BankSetSaveInterest(uint bankid,float interest)from"economy";
+import bool BankTransferFromCritter(uint bankId,Critter&critter,uint amount,uint type,bool virtual)from"economy";
+
+import void SaveBankData()from"economy";   
+
+import int GetItemSellModifier(Critter&player,Critter&trader)from"economy";
+import int GetItemBuyModifier(Critter&player,Critter&trader)from"economy";
+import uint GetItemCost(Item&item,Critter&cr,Critter&trader,bool sell)from"economy";
+import uint GetItemCostPlain(Item&item,Critter&cr,Critter&trader)from"economy";
+
+import array<int>GetTraderLevels(Critter@npc)from"economy";
+import uint GetTraderLevel(Critter@npc,uint type)from"economy";
+
+import uint ItemLevel(Item&item)from"economy";
+import uint ItemLevel(uint pid)from"economy";
+import uint TraderCapacity(Critter@npc)from"economy";
+import uint TraderCapacity(Critter@npc,uint type,uint level)from"economy";
+import uint TraderMoneyCapacity(Critter@npc)from"economy";
+import uint TradingItemType(Item&item)from"economy";
+import uint TradingItemType(uint pid)from"economy";                                                                                                          
+
+const string@FD_Bank_Result2String(uint res)
+{
+	if(res==(1))
+	return"FD_BANK_RESULT_SUCCESS";
+	else if(res==(2))
+	return"FD_BANK_RESULT_UNKNOWN";
+	else if(res==(3))
+	return"FD_BANK_RESULT_TOO_MANY_ACCOUNTS";
+	else if(res==(4))
+	return"FD_BANK_RESULT_ALREADY_HAS_ACCOUNT";
+	else if(res==(5))
+	return"FD_BANK_RESULT_NOT_ENOUGH_MONEY";
+	else if(res==(6))
+	return"FD_BANK_RESULT_BANK_FULL";
+	else if(res==(7))
+	return"FD_BANK_RESULT_BANK_EMPTY";
+	else if(res==(8))
+	return"FD_BANK_RESULT_DATA_ERROR";
+	else if(res==(9))
+	return"FD_BANK_RESULT_INVALID_PLAYER";
+	else if(res==(10))
+	return"FD_BANK_RESULT_NO_ACCOUNT";
+	else
+	return"FD_Result: Unknown error code";
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+shared class Entire
+{
+	int Number;
+	uint16 HexX;
+	uint16 HexY;
+	uint8 Direction;
+};
+
+uint ParseEntires(Map&map,array<Entire>&entires,int number)
+{
+	uint oldCount=entires.length();
+	uint count=map.CountEntire(number);
+	entires.resize(oldCount+count);
+	
+	for(uint i=0;i<count;i++)
+	{
+		Entire@ent=entires[oldCount+i];
+		if(map.GetEntireCoords(number,i,ent.HexX,ent.HexY,ent.Direction)==false)
+		return 0;
+		ent.Number=number;
+	}
+	
+	return count;
+}
+
+bool IsEntireFree(uint mappid,int number)
+{
+	Map@map=GetMapByPid(mappid,0);
+	return IsEntireFree(map,number);
+}
+
+bool IsEntireFree(Map&map,int number)
+{
+	uint16 x,y;
+	x=0;
+	y=0;
+	return GetEntireFreeHex(map,number,x,y);
+}
+
+bool GetEntireFreeHex(Map&map,int number,uint16&hx,uint16&hy,uint skip=0)
+{
+	uint count=map.CountEntire(number); 
+	
+	for(uint i=skip;i<count;i++)
+	{
+		if(map.GetEntireCoords(number,i,hx,hy)&&map.IsHexPassed(hx,hy))
+		return true;
+	}
+	
+	if(hx==0||hy==0||hx>=map.GetWidth()-1||hy>=map.GetHeight()-1)
+	return false; 
+	
+	for(uint i=0;i<count;i++)
+	{
+		if(map.GetEntireCoords(number,i,hx,hy))
+		{
+			for(int x=-1;x<=1;x++)
+			{
+				for(int y=-1;y<=1;y++)
+				{
+					if(x==0&&y==0)
+					continue;
+					if(__MapHexagonal)
+					{
+						if((hx%2)==1&&((x==-1&&y==1)||(x==1&&y==1)))
+						continue;
+						if((hx%2)==0&&((x==-1&&y==-1)||(x==1&&y==-1)))
+						continue;
+					}
+					
+					if(map.IsHexPassed(hx+x,hy+y))
+					{
+						hx+=x;
+						hy+=y;
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool GetNearEntire(Map&map,int number,uint16&hx,uint16&hy)
+{
+	uint16 hxBase=hx;
+	uint16 hyBase=hy;
+	
+	array<Entire>entires;
+	uint count=ParseEntires(map,entires,number);
+	if(count==0)
+	return false;
+	
+	hx=entires[0].HexX;
+	hy=entires[0].HexY;
+	for(uint i=1;i<count;i++)
+	{
+		Entire@ent=entires[i];
+		if(GetDistantion(hxBase,hyBase,ent.HexX,ent.HexY)<GetDistantion(hxBase,hyBase,hx,hy))
+		{
+			hx=ent.HexX;
+			hy=ent.HexY;
+		}
+	}
+	
+	return true;
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
+shared class Serializator
+{
+	Serializator()
+	{
+		CurPos=0;
+		BufSize=0;
+		DataSize=0;
+	}
+	
+	Serializator(uint approxSize)
+	{
+		CurPos=0;
+		BufSize=0;
+		DataSize=0;
+		GrowBuffer(approxSize);
+	}
+	
+	void GrowBuffer()
+	{
+		BufSize+=(128);
+		Array.resize(BufSize);
+	}
+	
+	void GrowBuffer(uint length)
+	{
+		BufSize+=length;
+		Array.resize(BufSize);
+	}
+	
+	bool Save(string&name)
+	{
+		if(DataSize==0)
+		return false;
+		bool result=SetAnyData(name,Array,DataSize);
+		Clear();
+		return result;
+	}
+	
+	bool Load(string&name)
+	{
+		Clear();
+		if(!IsAnyData(name))
+		return false;
+		if(!GetAnyData(name,Array))
+		return false;
+		BufSize=Array.length();
+		DataSize=BufSize;
+		return true;
+	}
+	
+	void Clear()
+	{
+		CurPos=0;
+		BufSize=0;
+		DataSize=0;
+	}
+	
+	Serializator@SetCurPos(uint pos)
+	{
+		if(pos>BufSize)
+		GrowBuffer(pos-BufSize+(128));
+		CurPos=pos;
+		return this;
+	}
+	
+	Serializator@Fill(uint8 value,uint length)
+	{
+		if(CurPos+length>BufSize)
+		GrowBuffer(CurPos+length-BufSize+(128));
+		for(uint i=0;i<length;i++)
+		Array[CurPos++]=value;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@Set(const int64&value)
+	{
+		if(CurPos+8>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>56)&0xFF;
+		Array[CurPos++]=(value>>48)&0xFF;
+		Array[CurPos++]=(value>>40)&0xFF;
+		Array[CurPos++]=(value>>32)&0xFF;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int64&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const int32&value)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int32&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const int16&value)
+	{
+		if(CurPos+2>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int16&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const int8&value)
+	{
+		if(CurPos+1>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=value;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const int8&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint64&value)
+	{
+		if(CurPos+8>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>56)&0xFF;
+		Array[CurPos++]=(value>>48)&0xFF;
+		Array[CurPos++]=(value>>40)&0xFF;
+		Array[CurPos++]=(value>>32)&0xFF;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint64&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint32&value)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint32&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint16&value)
+	{
+		if(CurPos+2>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint16&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const uint8&value)
+	{
+		if(CurPos+1>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=value;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const uint8&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const bool&value)
+	{
+		if(CurPos+1>BufSize)
+		GrowBuffer();
+		Array[CurPos++]=value?1:0;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const bool&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const string&value)
+	{
+		uint len=value.rawLength();
+		if(CurPos+len+1>BufSize)
+		GrowBuffer(CurPos+len+1-BufSize+(128));
+		for(uint i=0;i<len;i++)
+		Array[CurPos++]=value.rawGet(i);
+		Array[CurPos++]=0;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const string&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const float&value)
+	{
+		int dummy=FloatToInt(value);
+		return Set(dummy);
+	}
+	
+	Serializator@opShl(const float&value)
+	{
+		return Set(value);
+	}
+	
+	Serializator@Set(const array<int64>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*8;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int64>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<int32>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*4;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int32>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<int16>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*2;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int16>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<int8>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<int8>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint64>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*8;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint64>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint32>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*4;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint32>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint16>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*2;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint16>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<uint8>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<uint8>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<bool>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<bool>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<string>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen;
+		for(uint i=0,j=valuesLen;i<j;i++)
+		len+=values[i].length();
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(values[i]);
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<string>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const array<float>&values)
+	{
+		uint valuesLen=values.length();
+		uint len=4+valuesLen*4;
+		if(CurPos+len>BufSize)
+		GrowBuffer(CurPos+len-BufSize);
+		Set(valuesLen);
+		for(uint i=0,j=valuesLen;i<j;i++)
+		Set(FloatToInt(values[i]));
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const array<float>&values)
+	{
+		return Set(values);
+	}
+	
+	Serializator@Set(const Critter&cr)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		uint value=cr.Id;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const Critter&cr)
+	{
+		return Set(cr);
+	}
+	
+	Serializator@Set(const Item&item)
+	{
+		if(CurPos+4>BufSize)
+		GrowBuffer();
+		uint value=item.Id;
+		Array[CurPos++]=(value>>24)&0xFF;
+		Array[CurPos++]=(value>>16)&0xFF;
+		Array[CurPos++]=(value>>8)&0xFF;
+		Array[CurPos++]=value&0xFF;
+		if(CurPos>DataSize)
+		DataSize=CurPos;
+		return this;
+	}
+	
+	Serializator@opShl(const Item&item)
+	{
+		return Set(item);
+	}
+	
+	Serializator@Get(int64&value)
+	{
+		value=0;
+		if(CurPos+8>DataSize)
+		return this;
+		value|=Array[CurPos++]<<56;
+		value|=Array[CurPos++]<<48;
+		value|=Array[CurPos++]<<40;
+		value|=Array[CurPos++]<<32;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int64&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(int32&value)
+	{
+		value=0;
+		if(CurPos+4>DataSize)
+		return this;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int32&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(int16&value)
+	{
+		value=0;
+		if(CurPos+2>DataSize)
+		return this;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int16&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(int8&value)
+	{
+		value=0;
+		if(CurPos+1>DataSize)
+		return this;
+		value=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(int8&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint64&value)
+	{
+		value=0;
+		if(CurPos+8>DataSize)
+		return this;
+		value|=Array[CurPos++]<<56;
+		value|=Array[CurPos++]<<48;
+		value|=Array[CurPos++]<<40;
+		value|=Array[CurPos++]<<32;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint64&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint32&value)
+	{
+		value=0;
+		if(CurPos+4>DataSize)
+		return this;
+		value|=Array[CurPos++]<<24;
+		value|=Array[CurPos++]<<16;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint32&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint16&value)
+	{
+		value=0;
+		if(CurPos+2>DataSize)
+		return this;
+		value|=Array[CurPos++]<<8;
+		value|=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint16&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(uint8&value)
+	{
+		value=0;
+		if(CurPos+1>DataSize)
+		return this;
+		value=Array[CurPos++];
+		return this;
+	}
+	
+	Serializator@opShr(uint8&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(bool&value)
+	{
+		value=false;
+		if(CurPos+1>DataSize)
+		return this;
+		value=Array[CurPos++]==1?true:false;
+		return this;
+	}
+	
+	Serializator@opShr(bool&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(string&str)
+	{
+		uint len=0;
+		for(uint i=CurPos;;i++)
+		{
+			if(i==DataSize)
+			{
+				str="";
+				return this;
+			}
+			if(Array[i]==0)
+			{
+				len=i-CurPos;
+				break;
+			}
+		}
+		str.rawResize(len);
+		for(uint i=0;i<len;i++)
+		str.rawSet(i,Array[CurPos++]);
+		CurPos++;
+		return this;
+	}
+	
+	Serializator@opShr(string&str)
+	{
+		return Get(str);
+	}
+	
+	Serializator@Get(float&value)
+	{
+		int dummy=0;
+		Get(dummy);
+		value=IntToFloat(dummy);
+		return this;
+	}
+	
+	Serializator@opShr(float&value)
+	{
+		return Get(value);
+	}
+	
+	Serializator@Get(array<int64>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int64>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<int32>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int32>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<float>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		{
+			int dummy=0;
+			Get(dummy);
+			values[i]=IntToFloat(dummy);
+		}
+		return this;
+	}
+	
+	Serializator@opShr(array<float>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<int16>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int16>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<int8>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<int8>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint64>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint64>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint32>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint32>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint16>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint16>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<uint8>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<uint8>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<bool>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<bool>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(array<string>&values)
+	{
+		uint valuesLen=0;
+		Get(valuesLen);
+		values.resize(valuesLen);
+		for(uint i=0;i<valuesLen;i++)
+		Get(values[i]);
+		return this;
+	}
+	
+	Serializator@opShr(array<string>&values)
+	{
+		return Get(values);
+	}
+	
+	Serializator@Get(Critter@&cr)
+	{
+		@cr=null;
+		if(CurPos+4>DataSize)
+		return this;
+		uint id=0;
+		id|=Array[CurPos++]<<24;
+		id|=Array[CurPos++]<<16;
+		id|=Array[CurPos++]<<8;
+		id|=Array[CurPos++];
+		@cr=::GetCritter(id);
+		return this;
+	}
+	
+	Serializator@opShr(Critter@&cr)
+	{
+		return Get(cr);
+	}
+	
+	Serializator@Get(Item@&item)
+	{
+		@item=null;
+		if(CurPos+4>DataSize)
+		return this;
+		uint id=0;
+		id|=Array[CurPos++]<<24;
+		id|=Array[CurPos++]<<16;
+		id|=Array[CurPos++]<<8;
+		id|=Array[CurPos++];
+		@item=::GetItem(id);
+		return this;
+	}
+	
+	Serializator@opShr(Item@&item)
+	{
+		return Get(item);
+	}
+	
+	array<uint8>Array;
+	uint CurPos;
+	uint BufSize;
+	uint DataSize;
+};                                                                                                                                                                                                                                                                                                                                                                            
+
+import Location@GetLocationOf(Critter&critter)from"utils";
+import string GetLocationName(uint locId)from"utils";
+import string GetLocationName(Location@loc)from"utils";
+import bool ReadPids(array<int>&out pids,bool removeinvalid)from"utils";
+import void ReadDefines(string@fileName,dictionary&items,array<string>@defines)from"utils";
+import bool ParseDefine(const string&in line,string&out spid,int&out id)from"utils";
+import int SkipWhitespaces(const string&in str,int start)from"utils";
+import int SkipNonWhitespaces(const string&in str,int start)from"utils";
+import bool IsParameterTag(string&str)from"utils";
+import string GetParameterString(array<string@>@arr,string&parameter)from"utils";
+import int GetIndexOfString(array<string@>@arr,string&str)from"utils";
+import string GetConcatenatedString(array<string@>@arr,uint startindex,int stopindex)from"utils";
+import string GetConditionOfCritter(Critter@cr)from"utils";
+import string GetExtConditionOfCritter(Critter@cr)from"utils";
+import uint GetAllOnlinePlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players,bool ignorePriviledges)from"utils";
+import uint GetNumberOfPlayersOnline()from"utils";
+import void SetTurnBasedAvailability(Location@loc)from"utils";
+import bool IsGuarded(Map@map)from"utils";
+import bool IsPublic(Map@map)from"utils";
+import bool IsEncounterMap(Map@map)from"utils";
+import bool IsTown(Map@map)from"utils";
+import bool IsDungeon(Map@map)from"utils";
+import bool IsBaseControl(Map@map)from"utils";
+
+import uint GetMapType(Map@map)from"utils";
+import void LockDoor(uint x,uint y,Map@map,uint complexity,uint lockid)from"utils";
+import void UnlockDoor(uint x,uint y,Map@map)from"utils";
+import void ClearContainer(Item@container)from"utils";
+import void MoveItemsCritterToCont(Critter&crFrom,Item&contTo,uint specid)from"utils";
+import string GetCritterInfo(Critter&cr)from"utils";
+import bool AddExpTeam(Critter&critter,int xp)from"utils";
+import void ClearEnemyStack(Critter&critter)from"utils";
+import void ClearEnemyStacksOnMap(Map@map)from"utils";
+import bool IsCurrentEnemy(Critter&cr,uint targetId)from"utils";
+import string@GetSafePlayerName(uint id)from"utils";
+import string GetSafePlayerName(uint id,string&onSuccess,string&onError)from"utils";
+import IDateTime@GetCurrentDateTime()from"utils";
+import string GetCurrentDateTimeString()from"utils";
+import string GetCurrentDateTimeString(bool date,bool time)from"utils";
+import Critter@GetMostSkilled(array<Critter@>@group,int skill)from"utils";
+import string GetAuthString(Critter&player)from"utils";
+import string GetAuthString(int accesslevel)from"utils";
+import bool CanRequestHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player,int minutes)from"utils";
+import Critter@GetOnlineGM()from"utils";
+import void Preprocess(Critter&player,string&commandString)from"utils";
+import bool IsHumanoid(Critter@cr)from"utils";
+import uint GetGroupIndex(Critter&cr)from"utils";
+import uint GetGroupIndex(int st)from"utils";
+import void SetGroupIndex(Critter&cr,uint val)from"utils";
+import uint GetGroupRank(Critter&cr)from"utils";
+import void SetGroupRank(Critter&cr,uint val)from"utils";
+import uint GetGroupMode(Critter&cr)from"utils";
+import void SetGroupMode(Critter&cr,uint val)from"utils";
+import void SetGroupInfo(Critter&cr,uint faction,uint rank,uint mode)from"utils";
+import void SetGroupInfoPack(Critter&cr,uint packInfo)from"utils";
+import void ClearEvents(Critter&cr)from"utils";
+
+import int GetGvar(uint gvar)from"utils";
+import void SetGvar(uint gvar,uint value)from"utils";
+import int GetLLvar(Location&location,uint llvar)from"utils";
+import int GetLLvar(uint locationId,uint llvar)from"utils";
+import void SetLLvar(Location&location,uint llvar,uint value)from"utils";
+import int GetLMvar(Map&map,uint llvar)from"utils";
+import int GetLMvar(uint mapId,uint llvar)from"utils";
+import void SetLMvar(Map&map,uint llvar,uint value)from"utils";
+import int GetLIvar(Item&item,uint llvar)from"utils";
+import int GetLIvar(uint itemId,uint llvar)from"utils";
+import void SetLIvar(Item&item,uint llvar,uint value)from"utils";
+import int GetLvar(Critter&critter,uint lvar)from"utils";
+import int GetLvar(uint id,uint lvar)from"utils";
+import void SetLvar(Critter&critter,uint lvar,uint value)from"utils";
+import void SetLvar(uint id,uint lvar,uint value)from"utils";
+import int GetUvar(uint uvar,uint key,uint index)from"utils";
+import void SetUvar(uint uvar,uint key,uint index,uint value)from"utils";
+
+import uint GetContainerValue(Item@container)from"utils";
+import uint BaseItemValue(uint pid,bool ammo)from"utils";
+import uint BaseItemValue(uint pid,uint broken,uint det,bool ammo)from"utils";
+import uint BaseItemValue(Item@item)from"utils";
+import uint BaseItemValue(Item@item,uint proc)from"utils";
+import uint BaseSingleItemValue(Item@item)from"utils";
+import uint BaseSingleItemValue(Item@item,uint proc)from"utils";
+
+import void SetBloodType(Critter@cr)from"utils";
+import string GetBloodType(Critter@cr)from"utils";
+import string GetBloodRandom()from"utils";
+
+import void LogCommandUsage(Critter&player,string&commandString)from"utils";
+import void DropTimeouts(Critter&cr)from"utils";
+
+import bool HasItem(Critter@cr,uint pid)from"utils";
+import bool HasSomeWeapon(Critter@cr)from"utils";
+import uint GetBestWeaponSkill(Critter@cr)from"utils";
+import void GiveBag(uint bag,Critter@cr)from"utils";
+import void SetQuestGarbager(uint time,uint playerid,uint locid,uint var,uint val)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import void AddScore(Critter@cr,uint score,uint points)from"utils";
+
+import bool ReloadWeapon(Critter&cr)from"utils";
+import Item@GetRadio(Critter&cr)from"utils";
+import Item@GetRepairTool(Critter&cr)from"utils";
+import Item@GetEquippedItem(Critter&cr,uint Pid)from"utils";
+import Item@GetEquippedItem(Critter&cr,array<uint>&Pids)from"utils";
+import Item@GetEquippedItemByType(Critter&cr,uint ItemType)from"utils"; 
+
+import bool SkillRoll(Critter@cr,int skill,int bonus)from"utils";
+import int SkillCheck(Critter&cr,int skill,int skillused,Item@item,int bonus)from"utils";
+import string SkillName(uint8 skill)from"utils";
+import void ChangeCrTypeSafe(Critter&cr,uint8 crType)from"utils";
+
+import bool Pickable(Item@item)from"utils";
+
+import void TransferItemsToContOnMap(Critter&cr,Map@map,int entid,int contpid,int itemtypes)from"utils";
+import void TransferItemsFromContOnMap(Critter&cr,Map@map,int entid,int contpid)from"utils";
+
+import string IpToString(uint ip)from"utils";
+
+import void VerboseAction(Critter&cr,string&text)from"utils";
+import void VerboseAction(Critter&cr,Critter&target,string&text)from"utils";
+import void VerboseExperience(Critter&cr,int xpDiff,int levelDiff)from"utils";
+
+import void SetChosenActions(Critter&cr,array<int>&actions)from"utils";
+
+import void HexLine(uint16 x0,uint16 y0,uint16 x1,uint16 y1,array<uint16>@xList,array<uint16>@yList)from"utils";
+import void HexCircle(uint16 x0,uint16 y0,uint16 radius,array<uint16>@xList,array<uint16>@yList)from"utils";
+
+import void StartPersonalDataCleanup()from"utils";
+
+import bool IsPersonalData(Location&location,string&name)from"utils";
+import bool GetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Location&location,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Location&location,string&name)from"utils";
+
+import bool IsPersonalData(Map&map,string&name)from"utils";
+import bool GetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Map&map,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Map&map,string&name)from"utils";
+
+import bool IsPersonalData(Critter&critter,string&name)from"utils";
+import bool GetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Critter&critter,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Critter&critter,string&name)from"utils";
+
+import bool IsPersonalData(Item&item,string&name)from"utils";
+import bool GetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Item&item,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Item&item,string&name)from"utils";
+
+import bool FindPreferredGridApprox(Map&map,uint16&hx,uint16&hy)from"utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";    
+
+import int FindInArray(array<int>&arr,int value)from"utils";
+import int FindInArray(array<uint>&arr,uint value)from"utils";
+import int FindInArray(array<uint16>&arr,uint16 value)from"utils";
+import int FindInArray(array<uint8>&arr,uint8 value)from"utils";
+import bool FindInArray(array<int>&arr,int id,int&index)from"utils";
+import bool FindInArray(array<uint>&arr,uint id,int&index)from"utils";
+import bool FindInArray(array<uint8>&arr,uint8 id,int&index)from"utils";
+import int FindInArray(array<string>&arr,string&value)from"utils";
+import int FindInArray(array<string@>@arr,string&value)from"utils";
+import bool Present(int what,array<int>&where)from"utils";
+import bool Present(uint what,array<uint>&where)from"utils";
+import bool Present(uint16 what,array<uint16>&where)from"utils";
+import bool Present(string&what,array<string>&where)from"utils";
+import bool Present(string&what,array<string@>@where)from"utils";
+
+import uint CreateLocationForGroup(Critter&player,uint16 pid,uint16 worldX,uint16 worldY,array<Critter@>&)from"utils";
+import bool FindFirstFreeHex(Map@map,uint16&x,uint16&y,uint8 dir,uint16 maxSteps)from"utils";
+import bool FindNearestFreeHex(Map&map,uint16&x,uint16&y,uint radius)from"utils";
+
+import bool GetItemCoordinates(Item&item,uint&mapID,uint16&x,uint16&y)from"utils";
+import bool ItemOnHex(uint16 pid,Map@map,uint16 x,uint16 y)from"utils";
+
+import void PrintCallstack()from"utils";
+import void PrintCallstack(int level)from"utils";
+
+import bool LocationHasCritters(Location&loc,uint findType)from"utils";
+import uint LocationGetCritters(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint LocationGetPlayersAndFollowers(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint MapGetPlayersAndFollowers(Map&map,uint findType,array<Critter@>@critters)from"utils";
+import uint CritterGetPlayersAndFollowers(Critter&critter,bool lookOnMe,uint findType,array<Critter@>@critters)from"utils";
+import bool LocationHasItems(Location&loc,uint16 protoId)from"utils";
+import uint LocationGetItems(Location&loc,uint16 protoId,array<Item@>@items)from"utils";
+import void LocationDeleteItems(Location&loc,uint16 protoId)from"utils";
+
+import bool IsDisposableEncounter(Location@loc)from"utils";
+
+import bool IsT4Item(Item&item)from"utils";
+import bool IsT3Item(Item&item)from"utils";
+import uint16 AddT3Item()from"utils";
+import uint16 AddT4Item()from"utils";
+import uint16 AddImplant()from"utils";
+import uint16 AddT4BP()from"utils";
+import uint16 AddRareAmmo()from"utils";
+import uint16 AddTypicalAmmo()from"utils";
+
+import void SetDeterioration(Item&item)from"utils";  
+
+shared class CPosition
+{
+	uint x;
+	uint y;
+	uint dir;
+};
+
+shared interface IRect
+{
+	bool IsWithin(Critter&cr);
+};
+
+shared class Rect:IRect
+{
+	uint x1;
+	uint y1;
+	uint x2;
+	uint y2;
+	
+	Rect(uint x1,uint y1,uint x2,uint y2)
+	{
+		this.x1=x1;
+		this.y1=y1;
+		this.x2=x2;
+		this.y2=y2;
+	}
+	
+	bool IsWithin(Critter&cr)
+	{
+		return((cr.HexX>=this.x1&&cr.HexX<=this.x2)&&(cr.HexY>=this.y1&&cr.HexY<=this.y2));
+	}
+};
+
+shared interface IDateTime
+{
+	uint16 get_Year();
+	uint16 get_Month();
+	uint16 get_DayOfWeek();
+	uint16 get_Day();
+	uint16 get_Hour();
+	uint16 get_Minute();
+	uint16 get_Second();
+	uint16 get_Milliseconds();
+	string@ToString();
+};                                                                                                          
+
+import string GetCritterLexems(Critter&critter)from"lexems";
+import string GetItemLexems(Item&item)from"lexems";
+
+import bool IsLexem(Critter&critter,string&lex)from"lexems";
+import bool IsLexem(Item&it,string&lex)from"lexems";
+import bool IsLexem(string&lexems,string&lex)from"lexems";
+
+import string GetLexem(Critter&critter,string&lex)from"lexems";
+import string GetLexem(Item&item,string&lex)from"lexems";
+import string GetLexem(string&lexems,string&lex)from"lexems"; 
+
+import void SetLexem(Critter&critter,string&lex,string&value)from"lexems";
+import void SetLexem(Item&item,string&lex,string&value)from"lexems";
+import string SetLexem(string&lexems,string&lex,string&value)from"lexems";
+
+import void UnsetLexem(Critter&critter,string&lex)from"lexems";
+import void UnsetLexem(Item&item,string&lex)from"lexems";
+import string UnsetLexem(string&lexems,string&lex)from"lexems";                                               
+
+array<int>CarPrices;
+Serializator serializer;
+
+void InitCars()
+{ 
+	
+	SetGvar((1),(50000));
+	CarPrices.resize((12));
+	CarPrices[(0)]=GetProtoItem((800)).Cost;
+	CarPrices[(1)]=GetProtoItem((802)).Cost;
+	CarPrices[(2)]=GetProtoItem((805)).Cost;
+	CarPrices[(3)]=GetProtoItem((816)).Cost;
+	CarPrices[(4)]=GetProtoItem((560)).Cost;
+	CarPrices[(5)]=GetProtoItem((559)).Cost;
+	CarPrices[(6)]=GetProtoItem((558)).Cost;
+	CarPrices[(7)]=GetProtoItem((9746)).Cost;
+	CarPrices[(8)]=GetProtoItem((9925)).Cost;
+	CarPrices[(9)]=GetProtoItem((9927)).Cost;
+	CarPrices[(10)]=GetProtoItem((9929)).Cost;
+	CarPrices[(11)]=GetProtoItem((831)).Cost;   
+	
+}
+
+void SetPrice(uint index,int value)
+{
+	CarPrices[index]=value;
+}
+
+int GetPrice(uint index)
+{
+	if(index>=(12))
+	return-1;
+	return CarPrices[index];
+}
+
+uint e_UpdateCarPrices(array<uint>@values)
+{
+	{;};
+	for(uint i=0;i<(12);i++)
+	{
+		CarPrices[i]-=Random(10,50);
+		if(CarPrices[i]<(5000))
+		CarPrices[i]=(5000);
+	}
+	
+	return((30)*__TimeMultiplier*60);
+}
+
+uint PidToIndex(uint16 protoCar)
+{
+	switch(protoCar)
+	{
+		case(800):
+		return 0;
+		case(802):
+		return 1;
+		case(805):
+		return 2;
+		case(816):
+		return 3;
+		case(560):
+		return 4;
+		case(559):
+		return 5;
+		case(558):
+		return 6;
+		case(9746):
+		return 7;
+		case(9925):
+		return 8;
+		case(9927):
+		return 9;
+		case(9929):
+		return 10;
+		case(831):
+		return 11;
+		default:
+		return 0;
+	}
+	return 0;
+}
+
+void ChangeCarPrice(uint16 protoCar,int sum)
+{
+	CarPrices[PidToIndex(protoCar)]+=sum;
+	if(CarPrices[PidToIndex(protoCar)]<(5000))
+	CarPrices[PidToIndex(protoCar)]=(5000);
+}
+
+void LoadCarPriceData()
+{
+	serializer.Clear();
+	if(!serializer.Load("car_prices"))
+	return;
+	serializer.Get(CarPrices);
+}
+
+void SaveCarPriceData()
+{
+	serializer.Clear();
+	serializer.Set(CarPrices).Save("car_prices");
+}
+
+string PidToStr(uint16 protoCar)
+{
+	switch(protoCar)
+	{
+		case(800):
+		return"PID_HUMMER";
+		case(802):
+		return"PID_BUGGY";
+		case(805):
+		return"PID_SCOUT";
+		case(816):
+		return"PID_HIGHWAYMAN";
+		case(560):
+		return"PID_COCKROACH";
+		case(559):
+		return"PID_CARAVAN_ORANGE";
+		case(558):
+		return"PID_CARAVAN_WHITE";
+		case(9746):
+		return"PID_POLICE_CAR";
+		case(9925):
+		return"PID_MOTORCYCLE";
+		case(9927):
+		return"PID_FIRETRUCK";
+		case(9929):
+		return"PID_TRUCK";
+		case(831):
+		return"PID_CORVEGA";
+		default:
+		return"Unknown";
+	}
+	return"Unknown";
+}
+
+uint GetCarCost(uint16 protoCar)
+{
+	
+	ProtoItem@car=GetProtoItem(protoCar);
+	if((@car!=null))
+	
+	return car.Cost;
+	return 0;
+}             
+
+int GetFuelCost(Item@car)
+{
+	return(car.Proto.Car_TankVolume)-car.Charge+10;
+}
+
+int GetWearCost(Item@car)
+{
+	return((car.Deterioration/10)+10);
+}
+
+int GetBioCost(Item@car)
+{
+	return GetCarCost(car.GetProtoId())*10/100;
+}
+
+void dlg_PrepareBuy(Critter&player,Critter@tray,string@lexems)
+{
+	if(!((@lexems!=null)&&lexems.length()==0))
+	return;
+	
+	lexems+="$hummer"+GetCarCost((800));
+	lexems+="$buggy"+GetCarCost((802));
+	lexems+="$scout"+GetCarCost((805));
+	lexems+="$highwayman"+GetCarCost((816));
+	lexems+="$cockroach"+GetCarCost((560));
+	lexems+="$orange"+GetCarCost((559));
+	lexems+="$white"+GetCarCost((558));
+	lexems+="$policecar"+GetCarCost((9746));
+	lexems+="$motorcycle"+GetCarCost((9925));
+	lexems+="$firetruck"+GetCarCost((9927));
+	lexems+="$truck"+GetCarCost((9929));
+	lexems+="$corvega"+GetCarCost((831));
+}
+
+uint r_BuyHummer(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(800));
+}
+
+uint r_BuyBuggy(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(802));
+}
+
+uint r_BuyScout(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(805));
+}
+
+uint r_BuyHighwayman(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(816));
+}
+
+uint r_BuyCockroach(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(560));
+}
+
+uint r_BuyCaravanWhite(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(558));
+}
+
+uint r_BuyCaravanOrange(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(559));
+}
+
+uint r_BuyPoliceCar(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(9746));
+}
+
+uint r_BuyMotorcycle(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(9925));
+}
+
+uint r_BuyFiretruck(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(9927));
+}
+
+uint r_BuyTruck(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(9929));
+}
+
+uint r_BuyCorvega(Critter&player,Critter@tray,int val)
+{
+	return TryCreateCar(player,(831));
+}
+
+bool d_CanAffordCockroach(Critter&player,Critter@someone)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((560))));
+}
+
+bool d_CanAffordPoliceCar(Critter&player,Critter@someone)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((9746))));
+}
+
+bool d_CanAffordMotorcycle(Critter&player,Critter@someone)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((9925))));
+}
+
+bool d_CanAffordFiretruck(Critter&player,Critter@someone)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((9927))));
+}
+
+bool d_CanAffordTruck(Critter&player,Critter@someone)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((9929))));
+}
+
+bool d_CanAffordCorvega(Critter&player,Critter@someone)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((831))));
+}
+
+bool d_CanNotAffordCockroach(Critter&player,Critter@someone)
+{
+	return(player.CountItem((41))<uint(GetCarCost((560))));
+}
+
+bool d_CanAffordCaravanWhite(Critter&player,Critter@tray)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((558))));
+}
+
+bool d_CanAffordCaravanOrange(Critter&player,Critter@tray)
+{
+	return(player.CountItem((41))>=uint(GetCarCost((559))));
+}
+
+bool d_CanNotAffordCaravanWhite(Critter&player,Critter@tray)
+{
+	return(player.CountItem((41))<uint(GetCarCost((558))));
+}
+
+bool d_CanNotAffordCaravanOrange(Critter&player,Critter@tray)
+{
+	return(player.CountItem((41))<uint(GetCarCost((559))));
+}
+
+uint TryCreateCar(Critter&player,uint16 protoCar)
+{
+	if(protoCar!=(800)&&protoCar!=(802)&&protoCar!=(805)&&protoCar!=(816)&&protoCar!=(560)&&protoCar!=(558)&&protoCar!=(559)
+	&&protoCar!=(9746)&&protoCar!=(9925)&&protoCar!=(9927)&&protoCar!=(9929)&&protoCar!=(831))
+	return(100);
+	
+	int cost=GetCarCost(protoCar);
+	if(player.CountItem((41))<uint(cost))
+	return(5);
+	
+	Map@map=player.GetMap();
+	if(!(@map!=null))
+	return(100);
+	
+	array<Entire>entires;
+	ParseEntires(map,entires,(100));
+	ParseEntires(map,entires,(243));
+	
+	uint16 hx,hy,entNum;
+	for(int i=0,j=entires.length();i<=j;i++)
+	{
+		if(i==j)
+		return(6);
+		
+		Entire@ent=entires[i];
+		if(map.CheckPlaceForItem(ent.HexX,ent.HexY,protoCar))
+		{
+			hx=ent.HexX;
+			hy=ent.HexY;
+			entNum=ent.Number;
+			break;
+		}
+	}
+	
+	GameVar@var=GetGlobalVar((1));
+	uint keyId=var.GetValue();
+	var+=1;
+	
+	Item@car=map.AddItem(hx,hy,protoCar,1);
+	if(!(@car!=null))
+	return(100);
+	car.LockerId=keyId;
+	car.Charge=car.Proto.Car_TankVolume;
+	car.Deterioration=0;
+	car.Update();
+	
+	Item@bag=car.GetChild(0);
+	if((@bag!=null))
+	{
+		bag.LockerId=keyId;
+		bag.LockerComplexity=Random(50,100);
+		bag.Update();
+	}
+	
+	Item@key=player.AddItem((82),1);
+	if((@key!=null))
+	{
+		key.LockerId=keyId;
+		key.Update();
+	}
+	
+	FLog((7),GetCritterInfo(player)+" has purchased car "+PidToStr(protoCar)+" for "+cost+" on map "+player.GetMap().Id);
+	
+	player.DeleteItem((41),cost);
+	BanksAddMoney(cost);
+	ChangeCarPrice(protoCar,Random(500,1000));
+	SetLexem(car,"$carowner",player.Name);
+	if(entNum==(100))
+	return(7);
+	else
+	return(8);
+}
+
+Item@GetPlayerKey(Critter@player)
+{
+	Item@key=player.GetItem(0,(1));
+	if(!(@key!=null)||key.GetType()!=(7))
+	return null;
+	return key;
+}
+
+Item@GetPlayerCar(Critter@player)
+{
+	uint dummy=0;
+	return GetPlayerCar(player,dummy);
+}
+
+Item@GetPlayerCar(Critter@player,uint&force)
+{
+	Map@map=player.GetMap();
+	if(!(@map!=null))
+	{
+		force=(100);
+		return null;
+	}
+	
+	Item@key=GetPlayerKey(player);
+	if(!(@key!=null))
+	{
+		force=(101);
+		return null;
+	}
+	
+	array<Entire>entires;
+	ParseEntires(map,entires,(100));
+	ParseEntires(map,entires,(243));
+	for(int i=0,j=entires.length();i<j;i++)
+	{
+		Item@car=map.GetCar(entires[i].HexX,entires[i].HexY);
+		if((@car!=null)&&car.LockerId==key.LockerId)
+		return car;
+	}
+	
+	force=(102);
+	return null;
+}
+
+uint r_CheckCar(Critter&player,Critter@tray,int val)
+{
+	uint force=0;
+	GetPlayerCar(player,force);
+	return force;
+}
+
+void dlg_SellCar(Critter&player,Critter@tray,string@lexems)
+{
+	if(!((@lexems!=null)&&lexems.length()==0))
+	return;
+	
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	lexems="$sell_cost0";
+	else
+	lexems="$sell_cost"+(GetCarCost(car.GetProtoId())/4);
+}
+
+void r_SellCar(Critter&player,Critter@tray,int val)
+{
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	return;
+	int cost=GetCarCost(car.GetProtoId())/4;
+	Item@key=player.GetItem(0,(1));
+	if((@key!=null)&&key.GetType()==(7)&&key.LockerId==car.LockerId)
+	DeleteItem(key);
+	FLog((7),GetCritterInfo(player)+" has sold car "+PidToStr(car.GetProtoId())+" for "+cost+" on map "+player.GetMap().Id);
+	ChangeCarPrice(car.GetProtoId(),Random(-300,-100));
+	DeleteItem(car);
+	player.AddItem((41),cost);
+}
+
+void dlg_Fuel(Critter&player,Critter@tray,string@lexems)
+{
+	if(!((@lexems!=null)&&lexems.length()==0))
+	return;
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	lexems="$fuel_cost0";
+	else
+	lexems="$fuel_cost"+GetFuelCost(car);
+}
+
+void dlg_Wear(Critter&player,Critter@tray,string@lexems)
+{
+	if(!((@lexems!=null)&&lexems.length()==0))
+	return;
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	lexems="$wear_cost0";
+	else
+	lexems="$wear_cost"+GetWearCost(car);
+}
+
+void dlg_Bio(Critter&player,Critter@tray,string@lexems)
+{
+	if(!((@lexems!=null)&&lexems.length()==0))
+	return;
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	lexems="$bio_cost0";
+	else
+	lexems="$bio_cost"+GetBioCost(car);
+}
+
+uint r_DoFuel(Critter&player,Critter@tray,int val)
+{
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	return 0;
+	
+	uint cost=GetFuelCost(car);
+	uint money=player.CountItem((41));
+	if(cost>money)
+	return(37);
+	
+	if(car.Charge>=(car.Proto.Car_TankVolume))
+	return(38);
+	car.Charge=car.Proto.Car_TankVolume;
+	player.DeleteItem((41),cost);
+	BanksAddMoney(cost);
+	FLog((7),GetCritterInfo(player)+" has re-fueled car "+PidToStr(car.GetProtoId())+" for "+cost+" on map "+player.GetMap().Id);
+	return 0;
+}
+
+uint r_DoWear(Critter&player,Critter@tray,int val)
+{
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	return 0;
+	
+	uint cost=GetWearCost(car);
+	uint money=player.CountItem((41));
+	if(cost>money)
+	return(37);
+	
+	if(car.Deterioration==0)
+	return(38);
+	car.Deterioration=0;
+	player.DeleteItem((41),cost);
+	BanksAddMoney(cost);
+	FLog((7),GetCritterInfo(player)+" has repaired car "+PidToStr(car.GetProtoId())+" for "+cost+" on map "+player.GetMap().Id);
+	return 0;
+}
+
+uint r_DoBio(Critter&player,Critter@tray,int val)
+{
+	Item@car=GetPlayerCar(player);
+	if(!(@car!=null))
+	return 0;
+	
+	uint cost=GetBioCost(car);
+	uint money=player.CountItem((41));
+	if(cost>money)
+	return(37);
+	
+	if(((car.Val0&(0x0001))!=0))
+	return(38);
+	car.Val0|=(0x0001);
+	player.DeleteItem((41),cost);
+	BanksAddMoney(cost);
+	FLog((7),GetCritterInfo(player)+" has purchased a bioengine for car "+PidToStr(car.GetProtoId())+" which costed "+cost+" on map "+player.GetMap().Id);
+	return 0;
+}
+
+uint r_CopyKey(Critter&player,Critter@tray,int val)
+{
+	uint money=player.CountItem((41));
+	if(money<(1000))
+	return(37);
+	
+	Item@key=GetPlayerKey(player);
+	if(!(@key!=null))
+	return(103);
+	
+	Item@keyCopy=player.AddItem((82),1);
+	if(!(@keyCopy!=null))
+	return(100);
+	keyCopy.LockerId=key.LockerId;
+	keyCopy.Update();
+	
+	player.DeleteItem((41),(1000));
+	BanksAddMoney((1000));
+	FLog((7),GetCritterInfo(player)+" has copied a key for "+(1000)+" on map "+player.GetMap().Id);
+	return 0;
+}

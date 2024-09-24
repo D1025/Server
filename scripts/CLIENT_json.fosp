@@ -1,0 +1,1171 @@
+                      
+
+shared interface JSON
+{ 
+	
+	bool isUndefined();
+	bool isNull();
+	bool isBoolean();
+	bool isString();
+	bool isNumber();
+	bool isObject();
+	bool isArray();  
+	
+	JSON@opShr(bool&value);
+	JSON@opShr(string&value);
+	JSON@opShr(int8&value);
+	JSON@opShr(int16&value);
+	JSON@opShr(int32&value);
+	JSON@opShr(int64&value);
+	JSON@opShr(uint8&value);
+	JSON@opShr(uint16&value);
+	JSON@opShr(uint32&value);
+	JSON@opShr(uint64&value);
+	JSON@opShr(float&value);
+	JSON@opShr(double&value);
+	JSON@opShr(array<bool>&value);
+	JSON@opShr(array<string>&value);
+	JSON@opShr(array<string@>&value);
+	JSON@opShr(array<int8>&value);
+	JSON@opShr(array<int16>&value);
+	JSON@opShr(array<int32>&value);
+	JSON@opShr(array<int64>&value);
+	JSON@opShr(array<uint8>&value);
+	JSON@opShr(array<uint16>&value);
+	JSON@opShr(array<uint32>&value);
+	JSON@opShr(array<uint64>&value);
+	JSON@opShr(array<float>&value);
+	JSON@opShr(array<double>&value);  
+	
+	JSON@opShl(const bool value);
+	JSON@opShl(const string&value);
+	JSON@opShl(const int8 value);
+	JSON@opShl(const int16 value);
+	JSON@opShl(const int32 value);
+	JSON@opShl(const int64 value);
+	JSON@opShl(const uint8 value);
+	JSON@opShl(const uint16 value);
+	JSON@opShl(const uint32 value);
+	JSON@opShl(const uint64 value);
+	JSON@opShl(const float value);
+	JSON@opShl(const double value);
+	JSON@opShl(const array<bool>&value);
+	JSON@opShl(const array<string>&value);
+	JSON@opShl(const array<string@>&value);
+	JSON@opShl(const array<int8>&value);
+	JSON@opShl(const array<int16>&value);
+	JSON@opShl(const array<int32>&value);
+	JSON@opShl(const array<int64>&value);
+	JSON@opShl(const array<uint8>&value);
+	JSON@opShl(const array<uint16>&value);
+	JSON@opShl(const array<uint32>&value);
+	JSON@opShl(const array<uint64>&value);
+	JSON@opShl(const array<float>&value);
+	JSON@opShl(const array<double>&value);  
+	
+	bool hasProperty(const string&key);
+	void setProperty(const string&key,JSON@value);
+	array<string>getKeys();
+	JSON@opIndex(const string&key);  
+	
+	uint length();
+	void push(JSON@value);
+	JSON@opIndex(const uint index);      
+	
+	void forEach(JSONForEachIndex@callback);
+	void forEach(JSONForEachIndexAll@callback);
+	void forEach(JSONForEachKey@callback);
+	void forEach(JSONForEachKeyAll@callback);     
+	
+	string@stringify();
+	string@stringify(uint space);
+	string@stringify(const string&space);   
+	
+	bool save(const string&path);
+}                                                       
+
+funcdef void JSONForEachKey(JSON@value,const string&key);
+funcdef void JSONForEachKeyAll(JSON@value,const string&key,JSON@all);
+funcdef void JSONForEachIndex(JSON@value,uint index);
+funcdef void JSONForEachIndexAll(JSON@value,uint index,JSON@all);                                                                                          
+
+array<string>controlChars={
+	"\\u0000","\\u0001","\\u0002","\\u0003",
+	"\\u0004","\\u0005","\\u0006","\\u0007",
+	"\\b","\\t","\\n","\\u000B",
+	"\\f","\\r","\\u000E","\\u000F",
+	"\\u0010","\\u0011","\\u0012","\\u0013",
+	"\\u0014","\\u0015","\\u0016","\\u0017",
+	"\\u0018","\\u0019","\\u001A","\\u001B",
+	"\\u001C","\\u001D","\\u001E","\\u001F"
+};     
+
+array<string>indent={
+	"",
+	" ",
+	"  ",
+	"   ",
+	"    ",
+	"     ",
+	"      ",
+	"       ",
+	"        ",
+	"         ",
+	"          "
+};   
+
+string@EscapeString(string&str)
+{
+	string@escapedString="";
+	uint length=str.rawLength();
+	uint8 ch=0;
+	for(uint i=0;i<length;i++)
+	{
+		ch=str.rawGet(i);
+		if(ch==34||ch==92)
+		{
+			{ uint len=escapedString.rawLength(); escapedString.rawResize(len+1); escapedString.rawSet(len,92); };
+			{ uint len=escapedString.rawLength(); escapedString.rawResize(len+1); escapedString.rawSet(len,ch); };
+		}
+		else if(ch<32)
+		{
+			escapedString+=controlChars[ch];
+		}
+		else
+		{
+			{ uint len=escapedString.rawLength(); escapedString.rawResize(len+1); escapedString.rawSet(len,ch); };
+		}
+	}
+	return escapedString;
+}     
+
+string@Stringify(JSON@value,const string&space,string&indent)
+{
+	if(@value==null||value.isUndefined())
+	{
+		return"";
+	}
+	else if(value.isNull())
+	{
+		
+		return"null";
+	}
+	else if(value.isBoolean())
+	{
+		bool v=false;
+		value>>v;
+		if(v)
+		{
+			return"true";
+		}
+		return"false";
+	}
+	else if(value.isNumber())
+	{
+		double v=0;
+		value>>v;
+		string s=""+v;
+		for(uint i=0,j=s.rawLength();i<j;i++)
+		{
+			if(s.rawGet(i)==',')
+			{
+				s.rawSet(i,'.');
+				break;
+			}
+		}
+		return s;
+	}
+	else if(value.isString())
+	{
+		string s;
+		value>>s;
+		s="\""+EscapeString(s)+"\"";
+		return s;
+	}
+	
+	string s="";
+	bool compact=(space.length()==0);
+	string newIndent=indent+space;
+	
+	if(value.isObject())
+	{
+		s=(compact?"{":"{\n");
+				array<string>keys=value.getKeys();
+				for(uint i=0,j=keys.length();i<j;i++)
+				{
+					s+=newIndent+"\""+keys[i]+(compact?"\":":"\": ");
+					s+=Stringify(value[keys[i]],space,newIndent);
+					if(i<j-1)
+					{
+						s+=(compact?",":",\n");
+					}
+				}
+				s+=(compact?"}":"\n"+indent+"}");
+	}
+	else if(value.isArray())
+	{
+		s=(compact?"[":"[\n");
+		for(uint i=0,j=value.length();i<j;i++)
+		{
+			s+=newIndent+Stringify(value[i],space,newIndent);
+			if(i<j-1)
+			{
+				s+=(compact?",":",\n");
+			}
+		}
+		s+=(compact?"]":"\n"+indent+"]");
+	}
+	return s;
+}      
+
+JSON@undefined;
+
+class Value:JSON
+{
+	bool isUndefined(){return false;}
+	bool isNull(){return false;}
+	bool isBoolean(){return false;}
+	bool isString(){return false;}
+	bool isNumber(){return false;}
+	bool isObject(){return false;}
+	bool isArray(){return false;}
+	
+	JSON@opShr(bool&value){return this;}
+	JSON@opShr(string&value){return this;}
+	JSON@opShr(int8&value){return this;}
+	JSON@opShr(int16&value){return this;}
+	JSON@opShr(int32&value){return this;}
+	JSON@opShr(int64&value){return this;}
+	JSON@opShr(uint8&value){return this;}
+	JSON@opShr(uint16&value){return this;}
+	JSON@opShr(uint32&value){return this;}
+	JSON@opShr(uint64&value){return this;}
+	JSON@opShr(float&value){return this;}
+	JSON@opShr(double&value){return this;}
+	JSON@opShr(array<bool>&value){return this;}
+	JSON@opShr(array<string>&value){return this;}
+	JSON@opShr(array<string@>&value){return this;}
+	JSON@opShr(array<int8>&value){return this;}
+	JSON@opShr(array<int16>&value){return this;}
+	JSON@opShr(array<int32>&value){return this;}
+	JSON@opShr(array<int64>&value){return this;}
+	JSON@opShr(array<uint8>&value){return this;}
+	JSON@opShr(array<uint16>&value){return this;}
+	JSON@opShr(array<uint32>&value){return this;}
+	JSON@opShr(array<uint64>&value){return this;}
+	JSON@opShr(array<float>&value){return this;}
+	JSON@opShr(array<double>&value){return this;}
+	
+	JSON@opShl(const bool value){return this;}
+	JSON@opShl(const string&value){return this;}
+	JSON@opShl(const int8 value){return this;}
+	JSON@opShl(const int16 value){return this;}
+	JSON@opShl(const int32 value){return this;}
+	JSON@opShl(const int64 value){return this;}
+	JSON@opShl(const uint8 value){return this;}
+	JSON@opShl(const uint16 value){return this;}
+	JSON@opShl(const uint32 value){return this;}
+	JSON@opShl(const uint64 value){return this;}
+	JSON@opShl(const float value){return this;}
+	JSON@opShl(const double value){return this;}
+	JSON@opShl(const array<bool>&value){return this;}
+	JSON@opShl(const array<string>&value){return this;}
+	JSON@opShl(const array<string@>&value){return this;}
+	JSON@opShl(const array<int8>&value){return this;}
+	JSON@opShl(const array<int16>&value){return this;}
+	JSON@opShl(const array<int32>&value){return this;}
+	JSON@opShl(const array<int64>&value){return this;}
+	JSON@opShl(const array<uint8>&value){return this;}
+	JSON@opShl(const array<uint16>&value){return this;}
+	JSON@opShl(const array<uint32>&value){return this;}
+	JSON@opShl(const array<uint64>&value){return this;}
+	JSON@opShl(const array<float>&value){return this;}
+	JSON@opShl(const array<double>&value){return this;}
+	
+	bool hasProperty(const string&key){return false;}
+	void setProperty(const string&key,JSON@value){return;}
+	array<string>getKeys(){array<string>k;return k;}
+	JSON@opIndex(const string&key){return@undefined;}
+	void forEach(JSONForEachKey@callback){return;}
+	void forEach(JSONForEachKeyAll@callback){return;}
+	
+	uint length(){return 0;}
+	void push(JSON@value){return;}
+	JSON@opIndex(const uint index){return@undefined;}
+	void forEach(JSONForEachIndex@callback){return;}
+	void forEach(JSONForEachIndexAll@callback){return;}
+	
+	string@stringify()
+	{
+		return Stringify(this,"","");
+	}
+	
+	string@stringify(uint space)
+	{
+		if(space>10)space=10;
+		return Stringify(this,indent[space],"");
+	}
+	
+	string@stringify(const string&space)
+	{
+		string str=substring(space,0,10);
+		for(uint i=0,j=str.length();i<j;i++)
+		{
+			if(!(str.rawGet(i)==9||str.rawGet(i)==10||str.rawGet(i)==13||str.rawGet(i)==32))
+			{
+				Log("Indents can contain only whitespace characters.");
+				return"";
+			}
+		}
+		return Stringify(this,str,"");
+	}
+	
+	bool save(const string&path)
+	{
+		if(this.isUndefined())
+		{
+			return false;
+		}
+		file f;
+		if(f.open(path,"w")==0)
+		{
+			string@text=Stringify(this,"  ","");
+			return(uint(f.writeString(text))==text.rawLength());
+		}
+		return false;
+	}
+}
+
+final class Undefined:Value
+{
+	bool isUndefined()
+	{
+		return true;
+	}
+}
+
+final class Null:Value
+{
+	bool isNull()
+	{
+		return true;
+	}
+}
+
+final class Boolean:Value
+{
+	private bool value;
+	
+	Boolean(bool value)
+	{
+		this.value=value;
+	}
+	
+	bool isBoolean()
+	{
+		return true;
+	}
+	
+	JSON@opShr(bool&value)
+	{
+		value=this.value;
+		return this;
+	}
+	
+	JSON@opShl(const bool value)
+	{
+		this.value=value;
+		return this;
+	}
+}
+
+final class Number:Value
+{
+	private double value;
+	
+	Number(int8 value){this.value=value;}
+	Number(int16 value){this.value=value;}
+	Number(int32 value){this.value=value;}
+	Number(int64 value){this.value=value;}
+	Number(uint8 value){this.value=value;}
+	Number(uint16 value){this.value=value;}
+	Number(uint32 value){this.value=value;}
+	Number(uint64 value){this.value=value;}
+	Number(float value){this.value=value;}
+	Number(double value){this.value=value;}
+	
+	bool isNumber()
+	{
+		return true;
+	}
+	
+	JSON@opShr(int8&value){value=int8(this.value);return this;}
+	JSON@opShr(int16&value){value=int16(this.value);return this;}
+	JSON@opShr(int32&value){value=int32(this.value);return this;}
+	JSON@opShr(int64&value){value=int64(this.value);return this;}
+	JSON@opShr(uint8&value){value=uint8(this.value);return this;}
+	JSON@opShr(uint16&value){value=uint16(this.value);return this;}
+	JSON@opShr(uint32&value){value=uint32(this.value);return this;}
+	JSON@opShr(uint64&value){value=uint64(this.value);return this;}
+	JSON@opShr(float&value){value=float(this.value);return this;}
+	JSON@opShr(double&value){value=this.value;return this;}
+	
+	JSON@opShl(const int8 value){this.value=value;return this;}
+	JSON@opShl(const int16 value){this.value=value;return this;}
+	JSON@opShl(const int32 value){this.value=value;return this;}
+	JSON@opShl(const int64 value){this.value=value;return this;}
+	JSON@opShl(const uint8 value){this.value=value;return this;}
+	JSON@opShl(const uint16 value){this.value=value;return this;}
+	JSON@opShl(const uint32 value){this.value=value;return this;}
+	JSON@opShl(const uint64 value){this.value=value;return this;}
+	JSON@opShl(const float value){this.value=value;return this;}
+	JSON@opShl(const double value){this.value=value;return this;}
+}
+
+final class String:Value
+{
+	private string value;
+	
+	String(const string&value)
+	{
+		this.value=value;
+	}
+	
+	bool isString()
+	{
+		return true;
+	}
+	
+	uint length()
+	{
+		return value.length();
+	}
+	
+	JSON@opShr(string&value)
+	{
+		value=this.value;
+		return this;
+	}
+	
+	JSON@opShl(const string&value)
+	{
+		this.value=value;
+		return this;
+	}
+}
+
+final class Object:Value
+{
+	private dictionary properties;
+	private array<string>keys;
+	
+	bool isObject()
+	{
+		return true;
+	}
+	
+	bool hasProperty(const string&key)
+	{
+		return this.properties.exists(key);
+	}
+	
+	void setProperty(const string&key,JSON@value)
+	{
+		if(@value==null||value.isUndefined())
+		{
+			return;
+		}
+		if(!this.properties.exists(key))
+		{
+			keys.insertLast(key);
+		}
+		properties.set(key,@value);
+	}
+	
+	array<string>getKeys()
+	{
+		return this.keys;
+	}
+	
+	void forEach(JSONForEachKey@callback)
+	{
+		JSON@value;
+		for(uint i=0,j=this.keys.length();i<j;i++)
+		{
+			properties.get(this.keys[i],@value);
+			callback(value,this.keys[i]);
+		}
+	}
+	void forEach(JSONForEachKeyAll@callback)
+	{
+		JSON@value;
+		for(uint i=0,j=this.keys.length();i<j;i++)
+		{
+			properties.get(this.keys[i],@value);
+			callback(value,this.keys[i],this);
+		}
+	}
+	
+	JSON@opIndex(const string&key)
+	{
+		if(this.hasProperty(key))
+		{
+			JSON@value;
+			properties.get(key,@value);
+			return@value;
+		}
+		else
+		{
+			return@undefined;
+		}
+	}
+}
+
+final class Array:Value
+{
+	private array<JSON@>elements;
+	
+	bool isArray()
+	{
+		return true;
+	}                
+	
+	 JSON@opShr(array<bool>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isBoolean()) { bool value=false; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<string>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isString()) { string value=""; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<string@>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isString()) { string@value=""; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<int8>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { int8 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<int16>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { int16 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<int32>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { int32 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<int64>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { int64 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<uint8>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { uint8 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<uint16>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { uint16 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<uint32>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { uint32 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<uint64>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { uint64 value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<float>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { float value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };
+	 JSON@opShr(array<double>&retrieve) { for(uint i=0,j=this.elements.length();i<j;i++) { if(this.elements[i].isNumber()) { double value=0; this.elements[i]>>value; retrieve.insertLast(value); }  } return this; };          
+	
+	 JSON@opShl(const array<bool>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Boolean(store[i])); } return this; } ;
+	 JSON@opShl(const array<string>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(String(store[i])); } return this; } ;
+	 JSON@opShl(const array<string@>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(String(store[i])); } return this; } ;
+	 JSON@opShl(const array<int8>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<int16>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<int32>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<int64>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<uint8>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<uint16>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<uint32>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<uint64>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<float>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ;
+	 JSON@opShl(const array<double>&store) { for(uint i=0,j=store.length();i<j;i++) { this.push(Number(store[i])); } return this; } ; 
+	
+	uint length()
+	{
+		return this.elements.length();
+	}
+	
+	void push(JSON@value)
+	{
+		if(@value==null||value.isUndefined())
+		{
+			return;
+		}
+		this.elements.insertLast(@value);
+	}
+	
+	void forEach(JSONForEachIndex@callback)
+	{
+		for(uint i=0,j=elements.length();i<j;i++)
+		{
+			callback(elements[i],i);
+		}
+	}
+	void forEach(JSONForEachIndexAll@callback)
+	{
+		for(uint i=0,j=elements.length();i<j;i++)
+		{
+			callback(elements[i],i,this);
+		}
+	}
+	
+	JSON@opIndex(const uint index)
+	{
+		if(index<this.elements.length())
+		{
+			return this.elements[index];
+		}
+		else
+		{
+			return@undefined;
+		}
+	}
+}
+
+JSON@JSONNull(){return@Null();}
+JSON@JSONBoolean(bool value){return@Boolean(value);}
+JSON@JSONNumber(int8 value){return@Number(value);}
+JSON@JSONNumber(int16 value){return@Number(value);}
+JSON@JSONNumber(int32 value){return@Number(value);}
+JSON@JSONNumber(int64 value){return@Number(value);}
+JSON@JSONNumber(uint8 value){return@Number(value);}
+JSON@JSONNumber(uint16 value){return@Number(value);}
+JSON@JSONNumber(uint32 value){return@Number(value);}
+JSON@JSONNumber(uint64 value){return@Number(value);}
+JSON@JSONNumber(float value){return@Number(value);}
+JSON@JSONNumber(double value){return@Number(value);}
+JSON@JSONString(string value){return@String(value);}
+JSON@JSONObject(){return@Object();}
+JSON@JSONArray(){return@Array();}       
+
+enum TokenType
+{
+	LEFT_SQUARE_BRACKET='[',
+	RIGHT_SQUARE_BRACKET=']',
+	LEFT_CURLY_BRACKET='{',
+		RIGHT_CURLY_BRACKET='}',
+	COMMA=',',
+	COLON=':',
+	TRUE='t',
+	FALSE='f',
+	NULL='n',
+	STRING='"',
+	NUMBER='#',
+	INTEGER='I'
+}
+
+class Token
+{
+	TokenType type;
+	string value;
+	
+	uint row;
+	uint col;
+	
+	Token(TokenType type,string value)
+	{
+		this.type=type;
+		this.value=value;
+	}
+	string@name()
+	{
+		switch(this.type)
+		{
+			case LEFT_SQUARE_BRACKET:
+			return"[";
+			case RIGHT_SQUARE_BRACKET:
+			return"]";
+			case LEFT_CURLY_BRACKET:
+			return"{";
+				case RIGHT_CURLY_BRACKET:
+				return"}";
+			case COMMA:
+			return",";
+			case COLON:
+			return":";
+			case TRUE:
+			return"true";
+			case FALSE:
+			return"false";
+			case NULL:
+			return"null";
+			case STRING:
+			return"string";
+			case NUMBER:
+			case INTEGER:
+			return"number";
+		}
+		return"unknown";
+	}
+}  
+
+bool growToken(string@tokenValue,uint&tokenLength,uint&offset,uint length,uint8 character)
+{
+	tokenLength++;
+	{ uint len=tokenValue.rawLength(); tokenValue.rawResize(len+1); tokenValue.rawSet(len,character); };
+	offset++;
+	return offset>=length;
+} 
+
+bool eatNumberToken(const string&text,uint&offset,uint length,array<Token@>@tokens)
+{
+	string tokenValue="";
+	uint tokenLength=0;
+	TokenType tokenType=INTEGER;
+	
+	if(text.rawGet(offset)=='-')
+	{
+		if(growToken(tokenValue,tokenLength,offset,length,'-'))
+		{
+			return false;
+		}
+	}
+	if(text.rawGet(offset)=='0')
+	{
+		if(growToken(tokenValue,tokenLength,offset,length,'0'))
+		{
+			tokens.insertLast(@Token(tokenType,tokenValue));
+			offset++;
+			return true;
+		}
+	}
+	else if(text.rawGet(offset)>='1'&&text.rawGet(offset)<='9')
+	{
+		if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+		{
+			tokens.insertLast(@Token(tokenType,tokenValue));
+			offset++;
+			return true;
+		}
+		while(offset<length)
+		{
+			if(text.rawGet(offset)>='0'&&text.rawGet(offset)<='9')
+			{
+				if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+				{
+					tokens.insertLast(@Token(tokenType,tokenValue));
+					offset++;
+					return true;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	if(text.rawGet(offset)=='.')
+	{
+		tokenType=NUMBER;
+		if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+		{
+			return false;
+		}
+		while(offset<length)
+		{
+			if(text.rawGet(offset)>='0'&&text.rawGet(offset)<='9')
+			{
+				if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+				{
+					tokens.insertLast(@Token(tokenType,tokenValue));
+					offset++;
+					return true;
+				}
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
+	if(text.rawGet(offset)=='e'||text.rawGet(offset)=='E'){
+		tokenType=NUMBER;
+		if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+		{
+			return false;
+		}
+	}
+	if(text.rawGet(offset)=='+'||text.rawGet(offset)=='-'){
+		if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+		{
+			return false;
+		}
+	}
+	if(text.rawGet(offset)>='0'&&text.rawGet(offset)<='9')
+	{
+		if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+		{
+			tokens.insertLast(@Token(tokenType,tokenValue));
+			offset++;
+			return true;
+		}
+	}
+	while(offset<length)
+	{
+		if(text.rawGet(offset)>='0'&&text.rawGet(offset)<='9')
+		{
+			if(growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset)))
+			{
+				tokens.insertLast(@Token(tokenType,tokenValue));
+				offset++;
+				return true;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+	tokens.insertLast(@Token(tokenType,tokenValue));
+	return true;
+} 
+
+bool eatStringToken(const string&text,uint&offset,uint length,array<Token@>@tokens)
+{
+	string tokenValue="";
+	uint tokenLength=0;
+	offset++;
+	
+	while(offset<length)
+	{
+		if(text.rawGet(offset)=='"')
+		{
+			tokens.insertLast(@Token(STRING,tokenValue));
+			offset++;
+			return true;
+		}
+		else if(text.rawGet(offset)==92)
+		{
+			offset++;
+			if(offset>=length)
+			{
+				return false;
+			}
+			switch(text.rawGet(offset))
+			{
+				case'"':
+				case'/':
+				case 92:
+				growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset));
+				break;
+				case'b':
+				growToken(tokenValue,tokenLength,offset,length,8);
+				break;
+				case'f':
+				growToken(tokenValue,tokenLength,offset,length,12);
+				break;
+				case'n':
+				growToken(tokenValue,tokenLength,offset,length,10);
+				break;
+				case'r':
+				growToken(tokenValue,tokenLength,offset,length,13);
+				break;
+				case't':
+				growToken(tokenValue,tokenLength,offset,length,9);
+				break;
+				case'u':
+				offset+=5;
+				if(offset>=length)
+				{
+					return false;
+				}
+			}
+		}
+		else
+		{
+			growToken(tokenValue,tokenLength,offset,length,text.rawGet(offset));
+		}
+	}
+	return false;
+} 
+
+bool eatLiteralToken(const string&text,uint&offset,string@match,array<Token@>@tokens)
+{
+	uint tokenLength=match.rawLength();
+	
+	if(offset+tokenLength>text.rawLength())
+	{
+		return false;
+	}
+	for(uint i=1;i<tokenLength;i++)
+	{
+		if(text.rawGet(offset+i)!=match.rawGet(i))
+		{
+			return false;
+		}
+	}
+	tokens.insertLast(@Token(TokenType(text.rawGet(offset)),""));
+	offset+=tokenLength;
+	return true;
+} 
+
+void eatStructuralToken(const string&text,uint&offset,array<Token@>@tokens)
+{
+	tokens.insertLast(@Token(TokenType(text.rawGet(offset)),""));
+	offset++;
+} 
+
+void eatWhitespace(const string&text,uint&offset,uint length)
+{
+	offset++;
+	while(offset<length)
+	{
+		switch(text.rawGet(offset))
+		{
+			case 9:
+			case 10:
+			case 13:
+			case 32:
+			offset++;
+			break;
+			default:
+			return;
+		}
+	}
+} 
+
+bool tokenize(const string&text,array<Token@>@tokens)
+{
+	uint length=text.rawLength();
+	uint offset=0;
+	uint8 symbol; 
+	
+	if(length>2)
+	{
+		if(text.rawGet(0)==239&&
+		text.rawGet(1)==187&&
+		text.rawGet(2)==191)
+		{
+			offset+=3;
+		}
+	}
+	
+	while(offset<length)
+	{
+		symbol=text.rawGet(offset);
+		switch(symbol)
+		{
+			case 9:
+			case 10:
+			case 13:
+			case 32:
+			{
+				eatWhitespace(text,offset,length);
+				break;
+			}
+			case COMMA:
+			case COLON:
+			case LEFT_SQUARE_BRACKET:
+			case RIGHT_SQUARE_BRACKET:
+			case LEFT_CURLY_BRACKET:
+			case RIGHT_CURLY_BRACKET:
+			{
+				eatStructuralToken(text,offset,tokens);
+				break;
+			}
+			case TRUE:
+			if(!eatLiteralToken(text,offset,"true",tokens))
+			{
+				return false;
+			}
+			break;
+			case FALSE:
+			if(!eatLiteralToken(text,offset,"false",tokens))
+			{
+				Log("Failed to eat literal false token "+symbol);
+				return false;
+			}
+			break;
+			case NULL:
+			if(!eatLiteralToken(text,offset,"null",tokens))
+			{
+				return false;
+			}
+			break;
+			case STRING:
+			{
+				if(!eatStringToken(text,offset,length,tokens))
+				{
+					return false;
+				}
+				break;
+			}
+			case'-':
+			case'0':
+			case'1':
+			case'2':
+			case'3':
+			case'4':
+			case'5':
+			case'6':
+			case'7':
+			case'8':
+			case'9':
+			{
+				if(!eatNumberToken(text,offset,length,tokens))
+				{
+					return false;
+				}
+				break;
+			}
+			default:
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}            
+
+JSON@parse(array<Token@>@tokens)
+{
+	if(tokens.length()==0)
+	{
+		return@undefined;
+	}
+	uint tokenIndex=0;
+	return@parseValue(tokens,tokenIndex);
+}     
+
+JSON@parseValue(array<Token@>@tokens,uint&tokenIndex)
+{
+	switch(tokens[tokenIndex].type)
+	{
+		case NULL:
+		tokenIndex++;
+		return@Null();
+		case TRUE:
+		tokenIndex++;
+		return@Boolean(true);
+		case FALSE:
+		tokenIndex++;
+		return@Boolean(false);
+		case NUMBER:
+		{
+			float f=0;
+			StrToFloat(tokens[tokenIndex].value,f);
+			JSON@value=Number(f);
+			tokenIndex++;
+			return@value;
+		}
+		case INTEGER:
+		{
+			int i=0;
+			StrToInt(tokens[tokenIndex].value,i);
+			JSON@value=Number(i);
+			tokenIndex++;
+			return@value;
+		}
+		case STRING:
+		{
+			JSON@value=String(tokens[tokenIndex].value);
+			tokenIndex++;
+			return@value;
+		}
+		case LEFT_CURLY_BRACKET:
+		{
+			JSON@obj=Object();
+			while(tokenIndex<tokens.length())
+			{
+				tokenIndex++;
+				if(tokenIndex>=tokens.length())
+				{
+					Log("JSON parser: expected object key or end of object.");
+					return@undefined;
+				}
+				if(tokens[tokenIndex].type==RIGHT_CURLY_BRACKET)
+				{
+					return@obj;
+				}
+				string key=tokens[tokenIndex].value;
+				
+				tokenIndex++;
+				if(tokenIndex>=tokens.length())
+				{
+					Log("JSON parser: expected ':', found end of tokens.");
+					return@undefined;
+				}
+				if(tokens[tokenIndex].type!=COLON)
+				{
+					Log("JSON parser: expected ':', found other token.");
+					return@undefined;
+				}
+				
+				tokenIndex++;
+				if(tokenIndex>=tokens.length())
+				{
+					Log("JSON parser: expected a value, found end of tokens.");
+					return@undefined;
+				}
+				JSON@val=parseValue(tokens,tokenIndex);
+				
+				obj.setProperty(key,@val);
+				if(tokenIndex>=tokens.length())
+				{
+					Log("JSON parser: expected ',' or '}', found tokens end.");
+				return@undefined;
+			}
+			
+			if(tokens[tokenIndex].type==RIGHT_CURLY_BRACKET)
+			{
+				tokenIndex++;
+				return@obj;
+			}
+			if(tokens[tokenIndex].type!=COMMA)
+			{
+				Log("JSON parser: expected ',' found other token.");
+				return@undefined;
+			}
+		}
+	}
+	case LEFT_SQUARE_BRACKET:
+	{
+		JSON@arr=Array();
+		while(tokenIndex<tokens.length())
+		{
+			tokenIndex++;
+			if(tokenIndex>=tokens.length())return@undefined;
+			if(tokens[tokenIndex].type==RIGHT_SQUARE_BRACKET)
+			{
+				tokenIndex++;
+				return@arr;
+			}
+			JSON@val=parseValue(tokens,tokenIndex);
+			arr.push(@val);
+			if(tokenIndex>=tokens.length())
+			{
+				Log("JSON parser: trailing comma in array.");
+				return@undefined;
+			}
+			if(tokens[tokenIndex].type==RIGHT_SQUARE_BRACKET)
+			{
+				tokenIndex++;
+				return@arr;
+			}
+			if(tokens[tokenIndex].type!=COMMA)
+			{
+				Log("JSON parser: expected ',' or ']', found other token.");
+				return@undefined;
+			}
+		}
+	}
+}
+
+Log("JSON parser: unexpected token.");
+return@undefined;
+
+}                               
+
+JSON@JSONParse(const string&text)
+{
+	if(@undefined==null)
+	{
+		@undefined=@Undefined();
+	}
+	array<Token@>tokens;
+	if(tokenize(text,tokens))
+	{
+		return parse(@tokens);
+	}
+	return@undefined;
+}        
+
+JSON@JSONLoad(const string&path)
+{
+	if(@undefined==null)
+	{
+		@undefined=@Undefined();
+	}
+	file f;
+	if(f.open(path,"r")==0)
+	{
+		int size=f.getSize();
+		
+		string text="";
+		if(f.readString(size,text)==size&&f.close()<=0)     
+		
+		{
+			return JSONParse(text);
+		}
+	}
+	return@undefined;
+}  
+

@@ -1,0 +1,171 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// spawner_container_h.fos
+//
+
+#ifndef __SPAWNER_CONTAINER_H__
+#define __SPAWNER_CONTAINER_H__
+
+#define FIRST	                  			  (0)
+#define FAT_PROTECTED_TOWN_CONTAINER          (1)
+#define FAT_ENCOUNTER_STATIC_CONTAINER        (2)
+#define FAT_TOWN_CONTAINER	                  (3)
+#define FAT_VAULT_LOCKER				      (4)
+#define FAT_BOOKCASE				          (5)
+#define FAT_CRAFT_LOW            			  (6)
+#define FAT_CRAFT_HIGH            			  (7)
+#define FAT_MED_LOW           				  (8)
+#define FAT_MED_HIGH       					  (9)
+//
+//Encounters
+//
+#define SPAWNER_CONTAINER_ENCOUNTER_LOW       (10)
+#define SPAWNER_CONTAINER_ENCOUNTER_MEDIUM    (11)
+#define SPAWNER_CONTAINER_ENCOUNTER_HIGH      (12)
+
+#define SPAWNER_CONTAINER_GRAVE_LOW           (13)
+#define SPAWNER_CONTAINER_GRAVE_HIGH          (14)
+
+#define SPAWNER_CONTAINER_BLUEPRINT_LOW       (15)
+#define SPAWNER_CONTAINER_BLUEPRINT_MED       (16)
+#define SPAWNER_CONTAINER_BLUEPRINT_HIGH      (17)
+
+#define SPAWNER_CONTAINER_SEWER_TRASH         (18)
+#define SPAWNER_CONTAINER_AMMO_47MM	      (19) // 4.7mm 
+
+#define SPAWNER_RESERVED_MAX                  (30)
+// above that can be used runtime
+
+//		One time spawners
+// Weapons and Ammo
+
+#define ONCE_CONTAINER_SG_LOW                 (31)
+#define ONCE_CONTAINER_SG_MED                 (32)
+#define ONCE_CONTAINER_SG_HIGH                (33)
+
+#define ONCE_CONTAINER_BG_MED                 (34)
+#define ONCE_CONTAINER_BG_HIGH                (35)
+
+#define ONCE_CONTAINER_EW_MED                 (36)
+#define ONCE_CONTAINER_EW_HIGH                (37)
+
+#define ONCE_CONTAINER_THROWING_LOWMED        (38)
+#define ONCE_CONTAINER_THROWING_HIGH          (39)
+
+#define ONCE_CONTAINER_HTH_LOWMED             (40)
+#define ONCE_CONTAINER_HTH_HIGH               (41)
+
+
+// Drugs, medication and med tools
+
+#define ONCE_CONTAINER_MEDS_LOW               (42)
+#define ONCE_CONTAINER_MEDS_MED               (43)
+#define ONCE_CONTAINER_MEDS_HIGH              (44)
+#define ONCE_CONTAINER_MEDS_TOOLS             (45)
+
+// Armors
+
+#define ONCE_CONTAINER_ARMOR_LOW              (46)
+#define ONCE_CONTAINER_ARMOR_MED              (47)
+#define ONCE_CONTAINER_ARMOR_HIGH             (48)
+
+
+// Blueprints
+
+#define ONCE_CONTAINER_BP_MECH_LOW            (49)              // mech = mechanical ( weapons, ammo, armor, NOT drugs)
+#define ONCE_CONTAINER_BP_MECH_MED            (50)
+#define ONCE_CONTAINER_BP_MECH_HIGH           (51)
+
+#define ONCE_CONTAINER_BP_CHEM_LOW            (52)              // chem = chemicals,drugs only
+#define ONCE_CONTAINER_BP_CHEM_MED            (53)
+#define ONCE_CONTAINER_BP_CHEM_HIGH           (54)
+
+#define ONCE_CONTAINER_BP_MECH_ALL            (55)
+#define ONCE_CONTAINER_BP_CHEM_ALL            (56)
+
+//		Continuous spawning
+
+#define FAT_BATTEL_LOCKER           		  (57)
+#define FAT_DESK           					  (58)
+#define FAT_FURNITURE          				  (59)
+#define FAT_FOOD           					  (60)
+#define FAT_MIX_HTH          				  (61)
+#define FAT_MIX_SG           				  (62)
+#define FAT_MIX_BG          				  (63)
+#define FAT_MIX_EW							  (64)
+#define FAT_MIX_DRUGS   					  (65)
+#define FAT_MIX_ARMORS       				  (66)
+#define FAT_MIX_AMMO        				  (67)
+#define GHOST_TOWN_HIGH         			  (68)
+
+// SpawnTime(1, 2).SetSeparate(true).SetClearAtSpawn(true).Lock(0, 0)
+
+#define GM_BASE_SG_CONTAINER                   (69)
+#define GM_BASE_BG_CONTAINER                   (70)
+#define GM_BASE_EW_CONTAINER                   (71)
+#define GM_BASE_AMMO_CONTAINER                 (72)
+#define GM_BASE_CC_CONTAINER                   (73)
+#define GM_BASE_ARMOR_CONTAINER                (74)
+#define GM_BASE_SG_CONTAINER_BONUS_LOW         (75)
+#define GM_BASE_BG_CONTAINER_BONUS_LOW         (76)
+#define GM_BASE_EW_CONTAINER_BONUS_LOW         (77)
+#define GM_BASE_CC_CONTAINER_BONUS_LOW         (78)
+#define GM_BASE_ARMOR_CONTAINER_BONUS_LOW      (79)
+#define GM_BASE_SG_CONTAINER_BONUS_HI          (80)
+#define GM_BASE_BG_CONTAINER_BONUS_HI          (81)
+#define GM_BASE_EW_CONTAINER_BONUS_HI          (82)
+#define GM_BASE_CC_CONTAINER_BONUS_HI          (83)
+#define GM_BASE_ARMOR_CONTAINER_BONUS_HI       (84)
+
+// Containers for tests
+
+#define GM_TEST_SG_CONTAINER                   (85)
+#define GM_TEST_BG_CONTAINER                   (86)
+#define GM_TEST_EW_CONTAINER                   (87)
+#define GM_TEST_AMMO_CONTAINER                 (88)
+#define GM_TEST_CC_CONTAINER                   (89)
+#define GM_TEST_ARMOR_CONTAINER                (90)
+#define GM_TEST_LOCKER_MED_TEST                (91)
+// Containers continue Tito
+#define FAT_BATTEL_CRATE					   (92)
+#define FAT_TECH					   		   (93)
+#define FAT_MED								   (94)
+// Oil rig tops								
+#define EOR_CAPS					   (95)
+#define EOR_CBT_IMPLANTS					   (96)
+#define EOR_SPC_IMPLANTS					   (97)
+#define EOR_T4_AMMO					   (98)
+#define EOR_T4_PARTS					   (99)
+#define EOR_T4_WEAPONS					   (100)
+#define EOR_T4_ARMORS					   (101)
+#define EOR_T4_BP					   (102)
+#define EOR_T4_unstatted					   (103)
+#define EOR_Hypos					   (104)
+#define EOR_T3_T4					   (105)
+
+
+// Definiton for last container
+#define END_OF_CONTAINERS                      (EOR_T3_T4)
+
+shared interface IItemSpawner
+{
+    IItemSpawner@ Lock(uint16 min, uint16 max);
+    IItemSpawner@ SpawnTime(uint min, uint max);
+    IItemSpawner@ AddItem(uint16 pid, uint chance, uint min, uint max);
+    IItemSpawner@ AddItem(uint16 pid, uint chance);
+    IItemSpawner@ SetSeparate(bool separate);
+	IItemSpawner@ SetBonus(bool bonus);
+	IItemSpawner@ SetBonusLow(bool bonus);
+	IItemSpawner@ SetBonusOrNot(bool bonus);
+	IItemSpawner@ SetClearAtSpawn(bool clearSpawn);
+    IItemSpawner@ Clear();
+};
+
+#ifndef __SPAWNER_CONTAINER_MODULE__
+import void          MakeSpawnerContainer(Item& item, uint type) from "spawner_container";
+import IItemSpawner@ GetSpawner(uint num) from "spawner_container";
+import IItemSpawner@ MakeSpawner(uint num) from "spawner_container";
+#endif
+#endif

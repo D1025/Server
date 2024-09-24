@@ -1,0 +1,28 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 #
+4 2010 @
+4 3000 None 0 #
+65506 3010 #
+0 3020 &
+
+[engl]
+{100}{}{Paul Tibbett}
+{200}{}{You see Paul Tibbett, owner of the trade shop.}
+{210}{}{You see the owner of the trade shop, who is short and quite plump.}
+{1000}{}{Predialogue installations}
+{1010}{}{-}
+{2000}{}{(Upon entering the shop, you see the owner who is distracted as he tinkers with some spare parts. He wears a baseball cap, T-shirt, and faded jeans. From his face, he seems to be of Hispanic descent. Odd, considering how stereo-typically American he dresses...)}
+{2010}{}{Khm...}
+{3000}{}{Hey, amigo! After searching around, I found a solid set of armor. You should really check it out.}
+{3010}{}{Let me look at your stuff.}
+{3020}{}{No, I got everything I was looking for.}
+

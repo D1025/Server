@@ -1,0 +1,390 @@
+                        
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+
+import string GetCritterLexems(CritterCl&critter)from"lexems";
+import string GetItemLexems(ItemCl&item)from"lexems";
+
+import bool IsLexem(CritterCl&critter,string&lex)from"lexems";
+import bool IsLexem(ItemCl&it,string&lex)from"lexems";
+import bool IsLexem(string&lexems,string&lex)from"lexems";
+
+import string GetLexem(CritterCl&critter,string&lex)from"lexems";
+import string GetLexem(ItemCl&item,string&lex)from"lexems";
+import string GetLexem(string&lexems,string&lex)from"lexems";                 
+
+class Record
+{
+	string NameStr;
+	uint NameColor;
+	uint ContourColor;
+};
+array<Record>Records;
+
+array<int>Colorized;
+
+array<uint>MinigameTeamColor=
+{
+	(uint((0xFF<<24)|(((70)&0xFF)<<16)|(((70)&0xFF)<<8)|((70)&0xFF))),
+	(uint((0xFF<<24)|(((255)&0xFF)<<16)|(((170)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((0)&0xFF)<<16)|(((100)&0xFF)<<8)|((240)&0xFF))),
+	(uint((0xFF<<24)|(((255)&0xFF)<<16)|(((115)&0xFF)<<8)|((220)&0xFF))),
+	(uint((0xFF<<24)|(((200)&0xFF)<<16)|(((245)&0xFF)<<8)|((145)&0xFF))),
+	(uint((0xFF<<24)|(((250)&0xFF)<<16)|(((130)&0xFF)<<8)|((130)&0xFF))),
+	(uint((0xFF<<24)|(((65)&0xFF)<<16)|(((210)&0xFF)<<8)|((255)&0xFF))),
+	(uint((0xFF<<24)|(((50)&0xFF)<<16)|(((250)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((250)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((200)&0xFF)<<16)|(((250)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((185)&0xFF)<<16)|(((0)&0xFF)<<8)|((250)&0xFF))),
+	(uint((0xFF<<24)|(((0)&0xFF)<<16)|(((160)&0xFF)<<8)|((65)&0xFF))),
+	(uint((0xFF<<24)|(((120)&0xFF)<<16)|(((80)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((100)&0xFF)<<16)|(((255)&0xFF)<<8)|((225)&0xFF))),
+	(uint((0xFF<<24)|(((220)&0xFF)<<16)|(((190)&0xFF)<<8)|((145)&0xFF))),
+	(uint((0xFF<<24)|(((250)&0xFF)<<16)|(((250)&0xFF)<<8)|((10)&0xFF))),
+};  
+
+void InitNameColorizing()
+{
+	Records.resize(0);
+	
+	file f;
+	if(f.open("NameColorizing.txt","r")==0)
+	{
+		
+		dictionary colors;
+		while(!f.isEndOfFile())
+		{
+			if(f.readWord()=="@")
+			{
+				string@colorName=f.readWord();
+				int r=f.readNumber();
+				int g=f.readNumber();
+				int b=f.readNumber(); 
+				
+				for(uint i=0,j=colorName.rawLength();i<j;i++)
+				{
+					if(colorName.rawGet(i)=='&'||colorName.rawGet(i)=='?')
+					colorName.rawSet(i,' ');
+				} 
+				
+				colors.set(colorName,uint((uint((0xFF<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)))));
+			}
+		} 
+		
+		f.setPos(0);
+		while(!f.isEndOfFile())
+		{
+			if(f.readWord()==">")
+			{
+				uint len=Records.length();
+				Records.resize(len+1);
+				Record@r=Records[len];
+				
+				r.NameStr=strlwr(f.readWord());
+				r.NameColor=GetColor(colors,f.readWord(),((uint((0xFF<<24)|(((0xAD)&0xFF)<<16)|(((0xAD)&0xFF)<<8)|((0xB9)&0xFF)))));
+				r.ContourColor=GetColor(colors,f.readWord(),((uint((0xFF<<24)|(((150)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF)))));
+			}
+		}
+	}
+} 
+
+bool IsFollowerCl(CritterCl&cr)
+{
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return(false);
+	uint id=cr.Id;
+	for(uint i=(900);i<=(924);i++)
+	if(int(id)==chosen.Followers[i])
+	return true;
+	return false;
+}
+
+uint GetColor(dictionary&dict,string&colorName,uint defaultColor)
+{
+	uint color;
+	if(!dict.get(colorName,color))
+	color=defaultColor;
+	return color;
+}
+
+bool CompareName(string&crName,string&nameStr)
+{
+	uint l=0;
+	uint r=0;
+	uint lLen=crName.rawLength();
+	uint rLen=nameStr.rawLength();
+	while(r<rLen&&l<lLen)
+	{
+		uint8 lC=crName.rawGet(l);
+		uint8 rC=nameStr.rawGet(r);
+		
+		if(rC=='*')
+		{
+			
+			for(r++;r<rLen;r++)
+			if(nameStr.rawGet(r)!='*'&&nameStr.rawGet(r)!='?')
+			break;
+			if(r>=rLen)
+			return true;
+			rC=nameStr.rawGet(r);
+			
+			for(l++;l<lLen;l++)
+			if(crName.rawGet(l)==rC)
+			break;
+			if(l>=lLen)
+			return false;
+		}
+		else if(rC=='?')
+		{
+			
+		}
+		else if(lC!=rC)
+		{
+			
+			return false;
+		}
+		
+		l++;
+		r++;
+	}
+	
+	if(l<lLen||r<rLen)
+	return false;
+	return true;
+}  
+
+void ColorizeCritterPreview(CritterCl&cr)
+{
+	if(cr.IsPlayer()&&(IsLexem(cr,"$@")||IsLexem(cr,"$name")))
+	return;
+	
+	if(cr.IsNpc()&&cr.Param[(99)]==666)
+	{
+		cr.ContourColor=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF))));
+		cr.NameColor=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF))));
+		return;
+	}
+	
+	if(Records.length()==0)
+	return;
+	
+	string@factionId=""+cr.Stat[(106)];
+	string@crName=strlwr(cr.Name);;
+	for(uint i=0,j=Records.length();i<j;i++)
+	{
+		Record@r=Records[i];
+		if(CompareName(crName,r.NameStr))
+		{
+			cr.NameColor=r.NameColor;
+			cr.ContourColor=r.ContourColor;
+			return;
+		}
+	}
+	if(cr.Stat[(106)]!=0)
+	{
+		for(uint i=0,j=Records.length();i<j;i++)
+		{
+			Record@r=Records[i];
+			if(CompareName(factionId,r.NameStr))
+			{
+				cr.NameColor=r.NameColor;
+				cr.ContourColor=r.ContourColor;
+				return;
+			}
+		}
+	}
+	cr.NameColor=((uint((0xFF<<24)|(((0xAD)&0xFF)<<16)|(((0xAD)&0xFF)<<8)|((0xB9)&0xFF))));
+	cr.ContourColor=(cr.IsPlayer()?((uint((0xFF<<24)|(((150)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF)))):((uint((0xFF<<24)|(((150)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))));
+} 
+
+void ColorizeCritter(CritterCl&cr)
+{
+	if(cr.IsPlayer()&&(IsLexem(cr,"$@")||IsLexem(cr,"$name")))
+	return;
+	
+	CritterCl@chosen=GetChosen();
+	
+	if(!(@chosen!=null))
+	return;
+	
+	ColorizeCritter(chosen,cr,chosen.Param[(147)],cr.Param[(147)]);
+}   
+
+void ColorizeCritter(CritterCl&chosen,CritterCl&cr,int chosenMgData,int crMgData)
+{
+	if(cr.IsPlayer()&&(IsLexem(cr,"$@")||IsLexem(cr,"$name")))
+	return;
+	
+	if(ColorizeMinigame(chosen,cr,chosenMgData,crMgData))
+	return;
+	if(ColorizeFromFile(chosen,cr))
+	return;
+	if(ColorizeGoodEvil(chosen,cr))
+	return; 
+	
+	cr.NameColor=((uint((0xFF<<24)|(((0xAD)&0xFF)<<16)|(((0xAD)&0xFF)<<8)|((0xB9)&0xFF))));
+	cr.ContourColor=(cr.IsPlayer()?((uint((0xFF<<24)|(((150)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF)))):((uint((0xFF<<24)|(((150)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))));
+}  
+
+bool ColorizeMinigame(CritterCl&chosen,CritterCl&cr,int chosenMgData,int crMgData)
+{ 
+	
+	if(chosenMgData==0)
+	return false;
+	int chosenMgId=(((chosenMgData)>>4)&0xF);
+	if(chosenMgId==0)
+	return false;
+	
+	int crMgId=(((crMgData)>>4)&0xF); 
+	
+	if(chosenMgId==crMgId)
+	{
+		int chosenMgTeam=((chosenMgData)&0xF);
+		int crMgTeam=((crMgData)&0xF);
+		
+		if(chosenMgTeam==0)
+		{
+			cr.NameColor=MinigameTeamColor[crMgTeam];
+			cr.ContourColor=MinigameTeamColor[crMgTeam];
+		}
+		
+		else
+		{
+			if(crMgTeam==0)
+			{
+				cr.NameColor=MinigameTeamColor[0];
+				cr.ContourColor=MinigameTeamColor[0];
+			}
+			else
+			{
+				if(crMgTeam==chosenMgTeam)
+				{
+					cr.NameColor=((uint((0xFF<<24)|(((0x64)&0xFF)<<16)|(((0x95)&0xFF)<<8)|((0xed)&0xFF))));
+					cr.ContourColor=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF))));
+				}
+				else
+				{
+					cr.NameColor=((uint((0xFF<<24)|(((0xff)&0xFF)<<16)|(((0xa5)&0xFF)<<8)|((0)&0xFF))));
+					cr.ContourColor=((uint((0xFF<<24)|(((150)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF))));
+				}
+			}
+		}
+	}
+	
+	else
+	{
+		cr.NameColor=MinigameTeamColor[0];
+		cr.ContourColor=MinigameTeamColor[0];
+	}
+	return true;
+}  
+
+bool ColorizeFromFile(CritterCl&chosen,CritterCl&cr)
+{
+	for(uint i=0,j=Records.length();i<j;i++)
+	{
+		Record@r=Records[i];
+		if(r.NameStr=="myself")chosen.NameColor=r.NameColor;
+	}
+	
+	string@factionId=""+cr.Stat[(106)];
+	if(cr.IsNpc())
+	{
+		if(IsFollowerCl(cr))
+		{
+			cr.ContourColor=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF))));
+			cr.NameColor=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF))));
+			return true;
+		}
+		else if(cr.Param[(99)]==666)
+		{
+			cr.ContourColor=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF))));
+			cr.NameColor=((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF))));
+			return true;
+		}
+		return false;
+	}
+	
+	if(Records.length()==0)
+	return false; 
+	
+	if(!(@chosen!=null))
+	return false; 
+	
+	string@crName=strlwr(cr.Name);;
+	for(uint i=0,j=Records.length();i<j;i++)
+	{
+		Record@r=Records[i];
+		if(CompareName(crName,r.NameStr))
+		{
+			cr.NameColor=r.NameColor;
+			cr.ContourColor=r.ContourColor;
+			return true;
+		}
+	}
+	if(cr.Stat[(106)]!=0)
+	{
+		for(uint i=0,j=Records.length();i<j;i++)
+		{
+			Record@r=Records[i];
+			if(CompareName(factionId,r.NameStr))
+			{
+				cr.NameColor=r.NameColor;
+				cr.ContourColor=r.ContourColor;
+				return true;
+			}
+		}
+	}  
+	
+	return false;
+}  
+
+bool ColorizeGoodEvil(CritterCl&chosen,CritterCl&cr)
+{
+	if(cr.IsPlayer()&&!cr.IsChosen())
+	{
+		int crId=int(cr.Id);
+		for(uint i=(700);i<=(899);i+=1)
+		{
+			int id=chosen.GoodEvilList[i];
+			bool isEvil=(((id)&(0x80000000))!=0);
+			if(isEvil)
+			id^=0x80000000;
+			if(id==crId)
+			{
+				cr.NameColor=(isEvil?((uint((0xFF<<24)|(((0xC8)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))):((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xC8)&0xFF)<<8)|((0)&0xFF)))));
+				cr.ContourColor=(isEvil?((uint((0xFF<<24)|(((150)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))):((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((150)&0xFF)<<8)|((0)&0xFF)))));
+				return true;
+			}
+		}
+	}
+	return false;
+}     
+
+void _RefreshColorizing(int,int,int,string@,array<int>@data)
+{
+	CritterCl@chosen=GetChosen();
+	
+	if(!(@chosen!=null))
+	return;
+	
+	int chosenMinigameData=data[0];
+	
+	for(int i=1,j=data.length();i<j;i+=2)
+	{
+		CritterCl@cr=GetCritter(data[i]);
+		if(!(@cr!=null))
+		continue;
+		int crMinigameData=data[i+1];
+		ColorizeCritter(chosen,cr,chosenMinigameData,crMinigameData);
+	}
+}                                                 
+

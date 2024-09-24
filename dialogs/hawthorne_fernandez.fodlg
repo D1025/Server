@@ -1,0 +1,24 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 #
+65506 2010 #
+0 2020 &
+
+[engl]
+{100}{}{Cpt. Fernandez}
+{200}{}{You see Captain Fernandez.}
+{210}{}{El Capitan Fernandez - owner of the well known garrison club.}
+{1000}{}{Predialogue installations}
+{1010}{}{-}
+{2000}{}{Attention private! What orders you brought for Captain Fernandez?}
+{2010}{}{What you have?}
+{2020}{}{Goodbye.}
+

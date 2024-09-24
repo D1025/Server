@@ -1,0 +1,14 @@
+//
+// FOnline: Aftertimes
+//
+// map_tunnel.fos
+//
+// worldremaker
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+
+void map_init(Map& map, bool firstTime)
+{
+    //Dynamic mobs
+	if(firstTime) InitializeDynamicMob(map);
+}

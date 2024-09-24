@@ -1,0 +1,24 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+3 1010 D _script map_saltlake@d_IsInCafeteria 0  #
+2 1020 @
+2 2000 None 0 @
+3 3000 None 0 &
+
+[engl]
+{100}{}{Nuka Cola Worker}
+{200}{}{You see a worker of Nuka Cola Bottle Plant.}
+{210}{}{This is just another ordinary laborer in the factory.}
+{1000}{}{Predialogue installations}
+{1010}{}{Is on cafeteria}
+{1020}{}{Is on production line}
+{2000}{}{I'm busy, talk to you after work}
+{3000}{}{I'm not used talking with my mouth full.}
+

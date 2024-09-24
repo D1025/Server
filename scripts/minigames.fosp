@@ -1,0 +1,327 @@
+                                                               
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+array<uint>MinigameTeamColor=
+{
+	(uint((0xFF<<24)|(((70)&0xFF)<<16)|(((70)&0xFF)<<8)|((70)&0xFF))),
+	(uint((0xFF<<24)|(((255)&0xFF)<<16)|(((170)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((0)&0xFF)<<16)|(((100)&0xFF)<<8)|((240)&0xFF))),
+	(uint((0xFF<<24)|(((255)&0xFF)<<16)|(((115)&0xFF)<<8)|((220)&0xFF))),
+	(uint((0xFF<<24)|(((200)&0xFF)<<16)|(((245)&0xFF)<<8)|((145)&0xFF))),
+	(uint((0xFF<<24)|(((250)&0xFF)<<16)|(((130)&0xFF)<<8)|((130)&0xFF))),
+	(uint((0xFF<<24)|(((65)&0xFF)<<16)|(((210)&0xFF)<<8)|((255)&0xFF))),
+	(uint((0xFF<<24)|(((50)&0xFF)<<16)|(((250)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((250)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((200)&0xFF)<<16)|(((250)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((185)&0xFF)<<16)|(((0)&0xFF)<<8)|((250)&0xFF))),
+	(uint((0xFF<<24)|(((0)&0xFF)<<16)|(((160)&0xFF)<<8)|((65)&0xFF))),
+	(uint((0xFF<<24)|(((120)&0xFF)<<16)|(((80)&0xFF)<<8)|((0)&0xFF))),
+	(uint((0xFF<<24)|(((100)&0xFF)<<16)|(((255)&0xFF)<<8)|((225)&0xFF))),
+	(uint((0xFF<<24)|(((220)&0xFF)<<16)|(((190)&0xFF)<<8)|((145)&0xFF))),
+	(uint((0xFF<<24)|(((250)&0xFF)<<16)|(((250)&0xFF)<<8)|((10)&0xFF))),
+}; 
+
+import void RefreshColorizing(Critter@chosen)from"name_colorizing";  
+
+void SetMinigame(Critter&cr,int team,int id,int flags,int data)
+{
+	cr.ParamBase[(147)]=((cr.ParamBase[(147)]&0xFFFFFFF0)|((team)&0xF));
+	cr.ParamBase[(147)]=((cr.Param[(147)]&0xFFFFFF0F)|(((id)&0xF)<<4));
+	cr.ParamBase[(147)]=((cr.Param[(147)]&0xFFFFF0FF)|(((flags)&0xF)<<8));
+	cr.ParamBase[(147)]=((cr.Param[(147)]&0x00000FFF)|((data&0xFFFFF)<<12));
+	RefreshColorizing(cr);
+} 
+
+void UnsetMinigame(Critter&cr,bool refreshColors)
+{
+	cr.ParamBase[(147)]=0;
+	if(refreshColors)
+	RefreshColorizing(cr);
+}
+
+void UnsetMinigame(Critter&cr)
+{
+	UnsetMinigame(cr,true);
+} 
+
+void ChangeMinigameTeam(Critter&cr,int team)
+{
+	cr.ParamBase[(147)]=((cr.ParamBase[(147)]&0xFFFFFFF0)|((team)&0xF));
+	RefreshColorizing(cr);
+}            
+
+Item@GetDSpawn(Map@map,int minigameData)
+{
+	if(!(@map!=null))
+	return null;
+	
+	array<Item@>dSpawns;
+	if(map.GetItems((821),dSpawns)>0)
+	{
+		int minigameTeamAndId=((minigameData)&0xFF);  
+		
+		array<Item@>dSpawnsMatching;
+		for(int i=0,j=dSpawns.length();i<j;i+=1)
+		if(dSpawns[i].Val0==minigameTeamAndId)
+		dSpawnsMatching.insertLast(dSpawns[i]);
+		
+		if(dSpawnsMatching.length()>0)
+		{
+			Item@dSpawn=(dSpawnsMatching[Random(0,dSpawnsMatching.length()-1)]);  
+			
+			if((!((((minigameData)&0xF))%2==0)))
+			@dSpawn=GetNextDSpawn(dSpawn,minigameTeamAndId,false);
+			else
+			@dSpawn=GetNextDSpawn(dSpawn,minigameTeamAndId,true); 
+			
+			if((dSpawn.Val5)>0)
+			{
+				Map@previousMap=GetMap((dSpawn.Val5));
+				if((@previousMap!=null))
+				return GetDSpawn(previousMap,minigameData);
+				else
+				return dSpawn;
+			}
+			else
+			return dSpawn;
+		}
+	}
+	return null;
+}  
+
+Item@GetNextDSpawn(Item@dSpawn,int minigameTeamAndId,bool reverse)
+{
+	if(!(@dSpawn!=null))
+	return null;
+	
+	uint nextDSpawnId=((!((((minigameTeamAndId)&0xF))%2==0))?dSpawn.Val4:dSpawn.Val3);
+	
+	if(nextDSpawnId==0)
+	return dSpawn;
+	
+	Map@dSpawnMap=GetMap(dSpawn.MapId);
+	if(!(@dSpawnMap!=null))
+	return null;
+	else
+	{
+		Item@nextDSpawn=GetItem(nextDSpawnId);
+		if(!(@nextDSpawn!=null))
+		return dSpawn;
+		if(nextDSpawn.Val0==minigameTeamAndId)
+		return GetNextDSpawn(nextDSpawn,minigameTeamAndId,reverse);
+		else
+		return dSpawn;
+	}
+}  
+
+void _DSpawn(Item&item,bool firstTime)
+{
+	item.SetEvent((7),"_DSpawnWalk");
+	item.SetEvent((4),"_DSpawnSkill");
+}
+
+void _DSpawnWalk(Item&item,Critter&crit,bool entered,uint8 dir)
+{
+	if(entered)
+	TryCaptureDSpawn(item,crit);
+}
+
+bool _DSpawnSkill(Item&item,Critter&crit,int skill)
+{
+	if(skill==-1)
+	return TryCaptureDSpawn(item,crit);
+	return false;
+}  
+
+bool TryCaptureDSpawn(Item@dSpawn,Critter@crit)
+{
+	uint critMinigameId=(((crit.Param[(147)])>>4)&0xF);
+	uint dSpawnMinigameId=(((dSpawn.Val0)>>4)&0xF);  
+	
+	if(critMinigameId!=dSpawnMinigameId)
+	return false;
+	
+	uint critMinigameTeam=((crit.Param[(147)])&0xF);  
+	
+	if(!((((dSpawn.Val1)&((1<<critMinigameTeam)))!=0)))
+	{
+		crit.Say((11),"Your team can't capture this place.");
+		return false;
+	}
+	
+	int critMinigameTeamAndId=((crit.Param[(147)])&0xFF); 
+	
+	if(critMinigameTeamAndId==dSpawn.Val0)
+	return false;  
+	
+	uint prevDSpawnId=((!((critMinigameTeam)%2==0))?dSpawn.Val3:dSpawn.Val4);
+	if(prevDSpawnId>0)
+	{
+		Item@prevDSpawn=GetItem(prevDSpawnId);
+		if((@prevDSpawn!=null)&&(critMinigameTeamAndId!=prevDSpawn.Val0))
+		{
+			crit.Say((11),"Your team must capture previous place first.");
+			return false;
+		}
+	}
+	
+	uint eventTime=0;
+	array<int>eventValues=
+	{
+		(dSpawn.Val1>>24),
+		critMinigameTeamAndId,
+		dSpawn.Id
+	};  
+	
+	if(GetTimeEvent(dSpawn.Val2,eventTime,eventValues))
+	{ 
+		
+		if(critMinigameTeamAndId==eventValues[1])
+		crit.Say((11),"Your team is capturing this place already.");
+		else
+		crit.Say((11),"Another team is trying to capture this place.");
+	} 
+	
+	else
+	{
+		if(eventValues[0]==0)
+		{
+			CaptureDSpawn(dSpawn,crit,critMinigameTeamAndId);
+			return true;
+		}
+		else
+		{
+			crit.Say((11),"You have started capturing this place.");
+			dSpawn.Val2=CreateTimeEvent(((__FullSecond)+(((1)*__TimeMultiplier))),"CaptureDSpawnTick",eventValues,true);
+			return true;
+		}
+	}
+	return false;
+} 
+
+void CaptureDSpawn(Item@dSpawn,Critter@crit,uint minigameTeamAndId)
+{
+	if((@crit!=null))
+	crit.Say((11),"You have captured this place.");
+	
+	dSpawn.Val0=minigameTeamAndId;
+	dSpawn.Val2=0;
+	
+	uint minigameTeam=((minigameTeamAndId)&0xF);
+	dSpawn.AnimStayBegin=minigameTeam;
+	dSpawn.AnimStayEnd=minigameTeam;
+	dSpawn.AnimShowBegin=minigameTeam;
+	dSpawn.AnimShowEnd=minigameTeam;
+	dSpawn.AnimHideBegin=minigameTeam;
+	dSpawn.AnimHideEnd=minigameTeam;
+	dSpawn.Update();
+} 
+
+uint CaptureDSpawnTick(array<int>@eventValues)
+{
+	Item@dSpawn=GetItem(eventValues[2]);
+	if(!(@dSpawn!=null))
+	return 0;
+	
+	Map@map=GetMap(dSpawn.MapId);
+	if(!(@map!=null))
+	return 0;
+	
+	array<Critter@>players;
+	uint num=map.GetCrittersHex(dSpawn.HexX,dSpawn.HexY,1,(0x10)|(0x01),players);
+	bool captureTickSuccess=false;
+	for(uint i=0;i<num;i+=1)
+	{
+		if(((players[i].Param[(147)])&0xFF)==uint(eventValues[1]))
+		{
+			if(eventValues[0]>0)
+			eventValues[0]-=1;
+			
+			if(players[i].Mode[(510)]!=0&&players[i].GetAccess()<(1))
+			{
+				players[i].ModeBase[(510)]=0;
+			}
+			
+			if(eventValues[0]==0)
+			{
+				CaptureDSpawn(dSpawn,players[i],eventValues[1]);
+				dSpawn.Val0=eventValues[1];
+				dSpawn.Val2=0;
+				return 0;
+			}
+			else
+			{
+				players[i].Say((11),""+eventValues[0]+" seconds left to capture this place.");
+				captureTickSuccess=true;
+			}
+		}
+	}
+	if(captureTickSuccess)
+	return((1)*__TimeMultiplier);
+	else
+	return 0;
+}         
+
+int GetMinigameTeamColor(int minigameTeam)
+{
+	if(minigameTeam<0||minigameTeam>15)
+	return 0;
+	return MinigameTeamColor[minigameTeam];
+}  
+
+uint r_SetMinigame(Critter&player,Critter@npc,int team,int id,int flags,int data,uint returnValue)
+{
+	SetMinigame(player,team,id,flags,data);
+	return returnValue;
+}
+
+void r_SetMinigame(Critter&player,Critter@npc,int team,int id,int flags,int data)
+{
+	SetMinigame(player,team,id,flags,data);
+}     
+
+void refresh(Critter&caller,int,int,int critterId)
+{
+	Critter@cr=GetCritter(critterId);
+	if(!(@cr!=null))
+	{
+		caller.Say((11),"Critter "+critterId+" not valid.");
+		return;
+	}
+	RefreshColorizing(cr);
+} 
+
+void info(Critter&caller,int,int,int critterId)
+{
+	Critter@cr=GetCritter(critterId);
+	if(!(@cr!=null))
+	{
+		caller.Say((11),"Critter "+critterId+" not valid.");
+		return;
+	}
+	int minigameData=cr.Param[(147)];
+	caller.Say((11),"ST_MINIGAME_DATA of Critter "+cr.Id);
+	caller.Say((11),"Minigame Team: "+((minigameData)&0xF));
+	caller.Say((11),"Minigame Id: "+(((minigameData)>>4)&0xF));
+	caller.Say((11),"Minigame Custom Data: "+((minigameData)>>12));
+} 
+
+void team(Critter&caller,int minigameTeam,int minigameId,int critterId)
+{
+	Critter@cr=GetCritter(critterId);
+	if(!(@cr!=null))
+	{
+		caller.Say((11),"Critter "+critterId+" not valid.");
+		return;
+	}
+	SetMinigame(cr,minigameTeam,minigameId,0,0);
+}
+

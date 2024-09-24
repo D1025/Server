@@ -1,0 +1,97 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
+import void FlushScreen(Critter&cr,bool fadeOut,uint timeMs)from"effects";        
+
+uint RecPlayerId=0;
+uint RecBeginTime=0;
+uint FuckCount=0;
+
+void CheckTime()
+{
+	if(RecPlayerId!=0&&(__FullSecond)-RecBeginTime>(((10)*60)))
+	EndRec();
+}
+
+bool RecInAir()
+{
+	CheckTime();
+	return RecPlayerId!=0;
+}
+
+void BeginRec(Critter@cr)
+{
+	RecPlayerId=cr.Id;
+	RecBeginTime=(__FullSecond);
+	FuckCount=0;
+}
+
+void EndRec()
+{
+	RecPlayerId=0;
+	RecBeginTime=0;
+	FuckCount=0;
+}    
+
+bool s_Camera(Critter&cr,Scenery&camera,int skill,Item@item)
+{
+	return true;
+}
+
+bool s_Bed(Critter&cr,Scenery&bed,int skill,Item@item)
+{
+	CheckTime();
+	if(skill!=-1||(@item!=null))
+	return true;
+	if(cr.Id!=RecPlayerId)
+	return true;
+	FuckCount++;
+	cr.KarmaBase[(488)]=1; 
+	
+	return true;
+}    
+
+bool d_IsCanRec(Critter&player,Critter@npc,int val)
+{
+	CheckTime();
+	return!RecInAir();
+}
+
+bool d_IsFucked(Critter&player,Critter@npc,int val)
+{
+	CheckTime();
+	return player.Id==RecPlayerId&&FuckCount>0;
+}
+
+bool d_IsRec(Critter&player,Critter@npc,int val)
+{
+	CheckTime();
+	return player.Id==RecPlayerId;
+}
+
+bool d_IsNotRec(Critter&player,Critter@npc,int val)
+{
+	CheckTime();
+	return player.Id!=RecPlayerId;
+}    
+
+uint r_TryRec(Critter&player,Critter@npc,int val)
+{
+	if(!RecInAir())
+	{
+		BeginRec(player);
+		return(3);
+	}
+	
+	return(4);
+}
+
+void r_BeginRec(Critter&player,Critter@npc,int val)
+{
+	BeginRec(player);
+}
+
+void r_EndRec(Critter&player,Critter@npc,int val)
+{
+	EndRec();
+}   
+

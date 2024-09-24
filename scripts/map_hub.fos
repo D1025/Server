@@ -1,0 +1,108 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_hub.fos
+//
+
+#include "_macros.fos"
+#include "factions_h.fos"
+#include "economy_h.fos"
+#include "_defines.fos"
+#include "_entires.fos"
+#include "_maps.fos"
+#include "utils_h.fos"
+#include "mapdata_h.fos"
+#include "reinforcements_h.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void StartFirstTentQuest(Critter& player) from "quest_first_tent";
+
+void map_init(Map& map, bool firstTime)
+{
+    map.SetData(MAP_DATA_BANK, BANK_HUB);
+			
+    uint proto = map.GetProtoId();
+	
+	if(proto == MAP_HubDowntown)
+	{
+		_MapSetMode(map, MAP_MODE_NO_PVP);
+		if(firstTime) InitializeDynamicMob(map);
+		
+		Critter@ rewardgiver = map.GetNpc(205, FIND_ALL | FIND_ONLY_NPC, 0);
+		if(valid(rewardgiver))
+		{
+			rewardgiver.ModeBase[MODE_NO_LOOT] = 1;
+			rewardgiver.ModeBase[MODE_NO_STEAL] = 1;
+			rewardgiver.ModeBase[MODE_NO_BARTER] = 1;
+		}
+	}
+    // barrels rules
+    if(proto == MAP_HubArena)
+    {
+        map.SetEvent(MAP_EVENT_IN_CRITTER, "_CritterArenaIn");      //to remove guns on logging in/gm teleports into arena map
+        map.SetEvent(MAP_EVENT_OUT_CRITTER, "_CritterArenaOut");    //to return guns on going out of arena map
+    }
+    else
+        map.SetEvent(MAP_EVENT_OUT_CRITTER, "_CritterOut");
+
+
+    if(firstTime)
+    {
+
+        if(proto == MAP_HubDowntown)
+        {
+            uint[] maxes = { 35, 25 };
+            SetAlertMap(map, maxes);
+        }
+        else if(proto == MAP_HubOldtown)
+        {
+            uint[] maxes = { 10, 10 };
+            SetAlertMap(map, maxes);
+        }
+    }
+	
+	/*if(proto == MAP_HubDowntown)
+	{
+		array<Item@> multihexdoor;
+		map.GetItems(PID_CATHEDRAL_DOOR, multihexdoor);
+		
+		multihexdoor[0].Val8 = 400;
+	}*/
+}
+
+uint e_PushForward(array<uint>@ sometrash)
+{
+	return 0;
+}
+
+uint e_SetCountDownToRide(array<uint>@ sometrash)
+{
+	return 0;
+}
+
+void _CritterArenaIn(Map& map, Critter& cr)
+{
+    if(GetLvar(cr, LVAR_hub_arena_inside) == 0)
+    {
+        TransferItemsToContOnMap(cr, GetMapByPid(MAP_HubArena, 0), ENTIRE_HUB_ARENA_CONTAINER, PID_FOOTLOCKER_CLEAN_LEFT, ITEMTRANSFER_WEAPONS);
+        SetLvar(cr, LVAR_hub_arena_inside, 1);
+    }
+}
+
+void _CritterArenaOut(Map& map, Critter& cr)
+{
+    if(cr.IsLife() && GetLvar(cr, LVAR_hub_arena_inside) == 1)
+    {
+        TransferItemsFromContOnMap(cr, GetMapByPid(MAP_HubArena, 0), ENTIRE_HUB_ARENA_CONTAINER, PID_FOOTLOCKER_CLEAN_LEFT);
+        SetLvar(cr, LVAR_hub_arena_inside, 0);
+    }
+}
+
+void _CritterOut(Map& map, Critter& cr)
+{
+    if(cr.IsPlayer() && _IsOnline(cr) && GetLocalVar(LVAR_q_first_tent, cr.Id) == 0 && cr.Param[ST_LEVEL] > 1)
+    {
+        StartFirstTentQuest(cr);
+    }
+}

@@ -1,0 +1,1166 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+string[]male=
+{
+	"Alan",
+	"Alex",
+	"Alexander",
+	"Angus",
+	"Andrei",
+	"Angelo",
+	"Anthony",
+	"Anton",
+	"Arnold",
+	
+	"Barney",
+	"Bob",
+	"Boris",
+	"Brad",
+	"Brian",
+	"Bruce",
+	"Bruno",
+	"Bryan",
+	"Buck",
+	
+	"Carl",
+	"Carlos",
+	"Charles",
+	"Charlie",
+	"Chris",
+	"Christopher",
+	"Colin",
+	"Corey",
+	"Curtis",
+	
+	"Damien",
+	"Daniel",
+	"Danny",
+	"Darryl",
+	"Dave",
+	"David",
+	"Dennis",
+	"Dimitri",
+	"Donald",
+	"Donte",
+	"Douglas",
+	"Dusty",
+	
+	"Ed",
+	"Eddie",
+	"Edward",
+	"Eric",
+	"Evan",
+	
+	"Feargus",
+	"Francis",
+	"Frank",
+	"Fred",
+	"Freddy",
+	
+	"Gary",
+	"George",
+	"Gordon",
+	"Gerald",
+	"Greg",
+	"Gregory",
+	"Guybrush",
+	
+	"Harry",
+	"Henry",
+	"Hoss",
+	"Howard",
+	
+	"Igor",
+	"Ike",
+	"Ivan",
+	
+	"Jack",
+	"Jacob",
+	"James",
+	"Jamie",
+	"Jaroslav",
+	"Jason",
+	"Jay",
+	"Jeffrey",
+	"Jerry",
+	"Jesse",
+	"Jim",
+	"Jimmy",
+	"Joe",
+	"John",
+	"Johny",
+	"Jose",
+	"Joseph",
+	
+	"Keith",
+	"Kenneth",
+	"Kevin",
+	"Kriss",
+	"Kurt",
+	
+	"Larry",
+	"Lawrence",
+	"Lenny",
+	"Leo",
+	"Leonard",
+	"Leroy",
+	
+	"Mark",
+	"Marko",
+	"Martin",
+	"Matt",
+	"Max",
+	"Michael",
+	"Mick",
+	"Mitch",
+	"Morgan",
+	
+	"Nick",
+	"Norman",
+	"Norton",
+	
+	"Otto",
+	
+	"Patrick",
+	"Paul",
+	"Pete",
+	"Peter",
+	"Phil",
+	"Philip",
+	
+	"Quentin",
+	
+	"Randy",
+	"Ray",
+	"Raymond",
+	"Richard",
+	"Rick",
+	"Ricky",
+	"Rob",
+	"Robert",
+	"Rod",
+	"Rodd",
+	"Roger",
+	"Roland",
+	"Ron",
+	"Ronny",
+	"Ronald",
+	"Ross",
+	"Ryan",
+	
+	"Sam",
+	"Scott",
+	"Scotty",
+	"Sean",
+	"Sergei",
+	"Simon",
+	"Stephen",
+	"Steve",
+	"Steven",
+	
+	"Tamir",
+	"Ted",
+	"Terry",
+	"Theo",
+	"Thomas",
+	"Tim",
+	"Timmy",
+	"Timothy",
+	"Tom",
+	"Tony",
+	"Trevor",
+	"Tyrone",
+	
+	"Victor",
+	"Vincent",
+	"Vinnie",
+	"Vlad",
+	"Vladimir",
+	"Vladislav",
+	
+	"Wayne",
+	"Will",
+	"William",
+	
+	"Zachary",
+	"Zack"
+};
+
+string[]female=
+{
+	"Ada",
+	"Agness",
+	"Alena",
+	"Alexis",
+	"Alisha",
+	"Alvina",
+	"Alyssa",
+	"Amber",
+	"Amy",
+	"Andrea",
+	"Angela",
+	"Angelina",
+	"Anissa",
+	"Anja",
+	"Anna",
+	"Anya",
+	"April",
+	"Arin",
+	"Ashley",
+	"Avrele",
+	
+	"Barbara",
+	"Beth",
+	"Bethany",
+	"Beverly",
+	
+	"Carmen",
+	"Carrie",
+	"Chelsea",
+	"Cheri",
+	"Cheryl",
+	"Christine",
+	"Christy",
+	"Cindy",
+	"Courtney",
+	"Cynthia",
+	
+	"Darcy",
+	"Danielle",
+	"Debi",
+	"Deina",
+	"Debbie",
+	"Deborah",
+	"Debra",
+	"Delaney",
+	"Denise",
+	"Donna",
+	"Dora",
+	
+	"Elina",
+	"Eliza",
+	"Ellen",
+	"Emily",
+	"Emma",
+	"Erica",
+	"Eve",
+	"Evelyn",
+	
+	"Felice",
+	"Felicia",
+	"Flora",
+	"Frances",
+	
+	"Georgia",
+	"Glenda",
+	"Gwen",
+	
+	"Hanna",
+	"Hattie",
+	"Heidi",
+	"Helen",
+	"Holly",
+	
+	"Irene",
+	"Isabela",
+	"Isabelle",
+	
+	"Jacklyn",
+	"Janet",
+	"Janice",
+	"Jeanne",
+	"Jennifer",
+	"Jenn",
+	"Jenny",
+	"Jill",
+	"Jillian",
+	"Jo",
+	"Joyce",
+	"Judith",
+	"Judy",
+	"Julia",
+	
+	"Karen",
+	"Karmin",
+	"Kate",
+	"Kathy",
+	"Katie",
+	"Katja",
+	"Katrese",
+	"Kelly",
+	"Kim",
+	"Kimberly",
+	
+	"Lacey",
+	"Larissa",
+	"Laura",
+	"Lena",
+	"Leslie",
+	"Lily",
+	"Lina",
+	"Linda",
+	"Lisa",
+	"Liz",
+	"Lori",
+	"Lucy",
+	"Lynn",
+	
+	"Madeline",
+	"Margeret",
+	"Marilyn",
+	"Martha",
+	"Mary",
+	"Meryl",
+	"Michelle",
+	"Mina",
+	"Miroslava",
+	
+	"Nadia",
+	"Nancy",
+	"Naomi",
+	"Natasha",
+	"Nikita",
+	"Niki",
+	"Nikki",
+	"Nina",
+	
+	"Ophelia",
+	"Olga",
+	
+	"Pam",
+	"Pamela",
+	"Patricia",
+	"Patty",
+	"Paula",
+	
+	"Rebecca",
+	"Roberta",
+	"Rose",
+	"Ruth",
+	
+	"Sally",
+	"Sarah",
+	"Sasha",
+	"Secily",
+	"Sharon",
+	"Sharonna",
+	"Shawne",
+	"Shekira",
+	"Sherie",
+	"Shirley",
+	"Silvia",
+	"Simone",
+	"Sonia",
+	"Sonya",
+	"Stacy",
+	"Sue",
+	"Susan",
+	"Suzy",
+	"Svetlana",
+	
+	"Tamara",
+	"Tara",
+	"Tanya",
+	"Tatyana",
+	"Tawni",
+	"Thelma",
+	"Tisha",
+	"Tonya",
+	"Traci",
+	"Trish",
+	"Trisha",
+	
+	"Vanessa",
+	"Velvet",
+	"Veronica",
+	"Victoria",
+	"Virginia",
+	"Viviana",
+	
+	"Yvonne",
+	
+	"Zita"
+};                             
+
+string[]nick=
+{
+	"A.",
+	"B.",
+	"C.",
+	"D.",
+	"E.",
+	"F.",
+	"G.",
+	"H.",
+	"I.",
+	"J.",
+	"K.",
+	"L.",
+	"M.",
+	"N.",
+	"O.",
+	"P.",
+	"R.",
+	"S.",
+	"T.",
+	"W.",
+	
+	"'Alamo'",
+	"'Avenger'",
+	
+	"'Black Hand'",
+	
+	"'Flying Arrow'",
+	
+	"'Goodnight'",
+	
+	"'Ko-Ko'",
+	
+	"'Lightnin`'",
+	
+	"'Meat Missile'",
+	
+	"'Night Spirit'",
+	
+	"'Phantom'",
+	
+	"'Rising Sun'",
+	
+	"'Shadow'",
+	"'Smoke'",
+	"'Snake'",
+	
+	"'Tornado'",
+	
+	"'Wolf'"
+};
+
+string[]malenick=
+{
+	"'Ace'",
+	"'Alpha'",
+	
+	"'Big Stu'",
+	"'Black Jack'",
+	"'Bull'",
+	"'Butcher'",
+	
+	"'Cactus'",
+	"'Curley'",
+	
+	"'Duke'",
+	
+	"'El Diablo'",
+	
+	"'Flying Rock'",
+	
+	"'Ginger'",
+	
+	"'Joker'",
+	"Junior",
+	
+	"'Looser'",
+	
+	"'Mad Dog'",
+	"'Monkey Boy'",
+	
+	"'Raven'",
+	"'Razor'",
+	"'Romeo'",
+	
+	"'Shalashaska'",
+	"'Sheik'",
+	"'Snake'",
+	"'Speedy Bear'",
+	"'Spirit Dog'",
+	
+	"'Tiger'",
+	"'Two-Minutes'",
+	
+	"'Widow Maker'"
+};
+
+string[]femalenick=
+{
+	"'Angel'",
+	
+	"'Big Mama'",
+	"'Black Rose'",
+	"'Blind Date'",
+	
+	"'Dee-Dee'",
+	
+	"'Fox'",
+	"'Foxy'",
+	
+	"'Ice Queen'",
+	
+	"'Kitty'",
+	
+	"'Lovelace'",
+	"'Lucky Eye'",
+	
+	"'Milady'",
+	"'Mommy'",
+	"'Mynx'",
+	
+	"'Opium'",
+	
+	"'Sleeping Beauty'",
+	"'Snow'",
+	"'Spray'",
+	"'Sugar'",
+	"'Summer'",
+	"'Sun'",
+	"'Sunlight'",
+	
+	"'Witch'"
+};
+
+string[]surname=
+{
+	"Aaron",
+	"Aarons",
+	"Abbot",
+	"Abernethy",
+	"Adams",
+	"Adamson",
+	"Akerman",
+	"Allen",
+	"Ames",
+	"Amesbury",
+	"Ancliff",
+	"Anderson",
+	"Andrews",
+	"Aneley",
+	"Ankers",
+	"Annderton",
+	"Anset",
+	"Anshell",
+	"Anthiftle",
+	"Apsley",
+	"Armer",
+	"Armstrong",
+	"Arnell",
+	"Arnett",
+	"Arnott",
+	"Ashbury",
+	"Ashfield",
+	"Atherley",
+	"Atter",
+	"Attfield",
+	"Attridge",
+	"Attwood",
+	"Aubrey",
+	"Auger",
+	"Aulsford",
+	"Ayres",
+	
+	"Babbet",
+	"Babbs",
+	"Bachman",
+	"Backwell",
+	"Backote",
+	"Badley",
+	"Bailey",
+	"Baker",
+	"Bannister",
+	"Barnes",
+	"Barwiss",
+	"Baskerville",
+	"Bassett",
+	"Bate",
+	"Bates",
+	"Battie",
+	"Becker",
+	"Bell",
+	"Benford",
+	"Bennett",
+	"Benton",
+	"Berkeley",
+	"Birks",
+	"Black",
+	"Blacksmith",
+	"Blackwood",
+	"Blade",
+	"Blaine",
+	"Blake",
+	"Blakemore",
+	"Blanton",
+	"Bloodworth",
+	"Blyth",
+	"Bollinger",
+	"Bolt",
+	"Bonny",
+	"Boon",
+	"Bordley",
+	"Bouley",
+	"Bowler",
+	"Boyd",
+	"Boyfield",
+	"Bowton",
+	"Bowyer",
+	"Braddock",
+	"Bradley",
+	"Brady",
+	"Breedlove",
+	"Brooks",
+	"Brown",
+	"Bradbury",
+	"Bryant",
+	"Burgess",
+	"Burns",
+	"Burton",
+	"Buster",
+	"Buston",
+	"Butler",
+	
+	"Cadd",
+	"Cadell",
+	"Caiger",
+	"Calvey",
+	"Calveley",
+	"Cambell",
+	"Campbell",
+	"Carpenter",
+	"Carmack",
+	"Carroll",
+	"Carson",
+	"Carter",
+	"Cassil",
+	"Catterwood",
+	"Chasey",
+	"Chavez",
+	"Clarkson",
+	"Clavey",
+	"Clayton",
+	"Cole",
+	"Coleman",
+	"Collet",
+	"Collins",
+	"Cook",
+	"Cooper",
+	"Copper",
+	"Copps",
+	"Copson",
+	"Cossins",
+	"Costelle",
+	"Coundley",
+	"Cox",
+	"Coyle",
+	"Crawford",
+	"Cruz",
+	"Cunningham",
+	
+	"Dalton",
+	"Daniels",
+	"Davis",
+	"Delaney",
+	"Dellinger",
+	"Diaz",
+	"Dixon",
+	"Dorey",
+	"Dunn",
+	"Dvorak",
+	
+	"Edwards",
+	"Ellis",
+	"Evans",
+	
+	"Ferguson",
+	"Finch",
+	"Fisher",
+	"Floe",
+	"Flores",
+	"Fogarty",
+	"Ford",
+	"Foster",
+	"Fox",
+	"Freeman",
+	
+	"Garcia",
+	"Gardner",
+	"Gartner",
+	"Gibson",
+	"Gillat",
+	"Gleen",
+	"Glinsey",
+	"Gomez",
+	"Gondalez",
+	"Graham",
+	"Grant",
+	"Gray",
+	"Green",
+	"Greene",
+	"Griffin",
+	
+	"Hall",
+	"Hamazaki",
+	"Hammilton",
+	"Harper",
+	"Harris",
+	"Harrison",
+	"Hart",
+	"Hawke",
+	"Hawkins",
+	"Hayes",
+	"Henderson",
+	"Hernandez",
+	"Hicks",
+	"Higgs",
+	"Hill",
+	"Holmes",
+	"Howerty",
+	"Hudson",
+	"Hughes",
+	"Hunt",
+	
+	"Ishikawa",
+	
+	"Jackson",
+	"Janitz",
+	"Jenkins",
+	"Jensen",
+	"Jobbs",
+	"Johns",
+	"Johnson",
+	"Jones",
+	
+	"Karnatz",
+	"Karnette",
+	"Keddie",
+	"Keith",
+	"Keller",
+	"Kelley",
+	"Kent",
+	"King",
+	"Kirschenbaum",
+	"Knight",
+	"Knox",
+	"Kowalsky",
+	
+	"LaMotta",
+	"Lane",
+	"Lang",
+	"Lark",
+	"Larkin",
+	"Larkins",
+	"Larson",
+	"Lawson",
+	"Lee",
+	"Leishan",
+	"Lewis",
+	"Linner",
+	"Linsell",
+	"Lobb",
+	"Long",
+	"Lopez",
+	"Lutton",
+	"Lutz",
+	
+	"Mankowitz",
+	"Marshall",
+	"Martinez",
+	"Matthews",
+	"Mayer",
+	"McAbbot",
+	"McBain",
+	"McDonald",
+	"McGee",
+	"McGinley",
+	"McKenney",
+	"McKneely",
+	"Mifsud",
+	"Miller",
+	"Mills",
+	"Mitchell",
+	"Moore",
+	"Morales",
+	"Morgan",
+	"Morris",
+	"Murphy",
+	"Murray",
+	"Myers",
+	"Myren",
+	
+	"Nakamura",
+	"Nelson",
+	"Netanyahu",
+	"Nettle",
+	"Netting",
+	"Nevil",
+	"Neville",
+	"Newby",
+	"Newman",
+	"Nguyen",
+	"Nicholds",
+	"Nicholl",
+	"Nicholls",
+	"Nichols",
+	"Nicholson",
+	"Nickalls",
+	"Nickel",
+	"Nickell",
+	"Nickells",
+	"Nickels",
+	"Nickerson",
+	"Nickinson",
+	"Nickle",
+	"Nickless",
+	"Nickolds",
+	"Nickolls",
+	"Nickols",
+	"Nicks",
+	"Nickson",
+	"Nicol",
+	"Nicoll",
+	"Nicolls",
+	"Nicolson",
+	"Nixson",
+	"Nobb",
+	"Nobbs",
+	"Nobes",
+	"Nolan",
+	"Norrie",
+	"Notaras",
+	"Nutter",
+	
+	"O'Bree",
+	"O'Brian",
+	"O'Connell",
+	"O'Connor",
+	"O'Doherty",
+	"O'Hara",
+	"Offner",
+	"Okamoto",
+	"Olsen",
+	"Ongley",
+	"Ortis",
+	"Ortiz",
+	"Orton",
+	"Owens",
+	"Orr",
+	
+	"Palmer",
+	"Pannell",
+	"Parker",
+	"Paterson",
+	"Patterson",
+	"Payne",
+	"Perez",
+	"Perkins",
+	"Peters",
+	"Peterson",
+	"Phillips",
+	"Pierce",
+	"Porter",
+	"Powell",
+	"Price",
+	"Pyle",
+	
+	"Raines",
+	"Raikov",
+	"Ramirez",
+	"Ramos",
+	"Red",
+	"Reed",
+	"Reyes",
+	"Reynolds",
+	"Rice",
+	"Richardson",
+	"Riley",
+	"Rivera",
+	"Roberts",
+	"Robertson",
+	"Robinson",
+	"Roddy",
+	"Rodriguez",
+	"Romero",
+	"Rogers",
+	"Ruff",
+	"Ruiz",
+	"Russel",
+	
+	"Sanchez",
+	"Sanders",
+	"Schiavo",
+	"Schlegel",
+	"Shaw",
+	"Simmons",
+	"Simpson",
+	"Sims",
+	"Smith",
+	"Snyder",
+	"Spencer",
+	"Stephens",
+	"Sterling",
+	"Steward",
+	"Stevens",
+	"Stinnett",
+	"Stinson",
+	"Stone",
+	"Sullivan",
+	
+	"Tatler",
+	"Taylor",
+	"Thompson",
+	"Threepwood",
+	"Tobias",
+	"Torrance",
+	"Torres",
+	"Tucker",
+	"Turner",
+	"Twydell",
+	
+	"Umbers",
+	"Underhill",
+	"Underwood",
+	"Uttley",
+	
+	"Valenti",
+	"Varley",
+	"Varon",
+	"Vickerman",
+	"Vickers",
+	"Vines",
+	"Vixen",
+	"Vraithwaite",
+	
+	"Wagner",
+	"Wallace",
+	"Walker",
+	"Ward",
+	"Warden",
+	"Warren",
+	"Washington",
+	"Watkins",
+	"Watkinson",
+	"Weaver",
+	"Webb",
+	"West",
+	"Watson",
+	"Webb",
+	"Wells",
+	"White",
+	"Williams",
+	"Willis",
+	"Willits",
+	"Wilson",
+	"Wood",
+	"Woods",
+	"Wright",
+	
+	"Yamoto",
+	"Yarnowich",
+	"Young"
+};   
+
+string GetFirstName(uint gender,uint index)
+{
+	if(gender==(1))
+	return(female[index]);
+	else if(gender==(0))
+	return(male[index]);
+	else
+	return("(unreadable)");
+}
+
+string GetRandomFirstName(uint gender,int&index)
+{
+	if(gender==(1))
+	{
+		index=Random(0,female.length()-1);
+		return((female[Random(0,female.length()-1)]));
+	}
+	else if(gender==(0))
+	{
+		index=Random(0,male.length()-1);
+		return((male[Random(0,male.length()-1)]));
+	}
+	else
+	{
+		index=-1;
+		return("(unreadable)");
+	}
+}
+
+string GetRandomFirstName(uint gender)
+{
+	if(gender==(1))
+	return((female[Random(0,female.length()-1)]));
+	else if(gender==(0))
+	return((male[Random(0,male.length()-1)]));
+	else
+	return("(unreadable)");
+}
+
+string GetNick(uint gender,uint index,bool genderNick)
+{
+	if(!genderNick)
+	return nick[index];
+	if(gender==(1))
+	return femalenick[index];
+	else if(gender==(0))
+	return malenick[index];
+	return nick[index];
+}
+
+string BaseGetRandomNick(uint gender,bool genderNick,int&index)
+{
+	if(!genderNick)
+	{
+		index=Random(0,nick.length()-1);
+		return nick[index];
+	}
+	if(gender==(1))
+	{
+		index=Random(0,femalenick.length()-1);
+		return femalenick[index];
+	}
+	else if(gender==(0))
+	{
+		index=Random(0,malenick.length()-1);
+		return malenick[index];
+	}
+	return nick[index];
+}
+
+string GetRandomNick(uint gender,bool&genderNick,int&index)
+{
+	genderNick=(Random(1,100)<=(35));
+	return BaseGetRandomNick(gender,genderNick,index);
+}
+
+string GetRandomNick(uint gender)
+{
+	int dummy;
+	bool genderNick=(Random(1,100)<=(35));
+	return BaseGetRandomNick(gender,genderNick,dummy);
+}
+
+string GetSurname(uint index)
+{
+	return surname[index];
+}
+
+string GetRandomSurname(int&index)
+{
+	index=Random(0,surname.length()-1);
+	return surname[index];
+}
+
+string GetRandomSurname()
+{
+	return((surname[Random(0,surname.length()-1)]));
+}
+
+string GetRandomFullName(uint gender,int&firstName,bool&genderNick,int&nick,int&surname)
+{
+	string result=GetRandomFirstName(gender,firstName)+" ";
+	if(Random(1,100)<=(7))
+	result+=GetRandomNick(gender,genderNick,nick)+" ";
+	result+=GetRandomSurname(surname);
+	
+	return(result);
+}
+
+string GetRandomFullName(uint gender)
+{
+	string result=GetRandomFirstName(gender)+" ";
+	if(Random(1,100)<=(7))
+	result+=GetRandomNick(gender)+" ";
+	result+=GetRandomSurname();
+	
+	return(result);
+}
+
+void LogNames(bool printNames)
+{
+	file log;
+	if(log.open("logs/npc_names.log","w")>=0)
+	{
+		uint fnames=0,mnames=0,bnames=0;
+		uint fnamenicks=0,mnamenicks=0,bnicks=0;
+		uint bsurnames=0;
+		
+		for(uint m=0;m<male.length();m++)
+		{
+			bnames+=male[m].length();
+		}
+		for(uint f=0;f<female.length();f++)
+		{
+			bnames+=female[f].length();
+		}
+		for(uint n=0;n<nick.length();n++)
+		{
+			bnicks+=nick[n].length();
+		}
+		for(uint mn=0;mn<malenick.length();mn++)
+		{
+			bnicks+=malenick[mn].length();
+		}
+		for(uint fn=0;fn<femalenick.length();fn++)
+		{
+			bnicks+=femalenick[fn].length();
+		}
+		
+		for(uint s=0;s<surname.length();s++)
+		{
+			bsurnames+=surname[s].length();
+			for(uint m=0;m<male.length();m++)
+			{
+				mnames++;
+				if(printNames)
+				log.writeString(male[m]+" "+surname[s]+"\r\n");
+				for(uint n=0;n<nick.length();n++)
+				{
+					mnamenicks++;
+					if(printNames)
+					log.writeString(male[m]+" "+nick[n]+" "+surname[s]+"\r\n");
+				}
+				for(uint mn=0;mn<malenick.length();mn++)
+				{
+					mnamenicks++;
+					if(printNames)
+					log.writeString(male[m]+" "+malenick[mn]+" "+surname[s]+"\r\n");
+				}
+			}
+			for(uint f=0;f<female.length();f++)
+			{
+				fnames++;
+				if(printNames)
+				log.writeString(female[f]+" "+surname[s]+"\r\n");
+				for(uint n=0;n<nick.length();n++)
+				{
+					fnamenicks++;
+					if(printNames)
+					log.writeString(female[f]+" "+nick[n]+" "+surname[s]+"\r\n");
+				}
+				for(uint fn=0;fn<femalenick.length();fn++)
+				{
+					fnamenicks++;
+					if(printNames)
+					log.writeString(female[f]+" "+femalenick[fn]+" "+surname[s]+"\r\n");
+				}
+			}
+		}
+		if(printNames)
+		log.writeString("-------------------------------------------------------------------------------\r\n");
+		log.writeString("Tables:            names:"+(male.length()+female.length())+" (male:"+male.length()+" female:"+female.length()+") ["+bnames+" bytes]\r\n");
+		log.writeString("                   nicknames:"+(nick.length()+malenick.length()+femalenick.length())+" (no-gender:"+nick.length()+" male:"+malenick.length()+" female:"+femalenick.length()+") ["+bnicks+" bytes]\r\n");
+		log.writeString("                   surnames:"+surname.length()+" ["+bsurnames+" bytes]\r\n");
+		log.writeString("                   total:"+(male.length()+female.length()+nick.length()+malenick.length()+femalenick.length()+surname.length())+" ["+(bnames+bnicks+bsurnames)+" bytes]\r\n");
+		log.writeString("Name+Surname:      "+(mnames+fnames)+" (male:"+mnames+" female:"+fnames+")\r\n");
+		log.writeString("Name+Nick+Surname: "+(mnamenicks+fnamenicks)+" (male:"+mnamenicks+" female:"+fnamenicks+") [NICK_CHANCE:"+(7)+" GENDERNICK_CHANCE:"+(35)+"]\r\n");
+		log.writeString("Total:             "+(mnames+fnames+mnamenicks+fnamenicks)+"\r\n");
+		log.close();
+	}
+	else
+	Log("Can't open logs/names.log for writing!");
+}
+
+void lognames(Critter&,int printNames,int,int)
+{
+	LogNames(printNames>0?true:false);
+}
+

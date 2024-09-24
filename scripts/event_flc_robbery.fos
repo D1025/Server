@@ -1,0 +1,495 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// event_flc_robbery.fos
+//
+// Script for FLC Robbery jobs
+//
+
+#include "_macros.fos"
+#include "_colors.fos"
+#include "_maps.fos"
+#include "npc_roles_h.fos"
+#include "utils.fos"
+#include "broadcast_h.fos"
+#include "reputations_h.fos"
+#include "_defines.fos"
+
+#define BROADCAST_DISPLAY_TIME                   (30) // in seconds
+#define TIME_FOR_FURGON                          (5) // in minutes
+
+import bool LockerClose(Item& item) from "lockers";
+
+// Shared boolean variables.
+bool IsRobJobInHub = false, IsRobJobInSF = false, IsRobJobInBH = false, IsRobJobInVC = false, IsRobJobInNCR = false, IsRobJobInSL = false, IsRobJobInRedding = false;
+
+// Use dors - try them to open, use or smthng
+
+void FLC_doors(Item& item, bool firstTime)
+{
+	/*item.Val8 = 400 ;
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseFLC_doors");
+	CreateTimeEvent(AFTER(0), "lock_FLC_doors", item.Id, false);*/
+}
+
+void FLC_locker(Item& item, bool firstTime)
+{
+	/*item.SetEvent(ITEM_EVENT_SKILL, "_UseFLC_locker");
+	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
+
+    item.LockerId = Random(0, 0x7fffffff);
+    item.LockerComplexity = (Random(175,225));
+	CreateTimeEvent(AFTER(REAL_MINUTE(Random(60,120))), "lock_FLC_locker", item.Id, false);*/
+}
+
+// Executed when opening FLC doors
+bool _UseFLC_doors(Item& item, Critter& crit, int skill)
+{
+	// Opening / Closing
+    if((skill == -1) || (skill == SK_LOCKPICK))
+    {
+		ShoutToDoor(crit);
+		
+		Map@ map = GetMap(item.MapId);
+		Location@ location = map.GetLocation();
+
+		array<uint> FLCdata = { item.Id, crit.Id, location.Id };
+		CreateTimeEvent(AFTER(REAL_MS(500)), "e_UpdateReputation", FLCdata, false);
+		
+        // open it if closed
+        if(_LockerIsClose(item))
+        {
+			//item.LockerId = 0;                       // to jakbysmy chcieli jakis klucz implementowac
+			//item.LockerId = Random(98989, 989898);   // to jakbysmy chcieli do drzwi dodawac inne, losowe klucze chuj wie skad jeszcze
+			//item.LockerComplexity = Random(50,150);			
+            return false;
+        }
+		
+    }
+    return false;
+}
+
+// Executed when opening FLC locker
+bool _UseFLC_locker(Item& item, Critter& crit, int skill)
+{
+	// Opening / Closing
+    if((skill == -1) || (skill == SK_LOCKPICK) || (skill == SK_STEAL))
+    {
+		ShoutToLocker(crit);
+		
+		Map@ map = GetMap(item.MapId);
+		Location@ location = map.GetLocation();
+		
+		array<uint> FLCdata = { item.Id, crit.Id, location.Id };
+		CreateTimeEvent(AFTER(REAL_MS(500)), "e_UpdateReputation", FLCdata, false);
+		
+        // open it if closed
+        if(_LockerIsClose(item))
+        {
+			//item.LockerId = 0;                       // to jakbysmy chcieli jakis klucz implementowac
+			//item.LockerId = Random(98989, 989898);   // to jakbysmy chcieli do drzwi dodawac inne, losowe klucze chuj wie skad jeszcze
+			//item.LockerComplexity = Random(50,150);			
+            return false;
+        }
+		
+    }
+    return false;
+}
+
+void ShoutToDoor(Critter& player)
+{     											//  ST_NPC_ROLE == 95 == ROLE_FLC_BANKER w npc_roles_h
+	uint numLifeFLC = player.GetMap().GetNpcCount(ROLE_FLC_BANKER, FIND_ONLY_NPC | FIND_LIFE);
+																							 
+	if(numLifeFLC!=0)
+	{
+		for(uint i = 0; i < numLifeFLC; i++)
+		{
+			Critter@ banker = player.GetMap().GetNpc(ROLE_FLC_BANKER, FIND_ONLY_NPC | FIND_LIFE, i);
+			switch (Random(1,3))
+			{
+				case 1: {banker.Say(SAY_SHOUT_ON_HEAD, "WHAT THE HELL ARE YOU DOING?!"); break;}
+				case 2: {banker.Say(SAY_SHOUT_ON_HEAD, "GET AWAY FROM DOOR!"); break;}
+				case 3: {banker.Say(SAY_SHOUT_ON_HEAD, "DON'T EVEN TRY TO OPEN THEM!"); break;}				
+			}
+		}	
+
+	}
+}
+
+void ShoutToLocker(Critter& player)
+{     											//  ST_NPC_ROLE == 95 == ROLE_FLC_BANKER w npc_roles_h
+	uint numLifeFLC = player.GetMap().GetNpcCount(ROLE_FLC_BANKER, FIND_ONLY_NPC | FIND_LIFE);
+																							 
+	if(numLifeFLC!=0)
+	{
+		for(uint i = 0; i < numLifeFLC; i++)
+		{
+			Critter@ banker = player.GetMap().GetNpc(ROLE_FLC_BANKER, FIND_ONLY_NPC | FIND_LIFE, i);
+			switch (Random(1,3))
+			{
+				case 1: {banker.Say(SAY_SHOUT_ON_HEAD, "GET YOUR ASS FROM HERE!"); break;}
+				case 2: {banker.Say(SAY_SHOUT_ON_HEAD, "LEAVE THIS LOCKER!"); break;}
+				case 3: {banker.Say(SAY_SHOUT_ON_HEAD, "GET YOUR HANDS OFF FROM IT!"); break;}				
+			}
+		}	
+
+	}
+}
+
+uint e_UpdateReputation(array<uint>@ values)
+{
+	// item.Id, crit.Id, location.Id
+	Item@ item = GetItem(values[0]);
+	if(!valid(item))
+        return 0;
+		
+	Critter@ player = GetCritter(values[1]);
+	if(!valid(player))
+        return 0;
+		
+	Location@ location = GetLocation(values[2]);
+	if(!valid(location))
+        return 0;
+	
+	//if lockers
+	if(item.GetType() == ITEM_TYPE_CONTAINER)
+	{
+		if((item.LockerId == 0 || item.LockerComplexity == 0) && player.IsPlayer())
+		{
+			if(player.Reputation[FACTION_FLC] > -5000)
+				SubReputation(player, FACTION_FLC, 5000);
+			if(player.Reputation[ReputationIndex(location.GetProtoId())] > -2500)
+				SubReputation(player, ReputationIndex(location.GetProtoId()), 2500);
+			// same for other players from same faction and their followers
+			CallForSecurity(item, location, player);
+		}
+		else
+		{
+			if(player.Reputation[FACTION_FLC] > -5000)
+				SubReputation(player, FACTION_FLC, 50);
+			if(player.Reputation[ReputationIndex(location.GetProtoId())] > -2500)
+				SubReputation(player, ReputationIndex(location.GetProtoId()), 50);
+			// same for other players from same faction and their followers
+			if(Random(1,30) == 1)
+				CallForSecurity(item, location, player);
+		}
+	}
+	//if doors
+	if(item.GetType() == ITEM_TYPE_DOOR)
+	{
+		if((item.LockerId == 0 || item.LockerComplexity == 0) && player.IsPlayer())
+		{
+			if(player.Reputation[FACTION_FLC] > -2000)
+				SubReputation(player, FACTION_FLC, 2000);
+			if(player.Reputation[ReputationIndex(location.GetProtoId())] > -1000)
+				SubReputation(player, ReputationIndex(location.GetProtoId()), 1000);
+			// same for other players from same faction and their followers
+			CallForSecurity(item, location, player);
+		}
+		else
+		{
+			if(player.Reputation[FACTION_FLC] > -1000)
+				SubReputation(player, FACTION_FLC, 50);
+			if(player.Reputation[ReputationIndex(location.GetProtoId())] > -500)
+				SubReputation(player, ReputationIndex(location.GetProtoId()), 50);
+			// same for other players from same faction and their followers
+			if(Random(1,30) == 1)
+				CallForSecurity(item, location, player);
+		}
+	}
+	
+	//bool vars and functions are needed here
+	//do not spawn caps when robbery is running
+	//do not spawn caps when convoy is in town
+	
+	return 0;
+}
+
+uint lock_FLC_doors(array<uint>@ values)
+{
+	Item@ item = GetItem(values[0]);
+    if(!valid(item))
+        return 0;
+	
+	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
+
+    item.LockerId = Random(0, 0x7fffffff);
+    item.LockerComplexity = Random(175,225);
+    	
+    return REAL_MINUTE(Random(60,120));	
+}
+
+uint lock_FLC_locker(array<uint>@ values)
+{
+	Item@ item = GetItem(values[0]);
+    if(!valid(item))
+        return 0;
+		
+	Map@ map = GetMap(item.MapId);
+	Location@ loc = map.GetLocation();
+	
+	int SpawnedBottleCaps;
+
+	if(loc.IsGuarded())
+		SpawnedBottleCaps = (Random(1,20));
+	else
+		SpawnedBottleCaps = (Random(1,10));
+	
+	switch (SpawnedBottleCaps)
+		{
+		case 1: 	{item.AddItem(PID_BOTTLE_CAPS, 750, 0); break;}
+		case 2: 	{item.AddItem(PID_BOTTLE_CAPS, 1000, 0); break;}
+		case 3: 	{item.AddItem(PID_BOTTLE_CAPS, 1500, 0); break;}
+		case 4: 	{item.AddItem(PID_BOTTLE_CAPS, 2500, 0); break;}
+		case 5: 	{item.AddItem(PID_BOTTLE_CAPS, 5000, 0); break;}
+		case 6: 	{item.AddItem(PID_BOTTLE_CAPS, 7500, 0); break;}
+		case 7: 	{item.AddItem(PID_BOTTLE_CAPS, 6000, 0); break;}
+		case 8: 	{item.AddItem(PID_BOTTLE_CAPS, 8000, 0); break;}
+		case 9: 	{item.AddItem(PID_BOTTLE_CAPS, 10000, 0); break;}
+		case 10: 	{item.AddItem(PID_BOTTLE_CAPS, 15000, 0); break;}
+		case 11: 	{item.AddItem(PID_BOTTLE_CAPS, 25000, 0); break;}
+		case 12: 	{item.AddItem(PID_BOTTLE_CAPS, 40000, 0); break;}
+		case 13: 	{item.AddItem(PID_BOTTLE_CAPS, 50000, 0); break;}
+		case 14: 	{item.AddItem(PID_BOTTLE_CAPS, 60000, 0); break;}
+		case 15: 	{item.AddItem(PID_BOTTLE_CAPS, 75000, 0); break;}
+		case 16: 	{item.AddItem(PID_BOTTLE_CAPS, 10000, 0); break;}
+		case 17: 	{item.AddItem(PID_BOTTLE_CAPS, 12500, 0); break;}
+		case 18: 	{item.AddItem(PID_BOTTLE_CAPS, 15000, 0); break;}
+		case 19: 	{item.AddItem(PID_BOTTLE_CAPS, 25000, 0); break;}
+		case 20: 	{item.AddItem(PID_BOTTLE_CAPS, 100000, 0); break;}
+		}
+		
+	
+	if (SpawnedBottleCaps >= 10)
+	{
+		string FLClocation;
+		
+		switch(map.GetProtoId())
+		{
+			case MAP_HubDowntown : FLClocation = " Hub."; break;
+			case MAP_SanFranChina : FLClocation = " San Francisco."; break;
+			case MAP_BrokenHills : FLClocation = " Broken Hills."; break;
+			case MAP_VaultCityDowntown : FLClocation = " Vault City."; break;
+			case MAP_NCR : FLClocation = " NCR."; break;
+			case MAP_SaltLake : FLClocation = " Salt Lake City."; break;
+			case MAP_Redding : FLClocation = " Redding."; break;
+			default: FLClocation = " missing case or error!"; break;
+		}
+		if(Random(1,20) == 20)
+			{
+				uint16 location = loc.GetProtoId();
+				CallForFLCConvoy(map, item, location);
+				// ClearContainer(item);
+			}
+		else
+			ServerEventMSG(BROADCAST_DISPLAY_TIME, "Someone made a large deposit at the FLC bank in" + FLClocation);
+	}
+	
+	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
+
+    item.LockerId = Random(0, 0x7fffffff);
+    item.LockerComplexity = (Random(175,225));
+    	
+    return REAL_MINUTE(Random(60,120));
+}
+
+void CallForFLCConvoy(Map& map, Item& item, uint16 location)
+{
+	array<uint> FLCConvoydata = { map.Id, item.Id };
+	CreateTimeEvent(AFTER(REAL_MINUTE(TIME_FOR_FURGON)), "e_SpawnFLCConvoy", FLCConvoydata, false);
+	string FLClocation;
+		
+	switch(map.GetProtoId())
+	{
+		case MAP_HubDowntown : FLClocation = "Hub"; break;
+		case MAP_SanFranChina : FLClocation = "San Francisco"; break;
+		case MAP_BrokenHills : FLClocation = "Broken Hills"; break;
+		case MAP_VaultCityDowntown : FLClocation = "Vault City"; break;
+		case MAP_NCR : FLClocation = "NCR"; break;
+		case MAP_SaltLake : FLClocation = "Salt Lake City"; break;
+		case MAP_Redding : FLClocation = "Redding"; break;
+		default: FLClocation = "MISSING CASE OR ERROR!"; break;
+	}
+	ServerEventCNTSet("The FLC Convoy is comming to " + FLClocation + ". They will be there in %COUNTDOWN%.", location, EVENT_TYPE_FLC_CONVOY, REAL_MINUTE(TIME_FOR_FURGON));
+}
+
+uint e_SpawnFLCConvoy(array<uint>@ values)
+{
+	Map@ map = GetMap(values[0]);
+	Item@ container = GetItem(values[1]);
+	string FLClocation;
+	
+	if(!valid(container))
+		return 0;
+		
+	ClearContainer(container);
+	
+	switch(map.GetProtoId())
+	{
+		case MAP_HubDowntown : FLClocation = "Hub"; break;
+		case MAP_SanFranChina : FLClocation = "San Francisco"; break;
+		case MAP_BrokenHills : FLClocation = "Broken Hills"; break;
+		case MAP_VaultCityDowntown : FLClocation = "Vault City"; break;
+		case MAP_NCR : FLClocation = "NCR"; break;
+		case MAP_SaltLake : FLClocation = "Salt Lake City"; break;
+		case MAP_Redding : FLClocation = "Redding"; break;
+		default: FLClocation = "MISSING CASE OR ERROR!"; break;
+	}
+	
+	ServerEventMSG(BROADCAST_DISPLAY_TIME, "DEBUG: Nothing happen, script is not finished yet, FLC container in " + FLClocation + " is clean now.");
+	
+	return 0;
+}
+
+void CallForSecurity(Item& item, Location& location, Critter& player)
+{
+	if(!valid(item))
+		return;
+		
+	if(!valid(location))
+		return;
+		
+	if(!valid(player))
+		return;
+	
+	string FLClocation;
+	Map@ map = GetMap(item.MapId);
+	
+	uint16 seconds;
+	
+	switch(map.GetProtoId())
+	{
+		case MAP_HubDowntown :
+			if(IsRobJobInHub)
+			{
+				return;
+			}
+			else
+			{
+				FLClocation = "Hub";
+				seconds = Random(180, 300);
+				IsRobJobInHub = true;
+			}
+			break;
+		case MAP_SanFranChina :
+			if(IsRobJobInSF)
+			{
+				return;
+			}
+			else
+			{
+				FLClocation = "San Francisco";
+				seconds = Random(180, 300);
+				IsRobJobInSF = true;
+			}
+			break;
+		case MAP_BrokenHills :
+			if(IsRobJobInBH)
+			{
+				return;
+			}
+			else
+			{
+				FLClocation = "Broken Hills";
+				seconds = Random(30, 120);
+				IsRobJobInBH = true;
+			}
+			break;
+		case MAP_VaultCityDowntown :
+			if(IsRobJobInVC)
+			{
+				return;
+			}
+			else
+			{
+				FLClocation = "Vault City";
+				seconds = Random(180, 300);
+				IsRobJobInVC = true;
+			}
+			break;
+		case MAP_NCR :
+			if(IsRobJobInNCR)
+			{
+				return;
+			}
+			else
+			{
+				FLClocation = "NCR";
+				seconds = Random(180, 300);
+				IsRobJobInNCR = true;
+			}
+		break;
+		case MAP_SaltLake :
+			if(IsRobJobInSL)
+			{
+				return;
+			}
+			else
+			{
+				FLClocation = "Salt Lake City";
+				seconds = Random(30, 120);
+				IsRobJobInSL = true;
+			}
+			break;
+		case MAP_Redding :
+			if(IsRobJobInRedding)
+			{
+				return;
+			}
+			else
+			{
+				FLClocation = "Redding";
+				seconds = Random(30, 120);
+				IsRobJobInRedding = true;
+			}
+			break;
+		default: FLClocation = "MISSING CASE OR ERROR!";
+		seconds = 30;
+		break;
+	}
+	
+	array<uint> securedata = {map.Id, player.Id};
+	CreateTimeEvent(AFTER(REAL_SECOND(seconds)), "e_SpawnSecurity", securedata, false);
+	ServerEventCNTSet(player.Name + " has started the robbery job in " + FLClocation + " and the FLC Security Guards will be there in %COUNTDOWN%.", location.GetProtoId(), EVENT_TYPE_FLC_SECURITY, REAL_SECOND(seconds));
+}
+
+uint e_SpawnSecurity(array<uint>@ securedata)
+{
+	Map@ map = GetMap(securedata[0]);
+	if(!valid(map))
+		return 0;
+		
+	Critter@ player = GetCritter(securedata[1]);
+	if(!valid(player))
+		return 0;
+	
+	switch(map.GetProtoId())
+	{
+		case MAP_HubDowntown :
+			IsRobJobInHub = false;
+			break;
+		case MAP_SanFranChina :
+			IsRobJobInSF = false;
+			break;
+		case MAP_BrokenHills :
+			IsRobJobInBH = false;
+			break;
+		case MAP_VaultCityDowntown :
+			IsRobJobInVC = false;
+			break;
+		case MAP_NCR :
+			IsRobJobInNCR = false;
+			break;
+		case MAP_SaltLake :
+			IsRobJobInSL = false;
+			break;
+		case MAP_Redding :
+			IsRobJobInRedding = false;
+			break;
+	}
+	
+	ServerEventMSG(BROADCAST_DISPLAY_TIME, "DEBUG: Nothing happen, script is not finished yet.");
+	
+	return 0;
+}

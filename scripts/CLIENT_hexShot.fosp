@@ -1,0 +1,464 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
+shared interface IPolygon
+{
+	IPolygon@AddVertex(uint16 x,uint16 y);
+	IPolygon@AddVertices(array<uint16>&hexes);
+	
+	void GetTriangulation(array<uint16>&triangles);      
+	
+	bool IsWithin(uint16 x,uint16 y);
+};  
+
+import IPolygon@NewPolygon()from"polygon";     
+
+import void GetDrawHexAreaData(array<uint16>&area,bool triangles,int color,array<int>&data)from"polygon";
+import void DrawHexArea(array<uint16>&area,bool triangles,int color)from"polygon";               
+
+shared class Sprite
+{
+	Sprite()
+	{
+		Id=0;
+		Width=0;
+		Height=0;
+		FrmCount=0;
+	}
+	
+	bool Load(string&name,int path)
+	{
+		if(name.length()>0)
+		{
+			Id=LoadSprite(name,path);
+			Filename=name;
+		}
+		else
+		Id=0;
+		RefreshData();
+		return Id!=0;
+	}
+	
+	void LoadHash(uint nameHash,uint8 dir)
+	{
+		Id=LoadSprite(nameHash,dir);
+		RefreshData();
+	}
+	
+	void LoadByIni(string&iniKey,int path)
+	{
+		string@name=GetIfaceIniStr(iniKey);
+		if(@name!=null&&name.length()>0)
+		Id=LoadSprite(name,path);
+		else
+		Id=0;
+		RefreshData();
+	}
+	
+	void Draw(int x,int y)
+	{
+		if(Id!=0)
+		DrawSprite(Id,-1,x,y,0);
+	}
+	
+	private void RefreshData()
+	{
+		if(Id!=0)
+		{
+			Width=GetSpriteWidth(Id,0);
+			Height=GetSpriteHeight(Id,0);
+			FrmCount=GetSpriteCount(Id);
+		}
+		else
+		{
+			Width=0;
+			Height=0;
+			FrmCount=0;
+			Filename="";
+		}
+	}
+	
+	uint Id;
+	int Width;
+	int Height;
+	uint FrmCount;
+	string Filename;
+};                    
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+
+int SelectWeaponBonus(ItemCl@RealWeapon,int Int_Val_WeaponBonus)
+{
+	if((@RealWeapon!=null))
+	{
+		if(RealWeapon.Val0==Int_Val_WeaponBonus)return RealWeapon.Val5;
+		if(RealWeapon.Val1==Int_Val_WeaponBonus)return RealWeapon.Val6;
+		if(RealWeapon.Val2==Int_Val_WeaponBonus)return RealWeapon.Val7;
+		if(RealWeapon.Val3==Int_Val_WeaponBonus)return RealWeapon.Val8;
+		if(RealWeapon.Val4==Int_Val_WeaponBonus)return RealWeapon.Val9;
+		return 0;
+	}
+	else return 0;
+}
+
+bool IsHexShotWeapon(ItemCl@item)
+{
+	if(!(@item!=null))
+	return false;
+	if(item.GetType()!=(3))
+	return false;
+	
+	return(item.GetProtoId()==(13)
+	||item.GetProtoId()==(619)
+	||item.GetProtoId()==(620)
+	||item.GetProtoId()==(22120));
+}
+
+uint HexShotGetMaxRange(CritterCl&cr,ItemCl@item)
+{
+	if(!(@item!=null))
+	return 0;
+	uint viewRange=20+3*cr.Stat[(1)]+6*cr.Perk[(315)];
+	if(IsHexShotWeapon(item))
+	{
+		uint8 use=((item.Mode)&0xF);
+		uint bonusRange=SelectWeaponBonus(item,(106));
+		return(((((use)==0?item.Proto.Weapon_MaxDist_0:((use)==1?item.Proto.Weapon_MaxDist_1:((use)==2?item.Proto.Weapon_MaxDist_2:0)))+bonusRange)<(viewRange))?(((use)==0?item.Proto.Weapon_MaxDist_0:((use)==1?item.Proto.Weapon_MaxDist_1:((use)==2?item.Proto.Weapon_MaxDist_2:0)))+bonusRange):(viewRange));
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+bool IsHexShotable(ProtoItem&weapon)
+{
+	if(!(@weapon!=null))
+	false;
+	return true;
+}
+
+int HexShotingToHit(CritterCl&cr,uint16 tx,uint16 ty,ProtoItem&weapon,ItemCl&realWeapon)
+{
+	if(!(@weapon!=null))
+	return 0;
+	if(!cr.IsLife())
+	return 0;
+	
+	int weaponPerk=weapon.Weapon_Perk;
+	int skillNum=((0)==0?weapon.Weapon_Skill_0:((0)==1?weapon.Weapon_Skill_1:((0)==2?weapon.Weapon_Skill_2:0)));
+	int toHit=int(cr.Skill[skillNum]);
+	
+	if(cr.Damage[(502)]!=0)
+	toHit-=25; 
+	
+	if(cr.Trait[(553)]!=0)
+	toHit+=((((weapon.Flags)&((0x00000080)))!=0)?-40:20);
+	int handlingStrength=cr.Stat[(0)];
+	int reqStrength=weapon.Weapon_MinStrength;
+	if(cr.Perk[(407)]!=0)
+	handlingStrength+=2;
+	if(handlingStrength<reqStrength)
+	toHit-=(reqStrength-handlingStrength)*20;
+	
+	if(weaponPerk==(2))
+	toHit+=20;
+	
+	toHit+=SelectWeaponBonus(realWeapon,(104)); 
+	
+	int distmod1=2;
+	int distmod2=0;
+	if(weaponPerk==(1))
+	distmod1=4;
+	
+	int perception=cr.Stat[(1)];
+	int dist=GetDistantion(cr.HexX,cr.HexY,tx,ty);
+	
+	int acc=dist;
+	
+	if(dist<distmod2)
+	acc+=distmod2;
+	else
+	acc-=(perception-2)*distmod1;
+	
+	if(-2*perception>acc)
+	acc=-2*perception;
+	
+	acc-=2*cr.Perk[(315)];
+	
+	if(acc>=0&&cr.Damage[(502)]!=0)
+	acc*=-12;
+	else
+	acc*=-4;
+	
+	toHit+=acc;
+	
+	int blockers=0;     
+	
+	blockers=GetCrittersPath(cr.HexX,cr.HexY,tx,ty,0.0f,dist,(0x01),null); 
+	
+	toHit-=10*blockers;
+	
+	toHit=(((toHit)>(95))?(95):(((toHit)<(5))?(5):(toHit)));
+	
+	return toHit;
+}
+
+int HexShotActionPointsCost(ItemCl&item,CritterCl&cr)
+{
+	if(IsHexShotWeapon(item))
+	{
+		uint8 use=((item.Mode)&0xF);
+		int apCost=(cr.Perk[(306)]>0)?-1:0;
+		apCost+=((use)==0?item.Proto.Weapon_ApCost_0:((use)==1?item.Proto.Weapon_ApCost_1:((use)==2?item.Proto.Weapon_ApCost_2:0)));  
+		
+		return apCost;
+	}
+	return 0;
+}
+
+bool IsHexShotableThere(CritterCl&cr,ItemCl@item,uint16 tx,uint16 ty)
+{
+	if(!(@item!=null)||!IsHexShotable(item.Proto)||!cr.IsLife())
+	return false;     
+	
+	if(cr.Damage[(503)]!=0||cr.Damage[(504)]!=0)
+	return false;
+	if(HexShotGetMaxRange(cr,item)==0||GetDistantion(cr.HexX,cr.HexY,tx,ty)==0)
+	return false; 
+	
+	uint16 pbx=tx;
+	uint16 pby=ty;
+	uint16 bx=tx;
+	uint16 by=ty;     
+	
+	GetCrittersPath(cr.HexX,cr.HexY,tx,ty,0.0f,0,0,null,pbx,pby,bx,by); 
+	
+	if(bx!=tx||by!=ty)
+	return false;
+	
+	return(HexShotGetMaxRange(cr,item)>=GetDistantion(cr.HexX,cr.HexY,tx,ty));
+	
+}                                                                                                             
+
+bool Active=false;
+int LastCursor=0;
+uint16 lastH=0,lastM=0,lastS=0,lastMS=0;
+
+bool HexShotingMouseDown(int click)
+{
+	if(!IsHexShotingActive())
+	return false;
+	
+	if(click!=(0))
+	{
+		SetHexShoting(false);
+		return false;
+	}
+	
+	CritterCl@chosen=GetChosen();
+	
+	array<uint>actions;
+	uint cnt=GetChosenActions(actions);
+	
+	if(actions.length()>0)
+	{
+		if(actions[0]==1)
+		TryHexShot();
+	}
+	else
+	{
+		if(!chosen.IsAnimPlaying())
+		TryHexShot();
+	}
+	
+	return true;
+}
+
+bool IsHexShotingActive()
+{
+	return Active;
+}
+
+void HexShotingKeyDown(uint8 key,string&keyText)
+{
+	if(key==0x1D&&!__ConsoleActive)
+	SetHexShoting(true);
+}
+
+void HexShotingKeyUp(uint8 key,string&keyText)
+{
+	if(key==0x1D)
+	SetHexShoting(false);
+}
+
+void HexShotingInputLost()
+{
+	SetHexShoting(false);
+}
+
+void SetHexShoting(bool enabled)
+{
+	if(enabled)
+	{
+		
+		LastCursor=::GetCurrentCursor();
+		if(LastCursor==(3))
+		Active=true;
+		
+	}
+	else
+	{
+		Active=false;
+		
+	}
+}
+
+void RenderHexShoting()
+{
+	if(!IsHexShotingActive())
+	return;
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return;
+	
+	uint16 hx=0,hy=0;
+	if(!GetMonitorHex(__MouseX,__MouseY,hx,hy))
+	return;
+	
+	ItemCl@item=chosen.GetItem(0,(1));
+	if(!IsHexShotableThere(chosen,item,hx,hy))
+	return; 
+	
+	int x=0,y=0;
+	if(!GetHexPos(hx,hy,x,y))
+	return;
+	
+	int radius=(item.AmmoPid==(37))?3:4;
+	
+	uint tohit=::HexShotingToHit(chosen,hx,hy,item.Proto,item);
+	int ap=::HexShotActionPointsCost(item,chosen);
+	bool hasAp=ap<=chosen.Stat[(75)];
+	bool hasAmmo=item.AmmoCount>0;
+	
+	array<uint16>radiusVert=
+	{
+		hx,hy,
+		hx,hy,
+		hx,hy,
+		hx,hy,
+		hx,hy,
+		hx,hy
+	};
+	MoveHexByDir(radiusVert[0],radiusVert[1],0,radius);
+	MoveHexByDir(radiusVert[2],radiusVert[3],1,radius);
+	MoveHexByDir(radiusVert[4],radiusVert[5],2,radius);
+	MoveHexByDir(radiusVert[6],radiusVert[7],3,radius);
+	MoveHexByDir(radiusVert[8],radiusVert[9],4,radius);
+	MoveHexByDir(radiusVert[10],radiusVert[11],5,radius);  
+	
+	DrawHexArea(radiusVert,false,(0x77FF0000));
+	
+	if(hasAp&&hasAmmo)
+	DrawText(tohit+"%",x+20,y-10,40,20,((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xC8)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0200));
+	else
+	{
+		if(hasAmmo)
+		DrawText(tohit+"%",x+20,y-10,40,20,((uint((0xFF<<24)|(((0xC8)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0200));
+		else
+		DrawText("Reload",x+20,y-10,40,20,((uint((0xFF<<24)|(((0xC8)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0200));
+	}
+	
+}
+
+void TryHexShot()
+{
+	
+	if(!IsHexShotingActive())
+	return;
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return;
+	
+	uint16 hx=0,hy=0;
+	if(!GetMonitorHex(__MouseX,__MouseY,hx,hy))
+	return;
+	
+	ItemCl@item=chosen.GetItem(0,(1));
+	if(!IsHexShotableThere(chosen,item,hx,hy))
+	return;
+	
+	if(item.AmmoCount<=0)
+	PlaySound('W','O',item.Proto.Weapon_SoundId_0,'1');
+	
+	if(item.AmmoCount<=0||(::HexShotActionPointsCost(item,chosen)>chosen.Stat[(75)]))
+	{
+		array<uint>actions;
+		uint cnt=GetChosenActions(actions);
+		if(actions.length()>0&&actions[0]==(1))
+		{
+			uint[]action={(0),0,0,0,0,0,0};
+			SetChosenActions(action);
+		}
+		return;
+	} 
+	
+	if(CheckTimeDiff(lastH,lastM,lastS,lastMS))
+	RunServerScriptUnsafe("hexShot@unsafe_HexShot",hx,hy,0,null,null);
+	
+}
+
+bool CheckTimeDiff(uint16 lh,uint16 lm,uint16 ls,uint16 lms)
+{
+	uint16 undef;
+	uint16 hour=0;
+	uint16 second=0;
+	uint16 msecond=0;
+	uint16 minute=0;
+	
+	GetTime(undef,undef,undef,undef,hour,minute,second,msecond);
+	
+	lastH=hour;
+	lastM=minute;
+	lastS=second;
+	lastMS=msecond;
+	
+	if(lh>hour)
+	hour+=24;
+	if(lm>minute)
+	{
+		minute+=60;
+		hour--;
+	}
+	if(ls>second)
+	{
+		second+=60;
+		minute--;
+	}
+	if(lms>msecond)
+	{
+		msecond+=1000;
+		second--;
+	}
+	
+	uint td=(second-ls)*1000;
+	td=(msecond-lms+td);
+	
+	if(td>=__Breaktime||lh!=hour||lm!=minute)
+	return true;
+	else
+	{
+		lastH=lh;
+		lastM=lm;
+		lastS=ls;
+		lastMS=lms;
+		return false;
+	}
+} 
+

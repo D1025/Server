@@ -1,0 +1,5293 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// mob_dynamic.fos
+//
+// Script for dynamic mobs, a replacement for regular ones
+// Integrated with Town Raiders events.
+//
+
+#include "_defines.fos"
+#include "_macros.fos"
+#include "_maps.fos"
+#include "entire.fos"
+#include "npc_roles_h.fos"
+#include "npc_planes_h.fos"
+#include "utils_h.fos"
+#include "broadcast_h.fos"
+#include "_npc_pids.fos"
+#include "item_bonus.fos"
+#include "_dialogs.fos"
+#include "_ai.fos"
+#include "_entires.fos"
+#include "polygon_h.fos"
+#include "mob_dynamic_h.fos"
+#include "factions_h.fos"
+
+import string GetLexem(Item& item, string& lex) from "lexems";
+import bool IsLexem(Item& it, string& lex) from "lexems";
+import void UnsetLexem(Item& item, string& lex) from "lexems";
+import bool BaseIsTakingByMobs(Location& loc) from "base_control";
+//import bool BaseIsTaking(uint16 locid) from "base_control";
+
+//Shared variables:
+string groupname = "NOT SPECIFIED";
+uint16 statteamid = 5003, dialog = 0, aiid = 0;
+
+void InitializeDynamicMob(Map& map)
+{
+	InitializeDynamicMob(map, false, 1);
+}
+
+void InitializeDynamicMob(Map& map, bool withBoss)
+{
+	InitializeDynamicMob(map, withBoss, 1);
+}
+
+void InitializeDynamicMob(Map& map, bool withBoss, int8 howmanybosses)
+{	
+	uint8 reqNumMobs; //required number of mobs for map
+	uint8 numMobs = map.GetNpcCount(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_LIFE_AND_KO);
+	
+	Location@ loc = map.GetLocation();
+	
+	switch(map.GetProtoId())
+	{
+		case MAP_SaltLake :	reqNumMobs = 10; break; //entires 0 , 1 , 2 , 5 , 10 , 17
+		// WH
+		case MAP_Ripper : reqNumMobs = 20; break; 
+		case MAP_RipperSub : reqNumMobs = 10; break; 
+		//ARES
+		case MAP_Area51Entrance : reqNumMobs = 25; break;
+		case MAP_Area51Hangar :
+		case MAP_Area51Base : reqNumMobs = 12; break;
+		case MAP_AresMilitaryBase_Entrance : reqNumMobs = 25; break;
+		case MAP_AresMilitaryBase_Level1 :
+		case MAP_AresMilitaryBase_Level2 :
+		case MAP_Ares_level3 :
+		case MAP_Ares_level4 : reqNumMobs = 12; break;
+		//case MAP_Talchem_surface :
+		case MAP_Talchem_1 : reqNumMobs = 20; break;
+		case MAP_Talchem_2 : reqNumMobs = 20; break;
+		// Tunnel
+		case MAP_Tunnel_1 : reqNumMobs = 15; break;
+		case MAP_Tunnel_2 : reqNumMobs = 25; break;
+		case MAP_Tunnel_3 : reqNumMobs = 6; break;
+		//Waterworks
+		case MAP_Waterworks : reqNumMobs = 15; break;
+		//Slavery vault
+		case MAP_SlaveryVault1 : reqNumMobs = 10; break;
+		case MAP_SlaveryVault2 : reqNumMobs = 20; break;
+		case MAP_SlaveryVault3 : reqNumMobs = 15; break;
+		//Necro
+		case MAP_NecropolisVaultLevel1 : reqNumMobs = 5; break;
+		case MAP_NecropolisVaultLevel2 : reqNumMobs = 20; break;
+		case MAP_NecropolisVaultLevel3 : reqNumMobs = 20; break;
+		//Vault 14
+		case MAP_Vault14Entrance : reqNumMobs = 4; break;
+		case MAP_Vault14Level1 : reqNumMobs = 10; break;
+		case MAP_Vault14Level2 : reqNumMobs = 15; break;
+		case MAP_Vault14Level3 : reqNumMobs = 15; break;
+		//Temple
+		case MAP_Temple_1 : reqNumMobs = 10; break;
+		case MAP_Temple_2 : reqNumMobs = 25; break;
+		//Abbey
+		//case MAP_Abbey_sur
+		case MAP_Abbey_sur : reqNumMobs = 20; break;
+		case MAP_Abbey_lvl1 : reqNumMobs = 15; break;
+		case MAP_Abbey_lvl2 : reqNumMobs = 15; break;
+		//Glow
+		//case MAP_Glow_Entrance
+		case MAP_Glow_Floor1 : reqNumMobs = 5; break;
+		case MAP_Glow_Floor2 : reqNumMobs = 8; break;
+		case MAP_Glow_Floor3 : reqNumMobs = 10; break;
+		case MAP_Glow_Floor4 : reqNumMobs = 10; break;
+		case MAP_Glow_Floor5 : reqNumMobs = 15; break;
+		case MAP_Glow_Floor6 : reqNumMobs = 5; break;
+		//LABX7
+		case MAP_Labx7_sur : reqNumMobs = 15; break;
+		case MAP_Labx7_lvl1 : reqNumMobs = 50; break;
+		//case MAP_Labx7_lvl2 : reqNumMobs = 15; break;
+		case MAP_Stfarm1 : reqNumMobs = 8; break;
+		case MAP_Stfarm2 : reqNumMobs = 15; break;
+		//Mariposa
+		case MAP_MilitaryBaseEntrance : reqNumMobs = 10; break;
+		case MAP_MilitaryBaseLevel1 : reqNumMobs = 15; break;
+		case MAP_MilitaryBaseLevel2 : reqNumMobs = 15; break;
+		case MAP_MilitaryBaseLevel3 : reqNumMobs = 15; break;
+		case MAP_MilitaryBaseLevel4 : reqNumMobs = 8; break;
+		//Vault 15
+		case MAP_Vault15Surface : reqNumMobs = 8; break;
+		case MAP_Vault15Level1 : reqNumMobs = 12; break;
+		case MAP_Vault15Level2 : reqNumMobs = 10; break;
+		case MAP_Vault15Level3 : reqNumMobs = 10; break;
+		//Hawthorne:
+		case MAP_Hawthorne : reqNumMobs = 25; break;
+		case MAP_HawthorneOffice : reqNumMobs = 5; break;
+		case MAP_HawthorneHangar : reqNumMobs = 15; break;
+		//case MAP_HawthorneBasement : reqNumMobs = 5; break; 
+		//Tanker	
+		case MAP_SanFranTanker_2 :	reqNumMobs = 25; break;
+		case MAP_Vault13Level1 :	reqNumMobs = 10; break;
+		case MAP_NewRenoSewers : reqNumMobs = 10; break;
+		case MAP_NewReno3 : reqNumMobs = 5; break;
+		default: reqNumMobs = 5; break;
+	}
+	
+	if(loc.IsGuarded() && IsNotDungInGuardedLoc(map))
+	{
+		//Guarded locations, town raiders
+		if(valid(map))
+		{
+			uint16 timeinminutes = Random(10, 2885);
+			CreateTimeEvent(AFTER(REAL_MINUTE(timeinminutes-5)), "e_SetCountDownToRide", map.Id, true);
+		}
+	}
+	/*else if(loc.GetProtoId() == LOCATION_Vault13)
+	{
+		//fill location with v13 mobs (maybe these will be lootable?)
+		//reviwe mob with 882 pid - vault leader, and set dualminigun as weapon
+		//and maybe call for enclave
+	}
+	*/
+	else
+	{
+		//Dungeons and unguarded locations, guarding mobs
+		if(withBoss) //if dungeon is with boss(es)
+		{
+			array<Critter@> bosses;
+			map.GetCritters(0, FIND_ONLY_NPC | FIND_ALL, bosses);
+			
+			for(uint16 i = 0; i < bosses.length(); i++)
+			{
+				if(valid(bosses[i]))
+				{
+					if(bosses[i].Stat[ST_NPC_BOSS] == MOB_IS_BOSS)
+						howmanybosses--;
+				}
+			}
+			
+			for(uint8 i = 0; i < howmanybosses; i++)
+			{
+				array<uint> bossdata = { map.Id, 0, SPAWN_DUNGEON_BOSS };
+				CreateTimeEvent(AFTER(REAL_MINUTE(Random(1,10))), "e_TrySpawnMob", bossdata, true);
+				reqNumMobs--;
+			}
+			
+		}
+		for(uint8 i = 0; i < numMobs; i++)
+		{
+			Critter@ thiscanbeturret = map.GetNpc(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_LIFE_AND_KO, i);
+			if(thiscanbeturret.GetProtoId() == 480 || thiscanbeturret.GetProtoId() == 474 || thiscanbeturret.GetProtoId() == 470)
+				reqNumMobs++;
+		}
+		if(map.GetProtoId() == MAP_SaltLake)
+			for(uint8 i = 0; i < numMobs; i++)
+			{
+				Critter@ nukacolaworker = map.GetNpc(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_LIFE_AND_KO, i);
+				if(IsNukaColaWorker(nukacolaworker))
+					reqNumMobs++;
+			}
+		if(numMobs < reqNumMobs)
+		{
+			uint8 mobsToSpawn = reqNumMobs - numMobs;
+			for(uint8 i = 1; i < mobsToSpawn; i++)
+			{
+				if(valid(map))
+				{
+					array<uint> mobdata = { map.Id, 0, SPAWN_DUNGEON_MOB };
+					CreateTimeEvent(AFTER(REAL_MINUTE(Random(1,10))), "e_TrySpawnMob", mobdata, true);
+				}
+			}			
+		}
+	}
+}
+
+uint e_SetCountDownToRide(array<uint>@ ctdata)
+{
+	Map@ map = GetMap(ctdata[0]);
+	if(!valid(map))
+		return 0;
+	Location@ loc = map.GetLocation();
+	string locationName = GetLocationName(loc.Id);
+	ServerEventCNTSet("Some larger group is preparing to attack " + locationName + ". They will be there in %COUNTDOWN%.", loc.GetProtoId(), EVENT_TYPE_TOWN_RAIDERS, REAL_MINUTE(5));
+	
+	CreateTimeEvent(AFTER(REAL_MINUTE(5)), "e_TryRaidTown", map.Id, true);
+	return 0;
+}
+
+
+
+uint e_TryRaidTown(array<uint>@ mobdata)
+{
+	Map@ map = GetMap(mobdata[0]);
+	if(!valid(map))
+		return 0;
+		
+	uint8 reqNumMobs;
+	
+	array<Critter@> mobs;
+	map.GetCritters(0, FIND_ONLY_NPC, mobs);
+			
+	for(uint16 i=0; i < mobs.length(); i++)
+	{
+		if(valid(mobs[i]) && mobs[i].Stat[ST_TEAM_ID] == 5003)
+			statteamid = 5004;
+		if(valid(mobs[i]) && mobs[i].Stat[ST_TEAM_ID] == 5004)
+			statteamid = 5005;
+		if(valid(mobs[i]) && mobs[i].Stat[ST_TEAM_ID] == 5005)
+			statteamid = 5006;
+		if(valid(mobs[i]) && mobs[i].Stat[ST_TEAM_ID] == 5006)
+			statteamid = 5007;
+		if(valid(mobs[i]) && mobs[i].Stat[ST_TEAM_ID] == 5007)
+			statteamid = 5008;
+		if(valid(mobs[i]) && mobs[i].Stat[ST_TEAM_ID] == 5008)
+			statteamid = 5009;
+		if(valid(mobs[i]) && mobs[i].Stat[ST_TEAM_ID] == 5009)
+			statteamid = 5003;
+	}
+	
+	switch(map.GetProtoId())
+	{
+		case MAP_NCR : reqNumMobs = Random(10, 15); break; //Town Raiders!
+		default: reqNumMobs = Random(10, 15); break;
+	}
+	
+	array<uint> townraiddata = { map.Id, reqNumMobs, SPAWN_TOWN_RAIDERS };
+	CreateTimeEvent(AFTER(0), "e_TrySpawnMob", townraiddata, true);
+	
+	CreateTimeEvent(AFTER(REAL_MINUTE(Random(60, 2885))), "e_SetCountDownToRide", map.Id, true);
+	
+	//return REAL_MINUTE(Random(1,5));
+	return 0;
+}
+
+//Called via ~runscript command
+void SpawnMobs(Critter& cr, int howmany, int whatkind, int whattype)
+{
+	Map@ map = cr.GetMap();
+	if(!valid(map))
+	{
+		cr.Say(SAY_NETMSG, "You are not on valid map.");
+		return;
+	}
+	
+	if(!map.GetLocation().IsGuarded() && map.GetLocation().GetProtoId() != LOCATION_Vault13)
+	{
+		cr.Say(SAY_NETMSG, "You are not on valid map.");
+		return;
+	}
+	
+	if(howmany > 30) cr.Say(SAY_NETMSG, "Number of mobs " + howmany + " is too high! Setting to 30..." );
+	if(howmany < 2) cr.Say(SAY_NETMSG, "Number of mobs " + howmany + " is too low! Setting to 2..." );
+	
+	howmany = CLAMP(howmany, 2, 30);
+	
+	if(map.GetLocation().IsGuarded() && map.GetLocation().IsTown())
+	{
+		switch(map.GetProtoId())
+		{
+			case MAP_NCR :
+			case MAP_Adytum :
+			//case MAP_Blade :
+			//case MAP_Gunrunner :
+			//case MAP_Library :
+			case MAP_HubDowntown :
+			case MAP_Junktown :
+			case MAP_SanFranChina :
+			case MAP_VaultCityDowntown :
+			//case MAP_Vegas :
+				if(map.GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO | FIND_ONLY_NPC) != 0)
+				{
+					cr.Say(SAY_NETMSG, "Town is already raided.");
+				}
+				else
+				{
+					cr.Say(SAY_NETMSG, "Raiding the town by " + howmany + " mobs.");
+					array<uint> filldata = { map.Id, howmany, SPAWN_CALLED_MOBS, whatkind, whattype};
+					CreateTimeEvent(AFTER(0), "e_TrySpawnMob", filldata, false);
+				}
+				break;
+			default :
+				cr.Say(SAY_NETMSG, "This map is not ready to be raided.");
+		}
+		return;
+	}
+	
+	if(map.GetLocation().GetProtoId() == LOCATION_Vault13)
+	{
+		cr.Say(SAY_NETMSG, "Spawning " + howmany + " in Vault 13.");
+		array<uint> filldata = { map.Id, howmany, SPAWN_CALLED_MOBS, whatkind, whattype};
+		CreateTimeEvent(AFTER(0), "e_TrySpawnMob", filldata, false);
+		return;
+	}
+	
+	cr.Say(SAY_NETMSG, "Unknown exception or error.");
+}
+
+void CallMobs(Critter& cr, int howmany, int whatkind, int whattype)
+{
+	Map@ map = cr.GetMap();
+	if(!valid(map))
+	{
+		cr.Say(SAY_NETMSG, "You are not on valid map.");
+		return;
+	}
+	
+	if(howmany > 10) cr.Say(SAY_NETMSG, "Number of mobs " + howmany + " is too high! Setting to 10..." );
+	if(howmany < 1) cr.Say(SAY_NETMSG, "Number of mobs " + howmany + " is too low! Setting to 1..." );
+	
+	howmany = CLAMP(howmany, 1, 10);
+	
+	cr.Say(SAY_NETMSG, "Spawning " + howmany + " event mobs.");
+	array<uint> filldata = { map.Id, howmany, SPAWN_EVENT_MOBS, whatkind, whattype, cr.HexX, cr.HexY};
+	CreateTimeEvent(AFTER(0), "e_TrySpawnMob", filldata, false);
+}
+
+void FillMapByMobs(Map& map, uint8 reqNumMobs, uint8 kindof, uint8 subtype, uint8 weapgroup)
+{
+	if(!valid(map))
+	{
+		Log("Map is not valid.");
+		return;
+	}
+	
+	array<uint> filldata = { map.Id, reqNumMobs, SPAWN_MOBS_TO_FILL, kindof, subtype, weapgroup};
+	CreateTimeEvent(AFTER(0), "e_TrySpawnMob", filldata, false);
+}
+
+
+//DISABLED FOR NOW
+/*void FillLocationByMobs(Location& loc)
+{
+	if(!valid(loc))
+	{
+		Log("Location is not valid.");
+		return;
+	}	
+}*/
+
+//Arrays with mobs
+array<uint16> leatherjackets = { 30, 31, 32 , 33 , 472 }; 			// Group 1
+array<uint16> leatherarmors = { 70, 71 , 69 , 891 , 892 , 897 }; 	// Group 2
+array<uint16> metalarmors = { 40 , 41 , 827 , 828 , 829 , 890 }; 	// Group 3
+array<uint16> eca = { 888 , 889 }; 									// Group 4
+array<uint16> bca = { 886 , 887 }; 									// Group 5
+array<uint16> rca = { 475 , 476 }; 									// Group 6
+array<uint16> v13 = { 898 , 899 , 900 }; 							// Group 7
+array<uint16> pca = { 894 , 895 }; 									// Group 8
+array<uint16> carmor = { 134 , 135 }; 								// Group 9
+array<uint16> carmormk2 = { 261 , 262 }; 							// Group 10
+array<uint16> parmor = { 122 }; 									// Group 11
+array<uint16> hpa = { 893 }; 										// Group 12
+array<uint16> apa = { 250 }; 										// Group 13
+array<uint16> apamk2 = { 250 }; 									// Group 14
+array<uint16> vaultx = { 884 , 885}; 								// Group 15
+array<uint16> dca = { 590 , 591 }; 									// Group 16
+array<uint16> mutants = { 549 , 550 }; 						// Group 17
+array<uint16> melchiorpets = { 562 , 563 , 564 , 565 }; //melhior: 566 // Group 18
+array<uint16> aliens = { 242 , 243 , 517 }; //242 - Alien, 243 - Tough alien, 517 - Young alien // Group 19
+array<uint16> robots = { 576 , 577 , 578 , 579 , 580 , 581 , 582 , 583 , 584 };
+array<uint16> rats = { 588 , 587 , 586 };
+array<uint16> scavengers = { 60 , // guy with the baseball hat - one handed sg
+							 64 , // girl - one handed
+							 59 , // girl - two handed sg
+							 63 , // black guy with red clothes - two handed sg
+							 65 , // green old man - hth only
+							 68 }; // girl - hth only, knifes
+
+array<uint16>@ GenerateGroup(Map& map, uint8 kindofmob = 0, uint8 subtypemob = 0)
+{
+	array<uint16> GroupOfMobs;
+	dialog = 0;
+	aiid = 0;
+	
+	//Generate group
+	if(kindofmob == 0)
+		switch(Random(1, 21))
+		{
+			case 1 : groupname = "Slag bandits"; break;
+			case 2 : groupname = "Vipers raiders"; break;
+			case 3 : groupname = "Jackals raiders"; break;
+			case 4 : 
+				if(map.GetProtoId() == MAP_VaultCityDowntown || map.GetProtoId() == MAP_Navarro)
+					groupname = "NCR Soldiers and Rangers"; //weaponforgroup == 4
+				else
+					groupname = "Enclave Soldiers"; //weaponforgroup == 7
+				break;
+			case 5 : groupname = "Renegades"; break;
+			case 6 : groupname = "Slavers"; break;
+			case 7 : groupname = "Aliens"; break;
+			case 8 : groupname = "Deathclaws"; break;
+			case 9 : groupname = "Centaurs"; break;
+			case 10 : groupname = "Floaters"; break;
+			case 11 : groupname = "Floaters and Centaurs"; break;
+			case 12 : groupname = "Mercenaries"; break;
+			case 13 : groupname = "Super Mutant remnants"; break;
+			case 14 : groupname = "Master's Elite Crew"; break;
+			case 15 : groupname = "Endless Walkers"; break;
+			case 16 : groupname = "Spiders"; break;
+			case 17 : groupname = "Dogs"; break;
+			case 18 : groupname = "Radscorpions"; break;
+			case 19 : groupname = "Melchior's pets"; break;
+			case 20 : groupname = "Melchior with his pets"; break;
+			case 21 : groupname = "Robots"; break;
+			case 22 : groupname = "Rats"; break;
+		}
+		
+	
+	//Debug - comment it if not needed!
+	if(kindofmob != 0)
+	{
+		Log("Trying to generate one mob kindofmob = " + kindofmob + ", subtypemob = " + subtypemob + " for mapId <" + map.Id + ">, ProtoId <" + map.GetProtoId() + ">.");
+	}
+	else
+	{
+		Location@ loc = map.GetLocation();
+		//string locationName = GetLocationName(loc.Id);
+		Log("Trying to generate group of mobs <" + groupname + ">, subtypemob = " + subtypemob + " for mapId <" + map.Id + ">, location name <" + GetLocationName(loc.Id) + ">.");
+	}
+	
+	if(groupname == "Slag bandits" || kindofmob == 1)
+	{
+		groupname = "Slag bandits";
+		
+		uint8 tablelenght = 0;
+		uint8 getrangeofmob = 3;
+			
+		if(subtypemob == 1)
+			getrangeofmob = 2;
+				
+		if(subtypemob == 2)
+			getrangeofmob = 1;
+				
+		for(uint8 n=0; n<3; n++)
+		{
+			switch(Random(1, getrangeofmob))
+			{
+				case 1 : 
+					for(uint8 i=0; i<metalarmors.length(); i++)
+					{
+						tablelenght++;
+						GroupOfMobs.resize(tablelenght);
+						GroupOfMobs[tablelenght-1] = metalarmors[i];
+						
+					}
+					break;
+				case 2 : 
+					for(uint8 i=0; i<leatherarmors.length(); i++)
+					{
+						tablelenght++;
+						GroupOfMobs.resize(tablelenght);
+						GroupOfMobs[tablelenght-1] = leatherarmors[i];
+						
+					}
+					break;
+				case 3 : 
+					for(uint8 i=0; i<leatherjackets.length(); i++)
+					{
+						tablelenght++;
+						GroupOfMobs.resize(tablelenght);
+						GroupOfMobs[tablelenght-1] = leatherjackets[i];
+					}
+					break;
+			}
+			
+		}
+		if(Random(1,2) == 1)
+			for(uint8 i=0; i<carmor.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = carmor[i];
+			}
+			
+		if(Random(1,3) == 1)
+			for(uint8 i=0; i<carmormk2.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = carmormk2[i];
+			}
+		
+		if(Random(1,5) == 1)
+			for(uint8 i=0; i<eca.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = eca[i];
+			}
+		
+		if(Random(1,5) == 1)
+			for(uint8 i=0; i<bca.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = bca[i];
+			}
+			
+		dialog = DIALOG_slags_bandits; //slugs locker dialog
+		aiid = AIPACKET_THUGS;
+	}
+	
+	if(groupname == "Vipers raiders" || groupname == "Jackals raiders" || kindofmob == 2 || kindofmob == 3)
+	{
+		
+		if(kindofmob == 2) groupname = "Vipers raiders";
+		if(kindofmob == 3) groupname = "Jackals raiders";
+		
+		uint8 tablelenght = 0;
+				
+		for(uint8 i=0; i<leatherjackets.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = leatherjackets[i];
+		}
+		
+		if(Random(1,2) == 1)
+			for(uint8 i=0; i<leatherarmors.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = leatherarmors[i];
+			}
+		
+		if(Random(1,3) == 1)
+			for(uint8 i=0; i<metalarmors.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = metalarmors[i];
+			}
+			
+		if(Random(1,4) == 1)
+			for(uint8 i=0; i<carmor.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = carmor[i];
+			}
+			
+		if(Random(1,5) == 1)
+			for(uint8 i=0; i<carmormk2.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = carmormk2[i];
+			}
+		
+		if(Random(1,10) == 1)
+			for(uint8 i=0; i<eca.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = eca[i];
+			}
+		
+		if(Random(1,10) == 1)
+			for(uint8 i=0; i<bca.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = bca[i];
+			}
+			
+		dialog = DIALOG_all_raider;
+		aiid = AIPACKET_THUGS;
+	}
+	
+	if(groupname == "NCR Soldiers and Rangers" || kindofmob == 22)
+	{
+		groupname = "NCR Soldiers and Rangers";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<carmormk2.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = carmormk2[i];
+		}
+		
+		if(Random(1,5) == 1)
+			for(uint8 i=0; i<rca.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = rca[i];
+			}
+		
+		if(Random(1,10) == 1)
+			for(uint8 i=0; i<bca.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = bca[i];
+			}
+		
+		dialog = DIALOG_all_ncr_army;
+		//also DIALOG_all_ranger
+		aiid = AIPACKET_NCR_RANGERS;
+	}
+	
+	if(groupname == "Enclave Soldiers" || kindofmob == 4)
+	{
+		groupname = "Enclave Soldiers";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<carmormk2.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = carmormk2[i];
+		}
+		
+		if(Random(1,2) == 1)
+			for(uint8 i=0; i<eca.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = eca[i];
+			}
+		
+		if(Random(1,10) == 1)
+			for(uint8 i=0; i<apa.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = apa[i];
+			}
+			
+		dialog = DIALOG_all_enclave_soldier;
+		aiid = AIPACKET_ENCLAVE_PATROL;
+	}
+	
+	
+	if(groupname == "Renegades" || kindofmob == 5)
+	{
+		groupname = "Renegades";
+		
+		uint8 tablelenght = 0;
+		
+		for(uint8 i=0; i<carmor.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = carmor[i];
+		}
+		
+		if(Random(1,2) == 1)
+			for(uint8 i=0; i<carmormk2.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = carmormk2[i];
+			}
+			
+		dialog = DIALOG_all_renegade;
+		aiid = AIPACKET_THUGS;
+	}
+	
+	if(groupname == "Slavers" || kindofmob == 6)
+	{
+		groupname = "Slavers";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<leatherjackets.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = leatherjackets[i];
+		}
+		
+		for(uint8 i=0; i<leatherarmors.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = leatherarmors[i];
+		}
+		
+		if(Random(1,3) == 1)
+			for(uint8 i=0; i<carmor.length(); i++)
+			{
+				tablelenght++;
+				GroupOfMobs.resize(tablelenght);
+				GroupOfMobs[tablelenght-1] = carmor[i];
+			}
+			
+		dialog = DIALOG_all_slaver;
+		aiid = AIPACKET_SLAVER;
+	}
+	
+	if(groupname == "Aliens" || kindofmob == 7)
+	{
+		groupname = "Aliens";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<aliens.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = aliens[i];
+		}
+		
+		dialog = DIALOG_mob_alien;
+		aiid = AIPACKET_ALIEN;
+	}
+	
+	if(groupname == "Deathclaws" || kindofmob == 8)
+	{
+		groupname = "Deathclaws";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0] = 244; //small dc
+		GroupOfMobs[1] = 245; //big dc
+		
+		if(subtypemob == 1)
+		{
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0] = 506; //Goris (claws dialog is needed - now it's identified as desert stalker, or make changes in msg files)
+		}
+		
+		aiid = AIPACKET_DEATHCLAW;
+	}
+	
+	
+	if(groupname == "Centaurs" || kindofmob == 9)
+	{
+		groupname = "Centaurs";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0] = 248; //centaur
+		GroupOfMobs[1] = 249; //mean centaur
+		
+		aiid = AIPACKET_CENTAUR;
+	}
+	
+	if(groupname == "Floaters" || kindofmob == 10)
+	{
+		groupname = "Floaters";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0] = 246; //floater
+		GroupOfMobs[1] = 247; //nasty floater
+		
+		aiid = AIPACKET_FLOATER;
+	}
+	
+	if(groupname == "Floaters and Centaurs" || kindofmob == 11)
+	{
+		groupname = "Floaters and Centaurs";
+		
+		GroupOfMobs.resize(4);
+		GroupOfMobs[0] = 246; //floater
+		GroupOfMobs[1] = 247; //nasty floater
+		GroupOfMobs[2] = 248; //centaur
+		GroupOfMobs[3] = 249; //mean centaur
+	}
+	
+	if(groupname == "Mercenaries" || kindofmob == 12)
+	{
+		groupname = "Mercenaries";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<carmor.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = carmor[i];
+		}
+		
+		for(uint8 i=0; i<carmormk2.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = carmormk2[i];
+		}
+		aiid = AIPACKET_THUGS;
+		dialog = DIALOG_all_mercenary;
+	}
+	
+	if(groupname == "Super Mutant remnants" || kindofmob == 13)
+	{
+		groupname = "Super Mutant remnants";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<mutants.length()-1; i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = mutants[i];
+		}
+		dialog = DIALOG_all_supermutants_enc;
+		aiid = AIPACKET_SUPER_MUTANT;
+	}
+	
+	if(groupname == "Master's Elite Crew" || kindofmob == 14)
+	{
+		groupname = "Master's Elite Crew";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<mutants.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = mutants[i];
+		}
+		dialog = 0;
+		aiid = AIPACKET_SUPER_MUTANT;
+	}
+	
+	if(groupname == "Endless Walkers" || kindofmob == 15)
+	{
+		groupname = "Endless Walkers";
+		
+		GroupOfMobs.resize(4);
+		GroupOfMobs[0] = 572;
+		GroupOfMobs[1] = 573;
+		GroupOfMobs[2] = 574;
+		GroupOfMobs[3] = 575;
+		
+		if(subtypemob == 1) // Fallout 2 Reactor Ghouls
+		{
+			GroupOfMobs.resize(5);
+			GroupOfMobs[4] = 178;
+		}
+		
+		if(subtypemob == 2) // Brown Ghouls
+		{
+			GroupOfMobs.resize(5);
+			GroupOfMobs[4] = 258;
+		}
+		
+		if(subtypemob == 3) // Brown + Fallout 2 Reactor Ghouls
+		{
+			GroupOfMobs.resize(6);
+			GroupOfMobs[4] = 179;
+			GroupOfMobs[5] = 258;
+		}
+		
+		if(subtypemob == TYPE_REACTOR_GHOULS_ONLY) // Fallout 2 Reactor Ghouls
+		{
+			GroupOfMobs.resize(1);
+			GroupOfMobs[0] = 178;
+		}
+		
+		dialog = DIALOG_all_endless_walker;
+	}
+	
+	if(groupname == "Spiders" || kindofmob == 16)
+	{
+		groupname = "Spiders";
+		
+		GroupOfMobs.resize(1);
+		GroupOfMobs[0] = 883;
+		
+		aiid = AIPACKET_CENTAUR;
+	}
+		
+	if(groupname == "Dogs" || kindofmob == 17)
+	{
+		groupname = "Dogs";
+		
+		GroupOfMobs.resize(1);
+		GroupOfMobs[0] = 9;
+		dialog = DIALOG_mob_dog;
+	}
+	
+	if(groupname == "Radscorpions" || kindofmob == 18)
+	{
+		groupname = "Radscorpions";
+		
+		GroupOfMobs.resize(2);
+		GroupOfMobs[0] = 5;
+		GroupOfMobs[1] = 6;
+		
+		aiid = AIPACKET_SCORPION;
+	}
+		
+	if(groupname == "Melchior's pets" || groupname == "Melchior with his pets" || kindofmob == 19)
+	{
+		
+		if(kindofmob == 19 && subtypemob == 0 && groupname != "Melchior with his pets") groupname = "Melchior's pets";
+		if(kindofmob == 19 && subtypemob == 1) groupname = "Melchior with his pets";
+		
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<melchiorpets.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = melchiorpets[i];
+		}
+	}
+	
+	if(groupname == "Robots" || kindofmob == 20)
+	{
+		groupname = "Robots";
+		
+		uint8 tablelenght = 0;
+		// { 576 , 577 , 578 , 579 , 580 , 581 , 582 , 583 , 584 }
+		switch(subtypemob)
+		{
+			case TYPE_ALL_ROBOTS :
+				for(uint8 i=0; i<robots.length(); i++)
+				{
+					tablelenght++;
+					GroupOfMobs.resize(tablelenght);
+					GroupOfMobs[tablelenght-1] = robots[i];
+				}
+				break;
+			case TYPE_MRHANDY_ONLY :
+				GroupOfMobs.resize(1);
+				GroupOfMobs[0] = 576;
+				if(Random(1,10) == 10) //Amplified Mr Handy
+				{
+					GroupOfMobs.resize(2);
+					GroupOfMobs[1] = 577;
+				}
+				aiid = AIPACKET_REPAIR_BOT;
+				break;
+			case TYPE_ROBOBRAIN_ONLY :
+				GroupOfMobs.resize(1);
+				GroupOfMobs[0] = 578;
+				if(Random(1,10) == 10) //Adaptive BrainBot
+				{
+					GroupOfMobs.resize(2);
+					GroupOfMobs[1] = 579;
+				}
+				aiid = AIPACKET_TOUGH_BOT;
+				break;
+			case TYPE_EYEBOT_ONLY :
+				GroupOfMobs.resize(1);
+				GroupOfMobs[0] = 580;
+				if(Random(1,10) == 10) //Amplified Eye Bot
+				{
+					GroupOfMobs.resize(2);
+					GroupOfMobs[1] = 581;
+				}
+				aiid = AIPACKET_CRAZED_ROBOT;
+				break;
+			case TYPE_SENTRYBOT_ONLY :
+				GroupOfMobs.resize(1);
+				GroupOfMobs[0] = 582;
+				if(Random(1,10) == 10) //Corrected Sentries
+				{
+					GroupOfMobs.resize(2);
+					GroupOfMobs[1] = 583;
+					if(Random(1,2) == 2) //Boosted Sentries
+					{
+						GroupOfMobs.resize(3);
+						GroupOfMobs[2] = 584;
+					}
+				}
+				aiid = AIPACKET_SECURITY_BOT;
+				break;
+		}
+		
+		if(aiid == 0) aiid = AIPACKET_FO1_ROBOTS;
+	}
+	
+	//Vault 13 Citizens
+	if(kindofmob == 21)
+	{
+		groupname = "Vault 13 Dwellers";
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<v13.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = v13[i];
+		}
+		aiid = AIPACKET_FO1_VAULTDWELLER;
+		dialog = DIALOG_vault13_mob_dweller;
+	}
+	
+	if(groupname == "Rats" || kindofmob == 23)
+	{
+		groupname = "Rats";
+		
+		uint8 tablelenght = 0;
+		
+		switch(subtypemob)
+		{
+			case TYPE_ALL_RATS :
+				for(uint8 i=0; i<rats.length(); i++)
+				{
+					tablelenght++;
+					GroupOfMobs.resize(tablelenght);
+					GroupOfMobs[tablelenght-1] = rats[i];
+				}
+				aiid = AIPACKET_FO1_RATS;
+				break;
+			case TYPE_MOLERATS_ONLY :
+				GroupOfMobs.resize(1);
+				GroupOfMobs[0] = 586;
+				aiid = AIPACKET_FO1_MOLE_RATS;
+				break;
+			case TYPE_RATS_ONLY :
+				GroupOfMobs.resize(1);
+				GroupOfMobs[0] = 588;
+				aiid = AIPACKET_FO1_RATS;
+				break;
+			case TYPE_PIGRATS_ONLY :
+				GroupOfMobs.resize(1);
+				GroupOfMobs[0] = 587;
+				aiid = AIPACKET_FO1_MOLE_RATS;
+				break;
+			case TYPE_RATS_AND_PIGRATS :
+				GroupOfMobs.resize(2);
+				GroupOfMobs[0] = 588;
+				GroupOfMobs[1] = 587;
+				aiid = AIPACKET_MUTATED_RAT;
+				break;
+			case TYPE_RATS_AND_MOLERATS :
+				GroupOfMobs.resize(2);
+				GroupOfMobs[0] = 588;
+				GroupOfMobs[1] = 586;
+				aiid = AIPACKET_MUTATED_RAT;
+				break;
+			case TYPE_PIGRATS_AND_MOLERATS :
+				GroupOfMobs.resize(2);
+				GroupOfMobs[0] = 587;
+				GroupOfMobs[1] = 586;
+				aiid = AIPACKET_MUTATED_RAT;
+				break;
+		}
+		
+		dialog = 0;
+	}
+	
+	if(kindofmob == FROM_GROUP_SCAVENGERS)
+	{
+		groupname = "Reno Scavengers";
+		uint8 tablelenght = 0;
+
+		for(uint8 i=0; i<scavengers.length(); i++)
+		{
+			tablelenght++;
+			GroupOfMobs.resize(tablelenght);
+			GroupOfMobs[tablelenght-1] = scavengers[i];
+		}
+		aiid = AIPACKET_THUGS;
+		dialog = DIALOG_nr_scavenger;
+	}
+	
+	/*	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		x Log for debug, comment it if everything is fine. x
+		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	*/
+	
+	if(kindofmob == 0) // For town raiders, other events
+		Log("Generating mobs's group: " + groupname);
+		
+	if(kindofmob != 0) // For dungeons.
+		Log("Generating mob from group with params: kindofmob = " + kindofmob + ", subtypemob = " + subtypemob);
+		
+	/*	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+		x End of debug part.                               x
+		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	*/
+	
+	return GroupOfMobs;
+}
+
+uint16 GenerateBoss()
+{
+	uint16 BossPid = 0;
+	
+	if(groupname == "Aliens")
+	{
+		BossPid = 354; // Queen
+		dialog = 0;
+	}
+	else if(groupname == "Deathclaws")
+	{
+		BossPid = 275; // Mother
+		dialog = 0;
+	}
+	else if(groupname == "Super Mutant remnants")
+	{
+		BossPid = 551;
+		dialog = DIALOG_all_supermutants_enc;
+	}
+	else if(groupname == "Master's Elite Crew")
+	{
+		BossPid = 551;
+		dialog = 0;
+	}
+	else if(groupname == "Melchior with his pets")
+	{
+		BossPid = 566;
+		dialog = 0;
+	}
+	else if(groupname == "Rats")
+	{
+		BossPid = 585;
+		dialog = 0;
+		aiid = AIPACKET_RAT_GOD;
+	}
+
+	return BossPid;
+}
+
+bool BossCanBeGenerated()
+{
+	return GenerateBoss() != 0;
+}
+
+//other:
+//deathclaw 7, dog 9, floater 246, nasty floater 247, 248 centaur, 249 mean centaur, scorpions 5 - 6,
+/* -------------------------------------------------
+New from dynamics:
+
+PID			Type						Notes
+882		Vault Overseer			Only for miniguns AIPACKET_FO1_VAULTDWELLER
+883		Spider					Only unarmed
+896		Mad Ghoul				Can't use any attack, can't walk
+------------------------------------------------- */
+//Arrays for entrances
+//Dungeons and Base Control
+array<uint8> entireSaltLake = { 0 , 1 , 2 , 3 , 10 , 17 };
+array<uint8> entireLARipper = { 0 , 11 , 12 , 13 }; //Warehouse
+array<uint8> entireA51entrance = { 10 };
+array<uint8> entireAresMilitaryBase = { 3 };
+array<uint8> entireTunnel = { 0 , 1 };
+array<uint8> entireTypicalent = { 4 };
+array<uint8> entireWaterWorks = { 0 };
+array<uint8> entireGlow = { 5 };
+array<uint8> entireSierra = { 8 };
+array<uint8> entireRenoSewer = { 5 };
+
+//Areas for dynamic mobs
+IPolygon@ AresLevel1Area1 = null;
+IPolygon@ AresLevel1Area2 = null;
+IPolygon@ AresLevel1Area3 = null;
+IPolygon@ AresLevel2Area1 = null;
+IPolygon@ AresLevel2Area2 = null;
+IPolygon@ AresLevel2Area3 = null;
+IPolygon@ AresLevel3Area1 = null;
+IPolygon@ AresLevel3Area2 = null;
+IPolygon@ AresLevel3Area3 = null;
+IPolygon@ AresLevel4Area1 = null;
+IPolygon@ AresLevel4Area2 = null;
+IPolygon@ AresLevel4Area3 = null;
+
+IPolygon@ HawthorneMilitaryBase = null;
+IPolygon@ NukaColaBottlePlant = null;
+
+/* void InitAresAreas(Map& map)
+{	
+	if(map.GetProtoId() == MAP_AresMilitaryBase_Level1)
+	{
+		if(!valid(AresLevel1Area1))
+			@AresLevel1Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+		if(!valid(AresLevel1Area2))
+			@AresLevel1Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+		if(!valid(AresLevel1Area3))
+			@AresLevel1Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+	}
+	
+	if(map.GetProtoId() == MAP_AresMilitaryBase_Level2)
+	{
+		if(!valid(AresLevel2Area1))
+			@AresLevel2Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+		if(!valid(AresLevel2Area2))
+			@AresLevel2Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+		if(!valid(AresLevel2Area3))
+			@AresLevel2Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+	}
+	
+	if(map.GetProtoId() == MAP_Ares_level3)
+	{
+		if(!valid(AresLevel3Area1))
+			@AresLevel3Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+		if(!valid(AresLevel3Area2))
+			@AresLevel3Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+		if(!valid(AresLevel3Area3))
+			@AresLevel3Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+	}
+	
+	if(map.GetProtoId() == MAP_Ares_level4)
+	{
+		if(!valid(AresLevel4Area1))
+			@AresLevel4Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+		if(!valid(AresLevel4Area2))
+			@AresLevel4Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+		if(!valid(AresLevel4Area3))
+			@AresLevel4Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+	}
+} */
+
+//Town Raiders
+array<uint8> entireNCR = { 0 , 10 };
+array<uint8> entireAdytum = { 0 };
+//array<uint8> entireBlade = { 0 };
+//array<uint8> entireGunrunner = { 0 };
+//array<uint8> entireLibrary = { 0 };
+array<uint8> entireHubDowntown = { 0 };
+array<uint8> entireJunktown = { 1 };
+array<uint8> entireSanFran = { 0 , 10 };
+array<uint8> entireVaultCityDowntown = { 0 };
+array<uint8> entireVegas = { 0 };
+
+uint e_TrySpawnMob(array<uint>@ mobdata)
+{
+	groupname = "NOT SPECIFIED"; //Reset for GenerateGroup
+	
+	Map@ map = GetMap(mobdata[0]);
+	if(!valid(map))
+		return 0;
+		
+	//seting example mob parameters
+	uint16 pid; //typical slags here
+	uint16 bag = 1; //Random shotgun in hand from bags.cfg
+	uint8 level = Random(1,4) , spawndirection = Random(0,5), howmanyspawns = 1, weaponforgroup = 0, kindof = 0 , subtype = 0;
+	//uint16 dialog; //Moved to global var of this script
+	// string groupname = "NOT SPECIFIED"; //Moved to global var of this script
+	bool MobIsBoss = false;
+	array<uint8> entireNumbers;
+	
+	Location@ loc = map.GetLocation();
+	
+	if(mobdata.length() == 2) //Special exception for dungeon mobs TODO: Rework whole mobdata for dung mobs.
+	{
+		mobdata.resize(3);
+		mobdata[2] = SPAWN_DUNGEON_MOB;
+		howmanyspawns = 1;
+	}
+	
+	if(mobdata[2] == SPAWN_EVENT_MOBS) //map.Id, howmany, SPAWN_EVENT_MOBS, whatkind, whattype, cr.HexX, cr.HexY
+	{
+		howmanyspawns = mobdata[1];
+		kindof = mobdata[3];
+		subtype = mobdata[4];
+	}
+	//else if((loc.IsGuarded() || mobdata[2] == SPAWN_MOBS_TO_FILL) && IsNotDungInGuardedLoc(map))
+	else if(mobdata[2] == SPAWN_TOWN_RAIDERS || mobdata[2] == SPAWN_MOBS_TO_FILL || mobdata[2] == SPAWN_CALLED_MOBS) //&& IsNotDungInGuardedLoc(map))
+	{
+		howmanyspawns = mobdata[1];
+		if(mobdata[2] == SPAWN_MOBS_TO_FILL || mobdata[2] == SPAWN_CALLED_MOBS)
+		{
+			if(howmanyspawns == 0) return 0;
+			kindof = mobdata[3];
+			subtype = mobdata[4];
+		}
+		if(mobdata[2] == SPAWN_MOBS_TO_FILL)
+			weaponforgroup = mobdata[5];
+	}
+	//Here is a special exception for solving some bullshit after latest updates. Remove it when everything will be fine
+	else if(mobdata.length() == 1)
+	{
+		mobdata.resize(2);
+		mobdata[1] = SPAWN_DUNGEON_MOB;
+		Log("Special exception applied...");
+	}
+	//End of special exception.
+	else
+	{
+		if(mobdata[2] == SPAWN_DUNGEON_BOSS)
+			MobIsBoss = true;
+	}
+	
+	if(mobdata[2] != SPAWN_EVENT_MOBS) //event mobs will be spawned near GM
+	switch(map.GetProtoId())
+	{
+		case MAP_SaltLake :
+			entireNumbers.resize(entireSaltLake.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireSaltLake[i];
+			break;
+		case MAP_Ripper :
+			entireNumbers.resize(entireLARipper.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireLARipper[i];
+			break;
+		case MAP_RipperSub :
+			entireNumbers.resize(1);
+			entireNumbers[0] = 12;
+			break;
+		case MAP_Area51Entrance :
+		case MAP_Area51Hangar :
+		case MAP_Area51Base :
+			entireNumbers.resize(entireA51entrance.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireA51entrance[i];
+			break;
+		case MAP_AresMilitaryBase_Entrance:
+		case MAP_AresMilitaryBase_Level1 :
+		case MAP_AresMilitaryBase_Level2 :
+		case MAP_Ares_level3 :
+		case MAP_Ares_level4 :
+			entireNumbers.resize(entireAresMilitaryBase.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireAresMilitaryBase[i];
+			break;
+		case MAP_NCR :
+			entireNumbers.resize(entireNCR.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireNCR[i];
+			break;
+		case MAP_Adytum :
+			entireNumbers.resize(entireAdytum.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireAdytum[i];
+			break;
+		/* case MAP_Blade :
+			entireNumbers.resize(entireBlade.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireBlade[i];
+			break; */
+		/*case MAP_Gunrunner :
+			entireNumbers.resize(entireGunrunner.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireGunrunner[i];
+			break;
+		case MAP_Library :
+			entireNumbers.resize(entireLibrary.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireLibrary[i];
+			break;*/
+		case MAP_HubDowntown :
+			entireNumbers.resize(entireHubDowntown.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireHubDowntown[i];
+			break;
+		case MAP_Junktown :
+			entireNumbers.resize(entireJunktown.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireJunktown[i];
+			break;
+		case MAP_SanFranChina :
+			entireNumbers.resize(entireSanFran.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireSanFran[i];
+			break;
+		case MAP_VaultCityDowntown :
+			entireNumbers.resize(entireVaultCityDowntown.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireVaultCityDowntown[i];
+			break;
+		case MAP_Vegas :
+			entireNumbers.resize(entireVegas.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireVegas[i];
+			break;
+		case MAP_Talchem_1 :
+		case MAP_Talchem_2 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;
+		case MAP_Tunnel_1 :
+		case MAP_Tunnel_2 :
+		case MAP_Tunnel_3 :
+			entireNumbers.resize(entireTunnel.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTunnel[i];
+			break;
+		case MAP_Waterworks :
+			entireNumbers.resize(entireWaterWorks.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireWaterWorks[i];
+			break;
+		case MAP_SlaveryVault1 :
+		case MAP_SlaveryVault2 :
+		case MAP_SlaveryVault3 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;
+		case MAP_NecropolisVaultLevel1 :
+		case MAP_NecropolisVaultLevel2 :
+		case MAP_NecropolisVaultLevel3 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;	
+		case MAP_Vault14Entrance :
+		case MAP_Vault14Level1 :
+		case MAP_Vault14Level2 :
+		case MAP_Vault14Level3 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;
+		case MAP_Temple_1 :
+		case MAP_Temple_2 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;	
+		case MAP_Abbey_sur :
+		case MAP_Abbey_lvl1 :
+		case MAP_Abbey_lvl2 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];	
+			break;
+		case MAP_Glow_Floor1 :
+		case MAP_Glow_Floor2 :
+		case MAP_Glow_Floor3 :
+		case MAP_Glow_Floor4 :
+		case MAP_Glow_Floor5 :
+		case MAP_Glow_Floor6 :
+			entireNumbers.resize(entireGlow.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireGlow[i];	
+			break;
+		case MAP_SierraArmyDepot_TheBattlefield :
+		case MAP_SierraArmyDepot_Level1 :
+		case MAP_SierraArmyDepot_Level2 :
+		case MAP_SierraArmyDepot_Level3 :
+		case MAP_SierraArmyDepot_Level4 :
+			entireNumbers.resize(entireSierra.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireSierra[i];	
+			break;
+		case MAP_Labx7_sur :
+		case MAP_Labx7_lvl1 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];	
+			break;
+		case MAP_Stfarm1 :
+		case MAP_Stfarm2 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];	
+			break;
+		case MAP_MilitaryBaseEntrance :
+		case MAP_MilitaryBaseLevel1 :
+		case MAP_MilitaryBaseLevel2 :
+		case MAP_MilitaryBaseLevel3 :
+		case MAP_MilitaryBaseLevel4 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];	
+			break;
+		case MAP_Vault15Surface :
+		case MAP_Vault15Level1 :
+		case MAP_Vault15Level2 :
+		case MAP_Vault15Level3 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;
+		case MAP_Hawthorne :
+		//case MAP_HawthorneBasement :
+		case MAP_HawthorneHangar :
+		case MAP_HawthorneOffice :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;
+		case MAP_SanFranTanker_2 :
+			entireNumbers.resize(entireTypicalent.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireTypicalent[i];
+			break;
+		case MAP_Vault13Level1 :
+			if(mobdata[2] == SPAWN_DUNGEON_MOB)
+			{
+				entireNumbers.resize(entireTypicalent.length());
+				for(uint i = 0; i < entireNumbers.length(); i++)
+					entireNumbers[i] = entireTypicalent[i];
+				
+			}
+			if(mobdata[2] == SPAWN_MOBS_TO_FILL)
+			{
+				entireNumbers.resize(1);
+				entireNumbers[0] = 5;
+			}
+			break;
+		case MAP_Vault13Level2 :
+		case MAP_Vault13Level3 :
+			entireNumbers.resize(1);
+			entireNumbers[0] = 5;
+			break;
+		case MAP_enclave_1:
+		case MAP_enclave_2:
+		case MAP_enclave_boss:
+			entireNumbers.resize(1);
+			entireNumbers[0] = 90;
+			break;
+		case MAP_NewRenoSewers :
+			entireNumbers.resize(entireRenoSewer.length());
+			for(uint i = 0; i < entireNumbers.length(); i++)
+				entireNumbers[i] = entireRenoSewer[i];
+			break;
+		case MAP_NewReno3 :
+			entireNumbers.resize(2);
+			entireNumbers[0] = 1;
+			entireNumbers[1] = 2;
+			break;
+		default: return 0;
+	}
+	
+	uint8 entireNumber;
+	if(mobdata[2] != SPAWN_EVENT_MOBS)
+		entireNumber = entireNumbers[(Random(0, entireNumbers.length()-1))];
+	
+	array<Entire> enter_entires;
+	if(mobdata[2] != SPAWN_EVENT_MOBS)
+		if(ParseEntires(map, enter_entires, entireNumber) == 0)
+			return REAL_MINUTE(Random(1,10));
+		
+	//declaration for townraiders and mobs to fill array
+	array<uint16> TownRaiders;
+	if(mobdata[2] != SPAWN_DUNGEON_MOB && mobdata[2] != SPAWN_DUNGEON_BOSS)
+	{
+		array<uint16> Mobs = GenerateGroup(map, kindof, subtype);
+		if(Mobs.length() == 0)
+			return 0;
+			
+		uint8 tablelenght = 0;
+		for(uint8 i = 0; i < Mobs.length(); i++)
+		{
+			tablelenght++;
+			TownRaiders.resize(tablelenght);
+			TownRaiders[tablelenght-1] = Mobs[i];
+		}
+	}
+		
+	for(uint8 i = 1; i <= howmanyspawns; i++)
+	{
+		//dungeons part
+		
+	if(mobdata[2] == SPAWN_DUNGEON_MOB || mobdata[2] == SPAWN_DUNGEON_BOSS)
+	{
+		if(map.GetProtoId() == MAP_SaltLake)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 1, 1);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = 1;
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Warehouse)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 8);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			//weaponforgroup = 1;
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Area51)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 7);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+		
+		if(loc.GetProtoId() == LOCATION_AresRocketSilo)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 13);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = 13;
+		}
+		
+		if(loc.GetProtoId() == LOCATION_TalChem)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_GHOULS, TYPE_REACTOR_GHOULS_ONLY);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = WEAPONGROUP_UNARMED;
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Tunnel)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 15, 1);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+
+		if(loc.GetProtoId() == LOCATION_Waterworks)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_SLAG_BANDITS, TYPE_IN_METAL_ARMORS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = 1;
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Vault15)
+		{
+			array<uint16> Mobs;
+			// Add also some dogs (5% of chance)
+			if(Random(1, 20) != 20)
+			{
+				Mobs = GenerateGroup(map, FROM_GROUP_SLAG_BANDITS, TYPE_ALSO_IN_JACKETS_AND_LEATHERS);
+				weaponforgroup = 1;
+			}
+			// But dog can't be a potential boss
+			else if(!MobIsBoss)
+			{
+				Mobs = GenerateGroup(map, FROM_GROUP_DOGS);
+			}
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+		
+		if(loc.GetProtoId() == LOCATION_SlaveryVault)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 6);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = 1;
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Necropolis)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_GHOULS, TYPE_ADD_REACTOR_GHOULS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = 1;
+		}
+		
+		//Vault 14 - feel the power of this script here!
+		if(map.GetProtoId() == MAP_Vault14Entrance)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 13);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = 13;
+		}
+		
+		if(map.GetProtoId() == MAP_Vault14Level1 || map.GetProtoId() == MAP_Vault14Level2)
+		{
+			uint8 CentOrMut;
+			
+			if(Random(1,2) == 1) //Mutants
+			{
+				CentOrMut = 13;
+				weaponforgroup = 13;
+			}
+			else //Floaters and Centaurs
+			{
+				CentOrMut = 11;
+			}
+			array<uint16> Mobs = GenerateGroup(map, CentOrMut);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+		
+		if(map.GetProtoId() == MAP_Vault14Level3)
+		{
+			uint8 CentOrMutOrEnc = Random(1,3);
+		
+			switch(CentOrMutOrEnc)
+			{
+				case 1: //Mutants
+					CentOrMutOrEnc = 13;
+					weaponforgroup = 13;
+					break;
+				case 2: //Floates and Centaurs
+					CentOrMutOrEnc = 11;
+					break;
+				case 3: //Enclaves!
+					CentOrMutOrEnc = 4;
+					weaponforgroup = 7;
+					break;
+			}
+			array<uint16> Mobs = GenerateGroup(map, CentOrMutOrEnc);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Temple)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_DEATHCLAWS, TYPE_GORIS_ONLY);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			//weaponforgroup = 1;
+		}
+
+		if(loc.GetProtoId() == LOCATION_Abbey && map.GetProtoId() != MAP_Abbey_sur)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_GHOULS, TYPE_ADD_BROWN_GHOULS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			//weaponforgroup = 1;
+		}
+		else if(loc.GetProtoId() == LOCATION_Abbey && map.GetProtoId() == MAP_Abbey_sur)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_RATS, TYPE_RATS_AND_PIGRATS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+
+		if(loc.GetProtoId() == LOCATION_TheGlow)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_ROBOTS, Random(TYPE_MRHANDY_ONLY, TYPE_SENTRYBOT_ONLY));
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			// weaponforgroup = 1;
+		}
+		
+		if(map.GetProtoId() == MAP_SierraArmyDepot_TheBattlefield)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_ENCLAVE);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = WEAPONGROUP_MEDIUM;
+			groupname = "Sierra Soldiers";
+			dialog = DIALOG_sad_soldier;
+		}
+		
+		if(map.GetProtoId() == MAP_SierraArmyDepot_Level1 || map.GetProtoId() == MAP_SierraArmyDepot_Level2 ||
+		map.GetProtoId() == MAP_SierraArmyDepot_Level3 || map.GetProtoId() == MAP_SierraArmyDepot_Level4)
+		{
+			if(Random(1, 3) != 1)
+			{
+				array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_ENCLAVE);
+				if(Mobs.length() == 0)
+					return 0;
+				pid = Mobs[Random(0, Mobs.length()-1)];
+				weaponforgroup = WEAPONGROUP_MEDIUM;
+				groupname = "Sierra Soldiers";
+				dialog = DIALOG_sad_soldier;
+			}
+			else
+			{
+				array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_ROBOTS, Random(TYPE_ROBOBRAIN_ONLY, TYPE_SENTRYBOT_ONLY));
+				if(Mobs.length() == 0)
+					return 0;
+				groupname = "Sierra Robots";
+				pid = Mobs[Random(0, Mobs.length()-1)];
+			}
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Laboratory_X7)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_ALIENS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			// WHAT?! weaponforgroup = 1;
+		}
+
+		if(loc.GetProtoId() == LOCATION_Strange_Farm)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_RATS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}		
+		
+		if(loc.GetProtoId() == LOCATION_MariposaMilitaryBase)
+		{
+			array<uint16> Mobs = GenerateGroup(map, 14);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			weaponforgroup = 13;
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Hawthorne)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_MERCENARIES);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			groupname = "Army of Hawthorne";
+			dialog = DIALOG_hawthorne_soldier;
+			weaponforgroup = 7;
+		}
+
+		if(map.GetProtoId() == MAP_SanFranTanker_2)
+		{
+			uint8 AliOrFlo;
+			
+			if(Random(1,2) == 1) //Aliens
+			{
+				AliOrFlo = 7;
+			}
+			else //Floaters and Centaurs
+			{
+				AliOrFlo = 11;
+			}
+			array<uint16> Mobs = GenerateGroup(map, AliOrFlo);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+		
+		if(map.GetProtoId() == MAP_Vault13Level1 && mobdata[2] == SPAWN_DUNGEON_MOB)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_RATS, TYPE_RATS_ONLY);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+		
+		if(map.GetProtoId() == MAP_NewRenoSewers)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_SCAVENGERS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+		}
+		
+		if(map.GetProtoId() == MAP_NewReno3)
+		{
+			array<uint16> Mobs = GenerateGroup(map, FROM_GROUP_SLAG_BANDITS);
+			if(Mobs.length() == 0)
+				return 0;
+			pid = Mobs[Random(0, Mobs.length()-1)];
+			dialog = DIALOG_nr_scavenger;
+		}
+	}
+	
+		//Townraiders
+		if(mobdata[2] != SPAWN_DUNGEON_MOB && mobdata[2] != SPAWN_DUNGEON_BOSS)
+		{
+			pid = TownRaiders[Random(0, TownRaiders.length()-1)];
+			
+			//recognize ncr army and rangers
+			if(groupname == "NCR Soldiers and Rangers")
+			{
+				if(pid == 261 || pid == 262)
+					dialog = DIALOG_all_ncr_army;				
+				if(pid == 475 || pid == 476)
+					dialog = DIALOG_all_ranger;
+				if(pid == 886 || pid == 887)
+					switch(Random(1,2))
+					{
+						case 1 : dialog = DIALOG_all_ranger; break;
+						case 2 : dialog = DIALOG_all_ncr_army; break;
+					}
+			}
+			
+			//recognize scorpions
+			if(groupname == "Radscorpions")
+			{
+				if(pid == 5)
+					dialog = DIALOG_mob_small_scorp;
+				if(pid == 6)
+					dialog = DIALOG_mob_large_scorp;
+			}
+			
+			//recognize floaters and centaurs
+			if(groupname == "Floaters and Centaurs")
+			{
+				if(pid == 246 || pid == 247)
+					aiid = AIPACKET_FLOATER;
+				if(pid == 248 || pid == 249)
+					aiid = AIPACKET_CENTAUR;
+			}
+			
+			//recognize melchior and his pets
+			if(groupname == "Melchior's pets" || groupname == "Melchior with his pets")
+			{
+				if(pid == 562)
+				aiid = AIPACKET_DEATHCLAW;
+				if(pid == 563)
+				aiid = AIPACKET_FIRE_GECKOS;
+				if(pid == 564)
+				aiid = AIPACKET_CENTAUR;
+				if(pid == 565)
+				aiid = AIPACKET_FLOATER;
+				if(pid == 566)
+				aiid = AIPACKET_SUPER_MUTANT;
+			}
+			
+			if(i == 1 && mobdata[2] != SPAWN_EVENT_MOBS && mobdata[2] != SPAWN_MOBS_TO_FILL) MobIsBoss = true;
+			else MobIsBoss = false;
+		}
+		/*switch(map.GetProtoId())
+		{
+			case MAP_SaltLake :
+				//seting example mob parameters
+				pid = Random(826, 830); //typical slags here
+				if(pid == 827)          // red haired melee girl
+					bag = 190;          // ripper
+				else
+				bag = Random(582, 587); //Random shotgun in hand from bags.cfg
+				level = Random(1,10);
+				//dialog = 9479; //slugs locker dialog
+				break;
+			case MAP_Ripper :
+				//seting example mob parameters
+				array<uint16> Mobs = GenerateGroup(map, 1, 2);
+				if(Mobs.length() == 0)
+					return 0;
+				//dialog = 9479; //slugs locker dialog
+				break;
+			case MAP_Area51Entrance :
+				//seting example mob parameters
+				
+				pid = Random(1, 3); //Just for random alien
+				if(pid == 1) pid = 242; //Alien
+				if(pid == 2) pid = 243; //Tough alien
+				if(pid == 3) pid = 517; //Young alien
+				
+				bag = 1; //Random shotgun in hand from bags.cfg
+				level = Random(1,10);
+				//dialog = DIALOG_mob_alien; //alien mob dialog
+				break;
+			case MAP_NCR :
+				//seting example mob parameters
+				pid = Random(826, 830); //typical slags here
+				if(pid == 827)          // red haired melee girl
+					bag = 190;          // ripper
+				else
+				bag = Random(582, 587); //Random shotgun in hand from bags.cfg
+				level = Random(1,10);
+				//dialog = 9479; //slugs locker dialog
+				//groupname = "Slags";
+				break;
+			default: return 0;
+		}*/
+		Entire@ entire = null;
+		if(mobdata[2] != SPAWN_EVENT_MOBS)
+		{	
+			@entire = enter_entires[Random(0, (enter_entires.length() - 1))];
+		
+			if(!valid(entire) && loc.IsGuarded())
+				continue;
+		
+			if(!valid(entire))	
+				return REAL_MINUTE(Random(1,10));
+		
+			spawndirection = entire.Direction;
+		}
+		/*
+		// --------------------------------------------------------
+		// Replacement for constant parameters
+		
+		int[] params = Params(map, MobIsBoss);
+		if(params.length() == 0 || (params.length() % 2 != 0))
+			return 0;
+		
+		
+		// -------------------------------------------------------
+		*/
+		// Old version:
+		
+		if(MobIsBoss && BossCanBeGenerated()) pid = GenerateBoss();
+		
+		//Generate S.P.E.C.I.A.L.
+		uint8 S = 1, P = 1, E = 1, C = 1, I = 1, A = 1, L = 1, MaxStats = (MobIsBoss ? 53 : 33), MaxStat = (MobIsBoss ? 2 : 1);
+		if(IsHumanMob(pid))
+			for(uint8 i = 1; i < MaxStats; i++ )
+			{
+				switch(Random(1, 7)) //Generate S.P.E.C.I.A.L.
+				{
+					case 1 : if(S == 10 * MaxStat) i--; else S++; break;
+					case 2 : if(P == 10 * MaxStat) i--; else P++; break;
+					case 3 : if(E == 10 * MaxStat) i--; else E++; break;
+					case 4 : if(C == 10 * MaxStat) i--; else C++; break;
+					case 5 : if(I == 10 * MaxStat) i--; else I++; break;
+					case 6 : if(A == 10 * MaxStat) i--; else A++; break;
+					case 7 : if(L == 10 * MaxStat) i--; else L++; break;
+				}
+			}
+		else
+			for(uint8 i = 1; i < MaxStats; i++ )
+			{
+				switch(Random(1, 7)) //Generate S.P.E.C.I.A.L.
+				{
+					case 1 : if(S == 10 * MaxStat) i--; else S++; break;
+					case 2 : if(P == 10 * MaxStat) i--; else P++; break;
+					case 3 : if(E == 10 * MaxStat) i--; else E++; break;
+					case 4 : if(C == 4 * MaxStat) i--; else C++; break;
+					case 5 : if(I == 3 * MaxStat) i--; else I++; break;
+					case 6 : if(A == 10 * MaxStat) i--; else A++; break;
+					case 7 : if(L == 10 * MaxStat) i--; else L++; break;
+				}
+			}
+		
+		//Generate maxlife and exp points
+		uint16 maxmoblife = Random(250, 400) * (MobIsBoss ? 2 : 1), expoints = (500 + ((level - 1) * 50)) * (MobIsBoss ? 2 : 1);
+
+		if(pid == 883 || pid == 9 || pid == 5 || pid == 6 || pid == 242 || pid == 243 || pid == 517) //Rats, spiders, radscorpions, dogs and other "weak mobs", also aliens
+		{
+			maxmoblife = Random(100,150);
+			expoints = 300;
+			level = Random(1,10);
+			expoints = expoints + ((level - 1) * 50);
+		}
+		
+		if(loc.GetProtoId() == LOCATION_Vault13)
+		{
+			if(pid == 898 || pid == 899 || pid == 900)
+			{
+				aiid = AIPACKET_FO1_VAULTDWELLER;
+				dialog = DIALOG_vault13_mob_dweller;
+			}
+			if(pid == 588)
+			{
+				maxmoblife = Random(10, 15); //cave rats
+				expoints = maxmoblife;
+			}
+			if(pid != 898 && pid != 899 && pid != 900 && pid != 588) return REAL_MINUTE(1);
+		}
+		
+		if(IsHumanMob(pid))
+		{
+			maxmoblife = Random(200,300);
+			expoints = 1000;
+			level = Random(1,5);
+			expoints = expoints + ((level - 1) * 100);
+		}
+		
+		if(loc.GetProtoId() == LOCATION_TheGlow)
+		{
+			maxmoblife = Random(50,100);
+			expoints = 200;
+			level = Random(1,5);
+			expoints = expoints + ((level - 1) * 100);
+		}
+		
+		if(IsMutantMob(pid))
+		{
+			maxmoblife = Random(450,550);
+			expoints = 1500;
+			level = Random(1,7);
+			expoints = expoints + ((level - 1) * 100);
+		}
+		
+		// Set max maxmoblife for LOCATION_Strange_Farm
+		if(loc.GetProtoId() == LOCATION_Strange_Farm || map.GetProtoId() == MAP_Abbey_sur)
+		{
+			switch(pid)
+			{
+				case 586 : maxmoblife = Random(70, 80); break; //molerats
+				case 587 : maxmoblife = Random(40, 50); break; //pigrats
+				case 588 : maxmoblife = Random(10, 15); break; //cave rats
+			}
+			
+			if(MobIsBoss)
+			{
+				maxmoblife = maxmoblife * 2;
+			}
+			expoints = maxmoblife;			
+		}
+		
+		//set correct AI Packs for robots
+		if(pid == 576 || pid == 577)
+			aiid = AIPACKET_REPAIR_BOT;
+		else if(pid == 578 || pid == 579 || pid == 580 || pid == 581 || pid == 582 || pid == 583 || pid == 584)
+			aiid = AIPACKET_SECURITY_BOT;
+		
+		if(howmanyspawns == 1)
+		{
+			if(loc.GetProtoId() == LOCATION_Sierra)
+				statteamid = 5001;
+			else
+				statteamid = Random(5000, 5002);
+		}
+		
+		//Team IDs for Base Control System
+		if(IsBaseControl(map) && mobdata[2] != SPAWN_EVENT_MOBS)
+		{
+			switch(loc.GetProtoId())
+			{
+				case LOCATION_Waterworks :
+					statteamid = FACTION_SLAGS;
+					break;
+				case LOCATION_Area51 :
+					statteamid = FACTION_AREA51_SYSTEM;
+					break;
+				/*case LOCATION_SaltLake :
+					statteamid = FACTION_SALTLAKE;
+					break;*/
+				case LOCATION_MariposaMilitaryBase :
+					statteamid = FACTION_MARIPOSA_MUTANTS;
+					break;
+				case LOCATION_Hawthorne :
+					statteamid = FACTION_ARMY_OF_HAWTHORNE;
+					break;
+				default:
+					statteamid = Random(5000, 5002);
+					break;
+			}
+		}
+		
+		uint8 FactionRank = Random(1, 100);
+		if(MobIsBoss) FactionRank = RANK_LEADER; //5
+		else if(FactionRank <= 10) FactionRank = RANK_IMPORTANT; //4 - officer
+		else if(FactionRank <= 25) FactionRank = RANK_TRUSTED; //3
+		else if(FactionRank <= 35) FactionRank = RANK_ACCEPTED; //2
+		else if(FactionRank <= 55) FactionRank = RANK_ROOKIE; //1
+		else FactionRank = RANK_UNKNOWN; //just for keep it safe
+		
+		
+		int[] params =
+			{
+				ST_STRENGTH, S,
+				ST_PERCEPTION, P,
+				ST_ENDURANCE, E,
+				ST_CHARISMA, C,
+				ST_INTELLECT, I,
+				ST_AGILITY, A,
+				ST_LUCK, L,
+				ST_KILL_EXPERIENCE, expoints,
+				ST_MAX_LIFE, maxmoblife,
+				ST_AGE, Random(14, 80),
+				ST_AI_ID, aiid,
+				ST_TEAM_ID, statteamid,
+				//ST_BAG_ID, bag,
+				ST_REPLICATION_TIME, REPLICATION_NEVER,
+				// ST_REPLICATION_TIME, REPLICATION_DELETE,
+				//ST_REPLICATION_TIME, REPLICATION_DELETE_FAST,
+				ST_LEVEL, level,
+				ST_NPC_ROLE, ROLE_MOB_DYNAMIC,
+				ST_DIALOG_ID, dialog,
+				ST_FACTION_RANK, FactionRank
+			};
+			
+		//Setting bodytype and genre fo power armors
+		if(pid == 122 || pid == 893 || pid == 250)
+		{
+			uint8 tablelenght = params.length();
+			params.resize(tablelenght + 4);
+			params[tablelenght] = ST_BODY_TYPE;
+			params[tablelenght+2] = ST_GENDER;
+			
+			if(Random(1,2) == 1)
+			{
+				params[tablelenght+1] = BT_MEN;
+				params[tablelenght+3] = GENDER_MALE;
+			}
+			else
+			{
+				params[tablelenght+1] = BT_WOMEN;
+				params[tablelenght+3] = GENDER_FEMALE;
+			}
+		}
+		
+		//Setting bodytype and genre for... things
+		if(pid == 883) //A spider!
+		{
+			uint8 tablelenght = params.length();
+			params.resize(tablelenght + 4);
+			params[tablelenght] = ST_BODY_TYPE;
+			params[tablelenght+1] = BT_CENTAUR;
+			params[tablelenght+2] = ST_GENDER;
+			params[tablelenght+3] = GENDER_IT;
+		}
+		
+		//reset all resists for humans
+		if(IsHumanMob(pid))
+		{
+			uint8 tablelenght = params.length();
+			params.resize(tablelenght + 28);
+			params[tablelenght] = ST_NORMAL_ABSORB;
+			params[tablelenght+1] = 0;
+			params[tablelenght+2] = ST_LASER_ABSORB;
+			params[tablelenght+3] = 0;
+			params[tablelenght+4] = ST_FIRE_ABSORB;
+			params[tablelenght+5] = 0;
+			params[tablelenght+6] = ST_PLASMA_ABSORB;
+			params[tablelenght+7] = 0;
+			params[tablelenght+8] = ST_ELECTRO_ABSORB;
+			params[tablelenght+9] = 0;
+			params[tablelenght+10] = ST_EXPLODE_ABSORB;
+			params[tablelenght+11] = 0;
+			params[tablelenght+12] = ST_NORMAL_RESIST;
+			params[tablelenght+13] = 0;
+			params[tablelenght+14] =ST_LASER_RESIST ;
+			params[tablelenght+15] = 0;
+			params[tablelenght+16] = ST_FIRE_RESIST;
+			params[tablelenght+17] = 0;
+			params[tablelenght+18] = ST_PLASMA_RESIST;
+			params[tablelenght+19] = 0;
+			params[tablelenght+20] = ST_ELECTRO_RESIST;
+			params[tablelenght+21] = 0;
+			params[tablelenght+22] = ST_EMP_RESIST;
+			params[tablelenght+23] = 0;
+			params[tablelenght+24] = ST_EXPLODE_RESIST;
+			params[tablelenght+25] = 0;
+			params[tablelenght+26] = ST_POISON_RESISTANCE;
+			params[tablelenght+27] = 0;			
+		}
+		
+		if(MobIsBoss)
+		{
+			uint8 tablelenght = params.length();
+			params.resize(tablelenght + 2);
+			params[tablelenght] = ST_NPC_BOSS;
+			params[tablelenght+1] = MOB_IS_BOSS;
+		}
+		else if(mobdata[2] == SPAWN_EVENT_MOBS)
+		{
+			uint8 tablelenght = params.length();
+			params.resize(tablelenght + 2);
+			params[tablelenght] = ST_NPC_BOSS;
+			params[tablelenght+1] = MOB_FOR_EVENT;
+		}
+		
+		// Log debug part
+		if(howmanyspawns == 1)
+			Log("Trying to add mob pid <" + pid + "> to map <" + map.Id + "> at entire number <" + entire.Number + ">.");
+		
+		
+		Critter@ mob = null; //map.Id, howmany, SPAWN_EVENT_MOBS, whatkind, whattype, cr.HexX, cr.HexY
+		if(mobdata[2] == SPAWN_EVENT_MOBS) @mob = map.AddNpc(pid, Random(mobdata[5]-2, mobdata[5]+2), Random(mobdata[6]-2, mobdata[6]+2), Random(0, 5), params, null, "init_mob");
+		else  @mob = map.AddNpc(pid, entire.HexX, entire.HexY, spawndirection, params, null, "init_mob");
+		SetParatersToMob(mob, map, MobIsBoss);
+		RemoveItems(mob);
+		SetArmor(mob);
+		SetWeapon(mob, weaponforgroup);
+	}
+	
+	if(howmanyspawns > 1)
+	{
+		if(mobdata[2] == SPAWN_TOWN_RAIDERS || (mobdata[2] == SPAWN_CALLED_MOBS && loc.IsGuarded()))
+		{
+			string locationName = GetLocationName(loc.Id);
+		
+			if(locationName == "") locationName = "NOT RECOGNIZED!";
+			//ServerEventMSG(BROADCAST_DISPLAY_TIME, groupname + " have raided the town of " + locationName + "!");
+			ServerEventMSG(BROADCAST_DISPLAY_TIME, groupname + " have raided " + locationName + "!");
+		}
+	}
+	//groupname = "NOT SPECIFIED";
+		
+	return 0;
+}
+
+// Test of param array for generated critters
+/* array<int>@ Params(Map& map, bool MobIsBoss)
+{
+	uint16 dialog, bag, level, pid;
+	string groupname;
+	
+	switch(map.GetProtoId())
+		{
+			case MAP_SaltLake :
+				//seting example mob parameters
+				pid = Random(826, 830); //typical slags here
+				if(pid == 827)          // red haired melee girl
+					bag = 190;          // ripper
+				else
+				bag = Random(582, 587); //Random shotgun in hand from bags.cfg
+				level = Random(1,10);
+				dialog = 9479; //slugs locker dialog
+				break;
+			case MAP_Ripper :
+				//seting example mob parameters
+				pid = Random(826, 830); //typical slags here
+				if(pid == 827)          // red haired melee girl
+					bag = 190;          // ripper
+				else
+				bag = Random(582, 587); //Random shotgun in hand from bags.cfg
+				level = Random(1,10);
+				dialog = 9479; //slugs locker dialog
+				break;
+			case MAP_Area51Entrance :
+				//seting example mob parameters
+				
+				pid = Random(1, 3); //Just for random alien
+				if(pid == 1) pid = 242; //Alien
+				if(pid == 2) pid = 243; //Tough alien
+				if(pid == 3) pid = 517; //Young alien
+				
+				bag = 1; //Random shotgun in hand from bags.cfg
+				level = Random(1,10);
+				dialog = DIALOG_mob_alien; //alien mob dialog
+				break;
+			case MAP_NCR :
+				//seting example mob parameters
+				pid = Random(826, 830); //typical slags here
+				if(pid == 827)          // red haired melee girl
+					bag = 190;          // ripper
+				else
+				bag = Random(582, 587); //Random shotgun in hand from bags.cfg
+				level = Random(1,10);
+				dialog = 9479; //slugs locker dialog
+				groupname = "Slags";
+				break;
+			//default: return 0;
+		}
+	
+	//Generate S.P.E.C.I.A.L.
+		uint8 S = 1, P = 1, E = 1, C = 1, I = 1, A = 1, L = 1;
+		for(uint8 i = 1; i < 33; i++ )
+		{
+			switch(Random(1, 7)) //Generate S.P.E.C.I.A.L.
+			{
+				case 1 : if(S == 10) i--; else S++; break;
+				case 2 : if(P == 10) i--; else P++; break;
+				case 3 : if(E == 10) i--; else E++; break;
+				case 4 : if(C == 10) i--; else C++; break;
+				case 5 : if(I == 10) i--; else I++; break;
+				case 6 : if(A == 10) i--; else A++; break;
+				case 7 : if(L == 10) i--; else L++; break;
+			}
+		}
+		
+		int[] params =
+			{
+				ST_STRENGTH, S,
+				ST_PERCEPTION, P,
+				ST_ENDURANCE, E,
+				ST_CHARISMA, C,
+				ST_INTELLECT, I,
+				ST_AGILITY, A,
+				ST_LUCK, L,
+				ST_TEAM_ID, Random(5000, 5002),
+				ST_BAG_ID, bag,
+				ST_KILL_EXPERIENCE, 500,
+				// ST_REPLICATION_TIME, REPLICATION_DELETE,
+				//ST_REPLICATION_TIME, REPLICATION_DELETE_FAST,
+				ST_LEVEL, level,
+				ST_NPC_ROLE, ROLE_MOB_DYNAMIC,
+				ST_DIALOG_ID, dialog
+			};
+	
+	return params;
+}*/
+
+void SetParatersToMob(Critter& mob, Map& map, bool MobIsBoss)
+{
+	if(MobIsBoss)
+	{
+		//Set combat skills
+		mob.SkillBase[SK_SMALL_GUNS] = Random(250, 300);
+		mob.SkillBase[SK_BIG_GUNS] = Random(250, 300);
+		mob.SkillBase[SK_ENERGY_WEAPONS] = Random(250, 300);
+		mob.SkillBase[SK_UNARMED] = Random(250, 300);
+		//Set support skills
+		mob.SkillBase[SK_DOCTOR] = Random(150, 250);
+		mob.SkillBase[SK_FIRST_AID] = Random(150, 250);
+		//Other params
+		/*uint16 exp = mob.Param[ST_KILL_EXPERIENCE];
+		mob.ParamBase[ST_KILL_EXPERIENCE] = exp * 2;*/
+	}
+	else
+	{
+		//Set combat skills
+		mob.SkillBase[SK_SMALL_GUNS] = Random(100, 200);
+		mob.SkillBase[SK_BIG_GUNS] = Random(100, 200);
+		mob.SkillBase[SK_ENERGY_WEAPONS] = Random(100, 200);
+		mob.SkillBase[SK_UNARMED] = Random(100, 200);
+		//Set support skills
+		mob.SkillBase[SK_DOCTOR] = Random(50, 150);
+		mob.SkillBase[SK_FIRST_AID] = Random(50, 150);
+		//Other params
+		/*uint16 exp = mob.Param[ST_KILL_EXPERIENCE];
+		mob.ParamBase[ST_KILL_EXPERIENCE] = exp * 2;*/
+	}
+	
+	//Set perks
+	mob.PerkBase[PE_ACTION_BOY] = Random(0,2);
+	mob.PerkBase[PE_ADRENALINE_RUSH] = Random(0,1);
+	mob.PerkBase[PE_BONUS_HTH_ATTACKS] = Random(0,1);
+	mob.PerkBase[PE_BONUS_MOVE] = Random(0,1);
+	mob.PerkBase[PE_BONUS_RANGED_DAMAGE] = Random(0,2);
+	mob.PerkBase[PE_BONUS_RATE_OF_FIRE] = Random(0,1);
+	mob.PerkBase[PE_DEAD_MAN_WALKING] = Random(0,1);
+	mob.PerkBase[PE_EVEN_TOUGHER] = Random(0,1);
+	mob.PerkBase[PE_HEALER_II] = Random(0,1);
+	mob.PerkBase[PE_HIT_THE_GAPS] = Random(0,1);
+	mob.PerkBase[PE_HTH_CRITICALS] = Random(0,1);
+	mob.PerkBase[PE_IRON_GRIP] = Random(0,1);
+	mob.PerkBase[PE_LIVING_ANATOMY] = Random(0,1);
+	mob.PerkBase[PE_MAN_OF_STEEL] = Random(0,1);
+	mob.PerkBase[PE_MORE_RANGED_DAMAGE] = Random(0,1);
+	mob.PerkBase[PE_QUICK_POCKETS] = Random(0,1);
+	mob.PerkBase[PE_QUICK_RECOVERY] = Random(0,1);
+	mob.PerkBase[PE_SHARPSHOOTER] = Random(0,1);
+	mob.PerkBase[PE_STONEWALL] = Random(0,1);
+	mob.PerkBase[PE_MEDIC] = Random(0,1);
+}
+
+void init_mob(Critter& mob, bool firstTime)
+{
+    Map@ map = mob.GetMap();
+	if(!valid(map))
+		return;
+	
+	/*if(map.GetProtoId() == MAP_Hawthorne)
+		if(!valid(HawthorneMilitaryBase))
+			@HawthorneMilitaryBase = ::LoadShapeFromEntires(mob.GetMap(), HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);*/
+	
+	Location@ loc = map.GetLocation();
+	
+	bool MobIsBoss = (mob.Stat[ST_NPC_BOSS] == MOB_IS_BOSS ? true : false), MobForEvent = (mob.Stat[ST_NPC_BOSS] == MOB_FOR_EVENT ? true : false);
+	
+	if(loc.IsGuarded() && IsNotDungInGuardedLoc(map) && !MobForEvent)
+	{
+		//mob.ParamBase[ST_REPLICATION_TIME] = REPLICATION_NEVER;
+		mob.SetEvent(CRITTER_EVENT_DEAD, "_DeleteMob");
+		//mob.StatBase[ST_REPLICATION_TIME] = REPLICATION_NEVER;
+		//Proceed to the next area
+		array<uint> keeppushing = { map.Id , 170 };
+		CreateTimeEvent(AFTER(REAL_MINUTE(1)), "e_PushForward", keeppushing, true);
+		//mob.SetEvent(CRITTER_EVENT_ATTACKED, "_Attacked");
+		//mob.SetEvent(CRITTER_EVENT_ATTACK, "_Attacked");
+	}
+	else if(loc.GetProtoId() == LOCATION_Vault13 || loc.GetProtoId() == LOCATION_Sierra)
+	{
+		mob.SetEvent(CRITTER_EVENT_DEAD, "_DeleteMob");
+		mob.SetEvent(CRITTER_EVENT_ATTACKED, "_Alert");
+		
+		if(map.GetProtoId() == MAP_SierraArmyDepot_TheBattlefield)
+			ImmaAttack(map, mob);
+	}
+	else
+	{
+		//mob.StatBase[ST_REPLICATION_TIME] = REPLICATION_NEVER;
+		if(MobIsBoss)
+			mob.SetEvent(CRITTER_EVENT_DEAD, "_ClearEnemyStack");
+		else if(MobForEvent)
+			mob.SetEvent(CRITTER_EVENT_DEAD, "_DeleteEventMob");
+		else
+			mob.SetEvent(CRITTER_EVENT_DEAD, "_MakeAnotherMob");
+		mob.SetEvent(CRITTER_EVENT_ATTACKED, "_Alert");
+	}
+	
+	if(loc.GetProtoId() == LOCATION_Tunnel)
+		mob.StatBase[ST_RADIOACTIVE] = 10; // For ghouls inside the Tunnel
+		
+	if(loc.GetProtoId() == LOCATION_TalChem)
+		mob.StatBase[ST_TOXIC] = 10; // For ghouls inside the TalChem
+			
+	mob.SetEvent(CRITTER_EVENT_IDLE, "_MobIdle");
+    
+	_CritSetMode(mob, MODE_NO_STEAL);
+    _CritSetMode(mob, MODE_NO_DROP);
+    _CritSetMode(mob, MODE_NO_LOOT);
+	_CritSetMode(mob, MODE_UNLIMITED_AMMO);
+	_CritSetMode(mob, MODE_NO_TALK);
+    _CritSetMode(mob, MODE_NO_BARTER);
+	_CritUnsetMode(mob, MODE_NO_LOOSE_LIMBS);
+    // mob.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_MobShowCritterAggr");
+    // mob.SetEvent(CRITTER_EVENT_HIDE_CRITTER, "_MobHideCritter");
+    // mob.SetEvent(CRITTER_EVENT_ATTACKED, "_MobAttacked");
+    _CritSetExtMode(mob, MODE_EXT_MOB);
+	if(firstTime && !MobForEvent)
+    {
+        MoveMobToFreeHex(mob);
+	}
+	CreateTimeEvent(AFTER(REAL_SECOND(2)), "e_ChangeReplication", mob.Id, false);
+}
+
+void init_turret(Critter& turret, bool firstTime)
+{
+	Map@ map = turret.GetMap();
+	if(!valid(map))
+		return;
+	
+	Location@ loc = map.GetLocation();
+	
+	if(IsBaseControl(map))
+	{
+		switch(loc.GetProtoId())
+		{
+			case LOCATION_Waterworks :
+				turret.ParamBase[ST_TEAM_ID] = FACTION_SLAGS;
+				break;
+			case LOCATION_Area51 :
+				turret.ParamBase[ST_TEAM_ID] = FACTION_AREA51_SYSTEM;
+				break;
+			case LOCATION_SaltLake :
+				turret.ParamBase[ST_TEAM_ID] = FACTION_SALTLAKE;
+				break;
+			case LOCATION_MariposaMilitaryBase :
+				turret.ParamBase[ST_TEAM_ID] = FACTION_MARIPOSA_MUTANTS;
+				break;
+			case LOCATION_Hawthorne :
+				turret.ParamBase[ST_TEAM_ID] = FACTION_ARMY_OF_HAWTHORNE;
+				break;
+		}
+	}
+	else
+	{
+		turret.ParamBase[ST_TEAM_ID] = Random(5000, 5002);
+	}
+	
+	if(firstTime) SetWeapon(turret, 0); // This function doesn't care about second argument here.
+	turret.SetEvent(CRITTER_EVENT_DEAD, "_ClearEnemyStack");
+	turret.SetEvent(CRITTER_EVENT_ATTACKED, "_Alert");
+	turret.SetEvent(CRITTER_EVENT_IDLE, "_DontMove");
+    
+	_CritSetMode(turret, MODE_NO_STEAL);
+    _CritSetMode(turret, MODE_NO_DROP);
+    _CritSetMode(turret, MODE_NO_LOOT);
+	_CritSetMode(turret, MODE_UNLIMITED_AMMO);
+	_CritSetMode(turret, MODE_NO_TALK);
+    _CritSetMode(turret, MODE_NO_BARTER);
+	_CritUnsetMode(turret, MODE_NO_LOOSE_LIMBS);
+    _CritSetExtMode(turret, MODE_EXT_MOB);
+	
+	turret.ParamBase[ST_AI_ID] = AIPACKET_GUN_TURRET;
+	turret.ParamBase[ST_NPC_ROLE] = ROLE_MOB_DYNAMIC;
+	turret.ParamBase[ST_REPLICATION_TIME] = 1800;
+}
+
+void init_static_mob(Critter& mob, bool firstTime)
+{
+    Map@ map = mob.GetMap();
+	if(!valid(map))
+		return;
+	
+	Location@ loc = map.GetLocation();
+	
+	mob.SetEvent(CRITTER_EVENT_DEAD, "_ClearEnemyStack");
+	mob.SetEvent(CRITTER_EVENT_ATTACKED, "_Alert");
+	mob.SetEvent(CRITTER_EVENT_DEAD, "_ClearEnemyStack");
+	
+	if(loc.GetProtoId() == LOCATION_Tunnel)
+		mob.StatBase[ST_RADIOACTIVE] = 10; // For ghouls inside the Tunnel
+		
+	if(loc.GetProtoId() == LOCATION_TalChem)
+		mob.StatBase[ST_TOXIC] = 10; // For ghouls inside the TalChem
+			
+	if(firstTime && IsNukaColaWorker(mob))
+	{
+		SetParatersToMob(mob, map, false);
+		SetWeapon(mob, 0);
+	}
+	
+	if(!IsNukaColaWorker(mob)) mob.SetEvent(CRITTER_EVENT_IDLE, "_MobIdle");
+    
+	_CritSetMode(mob, MODE_NO_STEAL);
+    _CritSetMode(mob, MODE_NO_DROP);
+    _CritSetMode(mob, MODE_NO_LOOT);
+	_CritSetMode(mob, MODE_UNLIMITED_AMMO);
+	if(!IsNukaColaWorker(mob)) _CritSetMode(mob, MODE_NO_TALK);
+    if(!IsNukaColaWorker(mob)) _CritSetMode(mob, MODE_NO_BARTER);
+	_CritUnsetMode(mob, MODE_NO_LOOSE_LIMBS);
+    // mob.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_MobShowCritterAggr");
+    // mob.SetEvent(CRITTER_EVENT_HIDE_CRITTER, "_MobHideCritter");
+    // mob.SetEvent(CRITTER_EVENT_ATTACKED, "_MobAttacked");
+    _CritSetExtMode(mob, MODE_EXT_MOB);
+	if(firstTime && !IsNukaColaWorker(mob))
+    {
+        MoveMobToFreeHex(mob);
+	}
+}
+
+uint e_ChangeReplication(array<uint>@ values)
+{
+	Critter@ mob = GetCritter(values[0]);
+	if(!valid(mob)) return 0;
+	
+	if(mob.Stat[ST_NPC_BOSS] == 1)
+		mob.ParamBase[ST_REPLICATION_TIME] = 1800;
+	else
+		mob.ParamBase[ST_REPLICATION_TIME] = REPLICATION_NEVER;
+	
+	return 0;
+}
+
+uint e_PushForward(array<uint>@ keeppushing)
+{
+	Map@ map = GetMap(keeppushing[0]);
+	if(!valid(map))
+		return 0;
+		
+	uint numMobs = map.GetNpcCount(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_LIFE);
+	if(numMobs == 0)
+		return 0;
+		
+	uint8 entireNumber = keeppushing[1];
+	bool ItsMoveOutTime = false;
+	
+	// New system for gathering ENT hexes on map.
+	array<Entire> moveto_entires;
+	if(ParseEntires(map, moveto_entires, entireNumber) == 0)
+	{
+		//move out system but now return 0;
+		array<Critter@> mobs;
+		map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE_AND_KO, mobs);
+		for(uint16 i = 0; i < mobs.length(); i++)
+			if(valid(mobs[i]) && mobs[i].Stat[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+				mobs[i].Say(SAY_NORM_ON_HEAD, "Lets move out!");
+		//return 0;
+		
+		switch(map.GetProtoId())
+		{
+			case MAP_Adytum:  entireNumber = 12; break;
+			//case MAP_Blade:
+			//case MAP_Gunrunner:
+			//case MAP_Library: entireNumber = 0; break;
+			case MAP_VaultCityDowntown: entireNumber = 0; break;
+			case MAP_Junktown: entireNumber = 0; break;
+			case MAP_NCR: entireNumber = 0; break;
+			case MAP_HubDowntown: entireNumber = 10; break;
+			case MAP_SanFranChina: entireNumber = 220; break;
+			default: entireNumber = 0; break;
+		}
+		
+		//junktown: move out to 0
+		//ncr move out to 0 or 10 (array)
+		//hub move out to 10
+		//frisco move out to 220 (reinforcements spawn points bcs 0 or 10 are to far from exit grid)
+		if(ParseEntires(map, moveto_entires, entireNumber) == 0)
+			return 0;
+			
+		ItsMoveOutTime = true;
+				
+	}
+	
+	//shuffle_array(entires, uint8);
+	uint8  dir;
+	uint16 x, y;
+	x = y = dir = 0;
+	
+	array<Critter@> mobs;
+	map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE_AND_KO, mobs);
+	
+	for(uint16 i = 0; i < mobs.length(); i++)
+	{
+		Entire@ entire = moveto_entires[Random(0, (moveto_entires.length() - 1))];
+		if(!valid(entire))
+			continue;
+		
+		if(valid(mobs[i]) && mobs[i].Stat[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+		{	
+			if(GetEntireFreeHex(mobs[i].GetMap(), entireNumber, x, y, Random(0, (moveto_entires.length() - 1))))
+			{
+				mobs[i].SetHomePos(x, y, dir);
+				/*if(!ItsMoveOutTime)
+					mobs[i].Say(SAY_NORM_ON_HEAD, "Push them сука!");*/
+				mobs[i].SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_MobShowCritterAggr");
+			}
+			else
+			{
+			i--;
+			//Log("Unable to find free mob hex on map " + mobs[i].GetMapId());
+			}
+			if(ItsMoveOutTime)
+			{
+				uint16 hexX = 0, hexY = 0;
+				uint8 direction = 0;
+				mobs[i].GetHomePos(map.Id, hexX, hexY, direction);
+				//mobs[i].Say(SAY_NORM_ON_HEAD, "Lets move out!");
+				array<uint> okletsleave = { mobs[i].Id , hexX , hexY };
+				CreateTimeEvent(AFTER(REAL_MINUTE(1)), "e_CheckPosToLeave", okletsleave, true);
+			}
+		}
+	}
+	
+	
+	if(!ItsMoveOutTime)
+	{
+		entireNumber++;
+		array<uint> justpushthem = { map.Id , entireNumber };
+		CreateTimeEvent(AFTER(REAL_MINUTE(1)), "e_PushForward", justpushthem, true);
+	}
+		
+	return 0;
+}
+
+uint e_CheckPosToLeave(array<uint>@ leavingmob)
+{
+	Critter@ mob = GetCritter(leavingmob[0]);
+	if(!valid(mob))
+		return 0;
+		
+	if(mob.IsDead())
+		return 0;
+		
+	if(mob.IsKnockout())
+		return REAL_SECOND(2);
+	
+	uint16 hX = leavingmob[1], hY = leavingmob[2];
+	
+	if(mob.HexX >= hX - 5 && mob.HexX <= hX + 5 && mob.HexY >= hY - 5 && mob.HexY <= hY + 5)
+	{
+		mob.Say(SAY_NORM_ON_HEAD, "Bye!");
+		CreateTimeEvent(AFTER(REAL_SECOND(2)), "e_MobCanLeave", mob.Id, true);
+		
+		return 0;
+	}
+	return REAL_SECOND(10);
+}
+
+uint e_MobCanLeave(array<uint>@ mobdata)
+{
+	Critter@ mob = GetCritter(mobdata[0]);
+	
+	if(!valid(mob))
+		return 0;
+		
+	if(mob.IsDead())
+		return 0;
+	
+	if(!mob.IsKnockout())
+	{
+		DeleteNpc(mob);
+		return 0;
+	}	
+	return REAL_SECOND(2);
+}
+
+uint e_deleteMob(array<uint>@ mobdata)
+{
+	Critter@ mob = GetCritter(mobdata[0]);
+	
+	if(valid(mob))
+		DeleteNpc(mob);
+		
+	return 0;
+}
+
+void MoveMobToFreeHex(Critter& mob)
+{
+	MoveMobToFreeHex(mob, false);
+}
+
+void MoveMobToFreeHex(Critter& mob, bool DontMove)
+{
+    if(!valid(mob))
+		return;
+	
+	Map@ map = mob.GetMap();
+	if(!valid(map))
+		return;
+		
+	if(IsNukaColaWorker(mob))
+		return;
+		
+	if(mob.Stat[ST_NPC_BOSS] == MOB_FOR_EVENT)
+		return;
+		
+	if(mob.GetProtoId() ==  882 || mob.GetProtoId() == 901)
+		return;
+	
+	Location@ loc = map.GetLocation();
+	
+	if(!(loc.IsGuarded()) || IsDungInGuardedLoc(map))
+	{
+		uint8  dir;
+		uint16 x, y;
+		uint EntireSelector;
+		x = y = dir = 0;
+		
+		//do
+		//{
+			if(GetGvar(GVAR_sierra_robotscontrol) != 2 && mob.GetMap().GetLocation().GetProtoId() != LOCATION_Sierra && mob.Stat[ST_BODY_TYPE] != BT_ROBOT)
+				mob.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_MobShowCritterAggr");
+	
+			// New system for gathering ENT hexes on map.
+			uint8[] entires;
+			uint8 tablelenght = 0;
+			// Exception for Sierra
+			if(IsSierraRobot(mob))
+				for(uint8 i = ENTIRE_DYNAMIC_MOB_DIRS_BEGIN; i < ENTIRE_DYNAMIC_MOB_DIRS_END; i++)
+				{
+					array<Entire> enter_entires;
+					if(ParseEntires(map, enter_entires, i) > 0)
+					{
+						tablelenght++;
+						entires.resize(tablelenght);
+						entires[tablelenght-1] = i;
+					}
+				}
+			else if(map.GetProtoId() == MAP_SierraArmyDepot_Level1 || map.GetProtoId() == MAP_SierraArmyDepot_Level2 ||
+			map.GetProtoId() == MAP_SierraArmyDepot_Level3 || map.GetProtoId() == MAP_SierraArmyDepot_Level4)
+			{
+				array<Entire> enter_entires;
+				if(ParseEntires(map, enter_entires, ENTIRE_DYNAMIC_MOB) > 0)
+				{
+					tablelenght++;
+					entires.resize(tablelenght);
+					entires[tablelenght-1] = ENTIRE_DYNAMIC_MOB;
+				}
+			}
+			// End of exception for Sierra
+			// Exception for Rats in V13
+			else if(IsV13Rat(mob))
+			{
+				array<Entire> enter_entires;
+				if(ParseEntires(map, enter_entires, ENTIRE_DYNAMIC_MOB) > 0)
+				{
+					tablelenght++;
+					entires.resize(tablelenght);
+					entires[tablelenght-1] = ENTIRE_DYNAMIC_MOB + 10;
+				}
+			}
+			// End of exception for Rats in V13
+			else
+				for(uint8 i = ENTIRE_DYNAMIC_MOB; i < ENTIRE_DYNAMIC_MOB_DIRS_END; i++)
+				{
+					array<Entire> enter_entires;
+					if(ParseEntires(map, enter_entires, i) > 0)
+					{
+						tablelenght++;
+						entires.resize(tablelenght);
+						entires[tablelenght-1] = i;
+					}
+				}
+	
+			//shuffle_array(entires, uint8);
+				
+			uint8 entireNumber = entires[(Random(0, (entires.length()-1)))];
+			if(entireNumber == ENTIRE_DYNAMIC_MOB)
+			{
+				dir = Random(0, 5);
+				mob.SetEvent(CRITTER_EVENT_IDLE, "_MobIdle");
+			}
+			else
+			{
+				mob.SetEvent(CRITTER_EVENT_IDLE, "_DontMove");
+				switch(entireNumber)
+				{
+					case ENTIRE_DYNAMIC_MOB_DIRS_BEGIN : dir = 0; break;
+					case 172 : dir = 1; break;
+					case 173 : dir = 2; break;
+					case 174 : dir = 3; break;
+					case 175 : dir = 4; break;
+					case ENTIRE_DYNAMIC_MOB_DIRS_END : dir = 5; break;
+					default : dir = 0; mob.SetEvent(CRITTER_EVENT_IDLE, "_MobIdle"); break;
+				}
+			}
+
+			array<Entire> moveto_entires;
+			if(ParseEntires(map, moveto_entires, entireNumber) == 0)
+				return;
+				
+			
+			/*if(!valid(AresLevel1Area1)) Log("AresLevel1Area1 is not valid.");
+			if(!valid(AresLevel1Area2)) Log("AresLevel1Area2 is not valid.");
+			if(!valid(AresLevel1Area3)) Log("AresLevel1Area3 is not valid.");
+			if(!valid(AresLevel2Area1)) Log("AresLevel2Area1 is not valid.");
+			if(!valid(AresLevel2Area2)) Log("AresLevel2Area2 is not valid.");
+			if(!valid(AresLevel2Area3)) Log("AresLevel2Area3 is not valid.");
+			if(!valid(AresLevel3Area1)) Log("AresLevel3Area1 is not valid.");
+			if(!valid(AresLevel3Area2)) Log("AresLevel3Area2 is not valid.");
+			if(!valid(AresLevel3Area3)) Log("AresLevel3Area3 is not valid.");
+			if(!valid(AresLevel4Area1)) Log("AresLevel4Area1 is not valid.");
+			if(!valid(AresLevel4Area2)) Log("AresLevel4Area2 is not valid.");
+			if(!valid(AresLevel4Area3)) Log("AresLevel4Area3 is not valid.");*/
+			
+			Entire@ entire = null;
+					
+			// Exception for Ares (IPolygons here)
+			if(map.GetProtoId() == MAP_AresMilitaryBase_Level1 || map.GetProtoId() == MAP_AresMilitaryBase_Level2 ||
+			map.GetProtoId() == MAP_Ares_level3 || map.GetProtoId() == MAP_Ares_level4)
+			{
+				IPolygon@ polygon = null;
+				if(map.GetProtoId() == MAP_AresMilitaryBase_Level1)
+				{
+					if(!valid(AresLevel1Area1))
+						@AresLevel1Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+					if(!valid(AresLevel1Area2))
+						@AresLevel1Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+					if(!valid(AresLevel1Area3))
+						@AresLevel1Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+				}
+	
+				if(map.GetProtoId() == MAP_AresMilitaryBase_Level2)
+				{
+					if(!valid(AresLevel2Area1))
+						@AresLevel2Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+					if(!valid(AresLevel2Area2))
+						@AresLevel2Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+					if(!valid(AresLevel2Area3))
+						@AresLevel2Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+				}
+	
+				if(map.GetProtoId() == MAP_Ares_level3)
+				{
+					if(!valid(AresLevel3Area1))
+						@AresLevel3Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+					if(!valid(AresLevel3Area2))
+						@AresLevel3Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+					if(!valid(AresLevel3Area3))
+						@AresLevel3Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+				}
+	
+				if(map.GetProtoId() == MAP_Ares_level4)
+				{
+					if(!valid(AresLevel4Area1))
+						@AresLevel4Area1 = ::LoadShapeFromEntires(map, ARES_AREA1_START, ARES_AREA1_STOP);
+					if(!valid(AresLevel4Area2))
+						@AresLevel4Area2 = ::LoadShapeFromEntires(map, ARES_AREA2_START, ARES_AREA2_STOP);
+					if(!valid(AresLevel4Area3))
+						@AresLevel4Area3 = ::LoadShapeFromEntires(map, ARES_AREA3_START, ARES_AREA3_STOP);
+				}
+				
+				//do
+				//{
+					switch(map.GetProtoId())
+					{
+						case MAP_AresMilitaryBase_Level1 :
+							if(AresLevel1Area1.IsWithin(mob)) @polygon = @AresLevel1Area1;
+							if(AresLevel1Area2.IsWithin(mob)) @polygon = @AresLevel1Area2;
+							if(AresLevel1Area3.IsWithin(mob)) @polygon = @AresLevel1Area3;
+							break;
+						case MAP_AresMilitaryBase_Level2 :
+							if(AresLevel2Area1.IsWithin(mob)) @polygon = @AresLevel2Area1;
+							if(AresLevel2Area2.IsWithin(mob)) @polygon = @AresLevel2Area2;
+							if(AresLevel2Area3.IsWithin(mob)) @polygon = @AresLevel2Area3;
+							
+							break;
+						case MAP_Ares_level3 :
+							if(AresLevel3Area1.IsWithin(mob)) @polygon = @AresLevel3Area1;
+							if(AresLevel3Area2.IsWithin(mob)) @polygon = @AresLevel3Area2;
+							if(AresLevel3Area3.IsWithin(mob)) @polygon = @AresLevel3Area3;
+							
+							break;
+						case MAP_Ares_level4 :
+							if(AresLevel4Area1.IsWithin(mob)) @polygon = @AresLevel4Area1;
+							if(AresLevel4Area2.IsWithin(mob)) @polygon = @AresLevel4Area2;
+							if(AresLevel4Area3.IsWithin(mob)) @polygon = @AresLevel4Area3;
+							break;
+					}
+					EntireSelector = Random(0, (moveto_entires.length() - 1));
+					@entire = moveto_entires[EntireSelector];
+							if(!valid(entire)) return;
+					//mob.Wait(IDLE_ALERTED_2);
+				//}while(!CritterIsKeepedInPolygon(mob, polygon, entire));
+				if(!CritterIsKeepedInPolygon(mob, polygon, entire.HexX, entire.HexY))
+				{
+					if(DontMove)
+						mob.SetEvent(CRITTER_EVENT_IDLE, "_DontMove");
+					else
+						mob.SetEvent(CRITTER_EVENT_IDLE, "_MobIdle");
+					return;
+				}
+			}
+			// End of exception for Ares (IPolygons here)
+			//unfinished part
+			else
+			{
+				EntireSelector = Random(0, (moveto_entires.length() - 1));
+				@entire = moveto_entires[EntireSelector];
+				if(!valid(entire))
+					return;
+			}
+			//old code before polygons
+			/*Entire@ entire = moveto_entires[Random(0, (moveto_entires.length() - 1))];
+			if(!valid(entire))
+				return;*/ 
+
+			//if(GetEntireFreeHex(mob.GetMap(), entireNumber, x, y, Random(0, (moveto_entires.length() - 1))))
+			if(GetEntireFreeHex(mob.GetMap(), entireNumber, x, y, EntireSelector))
+			{
+				/* They cannot open doors with it - they see blocked path!
+				if(map.GetPathLength(mob, x, y, 0) == 0)
+				{
+					mob.Say(SAY_NORM_ON_HEAD, "I have blocked path.");
+					return;
+				}
+				*/
+
+				mob.SetHomePos(x, y, dir);
+				
+			
+				
+			}
+			else // Debug
+			{
+				mob.Say(SAY_NORM_ON_HEAD, "Position is currently busy...");
+			}
+		//}while(!IsDestPosFree(mob));
+		//Log("Unable to find free mob hex on map " + mob.GetMapId());
+		//For force fields
+		/*array<Item@> forcefields;
+		map.GetItems(PID_FORCEFIELD_YELLOW_1, forcefields);
+		map.GetItems(PID_FORCEFIELD_YELLOW_2, forcefields);
+		
+		if(forcefields.length() > 0)
+		{*/
+			//CreateTimeEvent(AFTER(REAL_SECOND(15)), "e_MoveMobToFreeHex", mob.Id, false);
+			//mob.Wait(2000);
+			//mob.Say(SAY_NORM_ON_HEAD, "I see forcefields here.");
+			//mob.SetHomePos(x, y, dir);
+			//NpcPlane@ plane = mob.GetCurPlane();
+			//while(plane.Identifier != AI_PLANE_ATTACK && plane.Identifier != AI_PLANE_WALK)
+			//while(plane.Identifier != AI_PLANE_ATTACK && mob.IsBusy())
+			//while(/*plane.Type != AI_PLANE_ATTACK)*/plane.Identifier == AI_PLANE_WALK)
+			/*{
+				mob.Say(SAY_NORM_ON_HEAD, "I'm getting new position.");
+				
+				mob.DropPlanes();
+				MoveMobToFreeHex(mob);
+			}*/
+			/*array<uint> checkmoving = { mob.Id, mob.HexX, mob.HexY };
+			CreateTimeEvent(AFTER(REAL_SECOND(5)), "e_MoveMobToFreeHex", checkmoving, false);
+		}
+		else*/
+		//{
+			//mob.SetHomePos(x, y, dir);
+		//}
+		
+		//mob.SetEvent(CRITTER_EVENT_PLANE_RUN, "_Walking"); //for block in doorways etc		
+		
+	}
+}
+
+/*uint e_MoveMobToFreeHex(array<uint>@ mobdata) //For force fields
+{
+	Critter@ mob = GetCritter(mobdata[0]);
+	
+	if(!valid(mob))
+		return 0;
+		
+	uint hx = mobdata[1], hy = mobdata[2];
+
+	
+	//NpcPlane@ plane = mob.GetCurPlane();*/
+	//if(/*(valid(plane)) && (plane.Identifier == AI_PLANE_WALK) && */hx == mob.HexX && hy == mob.HexY)
+	//{
+		//mob.Wait(500);
+		//mob.Say(SAY_NORM_ON_HEAD, "I'm getting new position.");
+		//mob.DropPlanes();
+		//MoveMobToFreeHex(mob);
+		/*@plane  = mob.GetCurPlane();
+		
+		if(valid(plane) && plane.Identifier != AI_PLANE_WALK)
+		{
+			mob.DropPlanes();
+			MoveMobToFreeHex(mob);
+			mob.Say(SAY_NORM_ON_HEAD, "I changed my mind.");
+		}*/
+		
+	//}
+	//else
+	//{
+		//mob.Say(SAY_NORM_ON_HEAD, "HOORRAY! I didn't block myself!.");
+	//}
+	//return 0;
+//}
+
+/*bool IsDestPosFree(Critter& mob)
+{
+	Map@ map = mob.GetMap();
+	if(valid(map))
+	{
+		uint16 mob1hexX = 0, mob1hexY = 0, mob2hexX = 0, mob2hexY = 0;
+		uint8 mob1dir = 0, mob2dir = 0;
+		
+		mob.GetHomePos(map.Id, mob1hexX, mob1hexY, mob1dir);
+		
+		array<Critter@> mobs;
+		map.GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_NPC, mobs);
+		
+		for(uint8 i = 0; i < mobs.length(); i++)
+		{
+			if(valid(mobs[i]))
+			{
+				mobs[i].GetHomePos(map.Id, mob2hexX, mob2hexY, mob2dir);
+				//if(mob.Id != mobs[i].Id && mob1hexX == mob2hexX && mob1hexY == mob2hexY)
+				if(mob.Id != mobs[i].Id //is not the same mob to compare
+				&& mob1hexX >= mob2hexX - 3 && mob1hexX <= mob2hexX + 3 // X axis
+				&& mob1hexY >= mob2hexY - 3 && mob1hexY <= mob2hexY + 3)// Y axis
+					return false;
+			}
+		}
+		return true;
+	}
+	return false;
+}*/
+
+bool CritterIsKeepedInPolygon(Critter& mob, IPolygon@ polygon, uint16 x, uint16 y)
+{
+	if(!valid(polygon))
+	{
+		mob.Say(SAY_NORM_ON_HEAD, "Area is not valid.");
+		return false;
+	}
+	
+	/*if(!valid(entire))
+	{
+		mob.Say(SAY_NORM_ON_HEAD, "Place is not valid.");
+		return false;
+	}*/
+	
+	if(polygon.IsWithin(mob) && !polygon.IsWithin(x, y))
+	{
+		mob.Say(SAY_NORM_ON_HEAD, "Bad place, taking another one.");
+		return false;
+	}
+	
+	mob.Say(SAY_NORM_ON_HEAD, "Going to: " + x + ", " + y + ".");
+	return true;
+}
+
+void _MakeAnotherMob(Critter& mob, Critter@ killer)
+{
+	if(!valid(mob))
+		return; 
+	if(mob.Stat[ST_REPLICATION_TIME] != REPLICATION_NEVER)
+		return;
+	
+	Map@ map = mob.GetMap();
+	
+	if(!valid(map))
+		return;
+	
+	uint8 neededTime;
+	
+	switch(map.GetProtoId())
+		{
+			case MAP_SaltLake : //Slags part
+			case MAP_Ripper :
+			neededTime = Random(10,20);
+			break;
+		
+		case MAP_Area51Entrance : //Aliens
+			neededTime = 20;
+			break;
+			
+		default: neededTime = Random(15,20);
+		}
+	
+	CreateTimeEvent(AFTER(REAL_MINUTE(neededTime)), "e_deleteMob", mob.Id, true);
+	array<uint> mobdata = { map.Id , 0 , SPAWN_DUNGEON_MOB };
+	CreateTimeEvent(AFTER(REAL_MINUTE(neededTime)), "e_TrySpawnMob", mobdata, true);
+}
+
+void _DeleteEventMob(Critter& mob, Critter@ killer)
+{
+	CreateTimeEvent(AFTER(REAL_SECOND(5)), "e_deleteMob", mob.Id, true);
+}
+
+void _DeleteMob(Critter& mob, Critter@ killer)
+{
+	//reward system vars
+	uint playerId = 0;
+	if(!valid(mob))
+		return;
+	
+	if(valid(killer) && killer.IsPlayer() && mob.GetMap().GetLocation().IsGuarded() && IsNotDungInGuardedLoc(mob.GetMap()))
+	{	
+		AddScore(killer, SCORE_TOWN_PROTECTOR, 1);
+		//if boss then 5
+		playerId = killer.Id;
+	}
+		
+	if(valid(killer) && _IsFollower(killer) && killer.FollowerVarBase[FV_MASTER] != 0 && mob.GetMap().GetLocation().IsGuarded() && IsNotDungInGuardedLoc(mob.GetMap()))
+	{
+		Critter@ player = GetCritter(killer.FollowerVar[FV_MASTER]);
+		if(!valid(player))
+			return;
+			
+		playerId = player.Id;
+			
+		AddScore(player, SCORE_TOWN_PROTECTOR, 1);
+		//if boss then 5
+	}
+	
+	if(valid(killer) && (killer.IsPlayer() || (_IsFollower(killer) && killer.FollowerVarBase[FV_MASTER] != 0)) && mob.GetMap().GetLocation().IsGuarded() && IsNotDungInGuardedLoc(mob.GetMap()))
+	{
+		//get random item from mob
+		
+		array<Item@> rewards;
+		mob.GetItemsByType(ITEM_TYPE_ARMOR, rewards);
+		mob.GetItemsByType(ITEM_TYPE_WEAPON, rewards);
+		//mob.GetItemsByType(ITEM_TYPE_AMMO, rewards);
+		
+		if(rewards.length() > 0)
+		{
+			Item@ reward = rewards[Random(0, rewards.length()-1)];
+			if(!valid(reward))
+				return;
+				
+			if(reward.GetProtoId() != PID_ROBO_ROCKET_LAUNCHER && reward.GetProtoId() != PID_PHAZER
+			&& reward.GetProtoId() != PID_DEATHCLAW_CLAW_1 && reward.GetProtoId() != PID_DEATHCLAW_CLAW_2
+			&& reward.GetProtoId() != PID_FIRE_GECKO_FLAME_WEAPON && reward.GetProtoId() != PID_SPECIAL_BOXER_WEAPON
+			&& reward.GetProtoId() != PID_GUN_TURRET_WEAPON	&& reward.GetProtoId() != PID_EYEBALL_FIST_1
+			&& reward.GetProtoId() != PID_EYEBALL_FIST_2 && reward.GetProtoId() != PID_DUAL_MINIGUN
+			&& reward.GetProtoId() != PID_HEAVY_DUAL_MINIGUN && reward.GetProtoId() != PID_END_BOSS_KIFE
+			&& reward.GetProtoId() != PID_END_BOSS_PLASMA_GUN && reward.GetProtoId() != PID_HOLY_HAND_GRENADE
+			&& reward.GetProtoId() != PID_VAULT_13_SUIT)
+			{
+			
+				Critter@ player = GetCritter(playerId);
+				if(!valid(player))
+					return;
+			
+				SetLexem(reward, "$rewardfor", player.Name);
+			
+				//take this item to mob with specific ROLE on this map!!!
+				//GetNPCfrommap
+				Map@ map = mob.GetMap();
+				if(!valid(map))
+					return;
+				
+				Critter@ rewardgiver = map.GetNpc(ROLE_REWARD_GIVER /*205*/, FIND_ALL | FIND_ONLY_NPC, 0);
+				if(!valid(rewardgiver))
+					return;
+				MoveItem(reward, 1, rewardgiver);
+
+			}
+		}
+	}
+	
+	
+		
+	CreateTimeEvent(AFTER(REAL_SECOND(5)), "e_deleteMob", mob.Id, true);
+}
+
+void _ClearEnemyStack(Critter& mob, Critter@ killer)
+{
+    if(IsNukaColaWorker(mob))
+	{
+		RemoveItems(mob);
+		SetWeapon(mob, 0);
+	}
+	
+	mob.ClearEnemyStack();
+}
+
+bool d_DoesHeHaveReward(Critter& player, Critter@ npc)
+{
+	array<Item@> rewards;
+	npc.GetItemsByType(ITEM_TYPE_ARMOR, rewards);
+	npc.GetItemsByType(ITEM_TYPE_WEAPON, rewards);
+	
+	uint8 rewardscount = 0;
+	
+	if(rewards.length() > 0)
+	{
+		for(uint16 i=0; i < rewards.length(); i++)
+		{
+			if(IsLexem(rewards[i], "$rewardfor") && GetLexem(rewards[i], "$rewardfor") == player.Name)
+			{
+				rewardscount++;
+			}
+		}
+	}
+	
+	if(rewardscount == 0)
+		return false;
+	else
+		return true;
+}
+
+void r_GiveRewardToPlayer(Critter& player, Critter@ npc)
+{
+	array<Item@> rewards;
+	npc.GetItemsByType(ITEM_TYPE_ARMOR, rewards);
+	npc.GetItemsByType(ITEM_TYPE_WEAPON, rewards);
+	
+	uint8 rewardscount = 0;
+	
+	if(rewards.length() > 0)
+	{
+		for(uint16 i=0; i < rewards.length(); i++)
+		{
+			if(IsLexem(rewards[i], "$rewardfor") && GetLexem(rewards[i], "$rewardfor") == player.Name)
+			{
+				MoveItem(rewards[i], 1, player);
+				UnsetLexem(rewards[i], "$rewardfor");
+				rewardscount++;
+			}
+		}
+	}
+	
+	if(rewardscount == 1)
+		player.Say(SAY_NETMSG, "You've received your reward.");
+		
+	if(rewardscount > 1)
+		player.Say(SAY_NETMSG, "You've received your rewards.");
+}
+
+
+void _MobIdle(Critter& mob)
+{
+	if(!valid(mob))
+		return;
+	// the great optimizer
+    if(!mob.IsLife())
+    {
+		mob.Wait(IDLE_ALERTED);
+        return;
+    }
+	
+	bool MobForEvent = (mob.Stat[ST_NPC_BOSS] == MOB_FOR_EVENT ? true : false);
+	
+	mob.SetEvent(CRITTER_EVENT_SHOW_CRITTER, null);
+	
+	if(Random(0, 200) == 0 && !IsSierraRobot(mob) ||
+	(Random(0, 25) == 0 && // Ares exception
+	(mob.GetMap().GetProtoId() == MAP_AresMilitaryBase_Level1 || mob.GetMap().GetProtoId() == MAP_AresMilitaryBase_Level2 ||
+	mob.GetMap().GetProtoId() == MAP_Ares_level3 || mob.GetMap().GetProtoId() == MAP_Ares_level4)))
+	{
+		/* NpcPlane@ plane = mob.GetCurPlane();
+		if((valid(plane)) && ((plane.Identifier != AI_PLANE_ATTACK))) */
+			if(!MobForEvent) MoveMobToFreeHex(mob);
+	}
+	
+	/*if(mob.GetMap().GetProtoId() == MAP_Hawthorne)
+		if(!valid(HawthorneMilitaryBase))
+			@HawthorneMilitaryBase = ::LoadShapeFromEntires(mob.GetMap(), HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);*/
+	
+	/*if(mob.GetMap().GetProtoId() == MAP_SaltLake)
+		if(!valid(NukaColaBottlePlant))
+			@NukaColaBottlePlant = ::LoadShapeFromEntires(mob.GetMap(), NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);*/
+
+    // check critters in sight
+     array<Critter@> crits;
+    // get visible players
+    uint            num = mob.GetCritters(false, FIND_LIFE_AND_KO, crits);
+	// get visible players and their followers
+	//uint            num = CritterGetPlayersAndFollowers(mob, false, FIND_LIFE_AND_KO, crits);
+
+    // mob.Say(SAY_NORM_ON_HEAD, ""+num);
+    // check distance
+    uint dist = GetDistance(mob);
+    for(uint i = 0; i < num; i++)
+    {
+		//if(GetCrittersDistantion(mob, crits[i]) > dist)
+			//mob.Say(SAY_NORM_ON_HEAD, "Idling, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+            // continue;
+        //else
+        //{
+            if(TryAttack(mob, crits[i])) return;
+			
+			/*if((crits[i].Stat[ST_NPC_ROLE] != ROLE_MOB_DYNAMIC) && 
+			((mob.GetMap().GetProtoId() != MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(crits[i]))
+			|| (mob.GetMap().GetProtoId() == MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(crits[i]) && HawthorneMilitaryBase.IsWithin(crits[i]))
+			|| !IsMobFromBase(mob)))
+			{
+				// attack
+				//mob.Say(SAY_NORM_ON_HEAD, "Attack, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+		
+				NpcPlane@ plane = mob.GetCurPlane();
+				if((valid(plane)) && (plane.Identifier != AI_PLANE_ATTACK))
+					mob.DropPlanes();
+
+				mob.AddEnemyInStack(crits[i].Id);
+				AddAttackPlane(mob, 0, crits[i]);
+				return;
+			}*/
+        //}
+    }
+	
+    if(crits.length() > 0)
+    {
+        MoveMob(mob, false);
+		mob.Wait(IDLE_ALERTED_2);
+		// mob.Say(SAY_NORM_ON_HEAD, "Found player but not attack yet! Distance: " + dist + ", ");
+    }
+    else
+	// NpcPlane@ plane = mob.GetCurPlane();
+	
+	// if((Random(1, 100) == 1) && mob.IsNoPlanes())
+    {
+        MoveMob(mob, false);
+        //mob.Say(SAY_NORM_ON_HEAD, "Don't care");
+        mob.Wait(IDLE_ALERTED_2);
+    }
+	
+}
+
+bool _Alert(Critter& mob, Critter& attacker)
+{
+	if(!valid(mob))
+		return true;
+		
+	if(!valid(attacker))
+		return true;
+		
+	if(attacker.Stat[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+		return true;
+	
+	uint radius = (mob.Param[ST_STRENGTH] + mob.Param[ST_ENDURANCE]) * 2;
+	
+	array<Critter@> mobstoalert;
+	mob.GetMap().GetCrittersHex(mob.HexX, mob.HexY, radius, FIND_LIFE_AND_KO | FIND_ONLY_NPC, mobstoalert);
+	
+	for(uint8 i = 0; i < mobstoalert.length(); i++)
+	{
+		if(!valid(mobstoalert[i])) continue;
+		if(mobstoalert[i].Param[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+		{
+			mobstoalert[i].AddEnemyInStack(attacker.Id);
+			AddAttackPlane(mobstoalert[i], 0, attacker);
+		}
+		
+	}
+	
+	return false;
+}
+
+void _DontMove(Critter& mob)
+{
+	if(!valid(mob))
+		return;
+	// the great optimizer
+    if(!mob.IsLife())
+    {
+		mob.Wait(IDLE_ALERTED);
+        return;
+    }
+	
+	mob.SetEvent(CRITTER_EVENT_SHOW_CRITTER, null);
+	
+	if((Random(0, 200) == 0 && !IsSierraRobot(mob) ||
+	(Random(0, 25) == 0 && // Ares exception
+	(mob.GetMap().GetProtoId() == MAP_AresMilitaryBase_Level1 || mob.GetMap().GetProtoId() == MAP_AresMilitaryBase_Level2 ||
+	mob.GetMap().GetProtoId() == MAP_Ares_level3 || mob.GetMap().GetProtoId() == MAP_Ares_level4))) &&
+	mob.GetProtoId() != 480 && mob.GetProtoId() != 470 && mob.GetProtoId() != 474) //Turrets!
+	/*(mob.IsCanWalk() || mob.IsCanRun()*/ 
+	{
+		/* NpcPlane@ plane = mob.GetCurPlane();
+		if((valid(plane)) && ((plane.Identifier != AI_PLANE_ATTACK))) */
+			MoveMobToFreeHex(mob, true);
+	}
+	
+	/*if(mob.GetMap().GetProtoId() == MAP_Hawthorne)
+		if(!valid(HawthorneMilitaryBase))
+			@HawthorneMilitaryBase = ::LoadShapeFromEntires(mob.GetMap(), HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);*/
+
+    // check critters in sight
+     array<Critter@> crits;
+    // get visible players
+    uint            num = mob.GetCritters(false, FIND_LIFE_AND_KO, crits);
+	// get visible players and their followers
+	//uint            num = CritterGetPlayersAndFollowers(mob, false, FIND_LIFE_AND_KO, crits);
+
+    // mob.Say(SAY_NORM_ON_HEAD, ""+num);
+    // check distance
+    uint dist = GetDistance(mob);
+    for(uint i = 0; i < num; i++)
+    {
+		//if(GetCrittersDistantion(mob, crits[i]) > dist)
+			//mob.Say(SAY_NORM_ON_HEAD, "Idling, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+            // continue;
+        //else
+        //{
+            if(TryAttack(mob, crits[i])) return;
+			
+			/*if((crits[i].Stat[ST_NPC_ROLE] != ROLE_MOB_DYNAMIC) && 
+			((mob.GetMap().GetProtoId() != MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(crits[i]))
+			|| (mob.GetMap().GetProtoId() == MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(crits[i]) && HawthorneMilitaryBase.IsWithin(crits[i]))
+			|| !IsMobFromBase(mob)))
+			{
+				// attack
+				//mob.Say(SAY_NORM_ON_HEAD, "Attack, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+		
+				NpcPlane@ plane = mob.GetCurPlane();
+				if((valid(plane)) && (plane.Identifier != AI_PLANE_ATTACK))
+					mob.DropPlanes();
+
+				mob.AddEnemyInStack(crits[i].Id);
+				AddAttackPlane(mob, 0, crits[i]);
+				return;
+			}*/
+        //}
+    }
+	
+    if(crits.length() > 0)
+    {
+        //MoveMob(mob, false);
+		mob.Wait(IDLE_ALERTED_2);
+		// mob.Say(SAY_NORM_ON_HEAD, "Found player but not attack yet! Distance: " + dist + ", ");
+    }
+    else
+	// NpcPlane@ plane = mob.GetCurPlane();
+	
+	// if((Random(1, 100) == 1) && mob.IsNoPlanes())
+    {
+        //MoveMob(mob, false);
+        //mob.Say(SAY_NORM_ON_HEAD, "Don't care");
+        mob.Wait(IDLE_ALERTED_2);
+    }
+	
+}
+
+bool TryAttack(Critter& mob, Critter@ targetCr)
+{
+	if(mob.GetMap().GetProtoId() == MAP_Hawthorne)
+		if(!valid(HawthorneMilitaryBase))
+			@HawthorneMilitaryBase = ::LoadShapeFromEntires(mob.GetMap(), HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
+	
+	if(mob.GetMap().GetProtoId() == MAP_SaltLake)
+		if(!valid(NukaColaBottlePlant))
+			@NukaColaBottlePlant = ::LoadShapeFromEntires(mob.GetMap(), NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
+			
+	if(IsNukaColaWorker(mob)) return false;
+	
+	if(mob.GetMap().GetProtoId() == MAP_NewReno3 && _IsTrueNpc(targetCr)) return false;
+	
+	if((targetCr.Stat[ST_NPC_ROLE] != ROLE_MOB_DYNAMIC) && 
+	((mob.GetMap().GetProtoId() != MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(targetCr))
+	|| (mob.GetMap().GetProtoId() == MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(targetCr) && HawthorneMilitaryBase.IsWithin(targetCr))
+	|| !IsMobFromBase(mob)))
+	{
+		// attack
+		//mob.Say(SAY_NORM_ON_HEAD, "Attack, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+		NpcPlane@ plane = mob.GetCurPlane();
+		if((valid(plane)) && (plane.Identifier != AI_PLANE_ATTACK))
+			mob.DropPlanes();
+		
+		mob.AddEnemyInStack(targetCr.Id);
+		AddAttackPlane(mob, 0, targetCr);
+			return true;
+	}
+	return false;
+}
+
+int GetDistance(Critter& mob)
+{
+	
+	// TODO: damaged eye??
+    int base = __LookNormal + 3 * mob.Stat[ST_PERCEPTION];
+	
+    return base / 2;
+}
+
+void MoveMob(Critter& mob, bool run)
+{
+    int dist = Random(0, (mob.Stat[ST_NPC_ROLE] % 100 / 10));
+    if(dist == 0)
+    {
+        mob.MoveRandom();
+    }
+    else
+    {
+        // bool AddWalkPlane(Critter& npc, uint priory, uint16 hexX, uint16 hexY, uint8 dir, bool run, uint8 cut)
+        uint16 hexX = mob.HexX;
+        uint16 hexY = mob.HexY;
+        mob.GetMap().MoveHexByDir(hexX, hexY, Random(0, 5), dist);
+        AddWalkPlane(mob, 0, hexX, hexY, 0xff, run, 0);
+    }
+}
+
+void ImmaAttack(Map& map, Critter& mob)
+{
+	if(!valid(mob))
+		return;
+	
+	array<Critter@> crits;
+    
+    //uint8 num = map.GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, crits);
+	uint8 num = MapGetPlayersAndFollowers(map, FIND_LIFE_AND_KO, crits);
+	
+	if(num > 0)
+	{
+		uint8 randomcritter = 0;
+		
+		if(num > 1)
+			randomcritter = Random(0, num - 1);
+			
+		if(valid(crits[randomcritter]))
+		{
+			NpcPlane@ plane = mob.GetCurPlane();
+			if((valid(plane)) && (plane.Identifier != AI_PLANE_ATTACK))
+				mob.DropPlanes();
+
+			mob.AddEnemyInStack(crits[randomcritter].Id);
+			AddAttackPlane(mob, 0, crits[randomcritter]);
+			return;
+		}
+	}
+	
+}
+
+bool TryAttackOnWalk(Critter& mob, Critter@ targetCr)
+{
+	Map@ map = mob.GetMap();
+	if(!valid(map))
+		return false;
+	
+	if(mob.GetMap().GetProtoId() == MAP_Hawthorne)
+		if(!valid(HawthorneMilitaryBase))
+			@HawthorneMilitaryBase = ::LoadShapeFromEntires(mob.GetMap(), HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
+	
+	if(mob.GetMap().GetProtoId() == MAP_SaltLake)
+		if(!valid(NukaColaBottlePlant))
+			@NukaColaBottlePlant = ::LoadShapeFromEntires(mob.GetMap(), NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
+			
+	if(IsNukaColaWorker(mob)) return false;
+	
+	//jeśli(chodzi po mieście niestrzeżonym i (target nie jest graczem lub followerem posiadającym właściciela)) return false;
+	
+	//jeśli(chodzi po mieście strzeżonym i target nie jest dynamicsem i (target jest żywy lub IsKnockout)) return false;
+	
+	
+	if((targetCr.Stat[ST_NPC_ROLE] != ROLE_MOB_DYNAMIC) && 
+	((mob.GetMap().GetProtoId() != MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(targetCr))
+	|| (mob.GetMap().GetProtoId() == MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(targetCr) && HawthorneMilitaryBase.IsWithin(targetCr))
+	|| !IsMobFromBase(mob)))
+	{
+		// attack
+		//mob.Say(SAY_NORM_ON_HEAD, "Attack, Distance const: " + dist + ", Dinstance var: " + GetCrittersDistantion(mob, crits[i]));
+		NpcPlane@ plane = mob.GetCurPlane();
+		if((valid(plane)) && (plane.Identifier != AI_PLANE_ATTACK))
+			mob.DropPlanes();
+		
+		mob.AddEnemyInStack(targetCr.Id);
+		AddAttackPlane(mob, 0, targetCr);
+			return true;
+	}
+	return false;
+}
+
+void _MobShowCritterAggr(Critter& mob, Critter& showCrit)
+{
+	Map@ map = mob.GetMap();
+	if(!valid(map))
+		return;
+		
+	if(map.GetProtoId() == MAP_Hawthorne)
+		if(!valid(HawthorneMilitaryBase))
+			@HawthorneMilitaryBase = ::LoadShapeFromEntires(map, HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
+		
+	Location@ loc = map.GetLocation();
+	
+	if(mob.GetMap().GetProtoId() == MAP_NewReno3 && _IsTrueNpc(showCrit)) return;
+	
+	if(((((!IsTown(map)) && showCrit.IsLife()) || (showCrit.IsPlayer() && showCrit.IsLife()) || (loc.IsGuarded() && showCrit.IsLife())) &&
+	showCrit.Stat[ST_NPC_ROLE] != ROLE_MOB_DYNAMIC && 
+			((mob.GetMap().GetProtoId() != MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(showCrit)
+			|| (mob.GetMap().GetProtoId() == MAP_Hawthorne && IsMobFromBase(mob) && !IsCurrentController(showCrit) && HawthorneMilitaryBase.IsWithin(showCrit))
+			|| !IsMobFromBase(mob)))) && !IsNukaColaWorker(mob))
+	{
+		uint 			dist = GetDistance(mob);
+		if(GetCrittersDistantion(mob, showCrit) <= dist)
+		{
+			
+		
+				//mob.Say(SAY_NORM_ON_HEAD, "Attack when walking.");
+		
+				// NpcPlane@ plane = mob.GetCurPlane();
+				// if((valid(plane)) && (plane.Identifier != AI_PLANE_ATTACK))
+					// mob.DropPlanes();
+
+				mob.AddEnemyInStack(showCrit.Id);
+				AddAttackPlane(mob, 0, showCrit);
+			
+		}
+	}
+}
+
+bool IsDungInGuardedLoc(Map& map)
+{
+	return map.GetProtoId() == MAP_SanFranTanker_2
+		|| map.GetProtoId() == MAP_WindOfWarVault;
+}
+
+bool IsNotDungInGuardedLoc(Map& map)
+{
+	return !IsDungInGuardedLoc(map);
+}
+
+bool IsMobFromBase(Critter& mob)
+{
+	Map@ map = mob.GetMap();
+	Location@ loc = map.GetLocation();
+	
+	switch(loc.GetProtoId()) // TODO: Configure polygons.
+	{
+		case LOCATION_Waterworks :
+			return true;
+		case LOCATION_Area51 :
+			return true;
+		case LOCATION_SaltLake :
+			return true;
+		case LOCATION_MariposaMilitaryBase :
+			return true;
+		case LOCATION_Hawthorne :
+			return true;
+	}
+	return false;
+}
+
+bool IsCurrentController(Critter& cr)
+{
+	Location@ loc = cr.GetMap().GetLocation();
+	
+	IBroadcastBuffer@ TakingBase = GetEventCountDownBuffer(loc.GetProtoId(), EVENT_TYPE_BASECONTROL);
+	
+	switch(loc.GetProtoId()) // TODO: Configure polygons.
+	{
+		case LOCATION_Waterworks :
+			if(!valid(TakingBase)) return GetGlobalVar(GVAR_waterworks_score) == cr.Stat[ST_TEAM_ID];
+			else return GetGlobalVar(GVAR_waterworks_score) == cr.Stat[ST_TEAM_ID] && !BaseIsTakingByMobs(loc);
+		case LOCATION_Area51 :
+			if(!valid(TakingBase)) return GetGlobalVar(GVAR_area51_score) == cr.Stat[ST_TEAM_ID];
+			else return GetGlobalVar(GVAR_area51_score) == cr.Stat[ST_TEAM_ID] && !BaseIsTakingByMobs(loc);
+		case LOCATION_SaltLake :
+			if(!valid(TakingBase)) return GetGlobalVar(GVAR_nukacola_score) == cr.Stat[ST_TEAM_ID];
+			else return GetGlobalVar(GVAR_nukacola_score) == cr.Stat[ST_TEAM_ID] && !BaseIsTakingByMobs(loc);
+		case LOCATION_MariposaMilitaryBase :
+			if(!valid(TakingBase)) return GetGlobalVar(GVAR_mariposa_score) == cr.Stat[ST_TEAM_ID];
+			else return GetGlobalVar(GVAR_mariposa_score) == cr.Stat[ST_TEAM_ID] && !BaseIsTakingByMobs(loc);
+		case LOCATION_Hawthorne :
+			if(!valid(TakingBase)) return GetGlobalVar(GVAR_hawthorne_score) == cr.Stat[ST_TEAM_ID];
+			else return GetGlobalVar(GVAR_hawthorne_score) == cr.Stat[ST_TEAM_ID] && !BaseIsTakingByMobs(loc);
+		default:
+
+	}
+	return false;
+}
+
+bool IsHtHOnlyMob(uint16 pid)
+{
+	return pid == 7 || pid == 9 || pid == 246 || pid == 247 || pid == 6 || pid == 5 ||
+			pid == 562 || pid == 563 || pid == 564 || pid == 565 || pid == 827 ||
+			pid == 242 || pid == 243 || pid == 517 || //aliens
+			pid == 244 || pid == 245 || pid == 275 || //deathclaws
+			pid == 248 || pid == 249 || //centaurs
+			pid == 572 || pid == 573 || pid == 574 || pid == 575; //endless walkers
+}
+
+bool IsFromMelchiorGroup(uint16 pid)
+{
+	return pid == 566 || pid == 562 || pid == 563 || pid == 564 || pid == 565;
+}
+
+bool IsMutantMob(uint16 pid)
+{
+	return pid == 549 || pid == 550 || pid == 551 || pid == 566;
+}
+
+bool IsHumanMob(uint16 pid)
+{
+	return pid == 30 || pid == 31 || pid == 32 || pid == 33 || pid == 472
+			|| pid == 40 || pid == 41 || pid == 828 || pid == 829
+			|| pid == 70 || pid == 71 || pid == 69 || pid == 261 || pid == 262
+			|| pid == 475 || pid == 476 || pid == 250 || pid == 251
+			|| pid == 590  || pid == 591 || pid == 884 || pid == 885
+			|| pid == 886 || pid == 887 || pid == 888 || pid == 889
+			|| pid == 890 || pid == 891 || pid == 892 || pid == 893
+			|| pid == 894 || pid == 895 || pid == 897 || pid == 898
+			|| pid == 899 || pid == 900
+			|| pid == 134 || pid == 135 || pid == 827;
+}
+
+bool IsVaultHumanMob(uint16 pid)
+{
+	return pid == 884 || pid == 885 || pid == 882 || pid == 898
+			|| pid == 899 || pid == 900;
+}
+
+bool IsBaldMan(uint16 pid)
+{
+	return pid == 69 || pid == 829;
+}
+
+bool IsBlackMan(uint16 pid)
+{
+	return pid == 890;
+}
+
+bool IsRedHairGirl(uint16 pid)
+{
+	return pid == 827;
+}
+
+bool IsGlowingGhoul(uint16 pid)
+{
+	return pid == 572 || pid == 573;
+}
+
+bool IsBrownGhoul(uint16 pid)
+{
+	return pid == 574 || pid == 575 || pid == 258;
+}
+
+bool IsF2Ghoul(uint16 pid)
+{
+	return pid == 258;
+}
+
+bool IsSierraRobot(Critter& mob)
+{
+	return mob.Stat[ST_BODY_TYPE] == BT_ROBOT && mob.GetMap().GetLocation().GetProtoId() == LOCATION_Sierra;
+}
+
+bool IsV13Rat(Critter& mob)
+{
+	return mob.GetProtoId() == 588 && mob.GetMap().GetProtoId() == MAP_Vault13Level1;
+}
+
+bool IsNukaColaWorker(Critter& mob)
+{
+	uint mapid = 0;
+	uint16 hexX = 0, hexY = 0;
+	uint8 dir = 0;
+	
+	if(mob.GetMap().GetProtoId() == MAP_SaltLake)
+	{	
+		if(!valid(NukaColaBottlePlant))
+			@NukaColaBottlePlant = ::LoadShapeFromEntires(mob.GetMap(), NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
+			
+		mob.GetHomePos(mapid, hexX, hexY, dir);
+	}
+
+			
+	return (((mob.GetMap().GetProtoId() == MAP_SaltLake && NukaColaBottlePlant.IsWithin(hexX, hexY)) ||
+		mob.GetMap().GetProtoId() == MAP_SaltLake_NukaCola)
+		&& (mob.GetProtoId() == 71 || // guard in leather - all anims
+		mob.GetProtoId() == 59 || // girl - two handed sg
+		mob.GetProtoId() == 60 || // guy with the baseball hat - one handed sg
+		mob.GetProtoId() == 63 || // black guy with red clothes - two handed sg
+		mob.GetProtoId() == 64 || // girl - one handed
+		mob.GetProtoId() == 65 || // green old man - hth only
+		mob.GetProtoId() == 68 || // girl - hth only
+		mob.GetProtoId() == 94 || // elegant suit - one handed
+		mob.GetProtoId() == 295 || // technician - one handed
+		mob.GetProtoId() == 403 || // bald guy in leather
+		mob.GetProtoId() == 424 || // fat guy Vic - one and two handed
+		mob.GetProtoId() == 451)); //scientist - hth only
+		
+}
+
+void RemoveItems(Critter& mob)
+{
+	array<Item@> items;
+	mob.GetItems(-1, items);
+	for(uint8 i = 0; i < items.length(); i++)
+	{
+		if(valid(items[i]))
+		{
+			mob.MoveItem(items[i].Id, 1, SLOT_INV);
+			DeleteItem(items[i]);
+		}
+			
+	}
+	mob.Wait(2000);
+}
+
+array<int>@ PrecizeBoss(Map& map, Location& location, uint16 CritterPid)
+{
+	array<int>@ PrecizedBoss;
+	if(location.GetProtoId() == LOCATION_AresRocketSilo) 
+		{
+			if(map.GetProtoId() == MAP_Ares_level3)
+			{
+				int[] params =
+					{
+						ST_STRENGTH, 8,
+						ST_PERCEPTION, 7
+					};
+				@PrecizedBoss = params;
+			}
+			if(map.GetProtoId() == MAP_Ares_level4)
+			{
+				int[] params =
+					{
+						ST_CHARISMA, 10,
+						ST_INTELLECT, 15,
+						ST_AGILITY, 8,
+						ST_LUCK, 7
+					};
+				@PrecizedBoss = params;
+			}
+		}
+	return @PrecizedBoss;
+}
+
+void SetArmor(Critter& mob)
+{
+	uint16 armorpid, helmetpid;
+	
+	//leather jackets
+	if((mob.GetProtoId() >= 30 && mob.GetProtoId() <= 33) || mob.GetProtoId() == 472)
+	{
+		switch(Random(1, 2))
+		{
+			case 1 : armorpid = PID_LEATHER_JACKET; helmetpid = PID_LEATHER_JACKET_HELMET; break;
+			case 2 : armorpid = PID_CURED_LEATHER_ARMOR; helmetpid = PID_COMBAT_LEATHER_JACKET_HELMET; break;
+		}
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//metal armors
+	if((mob.GetProtoId() >= 40 && mob.GetProtoId() <= 42) || (mob.GetProtoId() >= 827 && mob.GetProtoId() <= 829) || mob.GetProtoId() == 890)
+	{
+		switch(Random(1, 3))
+		{
+			case 1 : armorpid = PID_METAL_ARMOR; helmetpid = PID_METAL_HELMET; break;
+			case 2 : armorpid = PID_METAL_ARMOR_MK_II; helmetpid = PID_METAL_HELMET_MK2; break;
+			case 3  :armorpid = PID_TESLA_ARMOR; helmetpid = PID_TESLA_HELMET; break;
+		}
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//leather armors
+	if((mob.GetProtoId() >= 69 && mob.GetProtoId() <= 71) || mob.GetProtoId() == 897)
+	{
+		armorpid = PID_LEATHER_ARMOR;
+		helmetpid = PID_LEATHER_ARMOR_HELMET;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//combat armors
+	if(mob.GetProtoId() >= 134 && mob.GetProtoId() <= 135)
+	{
+		armorpid = PID_COMBAT_ARMOR;
+		helmetpid = PID_COMBAT_HELMET;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//combat armors mk2
+	if(mob.GetProtoId() >= 261 && mob.GetProtoId() <= 262)
+	{
+		armorpid = PID_COMBAT_ARMOR_MK_II;
+		helmetpid = PID_COMBAT_HELMET_MK_II;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//combat armors ncr
+	if(mob.GetProtoId() >= 475 && mob.GetProtoId() <= 476)
+	{
+		armorpid = PID_NCR_ARMOR;
+		helmetpid = PID_NCR_HELMET;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+		
+	//PA
+	if(mob.GetProtoId() == 122)
+	{
+		armorpid = PID_POWERED_ARMOR; helmetpid = PID_POWER_HELMET;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//HPA
+	if(mob.GetProtoId() == 893)
+	{
+		armorpid = PID_HARDENED_POWER_ARMOR; helmetpid = PID_HARDENED_POWER_HELMET;
+
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//APA
+	if(mob.GetProtoId() == 250)
+	{
+		switch(Random(1, 2))
+		{
+			case 1 : armorpid = PID_ADVANCED_POWER_ARMOR; helmetpid = PID_APA_HELMET; break;
+			case 2 : armorpid = PID_ADVANCED_POWER_ARMOR_MK2; helmetpid = PID_APA_HELMET_MK2; break;
+		}
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//brotherhood combat armors
+	if(mob.GetProtoId() >= 886 && mob.GetProtoId() <= 887)
+	{
+		armorpid = PID_BROTHERHOOD_COMBAT_ARMOR;
+		helmetpid = PID_BROTHERHOOD_HELMET;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//enlcave combat armors
+	if(mob.GetProtoId() >= 888 && mob.GetProtoId() <= 889)
+	{
+		armorpid = PID_ENCLAVE_COMBAT_ARMOR;
+		switch(Random(1, 2))
+		{
+			case 1 : helmetpid = PID_ENCLAVE_COMBAT_HELMET; break;
+			case 2 : helmetpid = PID_ENCLAVE_COMBAT_HELMET_MK2; break;
+		}
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//police uniforms replacement
+	if(mob.GetProtoId() >= 894 && mob.GetProtoId() <= 895)
+	{
+		armorpid = PID_CLOTHES_POLICE;
+		helmetpid = PID_COMBAT_HELMET_MK_II;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//leather armor mk2
+	if(mob.GetProtoId() >= 891 && mob.GetProtoId() <= 892)
+	{
+		armorpid = PID_LEATHER_ARMOR_MK_II;
+		helmetpid = PID_LEATHER_ARMOR_HELMET_MK2;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);
+	}
+	
+	//blue jumpsuit
+	if(mob.GetProtoId() >= 898 && mob.GetProtoId() <= 900)
+	{
+		armorpid = PID_VAULT_13_SUIT;
+		// helmetpid = PID_LEATHER_ARMOR_HELMET_MK2;
+		
+		Item@ armor = mob.AddItem(armorpid, 1);
+		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
+		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
+		AddBonusOrNot(armor);
+		
+		/*Item@ helmet = mob.AddItem(helmetpid, 1);
+		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
+		AddBonusOrNot(helmet);*/
+	}
+}
+
+uint16 GenerateWeapon(uint8 weapontype = 0, uint8 weaponlevel = 2)
+{
+	uint16 weaponry;
+	array<uint16> fromweaponry = { 0 };
+	
+	switch(weapontype)
+	{
+		case 1 ://pistols
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(6);
+					fromweaponry[0] = PID_10MM_PISTOL;
+					fromweaponry[1] = PID_9MM_MAUSER;
+					fromweaponry[2] = PID_ZIP_GUN;
+					fromweaponry[3] = PID_44_MAGNUM_REVOLVER;
+					fromweaponry[4] = PID_44_MAGNUM_SPEEDLOADER;
+					fromweaponry[5] = PID_DESERT_EAGLE_EXT_MAG;
+					break;
+				case 2 :
+					fromweaponry.resize(4);
+					fromweaponry[0] = PID_14MM_PISTOL;
+					fromweaponry[1] = PID_223_PISTOL;
+					fromweaponry[2] = PID_NEEDLER_PISTOL;
+					fromweaponry[3] = PID_GRENADE_PISTOL;
+					break;
+				case 3 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_PK12_GAUSS_PISTOL;
+					break;
+			}
+			break;
+		case 2 ://rifles
+			//disabled: PID_JONNY_BB_GUN , PID_RED_RYDER_LE_BB_GUN , PID_RED_RYDER_BB_GUN
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_HUNTING_RIFLE;
+					fromweaponry[1] = PID_SPRINGER_RIFLE;
+					fromweaponry[2] = PID_SCOPED_HUNTING_RIFLE;
+					break;
+				case 2 :
+					fromweaponry.resize(5);
+					fromweaponry[0] = PID_ASSAULT_RIFLE;
+					fromweaponry[1] = PID_SNIPER_RIFLE;
+					fromweaponry[2] = PID_FN_FAL;
+					fromweaponry[3] = PID_ASSAULT_RIFLE_EXT_MAG;
+					fromweaponry[4] = PID_GRENADE_LAUNCHER;
+					break;
+				case 3 :
+					fromweaponry.resize(5);
+					fromweaponry[0] = PID_SNIPER_RIFLE;
+					fromweaponry[1] = PID_INDEPENDENT;
+					fromweaponry[2] = PID_M72_GAUSS_RIFLE;
+					fromweaponry[3] = PID_FN_FAL_NIGHT_SCOPE;
+					fromweaponry[4] = PID_FN_FAL_HPFA;
+					break;
+			}
+			break;
+		case 3 ://shotguns
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_SHOTGUN;
+					fromweaponry[1] = PID_COMBAT_SHOTGUN;
+					fromweaponry[2] = PID_SAWED_OFF_SHOTGUN;
+					break;
+				case 2 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_COMBAT_SHOTGUN;
+					fromweaponry[1] = PID_PANCOR_JACKHAMMER;
+					fromweaponry[2] = PID_HK_CAWS;
+					break;
+				case 3 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_PANCOR_JACKHAMMER;
+					fromweaponry[1] = PID_SAIGA12;
+					fromweaponry[2] = PID_HK_CAWS;
+					break;
+			}
+			break;
+		case 4 ://submachineguns
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_10MM_SMG;
+					fromweaponry[1] = PID_TOMMY_GUN;
+					fromweaponry[2] = PID_GREASE_GUN;
+					break;
+				case 2 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_HK_P90C;
+					fromweaponry[1] = PID_10MM_SMG;
+					break;
+				case 3 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_HK_P90C;
+					fromweaponry[1] = PID_HK_G11;
+					fromweaponry[2] = PID_HK_G11E;
+					break;
+			}
+			break;
+		case 5 ://big guns
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(4);
+					fromweaponry[0] = PID_FLAMER;
+					fromweaponry[1] = PID_IMPROVED_FLAMETHROWER;
+					fromweaponry[2] = PID_M60;
+					fromweaponry[3] = PID_ROCKET_LAUNCHER;
+					break;
+				case 2 :
+					fromweaponry.resize(5);
+					fromweaponry[0] = PID_M60;
+					fromweaponry[1] = PID_IMPROVED_FLAMETHROWER;
+					fromweaponry[2] = PID_ROCKET_LAUNCHER;
+					fromweaponry[3] = PID_MINIGUN;
+					fromweaponry[4] = PID_LIGHT_SUPPORT_WEAPON;
+					break;
+				case 3 :
+					fromweaponry.resize(5);
+					fromweaponry[0] = PID_LIGHT_SUPPORT_WEAPON;
+					fromweaponry[1] = PID_AVENGER_MINIGUN;
+					fromweaponry[2] = PID_VINDICATOR_MINIGUN;
+					fromweaponry[3] = PID_M203;
+					fromweaponry[4] = PID_BOZAR;
+					break;
+			}
+			break;
+		case 6 ://energy pistols
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_LASER_PISTOL;
+					fromweaponry[1] = PID_MAGNETO_LASER_PISTOL;
+					break;
+				case 2 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_MAGNETO_LASER_PISTOL;
+					fromweaponry[1] = PID_PLASMA_PISTOL;
+					fromweaponry[2] = PID_PLASMA_PISTOL_EXT_CART;
+					break;
+				case 3 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_ALIEN_LASER_PISTOL;
+					fromweaponry[1] = PID_SOLAR_SCORCHER;
+					fromweaponry[2] = PID_YK32_PULSE_PISTOL;
+					break;
+			}
+			break;
+		case 7 ://energy rifles
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_LASER_RIFLE;
+					break;
+				case 2 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_PLASMA_RIFLE;
+					fromweaponry[1] = PID_LASER_RIFLE_EXT_CAP;
+					break;
+				case 3 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_YK42B_PULSE_RIFLE;
+					fromweaponry[1] = PID_TURBO_PLASMA_RIFLE;
+					fromweaponry[2] = PID_LASER_RIFLE_EXT_CAP;
+					break;
+			}
+			break;
+		case 8 ://energy miniguns
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_MINIGUN;
+					break;
+				case 2 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_GATLING_LASER;
+					break;
+				case 3 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_PLASMA_GATLING;
+					break;
+			}
+			break;
+		case 9 ://throwing
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_FRAG_GRENADE;
+					break;
+				case 2 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_FRAG_GRENADE;
+					fromweaponry[1] = PID_PLASMA_GRENADE;
+					break;
+				case 3 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_PLASMA_GRENADE;
+					break;
+			}
+			break;
+		case 10 ://knifes etc
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(4);
+					fromweaponry[0] = PID_KNIFE;
+					fromweaponry[1] = PID_COMBAT_KNIFE;
+					fromweaponry[2] = PID_SWITCHBLADE;
+					fromweaponry[3] = PID_SHIV;
+					break;
+				case 2 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_LIL_JESUS_WEAPON;
+					fromweaponry[1] = PID_WAKIZASHI_BLADE;
+					fromweaponry[2] = PID_RIPPER;
+					break;
+				case 3 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_LIL_JESUS_WEAPON;
+					fromweaponry[1] = PID_RIPPER;
+					break;
+			}
+			break;
+		case 11 ://spears
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_SPEAR;
+					fromweaponry[1] = PID_SHARP_SPEAR;
+					fromweaponry[2] = PID_SHARPENED_POLE;
+					break;
+				case 2 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_SPEAR;
+					fromweaponry[1] = PID_SHARP_SPEAR;
+					break;
+				case 3 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_SHARP_SPEAR;
+					break;
+			}
+			break;
+		case 12 ://electric/mechanic melee
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_CROWBAR;
+					fromweaponry[1] = PID_WRENCH;
+					break;
+				case 2 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_CATTLE_PROD;
+					fromweaponry[1] = PID_CROWBAR;
+					break;
+				case 3 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_SUPER_CATTLE_PROD;
+					fromweaponry[1] = PID_LOUISVILLE_SLUGGER;
+					break;
+			}
+			break;
+		case 13 ://unarmed only
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_POWER_FIST;
+					break;
+				case 2 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_POWER_FIST;
+					fromweaponry[1] = PID_MEGA_POWER_FIST;
+					break;
+				case 3 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_MEGA_POWER_FIST;
+					break;
+			}
+			break;
+		case 14 ://hammers
+			switch(weaponlevel)
+			{
+				case 1 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_SLEDGEHAMMER;
+					break;
+				case 2 :
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_SLEDGEHAMMER;
+					fromweaponry[1] = PID_SUPER_SLEDGE;
+					break;
+				case 3 :
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_SUPER_SLEDGE;
+					break;
+			}
+			break;
+		case 15 ://special weapon types
+		/*PID_ROBO_ROCKET_LAUNCHER, PID_PHAZER,
+		PID_DEATHCLAW_CLAW_1, PID_DEATHCLAW_CLAW_2,
+		PID_FIRE_GECKO_FLAME_WEAPON,
+		PID_SPECIAL_BOXER_WEAPON,
+		PID_GUN_TURRET_WEAPON,
+		PID_EYEBALL_FIST_1, PID_EYEBALL_FIST_2,
+		PID_DUAL_MINIGUN, PID_HEAVY_DUAL_MINIGUN,
+		PID_END_BOSS_KIFE, PID_END_BOSS_PLASMA_GUN,
+		PID_HOLY_HAND_GRENADE*/
+			switch(weaponlevel) //to use for special mobs
+			{
+				case 1 : //claws for endless walkers or deathclaws
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_DEATHCLAW_CLAW_1;
+					fromweaponry[1] = PID_DEATHCLAW_CLAW_2;
+					break;
+				case 2 : //sentry bots
+					fromweaponry.resize(3);
+					fromweaponry[0] = PID_ROBO_ROCKET_LAUNCHER;
+					fromweaponry[1] = PID_DUAL_MINIGUN;
+					fromweaponry[2] = PID_HEAVY_DUAL_MINIGUN;
+					break;
+				case 3: //fire geckos
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_FIRE_GECKO_FLAME_WEAPON;
+					break;
+				case 4: //turrets
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_DUAL_MINIGUN;
+					fromweaponry[1] = PID_HEAVY_DUAL_MINIGUN;
+					break;
+				case 5: //RoboEye
+					fromweaponry.resize(2);
+					fromweaponry[0] = PID_EYEBALL_FIST_1;
+					fromweaponry[1] = PID_EYEBALL_FIST_2;
+					break;
+				case 6: //energy turrets
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_DUAL_LASER_CANNON;
+					break;
+				case 7:
+					fromweaponry.resize(1);
+					fromweaponry[0] = PID_GUN_TURRET_WEAPON;
+					break;
+			}
+			break;
+	}
+	weaponry = fromweaponry[Random(0, fromweaponry.length()-1)];
+	
+	return weaponry;
+}
+
+
+void SetWeapon(Critter& mob, uint8 weaponforgroup)
+{
+	
+	uint8 weapontype = 0, weaponlevel = 2;
+	
+	/* if(IsHumanMob(mob.GetProtoId()) && !IsHtHOnlyMob(mob.GetProtoId()) && mob.GetProtoId() != 890)
+	{
+		array<uint16> weapons = {
+								//pistols
+								PID_10MM_PISTOL , PID_14MM_PISTOL , PID_9MM_MAUSER , PID_223_PISTOL , PID_ZIP_GUN , 
+								PID_44_MAGNUM_REVOLVER , PID_44_MAGNUM_SPEEDLOADER , PID_NEEDLER_PISTOL , PID_PK12_GAUSS_PISTOL ,
+								PID_DESERT_EAGLE_EXT_MAG , 
+								//rifles
+								PID_HUNTING_RIFLE , PID_ASSAULT_RIFLE , PID_SNIPER_RIFLE , PID_RED_RYDER_BB_GUN ,
+								PID_RED_RYDER_LE_BB_GUN , PID_JONNY_BB_GUN , PID_SCOPED_HUNTING_RIFLE ,
+								PID_SPRINGER_RIFLE , PID_FN_FAL , PID_INDEPENDENT , PID_M72_GAUSS_RIFLE , 
+								PID_FN_FAL_NIGHT_SCOPE , PID_ASSAULT_RIFLE_EXT_MAG , PID_FN_FAL_HPFA ,
+								//shotguns
+								PID_SHOTGUN , PID_COMBAT_SHOTGUN , PID_HK_CAWS , PID_PANCOR_JACKHAMMER ,
+								PID_SAWED_OFF_SHOTGUN , PID_SAIGA12 ,
+								//submachineguns
+								PID_10MM_SMG , PID_TOMMY_GUN , PID_HK_P90C , PID_GREASE_GUN , PID_HK_G11 , PID_HK_G11E ,
+								//flamer
+								PID_FLAMER , PID_IMPROVED_FLAMETHROWER ,
+								//bigguns
+								PID_MINIGUN , PID_AVENGER_MINIGUN , PID_VINDICATOR_MINIGUN , PID_LIGHT_SUPPORT_WEAPON ,
+								PID_M60 , PID_BOZAR , PID_ROCKET_LAUNCHER , PID_M203 ,
+								//energy
+								PID_LASER_PISTOL , PID_GATLING_LASER , PID_LASER_RIFLE , PID_ALIEN_LASER_PISTOL ,
+								PID_SOLAR_SCORCHER , PID_LASER_RIFLE_EXT_CAP , PID_MAGNETO_LASER_PISTOL ,
+								// PID_DUAL_LASER_CANNON , // Vault City Gun Turret
+								//plasma
+								PID_PLASMA_RIFLE , PID_PLASMA_PISTOL , PID_TURBO_PLASMA_RIFLE , PID_PLASMA_PISTOL_EXT_CART ,
+								PID_PLASMA_GATLING ,
+								//pulse/electro
+								PID_YK32_PULSE_PISTOL , PID_YK42B_PULSE_RIFLE ,
+								//throwing
+								PID_FRAG_GRENADE , PID_PLASMA_GRENADE , PID_PULSE_GRENADE ,
+								//knifes etc
+								PID_KNIFE , PID_COMBAT_KNIFE , PID_SWITCHBLADE , PID_SHIV , PID_LIL_JESUS_WEAPON , PID_WAKIZASHI_BLADE ,
+								//spears
+								PID_SPEAR , PID_SHARP_SPEAR , PID_SHARPENED_POLE ,
+								//melee
+								PID_CLUB , PID_SLEDGEHAMMER , PID_CROWBAR , PID_SUPER_SLEDGE , PID_WRENCH , PID_LOUISVILLE_SLUGGER ,
+								//electric/mechanic melee
+								PID_RIPPER , PID_CATTLE_PROD , PID_SUPER_CATTLE_PROD ,
+								//unarmed only
+								PID_POWER_FIST , PID_MEGA_POWER_FIST , 
+								//greande launcher
+								PID_GRENADE_LAUNCHER , PID_GRENADE_PISTOL
+								};
+	}*/
+								
+		/*-----------------------------------------------------
+		Function for generate wepon pid for mob
+		uint16 GenerateWeapon(uint8 weapontype = 0, uint8 weaponlevel = 2)
+		
+		weapontype:
+		1 pistols
+		2 rifles
+		3 shotguns
+		4 smgs
+		5 big guns
+		6 energy pistols
+		7 energy rifles
+		8 energy miniguns (no level 1, minigun bg is here)
+		9 grenades
+		10 knifes
+		11 spears
+		12 melee (crowbars anim, cattle prods included)
+		13 power fists
+		14 hammers
+		
+		weaponlevel:
+		1 low
+		2 med
+		3 hi
+		-----------------------------------------------------*/
+		
+	//prepared for future groups
+	/*if(IsF2Ghoul(mob.GetProtoId()))
+	{
+		switch(Random(1,3))
+		{
+			case 1: weapontype = 1; break;
+			case 2: weapontype = 4; break;
+			case 3: weapontype = 10; break;
+		}
+	}*/
+	
+	//prepared for future groups
+	/*if(IsBrownGhoul(mob.GetProtoId()))
+	{
+		switch(Random(1,3))
+		{
+			case 1: weapontype = 3; break;
+			case 2: weapontype = 10; break;
+			case 3: weapontype = 11; break;
+		}
+	}*/	
+	
+	if((groupname == "Vipers raiders" || groupname == "Jackals raiders" || groupname == "Slavers" || groupname == "Vault 13 Dwellers"
+	|| weaponforgroup == 2 || weaponforgroup == 3 || weaponforgroup == 6) && IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,9))
+		{
+			case 1: weapontype = 1; break;
+			case 2: weapontype = 2; break;
+			case 3: weapontype = 3; break;
+			case 4: weapontype = 4; break;
+			case 5: weapontype = 10; break;
+			case 6: weapontype = 11; break;
+			case 7: weapontype = 12; break;
+			case 8: weapontype = 13; break;
+			case 9: weapontype = 14; break;
+		}
+		
+		if(IsBlackMan(mob.GetProtoId()))
+			switch(Random(1,6))
+			{
+				case 1: weapontype = 1; break;
+				case 2: weapontype = 2; break;
+				case 3: weapontype = 3; break;
+				case 4: weapontype = 4; break;
+				case 5: weapontype = 13; break;
+				case 6: weapontype = 14; break;
+			}
+		
+		if(IsBaldMan(mob.GetProtoId()))
+		switch(Random(1,7))
+		{
+			case 1: weapontype = 1; break;
+			case 2: weapontype = 2; break;
+			case 3: weapontype = 3; break;
+			case 4: weapontype = 4; break;
+		}
+		
+		if(IsRedHairGirl(mob.GetProtoId()))
+		{
+			switch(Random(1,2))
+			{
+				case 1: weapontype = 10; break;
+				case 2: weapontype = 13; break;
+				//case 3: weapontype = 11; break; //spears disabled
+			}
+		}
+		
+		switch(Random(1,20))
+		{
+			case 1: 
+			case 2: 
+			case 3: 
+			case 4: 
+			case 5: 
+			case 6: 
+			case 7: 
+			case 8: 
+			case 9: 
+			case 10: weaponlevel = 1; break;
+			case 20: weaponlevel = 3; break;
+		}
+	}
+	
+	if((groupname == "Enclave Soldiers" || weaponforgroup == 7) && IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,6))
+		{
+			case 1: weapontype = 1; break;
+			case 2: weapontype = 2; break;
+			case 3: weapontype = 5; break;
+			case 4: weapontype = 6; break;
+			case 5: weapontype = 7; break;
+			case 6: weapontype = 8; break;
+		}
+		
+		switch(Random(1,20))
+		{
+			case 1: 
+			case 2: weaponlevel = 1; break;
+			case 17: 
+			case 18: 
+			case 19: 
+			case 20: weaponlevel = 3; break;
+		}
+	}
+	
+	if((groupname == "NCR Soldiers and Rangers" || groupname == "Mercenaries" || groupname == "Renegades" ||
+	weaponforgroup == 4 || weaponforgroup == 12 || weaponforgroup == 5) && IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,4))
+		{
+			case 1: weapontype = 1; break;
+			case 2: weapontype = 2; break;
+			case 3: weapontype = 3; break;
+			case 4: weapontype = 5; break;
+		}
+		
+		if(groupname == "NCR Soldiers and Rangers" || weaponforgroup == 4)
+			switch(Random(1,20))
+			{
+				case 1: 
+				case 2: weaponlevel = 1; break;
+				case 17: 
+				case 18: 
+				case 19: 
+				case 20: weaponlevel = 3; break;
+			}
+			
+		if(groupname == "Mercenaries" || weaponforgroup == 12)
+			switch(Random(1,20))
+			{
+				case 1: 
+				case 2: weaponlevel = 1; break;
+				case 20: weaponlevel = 3; break;
+			}
+			
+		if(groupname == "Renegades" || weaponforgroup == 5)
+			switch(Random(1,20))
+			{
+				case 1: 
+				case 2: 
+				case 3: 
+				case 4: weaponlevel = 1; break;
+				case 20: weaponlevel = 3; break;
+			}
+	}
+	
+	
+	
+	if((groupname == "Slag bandits" || weaponforgroup == 1) && IsHumanMob(mob.GetProtoId()))
+	{
+		switch(Random(1,7))
+		{
+			case 1: weapontype = 1; break;
+			case 2: weapontype = 2; break;
+			case 3: weapontype = 3; break;
+			case 4: weapontype = 4; break;
+			case 5: weapontype = 5; break;
+			case 6: weapontype = 6; break;
+			case 7: weapontype = 7; break;
+		}
+		
+		if(IsBlackMan(mob.GetProtoId()))
+			switch(Random(1,4))
+			{
+				case 1: weapontype = 1; break;
+				case 2: weapontype = 3; break;
+				case 3: weapontype = 4; break;
+				case 4: weapontype = 6; break;
+			}
+		
+		if(IsBaldMan(mob.GetProtoId()))
+		switch(Random(1,7))
+		{
+			case 1: weapontype = 1; break;
+			case 2: weapontype = 2; break;
+			case 3: weapontype = 3; break;
+			case 4: weapontype = 4; break;
+			case 5: weapontype = 5; break;
+			case 6: weapontype = 6; break;
+			case 7: weapontype = 7; break;
+		}
+		
+		if(IsRedHairGirl(mob.GetProtoId()))
+		{
+			switch(Random(1,2))
+			{
+				case 1: weapontype = 10; break;
+				case 2: weapontype = 13; break;
+			}
+		}
+		
+		switch(Random(1,20))
+		{
+			case 1: 
+			case 2: 
+			case 3: 
+			case 4: 
+			case 5: weaponlevel = 1; break;
+			case 20: weaponlevel = 3; break;
+		}
+	}
+	
+	if(groupname == "Endless Walkers" && weaponforgroup != WEAPONGROUP_UNARMED)
+	{
+		if(IsGlowingGhoul(mob.GetProtoId()))
+		{
+			weapontype = 15;
+			weaponlevel = 1;
+		}
+			
+		if(IsBrownGhoul(mob.GetProtoId()))
+		{
+			if(mob.GetMap().GetLocation().GetProtoId() == LOCATION_Necropolis)
+			{
+				switch(Random(1, 2))
+				{
+					case 1 : weapontype = WEAPONTYPE_RIFLES; break;
+					case 2 : weapontype = WEAPONTYPE_SHOTGUNS; break;
+					//case 3 : weapontype = WEAPONTYPE_SPEARS; break;
+					//case 4 : weapontype = WEAPONTYPE_KNIFES; break;
+					//case 5 : weapontype = WEAPONTYPE_POWER_FISTS; break;
+				}
+				weaponlevel = Random(WEAPONLEVEL_MEDIUM, WEAPONLEVEL_HIGH);
+			}
+			else
+			{
+				weapontype = 11; //spears
+				weaponlevel = 3; // sharp spears
+			}
+		}
+			
+		if(mob.GetProtoId() == 178) // Reactor ghouls
+		{
+			
+		}
+	}
+	
+	
+	
+	
+	if((groupname == "Melchior with his pets" || groupname == "Super Mutant remnants" || groupname == "Master's Elite Crew" ||
+	weaponforgroup == 20 || weaponforgroup == 13 || weaponforgroup == 14) && IsMutantMob(mob.GetProtoId()))
+	{
+		
+		switch(Random(1,4))
+		{
+			case 1: weapontype = 5; break;
+			case 2: weapontype = 7; break;
+			case 3: weapontype = 8; break;
+			case 4: weapontype = 13; break;
+			//case 5: weapontype = 9; break;
+		}
+		
+		if(groupname == "Master's Elite Crew" || weaponforgroup == 14)
+		{
+			switch(Random(1,10))
+			{
+			case 1: 
+			case 2: weaponlevel = 1; break;
+			case 10: weaponlevel = 3; break;
+			}
+		}
+		else
+		{
+			switch(Random(1,20))
+			{
+			case 1: 
+			case 2: 
+			case 3: 
+			case 4: 
+			case 5: weaponlevel = 1; break;
+			case 20: weaponlevel = 3; break;
+			}
+		}
+	}
+	
+	// claws for deathclaws
+	if(mob.GetProtoId() == 244 || mob.GetProtoId() == 245 || mob.GetProtoId() == 275 || mob.GetProtoId() == 562 || mob.GetProtoId() == 506)
+	{
+		weapontype = 15;
+		weaponlevel = 1;
+	}
+	
+	//and bring flames for fire geckos
+	if(mob.GetProtoId() == 563)
+	{
+		weapontype = 15;
+		weaponlevel = 3;
+	}
+		
+	//Robots
+	//Rifles for Robobrains
+	if(mob.GetProtoId() == 578 || mob.GetProtoId() == 579)
+	{
+		weapontype = Random(2,3);
+		weaponlevel = 2;
+		
+		uint8 justforrandom = Random(1, 100);
+		
+		if(justforrandom <=20)
+			weaponlevel = 1;
+			
+		if(justforrandom >=90)
+			weaponlevel = 3;
+	}
+	
+	//Hi rifles/miniguns for Mr Handys
+	if(mob.GetProtoId() == 576 || mob.GetProtoId() == 577)
+	{
+		weaponlevel = 2;
+		
+		switch(Random(1,3))
+		{
+			case 1: weapontype = 5; break;
+			case 2: weapontype = 7; break;
+			case 3: weapontype = 8; break;
+		}
+		
+		uint8 justforrandom = Random(1, 100);
+		
+		if(justforrandom <=20)
+			weaponlevel = 1;
+			
+		if(justforrandom >=90)
+			weaponlevel = 3;
+	}
+	
+	//RoboEye
+	if(mob.GetProtoId() == 580 || mob.GetProtoId() == 581)
+	{
+		weapontype = WEAPONTYPE_SPECIAL;
+		weaponlevel = WEAPONSPECIAL_ROBOEYE_TYPICAL;
+	}
+	
+	//Sentry Bots
+	if(mob.GetProtoId() == 582 || mob.GetProtoId() == 583 || mob.GetProtoId() == 584)
+	{
+		uint8 justforrandom = Random(1, 100);
+		
+			
+		if(justforrandom <=60)
+		{
+			weapontype = WEAPONTYPE_ENERGY_MINIGUNS;
+			weaponlevel = WEAPONLEVEL_LOW; // Not combined minigun is here
+		}
+		else if(justforrandom > 95)
+		{
+			weapontype = WEAPONTYPE_ENERGY_MINIGUNS;
+			weaponlevel = WEAPONLEVEL_HIGH;
+		}
+		else if(justforrandom > 85)
+		{
+			weapontype = WEAPONTYPE_ENERGY_MINIGUNS;
+			weaponlevel = WEAPONLEVEL_MEDIUM;
+		}
+		if(justforrandom > 60)
+		{
+			weapontype = WEAPONTYPE_SPECIAL;
+			weaponlevel = WEAPONSPECIAL_SENTRYBOTS_TYPICAL;
+		}
+		
+		
+	}
+	
+	//Turrets
+	if(mob.GetProtoId() == 474)
+	{
+		weapontype = WEAPONTYPE_SPECIAL;
+		weaponlevel = WEAPONSPECIAL_LASER_TURRETS;
+	}
+	if(mob.GetProtoId() == 470)
+	{
+		weapontype = WEAPONTYPE_SPECIAL;
+		weaponlevel = WEAPONSPECIAL_PLASMA_TURRETS;
+	}
+	if(mob.GetProtoId() == 480)
+	{
+		weapontype = WEAPONTYPE_SPECIAL;
+		weaponlevel = WEAPONSPECIAL_TURRETS_TYPICAL;
+	}
+	
+	// Nuka Cola Workers
+	if(IsNukaColaWorker(mob) || groupname == "Reno Scavengers")
+	{
+		switch(mob.GetProtoId())
+		{
+			case 94 : // elegant suit - one handed
+			case 295 : // technician - one handed
+			case 60 : // guy with the baseball hat - one handed sg
+			case 64 : // girl - one handed
+				if(Random(1,2) == 2)
+					weapontype = WEAPONTYPE_PISTOLS;
+				else
+					weapontype = WEAPONTYPE_ENERGY_PISTOLS;
+				break;
+			case 59 : // girl - two handed sg
+			case 63 : // black guy with red clothes - two handed sg
+				weapontype = Random(WEAPONTYPE_RIFLES, WEAPONTYPE_SHOTGUNS);
+				break;
+			case 403 : // bald guy in leather
+			case 424 : // fat guy Vic - one and two handed
+				if(Random(1,2) == 2)
+					weapontype = Random(WEAPONTYPE_RIFLES, WEAPONTYPE_SHOTGUNS);
+				else if(Random(1,2) == 2)
+					weapontype = WEAPONTYPE_PISTOLS;
+				else
+					weapontype = WEAPONTYPE_ENERGY_PISTOLS;
+				break;
+			case 65 : // green old man - hth only
+			case 451 : // scientist - hth only
+				weapontype = WEAPONTYPE_POWER_FISTS;
+				break;
+			case 68 : // girl - hth only, knifes
+				weapontype = WEAPONTYPE_KNIFES;
+				break;
+			case 71 : // guard in leather - all anims
+				weapontype = Random(WEAPONTYPE_PISTOLS, WEAPONTYPE_ENERGY_RIFLES);
+				break;
+		}
+		
+		weaponlevel = Random(WEAPONLEVEL_MEDIUM, WEAPONLEVEL_HIGH);
+	}
+	
+	//Overseers
+	if(mob.GetProtoId() == 882 || mob.GetProtoId() == 901)
+	{
+		weapontype = WEAPONTYPE_SPECIAL;
+		weaponlevel = WEAPONSPECIAL_TURRETS_TYPICAL;
+	}
+	
+	uint16 generatedweapon = 0;
+	if(weapontype != 0)
+		generatedweapon = GenerateWeapon(weapontype, weaponlevel);
+	else
+		Log("Can't set weapon for mob.Id <" + mob.Id + ">, ProtoId <" + mob.GetProtoId() + ">."); //For debug
+		
+	if(generatedweapon != 0)
+	{
+		Item@ weapon = mob.AddItem(generatedweapon, 1);
+		
+		if(!valid(weapon))
+			return;
+		
+		weapon.AmmoCount = 0;
+		if(!IsNukaColaWorker(mob))
+		{
+			mob.MoveItem(weapon.Id, weapon.GetCount(), SLOT_HAND1);
+			mob.SetFavoriteItem(SLOT_HAND1, weapon.GetProtoId());
+		}
+		AddBonusOrNot(weapon);
+	}
+	
+	
+	//add ammo
+	array<Item@> items;
+	mob.GetItemsByType(ITEM_TYPE_WEAPON, items);
+	
+	if(items.length() > 0)
+	for(uint8 i = 0; i < items.length(); i++)
+	{
+		if(valid(items[i]))
+			switch(items[i].GetProtoId())
+			{
+				//pistols
+				case PID_10MM_PISTOL :
+				case PID_SPRINGER_RIFLE :
+				case PID_HK_P90C :
+				case PID_ZIP_GUN :
+				case PID_10MM_SMG :
+					switch(Random(1,2))
+					{
+						case 1 : mob.AddItem(PID_10MM_JHP, Random(100, 500)); break;
+						case 2 : mob.AddItem(PID_10MM_AP, Random(100, 500)); break;
+					}
+					break;
+					
+				case PID_14MM_PISTOL :
+					mob.AddItem(PID_14MM_AP, Random(100, 500)); break;
+				
+				case PID_9MM_MAUSER :
+					switch(Random(1,2))
+					{
+						case 1 : mob.AddItem(PID_9MM_BALL, Random(100, 500)); break;
+						case 2 : mob.AddItem(PID_9MM_AMMO, Random(100, 500)); break;
+					}
+					break;
+				
+				case PID_44_MAGNUM_REVOLVER :
+				case PID_44_MAGNUM_SPEEDLOADER :
+				case PID_DESERT_EAGLE_EXT_MAG :
+					switch(Random(1,2))
+					{
+						case 1 : mob.AddItem(PID_44_MAGNUM_FMJ, Random(100, 500)); break;
+						case 2 : mob.AddItem(PID_44_MAGNUM_JHP, Random(100, 500)); break;
+					}
+					break;
+					
+				case PID_NEEDLER_PISTOL :
+					switch(Random(1,2))
+					{
+						case 1 : mob.AddItem(PID_HN_NEEDLER_CARTRIDGE, Random(100, 500)); break;
+						case 2 : mob.AddItem(PID_HN_AP_NEEDLER_CARTRIDGE, Random(100, 500)); break;
+					}
+					break;
+				
+				case PID_223_PISTOL :
+				case PID_SNIPER_RIFLE :
+				case PID_SCOPED_HUNTING_RIFLE :
+				case PID_HUNTING_RIFLE :
+				case PID_LIGHT_SUPPORT_WEAPON :
+				case PID_BOZAR :
+					mob.AddItem(PID_223_FMJ, Random(100, 500)); break;
+				
+				case PID_RED_RYDER_BB_GUN :
+				case PID_RED_RYDER_LE_BB_GUN :
+				case PID_JONNY_BB_GUN :
+					mob.AddItem(PID_BBS, Random(100, 500)); break;
+				
+				case PID_PK12_GAUSS_PISTOL :
+				case PID_M72_GAUSS_RIFLE :
+					mob.AddItem(PID_2MM_EC_AMMO, Random(100, 500)); break;
+
+				case PID_SHOTGUN :
+				case PID_COMBAT_SHOTGUN :
+				case PID_HK_CAWS :
+				case PID_PANCOR_JACKHAMMER :
+				case PID_SAWED_OFF_SHOTGUN :
+				case PID_SAIGA12 :
+					switch(Random(1,4))
+					{
+						case 1 : mob.AddItem(PID_SHOTGUN_SHELLS, Random(100, 500)); break;
+						case 2 : mob.AddItem(PID_SHOTGUN_SHELLS_FLECHETTE, Random(100, 500)); break;
+						case 3 : mob.AddItem(PID_SHOTGUN_SHELLS_SLUG, Random(100, 500)); break;
+						case 4 : mob.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, Random(100, 500)); break;
+					}
+					break;
+				
+				case PID_FN_FAL :
+				case PID_M60 :
+				case PID_FN_FAL_HPFA :
+				case PID_FN_FAL_NIGHT_SCOPE :
+					mob.AddItem(PID_7_62MM_AMMO, Random(300, 500)); break;
+				
+				case PID_TOMMY_GUN :
+				case PID_GREASE_GUN :
+					mob.AddItem(PID_45_CALIBER_AMMO, Random(100, 500)); break;
+				
+				case PID_FLAMER :
+				case PID_IMPROVED_FLAMETHROWER :
+					switch(Random(1,2))
+					{
+						case 1 : mob.AddItem(PID_FLAMETHROWER_FUEL, Random(50, 100)); break;
+						case 2 : mob.AddItem(PID_FLAMETHROWER_FUEL_MK_II, Random(50, 100)); break;
+					}
+					break;
+				
+				case PID_INDEPENDENT :
+				case PID_ASSAULT_RIFLE :
+				case PID_ASSAULT_RIFLE_EXT_MAG :
+				case PID_MINIGUN :
+				case PID_AVENGER_MINIGUN :
+					switch(Random(1,2))
+					{
+						case 1 : mob.AddItem(PID_5MM_JHP, Random(1000, 1500)); break;
+						case 2 : mob.AddItem(PID_5MM_AP, Random(1000, 1500)); break;
+					}
+					break;
+				
+				case PID_HK_G11 :
+				case PID_HK_G11E :
+				case PID_VINDICATOR_MINIGUN :
+					mob.AddItem(PID_4_7MM_CASELESS, Random(500, 1000)); break;
+
+				case PID_ROCKET_LAUNCHER :
+				case PID_M203 :
+					switch(Random(1,2))
+					{
+						case 1 : mob.AddItem(PID_EXPLOSIVE_ROCKET, Random(20, 50)); break;
+						case 2 : mob.AddItem(PID_ROCKET_AP, Random(20, 50)); break;
+					}
+					break;
+				
+				case PID_GATLING_LASER :
+				case PID_LASER_RIFLE :
+				case PID_LASER_RIFLE_EXT_CAP :
+				case PID_DUAL_LASER_CANNON :
+				case PID_PLASMA_RIFLE :
+				case PID_TURBO_PLASMA_RIFLE :
+				case PID_PLASMA_GATLING :
+				case PID_YK42B_PULSE_RIFLE :
+				case PID_GUN_TURRET_WEAPON :
+					mob.AddItem(PID_MICRO_FUSION_CELL, Random(300, 700)); break;
+				
+				case PID_LASER_PISTOL :
+				case PID_ALIEN_LASER_PISTOL :
+				case PID_MAGNETO_LASER_PISTOL :
+				case PID_PLASMA_PISTOL :
+				case PID_PLASMA_PISTOL_EXT_CART :
+				case PID_YK32_PULSE_PISTOL :
+				case PID_RIPPER :
+				case PID_CATTLE_PROD :
+				case PID_SUPER_CATTLE_PROD :
+				case PID_POWER_FIST :
+				case PID_MEGA_POWER_FIST :
+					mob.AddItem(PID_SMALL_ENERGY_CELL, Random(200, 500)); break;
+				
+				case PID_GRENADE_LAUNCHER :
+				case PID_GRENADE_PISTOL :
+					mob.AddItem(PID_40MM_GRENADE, Random(50, 100)); break;
+			}
+	}
+}
+
+/* -------------------------------------------------
+For all pids:
+- Generate Age ST_AGE
+mob.StatBase[ST_AGE] = Random(14, 80);
+
+- set bt_typ and genre for all four PAs!
+
+- Generate AI ST_AI_ID if needed. AIPACKET_THUGS (13) is applied here as default
+- Set proper flags
+- Set experience for kill ST_KILL_EXPERIENCE
+- RemoveItems from mob
+- Set correct armors
+- And weapons
+
+//typical male/female
+//bandits (jacket) 30, 31, 32 longhaired, 33 punk girl, 472 bald
+//slags = guards 40, 41 (metal armror), and taken from slags - long haired, 827 (unarmed) 828 and bald 829
+//leather = 70, 71, 69 bald
+// 134 135 ca
+// 261 262 camk2
+// 475 476 ncr ranger
+// 122 pa  - set bt ang genre!
+// 250 enclave apa-apa2 - set bt ang genre!
+// desert hunter 590 591
+//mutants: nightskin 549, green 550, boss 551
+//melhior: 566, and his "pets" 562 (deathclaw), 563 (fire gecko), 564 (centaur), 565 (floater)
+//otther:
+//deathclaw 7, dog 9, floater 246, nasty floater 247, scorpions 5 - 6,
+
+New from dynamics:
+
+PID			Type						Notes
+882		Vault Overseer			Only for miniguns AIPACKET_FO1_VAULTDWELLER
+883		Spider					Only unarmed
+884		Black Jump Suit Female	Can't use big rifles and IDK how about miniguns.
+885		Black Jump Suit Male	Can't use big rifles and IDK how about miniguns.
+886		Grey/Green CA Male		Brotherhood Combat Armor
+887		Grey/Green CA Female	Brotherhood Combat Armor
+888		Black CA Female			Enclave Combat Armor
+889		Black CA Male			Enclave Combat Armor
+890		Metal Armor Black Male	Can't use big rifles and miniguns.
+891		Leather Armor MKII Female
+892		Leather Armor MKII Male
+893		Hard Power Armor		Set gender
+894		Blue CA Male			Police uniform replacement
+895		Blue CA Female			Police uniform replacement
+896		Mad Ghoul				Can't use any attack, can't walk
+897		Leather Armor longhaired
+898		Vault Jump Suit longhaired			AIPACKET_FO1_VAULTDWELLER
+899		Vault Jump Suit Male				AIPACKET_FO1_VAULTDWELLER
+900		Vault Jump Suit Female				AIPACKET_FO1_VAULTDWELLER
+
+------------------------------------------------- */
+
+//generate possibilities of group to spawn for each location (map)
+
+//generate special (done)
+//generate skills
+
+//generate perks
+/*
+//reset all perks
+for(i = PERK_BEGIN; i <= PERK_END; i++)
+{
+	mob.ParamBase[i] = 0;
+}
+*/
+
+//make usefull perk array
+/*
+tank array = { PE_BONUS_RANGED_DAMAGE , PE_BONUS_RATE_OF_FIRE , PE_TOUGHNESS , }
+sniper array = { PE_BONUS_RATE_OF_FIRE , PE_MORE_CRITICALS , PE_SHARPSHOOTER , PE_BETTER_CRITICALS}
+if(IsHtHOnly(mob))
+hth array = { PE_BONUS_HTH_ATTACKS , PE_BONUS_HTH_DAMAGE , PE_TOUGHNESS, PE_BETTER_CRITICALS , PE_MORE_CRITICALS }
+burster array = { PE_BONUS_RATE_OF_FIRE , PE_MORE_CRITICALS , PE_BETTER_CRITICALS , }
+support array = { PE_STRONG_BACK }
+noncombat array = { PE_LIFEGIVER }
+*/
+
+//set level
+//set experience depends by level
+//setteam (find existing on map) 5003-5009
+//setdialog
+//arm this mob (new function in utils?)
+//set bonus or not to current weapon
+
+//reward system?
+//By lexem $rewardfor
+//in void _DeleteMob(Critter& mob, Critter@ killer)
+// if killer is player
+// if killer is follower with owner then take owner's id
+//import void   SetLexem(ItemMutual& item, string& lex, string& value) from "lexems";
+//transport this item to npc with value = killer.Id via void _DeleteMob(Critter& mob, Critter@ killer)
+//if(IsLexem(item, "$rewardfor")) 
+// 
+// string rewardforme = GetLexem(item, "$rewardfor");
+// int reward;
+// if(StrToInt(rewardforme, reward))
+// if player.Id == reward, give reward (via dialog r_result function)
+

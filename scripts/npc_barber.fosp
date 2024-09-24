@@ -1,0 +1,36 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+
+import void ChangeCrTypeSafe(Critter&cr,uint8 crType)from"utils";
+import void FlushScreen(Critter&cr,bool fadeOut,uint timeMs)from"effects";
+
+void fixCrType(int&crType)
+{
+	switch(crType)
+	{
+		case-1:
+		crType=((4));
+		break;
+		case-2:
+		crType=((69));
+		break;
+	}
+}
+
+bool d_IsCrType(Critter&player,Critter@kitty,int crType)
+{
+	fixCrType(crType);
+	return(player.Stat[(112)]==crType);
+}
+
+bool d_IsNotCrType(Critter&player,Critter@kitty,int crType)
+{
+	return(!d_IsCrType(player,kitty,crType));
+}
+
+void r_Haircut(Critter&player,Critter@tray,int crType)
+{
+	fixCrType(crType);
+	FlushScreen(player,false,500);
+	FlushScreen(player,true,5000);
+	ChangeCrTypeSafe(player,crType);
+}

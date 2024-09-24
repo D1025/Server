@@ -1,0 +1,24 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 #
+65506 2010 #
+0 2020 &
+
+[engl]
+{100}{}{Joe}
+{200}{}{You see the Jovial Joe.}
+{210}{}{You see a very funny bald guy with the eternal smile and protruding teeth. If not for clothing, you would've thought that he is crazy.}
+{1000}{}{Predialogue installations}
+{1010}{}{-}
+{2000}{}{A new face in our venue? Make yourself comfortable! There is no such a club in the world where you can sit through for long without at least buying some alcohol and getting drunk. And for this we work! Choose what you'll drink!}
+{2010}{}{Show me what you have.}
+{2020}{}{Nothing, I'm leaving.}
+

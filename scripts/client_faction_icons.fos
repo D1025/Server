@@ -1,0 +1,145 @@
+//
+// FOnline: Aftertimes
+// 
+//
+// client_faction_icons.fos
+//
+
+
+#include "_client_defines.fos"
+#include "_macros.fos"
+#include "lexems_h.fos"
+
+#define _CritIsOffline				# (cr)	(FLAG(cr.Flags, CRITTER_DISCONNECT))
+
+/*uint factions;
+array<uint> icons;
+
+
+void ReceiveFactionData( int count, int, int, string@, int[]@ )
+{
+	factions = count - 11;		// 11 pre defined npc factions
+	LoadSprites();
+}
+
+void LoadSprites()
+{
+	CritterCl@ chosen = GetChosen();
+	if (!valid(chosen))
+		return;
+	if ( icons.length() < factions)
+	{
+		for (uint i = icons.length(); i<factions; i++)
+		{
+			icons.insertLast(LoadSprite( "faction_icon"+(i+200)+".png", PT_ART_INTRFACE ));
+			//Message("LoadSprites: faction_icon"+(i+200)+".png | len: "+icons.length());	
+		}
+	}
+}*/
+
+void DrawIcons()
+{
+	CritterCl@[] players;
+    GetCritters( 0, FIND_ALL | FIND_ONLY_PLAYERS, players );
+	for( uint i = 0; i < players.length(); i++ )
+    {
+	
+		if(!valid(players[i]))
+			return;
+		
+		if (!__ShowPlayerNames)
+			return;
+		
+		if(!__ConfigShowFactionIcons || __GmapActive || GetCurrentMapPid() == 0)
+			return;
+	
+		//If(islexem(critter, "faction$")
+		if(IsLexem(players[i], "$faction") && players[i].IsPlayer())
+		{
+			//Getlexem.... To string
+			string PathToIcon = "faction_icons/" + GetLexem(players[i], "$faction") + ".png";
+		
+			//check that is icon file exists
+			file iconfile;
+			if(iconfile.open("data/" + PathToIcon, "r") >= 0)
+			{
+				iconfile.close();
+			
+				int x = 0;
+				int y = 0;
+				if(GetNameTextInfo(players[i], x, y )) //Take nicknameposition...
+				{
+					int lines=0;
+					int w=0;
+					int h=0;
+					string name=players[i].Name;
+					if(_CritIsOffline(players[i]))
+						name+=__PlayerOffAppendix;
+					
+					GetTextInfo(name, 200, 70,-1, FT_CENTERX | FT_BOTTOM | FT_BORDERED, w, h, lines );
+					x += 100 - ( w / 2 );
+					y += 70 - h;
+
+					if(x>0 && y>0 && x<__ScreenWidth && y<__ScreenHeight)
+						DrawSprite(LoadSprite(PathToIcon, PT_DATA), -1, x-18, y-4, 16, 16, false, true, 0) ;
+				}
+			}
+			
+		}
+	}
+	players.resize(0);
+}
+
+
+// Draw on layer 2 in
+// client_interface.fos
+/*void DrawIcons() //version by Druto
+{
+    if (!__ShowPlayerNames)
+        return;
+    CritterCl@ chosen = GetChosen();
+    if (!valid(chosen) || !__ConfigShowFactionIcons || __GmapActive || GetCurrentMapPid() == 0)		// TODO: disabled in config or not
+        return;
+    CritterCl@[] players;
+    GetCritters( 0, FIND_ALL | FIND_ONLY_PLAYERS, players );
+    for( uint i = 0; i < players.length(); i++ )
+    {
+        CritterCl@ cr = players[ i ];
+        if (!valid(cr) || cr.StatBase[ST_TEAM_ID]==0)
+            continue;
+        if ( (icons.length() + 200) > uint(cr.StatBase[ST_TEAM_ID]))
+		{
+            DrawIcon( cr );
+		}
+    }
+    players.resize(0);
+}*/
+
+
+/*void DrawIcon(CritterCl& cr)
+{
+    uint spriteId = icons[uint(cr.StatBase[ST_TEAM_ID] - 200)];
+    if(  spriteId <= 0 )
+	{
+		//Message("spriteID <= 0");
+        return;
+	}
+
+    int x = 0;
+    int y = 0;
+    if (GetNameTextInfo( cr, x, y ))
+    {
+        int lines=0;
+        int w=0;
+        int h=0;
+        string name=cr.Name;
+        if (_CritIsOffline(cr))
+            name+=__PlayerOffAppendix;
+        GetTextInfo( name, 200, 70,-1, FT_CENTERX | FT_BOTTOM | FT_BORDERED, w, h, lines );
+        x += 100 - ( w / 2 );
+        y += 70 - h;
+
+        if (x>0 && y>0 && x<__ScreenWidth && y<__ScreenHeight)
+            DrawSprite (spriteId, -1, x-18, y-4, 16, 16, false, true, 0) ;
+    }
+}*/

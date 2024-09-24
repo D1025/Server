@@ -1,0 +1,67 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// map_area51.fos
+//
+
+#include "_macros.fos"
+#include "_maps.fos"
+#include "elevators_h.fos"
+#include "triggers.fos"
+#include "mob_dynamic_h.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void CollectRewardSpawners(Map& map) from "base_control";
+
+/*
+Defined maps:
+MAP_Area51Entrance
+MAP_Area51Hangar
+MAP_Area51Base
+*/
+
+//
+// Initialize map.
+//
+
+// elevator 1-2
+CElevator FirstElevator(ELEVATOR_MILITARY_12);
+
+bool ElevatorsAdded = false;
+
+void map_init(Map& map, bool firstTime)
+{
+	CollectRewardSpawners(map);
+	// to add only one for all floors
+	if(!ElevatorsAdded)
+	{
+		// add elevators
+		AddElevator(FirstElevator);
+		ElevatorsAdded = true;
+	}
+	// parse elevators floors
+	uint16 x = 0, y = 0;
+
+	switch(map.GetProtoId())
+	{
+	case MAP_Area51Hangar:
+		if(map.GetEntireCoords(1, 0, x, y))
+			FirstElevator.AddFloor(map.Id, 1);
+		break;
+	case MAP_Area51Base:
+		if(map.GetEntireCoords(1, 0, x, y))
+			FirstElevator.AddFloor(map.Id, 1);
+		break;
+	default:
+	}
+	if(firstTime) InitializeDynamicMob(map);
+}
+
+//
+// Elevator triggers
+//
+void t_ElevatorFirst(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(FirstElevator, critter, entered);
+}

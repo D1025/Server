@@ -1,0 +1,32 @@
+//
+// FOnline: Aftertimes
+// worlremaker
+//
+// mapper_menu.fos
+//
+// Plugin: Additional GUI menu for Mapper
+
+#include "_mapper_defines.fos"
+#include "_colors.fos"
+#include "_defines.fos"
+#include "mapper_utils_h.fos"
+
+
+void DrawMenu()
+{
+	// contours for menu background
+	/* array<int> menubackground = {10, 10, int(COLOR_RED),
+								210, 10, int(COLOR_RED),
+								210, 50, int(COLOR_RED),
+								10, 50, int(COLOR_RED),
+								10, 10, int(COLOR_RED)};
+	DrawPrimitive(DRAW_PRIMITIVE_TRIANGLESTRIP, menubackground); */
+	/*DrawText("FOnline: Aftertimes Mapper", 15, 15, 195, 10, COLOR_LGREEN, FONT_FALLOUT, 0);
+	MapperMap@ map = GetActiveMap();
+	
+	if(!valid(map))
+	{		
+		DrawSprite(LoadSprite("options.png", PT_ART_INTRFACE),0,100,(__ScreenWidth / 2) - (164 / 2),0);
+	}*/
+	// DrawSprite(LoadSprite("command_attack.png", PT_ART_INTRFACE),0,220,25,0);
+}

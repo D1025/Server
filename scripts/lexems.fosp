@@ -1,0 +1,179 @@
+                                                                                                                
+
+string GetCritterLexems(Critter&critter)
+{    
+	
+	string lexems="";
+	critter.GetLexems(lexems);
+	return(lexems);
+	
+}
+
+string GetItemLexems(Item&item)
+{    
+	
+	string lexems="";
+	item.GetLexems(lexems);
+	return(lexems);
+	
+}
+
+bool IsLexem(Critter&critter,string&lex)
+{
+	return(IsLexem(GetCritterLexems(critter),lex));
+}
+
+bool IsLexem(Item&item,string&lex)
+{
+	return(IsLexem(GetItemLexems(item),lex));
+}
+
+bool IsLexem(string&lexems,string&lex)
+{
+	if(lexems.length()<3||lex.length()<2)
+	return(false);
+	
+	int pos=findFirst(lexems,lex);
+	if(pos<0)
+	return(false);
+	else
+	return(true);
+}
+
+string GetLexem(Critter&critter,string&lex)
+{
+	return(GetLexem(GetCritterLexems(critter),lex));
+}
+
+string GetLexem(Item&item,string&lex)
+{
+	return(GetLexem(GetItemLexems(item),lex));
+}
+
+string GetLexem(string&lexems,string&lex)
+{
+	if(lexems.rawLength()<3||lex.rawLength()<2)
+	return("");
+	
+	if(lex.rawGet(0)!='$')
+	return("");
+	
+	if(!IsLexem(lexems,lex))
+	return("");
+	
+	array<string@>@lexem=split(lexems,"$");
+	for(uint l=0;l<lexem.length();l++)
+	{
+		if(("$"+substring(lexem[l],0,lex.rawLength()-1))==lex)
+		{
+			return(substring(lexem[l],lex.rawLength()-1,lexem[l].length()-(lex.rawLength()-1)));
+		}
+	}
+	return("");
+} 
+
+void SetLexem(Critter&critter,string&lex,string&value)
+{
+	string lexems=SetLexem(GetCritterLexems(critter),lex,value);
+	critter.SetLexems(lexems);
+}
+
+void SetLexem(Item&item,string&lex,string&value)
+{
+	string lexems=SetLexem(GetItemLexems(item),lex,value);
+	item.SetLexems(lexems);
+	item.Update();
+}
+
+string SetLexem(string&lexems,string&lex,string&value)
+{
+	if(lex.length()<2)
+	return(lexems);
+	
+	if(!IsLexem(lexems,lex))
+	return(lexems+lex+value);
+	
+	if(value.length()==0)
+	return(UnsetLexem(lexems,lex));
+	
+	array<string@>@lexem=split(lexems,"$");
+	if(lexem[0].length()==0)
+	lexem.removeAt(0);
+	for(uint l=0;l<lexem.length();l++)
+	{
+		if(("$"+substring(lexem[l],0,lex.length()-1))==lex)
+		{
+			lexem[l]=substring(lex,1,lex.length()-1)+value;
+			break;
+		}
+	}
+	
+	string result="";
+	for(uint l=0;l<lexem.length();l++)
+	result+="$"+lexem[l];
+	
+	return(result);
+}
+
+void UnsetLexem(Critter&critter,string&lex)
+{
+	critter.SetLexems(UnsetLexem(GetCritterLexems(critter),lex));
+}
+
+void UnsetLexem(Item&item,string&lex)
+{
+	item.SetLexems(UnsetLexem(GetItemLexems(item),lex));
+	item.Update();
+}
+
+string UnsetLexem(string&lexems,string&lex)
+{
+	if(lexems.length()<3||lex.length()<2)
+	return(lexems);
+	
+	if(!IsLexem(lexems,lex))
+	return(lexems);
+	
+	array<string@>@lexem=split(lexems,"$");
+	if(lexem[0].length()==0)
+	lexem.removeAt(0);
+	for(uint l=0;l<lexem.length();l++)
+	{
+		if(("$"+substring(lexem[l],0,lex.length()-1))==lex)
+		{
+			lexem.removeAt(l);
+			break;
+		}
+	}
+	
+	string result="";
+	for(uint l=0;l<lexem.length();l++)
+	result+="$"+lexem[l];
+	
+	return(result);
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+
+void get(Critter&player,int,int crId,int itId)
+{
+	if(crId>0)
+	{
+		Critter@cr=GetCritter(crId);
+		if((@cr!=null))
+		{
+			string lexems="";
+			cr.GetLexems(lexems);
+			player.Say((11),"critter <"+lexems+">");
+		}
+	}
+	if(itId>0)
+	{
+		Item@it=GetItem(itId);
+		if((@it!=null))
+		{
+			string lexems="";
+			it.GetLexems(lexems);
+			player.Say((11),"item <"+lexems+">");
+		}
+	}
+}                                                                                                                                         
+

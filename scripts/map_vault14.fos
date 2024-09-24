@@ -1,0 +1,53 @@
+//
+// FOnline: Aftertimes
+//
+// map_vault14.fos
+//
+// worldremaker
+
+#include "elevators_h.fos"
+#include "_maps.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+
+//
+// Initialize map
+//
+
+// elevator 1-2-3
+CElevator Elevator(ELEVATOR_MILITARY_123);
+
+bool ElevatorsAdded = false;
+
+void map_init(Map& map, bool firstTime)
+{
+    // add only one for all floors
+    if(!ElevatorsAdded)
+    {
+        // add elevators
+        AddElevator(Elevator);
+        ElevatorsAdded = true;
+    }
+
+    uint16 x = 0, y = 0;
+    // parse elevators floors (only for vault levels)
+    switch(map.GetProtoId())
+    {
+    case MAP_Vault14Level1:
+    case MAP_Vault14Level2:
+    case MAP_Vault14Level3:
+        if(map.GetEntireCoords(1, 0, x, y))
+            Elevator.AddFloor(map.Id, 1);
+        break;
+    }
+	if(firstTime) InitializeDynamicMob(map);
+}
+
+
+//
+// Elevator triggers
+//
+void t_Elevator(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(Elevator, critter, entered);
+}

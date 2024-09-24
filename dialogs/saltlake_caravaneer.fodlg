@@ -1,0 +1,20 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 &
+
+[engl]
+{100}{}{Caravaneer}
+{200}{}{You see a caravaneer.}
+{210}{}{You see a caravaneer from Nuka Cola Factory. He looks like he hasn't slept for a long time.}
+{1000}{}{Predialogue installations}
+{1010}{}{Answer text}
+{2000}{}{Hello.@@What do you want? Don't you see that I'm busy?@@Look, I'm tired. Find someone else to bother, alright?@@Find our boss. He solves all our issues, not me.@@Whatever you want, you need to discuss it with our boss.}
+

@@ -1,0 +1,36 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 #
+3 2010 #
+0 2020 @
+3 3000 None 0 #
+4 3010 @
+4 4000 None 0 #
+5 4010 @
+5 5000 None 0 #
+0 5010 &
+
+[engl]
+{100}{}{Administrator}
+{200}{}{You see an administrator.}
+{210}{}{You see an elderly woman with disheveled hair sticking out in all directions. We can only say that her appeal was left far in the past.}
+{1000}{}{Predialogue installations}
+{1010}{}{Answer text}
+{2000}{}{Yes, what?}
+{2010}{}{Can I go inside?}
+{2020}{}{Nothing.}
+{3000}{}{No. The entrance to the plant is for personnel only.}
+{3010}{}{I am just one of them!}
+{4000}{}{That so? I think I would know about it.}
+{4010}{}{Uh... ma'am, you look tired. Did something happen?}
+{5000}{}{Oh, well, at least someone noticed! At this plant, there are so many men, and no one can help an old woman... And recently I've been even robbed, you know? They took my bunch of keys right from under my nose!}
+{5010}{}{Sorry. And now I have to go. Goodbye.}
+

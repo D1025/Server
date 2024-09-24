@@ -1,0 +1,932 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
+shared class CombatRes
+{
+	array<uint>Res;
+	Critter@Crit;
+	int Left;
+	int Right;
+	
+	CombatRes()
+	{
+		Res.resize(1);
+		Res[0]=1;
+		Left=(-1);
+		Right=(-1);
+	}
+};
+
+void AddEff(Critter@crit,array<uint>&eff,array<CombatRes>&combatResults)
+{
+	int ptr=0; 
+	
+	if(combatResults.length()==0)
+	{
+		combatResults.resize(1);
+		@combatResults[0].Crit=crit;
+	}
+	
+	while(combatResults[ptr].Crit.Id!=crit.Id)
+	{
+		if(crit.Id<combatResults[ptr].Crit.Id)
+		{
+			if(combatResults[ptr].Left!=(-1))
+			ptr=combatResults[ptr].Left;
+			else
+			{
+				uint last=combatResults.length();
+				combatResults.resize(last+1);
+				combatResults[ptr].Left=last;
+				ptr=last;
+				@combatResults[last].Crit=crit;
+			}
+		}
+		else
+		{
+			if(combatResults[ptr].Right!=(-1))
+			ptr=combatResults[ptr].Right;
+			else
+			{
+				uint last=combatResults.length();
+				combatResults.resize(last+1);
+				combatResults[ptr].Right=last;
+				ptr=last;
+				@combatResults[last].Crit=crit;
+			}
+		}
+	} 
+	
+	uint len=eff.length();
+	combatResults[ptr].Res.resize(combatResults[ptr].Res[0]+len);
+	for(uint i=0;i<len;i++)
+	combatResults[ptr].Res[i+combatResults[ptr].Res[0]]=eff[i];
+	
+	combatResults[ptr].Res[0]+=len;
+}
+
+void runTree(array<CombatRes>&combatResults,int ptr)
+{
+	if(ptr==0)
+	if(combatResults.length()==0)
+	return;    
+	
+	combatResults[ptr].Crit.SendCombatResult(combatResults[ptr].Res);    
+	
+	if(combatResults[ptr].Left!=(-1))
+	runTree(combatResults,combatResults[ptr].Left);
+	if(combatResults[ptr].Right!=(-1))
+	runTree(combatResults,combatResults[ptr].Right);
+}       
+
+interface IAttack
+{
+	
+	void AttackPrepareStart();
+	
+	void AttackCommence();
+	
+	void AttackRecuperationEnd();
+};   
+
+class CBoss
+{
+	
+	uint id;
+	
+	uint timeEvent;
+	
+	array<uint>critterList;
+	array<IAttack@>attacks;
+	array<int>attackChances;
+	int totalChance;
+	uint currentAttack;
+	array<int>attackPrepareTimes;
+	array<int>attackRecuperations; 
+	
+	bool patern;
+	
+	CBoss()
+	{
+		uint id=0;
+		
+		timeEvent=0;
+		
+		critterList=array<uint>(0);
+		attacks=array<IAttack@>(0);
+		attackChances=array<int>(0);
+		totalChance=0;
+		currentAttack=0;
+		attackPrepareTimes=array<int>(0);
+		attackRecuperations=array<int>(0);
+		
+		patern=false;
+	} 
+	
+	void SetId(uint id)
+	{
+		this.id=id;
+	}
+	
+	void AddAttack(IAttack@attack,int chance,int timeBeforeAttack,int timeAfterAttack)
+	{
+		attacks.insertLast(attack);
+		attackChances.insertLast(chance);
+		totalChance+=chance;
+		attackPrepareTimes.insertLast(timeBeforeAttack);
+		attackRecuperations.insertLast(timeAfterAttack);
+	}
+	
+	void AddCritter(Critter&crit)
+	{
+		critterList.insertLast(crit.Id);
+		crit.SetEvent((4),"_BossShowCritter");
+		crit.SetEvent((16),"_BossAttacked");
+		crit.SetEvent((1),"_BossFinish");
+		crit.SetEvent((2),"_BossDead");
+		crit.ParamBase[(90)]=id;
+	}
+	
+	void MakeAgressive()
+	{
+		aggressionStart();
+		
+		startAttack();
+	}
+	
+	void startAttack()
+	{
+		if(patern)
+		{
+			currentAttack=(currentAttack+1)%attacks.length();
+		}
+		else
+		{
+			int roll=Random(0,totalChance-1);
+			int sum=0;
+			int i=0;
+			int j=attacks.length();
+			for(;i<j;i++)
+			{
+				sum+=attackChances[i];
+				if(sum>roll)
+				break;
+			}
+			currentAttack=i;
+		}
+		attacks[currentAttack].AttackPrepareStart();
+		array<int>vals={id};
+		timeEvent=CreateTimeEvent(((__FullSecond)+(attackPrepareTimes[currentAttack])),"e_CommenceAttack",vals,false);
+	}
+	
+	void commenceAttack()
+	{
+		attacks[currentAttack].AttackCommence();
+		array<int>vals={id};
+		timeEvent=CreateTimeEvent(((__FullSecond)+(attackRecuperations[currentAttack])),"e_FinishAttack",vals,false);
+	}
+	
+	void finishAttack()
+	{
+		attacks[currentAttack].AttackRecuperationEnd();
+		startAttack();
+	}
+	
+	void aggressionStart()
+	{}
+	
+	void bossSee(Critter&cr,Critter&shownCr)
+	{}
+	
+	bool bossAttacked(Critter&cr,Critter&attacker)
+	{
+		return false;
+	}
+	
+	void bossHit(Critter&cr,Critter@attacker,int dmg)
+	{}
+	
+	void bossKilled(Critter&cr,Critter@attacker)
+	{}
+	
+	void bossFinish(Critter&cr,bool deleted)
+	{}
+	
+};
+
+uint e_CommenceAttack(array<int>@vals)
+{
+	CBoss@boss=GetBoss(vals[0]);
+	if((@boss!=null))
+	boss.commenceAttack();
+	return 0;
+}
+
+uint e_FinishAttack(array<int>@vals)
+{
+	CBoss@boss=GetBoss(vals[0]);
+	if((@boss!=null))
+	boss.finishAttack();
+	return 0;
+}
+
+void _BossShowCritter(Critter&cr,Critter&shownCr)
+{
+	CBoss@boss=GetBoss(cr.Param[(90)]);
+	if((@boss!=null))
+	boss.bossSee(cr,shownCr);
+}
+
+bool _BossAttacked(Critter&cr,Critter&attacker)
+{
+	bool retVal=false;
+	CBoss@boss=GetBoss(cr.Param[(90)]);
+	if((@boss!=null))
+	retVal=boss.bossAttacked(cr,attacker);
+	
+	array<uint>vals={cr.Id,attacker.Id,cr.Param[(72)]};
+	cr.ParamBase[(91)]=CreateTimeEvent(0,"_BossHit",vals,false);
+	return retVal;
+}
+
+uint _BossHit(array<uint>@values)
+{
+	Critter@cr=GetCritter(values[0]);
+	if(!(@cr!=null))
+	return 0;
+	Critter@attacker=GetCritter(values[1]);
+	int damage=int(values[2])-cr.Param[(72)];
+	
+	cr.ParamBase[(91)]=0;
+	
+	CBoss@boss=GetBoss(cr.Param[(90)]);
+	if((@boss!=null))
+	boss.bossHit(cr,attacker,damage);
+	
+	return 0;
+}
+
+void _BossDead(Critter&cr,Critter@killer)
+{
+	if(cr.Param[(91)]!=0)
+	{
+		EraseTimeEvent(cr.Param[(91)]);
+		cr.ParamBase[(91)]=0;
+	}
+	
+	CBoss@boss=GetBoss(cr.Param[(90)]);
+	if((@boss!=null))
+	boss.bossKilled(cr,killer);
+}
+
+void _BossFinish(Critter&cr,bool deleted)
+{
+	if(cr.Param[(91)]!=0)
+	{
+		EraseTimeEvent(cr.Param[(91)]);
+		cr.ParamBase[(91)]=0;
+	}
+	
+	CBoss@boss=GetBoss(cr.Param[(90)]);
+	if((@boss!=null))
+	boss.bossFinish(cr,deleted);
+}  
+
+import bool WrathOfTheGod(Critter&di)from"cheats";
+
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target,bool run)from"npc_planes";
+import bool AddMiscPlane(Critter&npc,uint priority,uint waitSecond,string@funcName)from"npc_planes";
+import bool AddWalkPlane(Critter&npc,uint priority,int identifier,uint identifierExt,uint16 hexX,uint16 hexY,uint8 dir,bool run,uint cut)from"npc_planes";
+
+bool isMod(Critter&crit)
+{
+	return(crit.IsPlayer()&&crit.GetAccess()>(1)||WrathOfTheGod(crit));
+}
+
+bool isSameTeam(Critter&crit1,Critter&crit2)
+{
+	return crit1.Param[(106)]==crit2.Param[(106)];
+}
+
+bool isMerc(Critter&crit)
+{
+	return(crit.IsNpc()&&(crit.Param[(930)]!=0||crit.Param[(932)]!=0||crit.Param[(933)]!=0));
+}
+
+void spawnMelchior(Critter&player,int x,int y,int p2)
+{
+	if(player.GetAccess()<(1))
+	return;
+	if(player.GetAccess()<(3))
+	{
+		player.Say((11),"You are not allowed to use this feature.");
+		return;
+	}  
+	
+	Map@map=player.GetMap();
+	if((@map!=null))
+	{
+		CBoss@melch=MelchiorBoss(map,x,y,bosses.length(),p2);
+		AddBoss(melch);
+		melch.MakeAgressive();
+	}
+}
+
+void spawnGhost(Critter&player,int x,int y,int p2)
+{
+	if(player.GetAccess()<(1))
+	return;
+	if(player.GetAccess()<(3))
+	{
+		player.Say((11),"You are not allowed to use this feature.");
+		return;
+	}
+	
+	Map@map=player.GetMap();
+	if((@map!=null))
+	{
+		CBoss@ghost=GhostBoss(map,x,y,bosses.length(),p2);
+		AddBoss(ghost);
+		ghost.MakeAgressive();
+	}
+}  
+
+array<CBoss@>bosses={};
+
+void AddBoss(CBoss@boss)
+{
+	bosses.insertLast(boss);
+}
+
+CBoss@GetBoss(uint id)
+{
+	return bosses[id];
+}                                                                      
+
+import void MakeMine(Item&mine,uint explodeOwner,uint complexity,uint hideSkill,uint bonusDamage,uint bonusRadius)from"explode";
+import void MakeSpearTrap(Item&trap,uint complexity,uint hideSkill,uint spearcount)from"traps";
+import void MakeGenericShotTrap(Item&trap,uint complexity,uint hideSkill,uint16 pid,uint dmgmin,uint dmgmax)from"traps";
+import void MakeBearTrap(Item&trap,uint complexity,uint hideSkill,uint bonusDamage)from"traps";
+import void MakeAlarmTrap(Item&trap,uint complexity,uint hideSkill,uint16 pid,uint8 min,uint8 max,uint16 bag,uint8 level,uint8 entire)from"traps";
+import void ClearWalkTrap(Item&item)from"traps";  
+
+import void InjureCritter(Critter&cr,uint dmg,uint dmgType,uint8 dir,uint attackerId)from"combat";
+
+class DynamiteThrow:IAttack
+{
+	MelchiorBoss@boss;
+	array<uint>dynamites;
+	uint dynamiteI;
+	uint timer;
+	DynamiteThrow(MelchiorBoss@boss,uint timer)
+	{
+		@this.boss=@boss;
+		this.timer=timer;
+		dynamites.resize(255);
+		dynamiteI=0;
+	}
+	void AttackPrepareStart()
+	{
+		Critter@melch=GetCritter(boss.critterList[0]);
+		
+	}
+	
+	void AttackCommence()
+	{
+		Critter@melch=GetCritter(boss.critterList[0]);
+		if((@melch!=null))
+		{
+			
+			melch.Say((1),"Catch!");
+			melch.Wait(100);
+			melch.Animate((1),(53),null,true,true);
+			melch.ModeBase[(539)]=1;
+			Map@map=melch.GetMap();
+			if((@map!=null))
+			{
+				
+				array<Critter@>crits;
+				uint searchFlags=(0x03); 
+				
+				if(boss.targetType==1)
+				searchFlags|=(0x20);
+				uint cnt=map.GetCritters(0,searchFlags,crits);
+				uint rnd1=Random(0,4);
+				uint rnd2=Random(0,4);
+				Item@dynamite;
+				uint16 x;
+				uint16 y;
+				for(uint i=0;i<cnt&&dynamiteI<249;i++)
+				{
+					if(isMod(crits[i])||isSameTeam(melch,crits[i])||(boss.targetType==0&&(!isMerc(crits[i])&&!crits[i].IsPlayer()))||(boss.targetType==1&&isMerc(crits[i])))
+					continue;
+					x=crits[i].HexX-2+((rnd1+i)%5);
+					y=crits[i].HexY-2+((rnd2+i)%5);
+					if(GetDistantion(melch.HexX,melch.HexY,x,y)>3)
+					{
+						@dynamite=MakeDynamite(melch,timer);
+						if((@dynamite!=null))
+						{
+							dynamites[dynamiteI++]=dynamite.Id;
+							MoveItem(dynamite,1,map,x,y);
+						}
+					}
+				}
+				
+				for(uint i=0;i<6;i++)
+				{
+					x=melch.HexX;
+					y=melch.HexY;
+					map.MoveHexByDir(x,y,i,5);
+					@dynamite=MakeDynamite(melch,timer);
+					
+					if((@dynamite!=null))
+					{
+						dynamites[dynamiteI++]=dynamite.Id;
+						MoveItem(dynamite,1,map,x,y);
+					}
+				}
+			}
+		}
+	}
+	
+	Item@MakeDynamite(Critter@cr,uint timer)
+	{
+		Item@activateExpl=cr.AddItem((206),1);
+		if(!(@activateExpl!=null))
+		return null;  
+		
+		((activateExpl.Flags)=(activateExpl.Flags)|((0x00020000)));
+		
+		activateExpl.Val2=int(cr.Id);
+		activateExpl.TrapValue=((200)/5+10);
+		(activateExpl.Val3)=5000;
+		activateExpl.Val4=(200);
+		activateExpl.Val5=(1);
+		activateExpl.Update();
+		return activateExpl;
+	} 
+	
+	void AttackRecuperationEnd()
+	{
+		for(uint i=0;i<dynamiteI;i++)
+		{
+			CreateTimeEvent(0,"explode@e_Explode",dynamites[i],false);
+		}
+		dynamiteI=0;
+		Critter@melch=GetCritter(boss.critterList[0]);
+		if((@melch!=null))
+		melch.Say((3),"MUHAHAHAAAA!!!");
+		melch.ModeBase[(539)]=0;
+		melch.Wait(100);
+	}
+};
+
+class ImbaPunch:IAttack
+{
+	MelchiorBoss@boss;
+	ImbaPunch(MelchiorBoss@boss)
+	{
+		@this.boss=@boss;
+	}
+	void AttackPrepareStart()
+	{
+		Critter@melch=GetCritter(boss.critterList[0]);
+		
+	}
+	
+	void AttackCommence()
+	{
+		Critter@melch=GetCritter(boss.critterList[0]);
+		if((@melch!=null))
+		{
+			bool hit=false;
+			Map@map=melch.GetMap();
+			if((@map!=null))
+			{
+				
+				array<Critter@>crits;
+				uint searchFlags=(0x03); 
+				
+				if(boss.targetType==1)
+				searchFlags|=(0x20);
+				uint cnt=map.GetCritters(0,searchFlags,crits);
+				for(uint i=0;i<cnt;i++)
+				{
+					if(isMod(crits[i])||isSameTeam(melch,crits[i])||(boss.targetType==0&&(!isMerc(crits[i])&&!crits[i].IsPlayer()))||(boss.targetType==1&&isMerc(crits[i])))
+					continue;
+					if(GetDistantion(melch.HexX,melch.HexY,crits[i].HexX,crits[i].HexY)<4)
+					{
+						hit=true;
+						InjureCritter(crits[i],Random(100,200),(7),GetDirection(melch.HexX,melch.HexY,crits[i].HexX,crits[i].HexY),melch.Id);
+						int knockDist=20;
+						uint16 knockHx=melch.HexX;
+						uint16 knockHy=melch.HexY;
+						map.GetHexCoordWall(crits[i].HexX,crits[i].HexY,knockHx,knockHy,180.0f,knockDist);
+						crits[i].ToKnockout(((true)?(82):(83)),((true)?(86):(87)),((true)?(88):(89)),crits[i].Param[(8)]*4,knockHx,knockHy);
+						
+						if(Random(0,3)==0)
+						crits[i].DamageBase[(506)]=1;
+						if(Random(0,3)==0)
+						crits[i].DamageBase[(505)]=1;
+						if(Random(0,3)==0)
+						crits[i].DamageBase[(504)]=1;
+						if(Random(0,3)==0)
+						crits[i].DamageBase[(503)]=1;
+					}
+				} 
+				
+			}
+			if(hit)
+			{
+				melch.Animate((1),(43),null,true,true);
+				melch.Wait(200);
+				map.RunEffect((4027),melch.HexX,melch.HexY,2);
+			}
+		}
+	} 
+	
+	void AttackRecuperationEnd()
+	{
+		Critter@melch=GetCritter(boss.critterList[0]);
+		
+	}
+};
+
+class MelchiorBoss:CBoss
+{
+	int targetType;
+	MelchiorBoss(Map&map,uint x,uint y,uint id,int targetType)
+	{
+		this.id=id;
+		this.targetType=targetType;
+		Critter@melchior=map.AddNpc(161,x,y,3,null,null,"_BossMelchiorInit");
+		if((@melchior!=null))
+		AddCritter(melchior);
+		patern=false;
+		AddAttack(DynamiteThrow(this,((4)*__TimeMultiplier)),1,((10)*__TimeMultiplier),((4)*__TimeMultiplier));
+		AddAttack(ImbaPunch(this),1,((5)*__TimeMultiplier),((5)*__TimeMultiplier));
+	}
+	
+	void aggressionStart()
+	{
+		if(critterList.length()<1)
+		{
+			Log("No critter boss error.");
+			return;
+		}
+		Critter@boss=GetCritter(critterList[0]);
+		if(!(@boss!=null))
+		{
+			Log("No critter boss error.");
+			return;
+		}
+		
+		Map@map=boss.GetMap();
+		if(!(@map!=null))
+		{
+			Log("Boss not on map.");
+			return;
+		}
+		
+		array<Critter@>crits;
+		uint searchFlags=(0x03); 
+		
+		if(targetType==1)
+		searchFlags|=(0x20);
+		
+		map.GetCritters(0,searchFlags,crits);
+		for(uint i=0;i<crits.length();i++)
+		{
+			if((targetType==0&&(!isMerc(crits[i])&&!crits[i].IsPlayer()))||(targetType==1&&isMerc(crits[i]))||isMod(crits[i])||isSameTeam(boss,crits[i]))
+			continue;
+			boss.AddEnemyInStack(crits[i].Id);
+			AddAttackPlane(boss,180,crits[i],true);
+		}
+	}
+	
+	void bossSee(Critter&cr,Critter&shownCr)
+	{
+		if(!cr.CheckEnemyInStack(shownCr.Id)&&!isSameTeam(cr,shownCr)&&!isMod(shownCr)&&
+		(targetType>1||(shownCr.IsPlayer()&&targetType==0)||
+		(targetType==0&&isMerc(shownCr))||(shownCr.IsNpc()&&!isMerc(shownCr)&&targetType==1)))
+		{
+			cr.AddEnemyInStack(shownCr.Id);
+			AddAttackPlane(cr,180,shownCr,true);
+		}
+	}
+	
+	bool bossAttacked(Critter&cr,Critter&attacker)
+	{
+		if(!cr.CheckEnemyInStack(attacker.Id))
+		{
+			cr.AddEnemyInStack(attacker.Id);
+			AddAttackPlane(cr,180,attacker,true);
+		}
+		
+		return true;
+	}
+	
+	void bossHit(Critter&cr,Critter@attacker,int dmg)
+	{
+		if(dmg<5&&Random(0,9)<1)
+		{
+			cr.Say((2),"You'll have to try harder than that.");
+		}
+	}
+	
+	void bossKilled(Critter&cr,Critter@attacker)
+	{
+		if(timeEvent!=0)
+		EraseTimeEvent(timeEvent);
+		timeEvent=0;
+		if((@attacker!=null))
+		attacker.Say((4),"Got Him!");
+	}
+	
+	void bossFinish(Critter&cr,bool deleted)
+	{
+		if(timeEvent!=0)
+		EraseTimeEvent(timeEvent);
+		timeEvent=0;
+	}
+};
+
+void _BossMelchiorInit(Critter&boss,bool firstTime)
+{
+	boss.ParamBase[(7)]=10000;
+	if(firstTime)
+	boss.ParamBase[72]=10000;
+	boss.StatBase[(13)]=10;
+	boss.ParamBase[(315)]=20;
+	boss.ParamBase[(542)]=int(0xFFFFFFFF);
+	boss.ParamBase[(522)]=1;
+	boss.AddItem((355),1);
+	boss.ParamBase[(106)]=17;
+} 
+
+class SilentKill:IAttack
+{
+	GhostBoss@boss;
+	uint timer;
+	SilentKill(GhostBoss@boss,uint timer)
+	{
+		@this.boss=@boss;
+		this.timer=timer;
+	}
+	void AttackPrepareStart()
+	{
+		Critter@ghost=GetCritter(boss.critterList[0]);
+		
+	}
+	
+	void AttackCommence()
+	{
+		Critter@ghost=GetCritter(boss.critterList[0]);
+		if((@ghost!=null))
+		{
+			bool alone=false;
+			boss.victimId=0;
+			ghost.ParamBase[(510)]=1;
+			Map@map=ghost.GetMap();
+			if((@map!=null))
+			{
+				array<Critter@>crits;
+				uint searchFlags=(0x03); 
+				
+				if(boss.targetType==1)
+				searchFlags|=(0x20);
+				uint cnt=map.GetCritters(0,searchFlags,crits);
+				
+				uint foundInd=0;
+				
+				for(uint i=0;i<cnt;i++)
+				{
+					if(isSameTeam(ghost,crits[i])||crits[i].Id==ghost.Id||
+					isMod(crits[i])||(boss.targetType==0&&(!isMerc(crits[i])&&!crits[i].IsPlayer()))||(boss.targetType==1&&isMerc(crits[i])))
+					{
+						Critter@sLH=crits[i];
+						@crits[i]=crits[cnt-1];
+						@crits[cnt-1]=sLH;
+						cnt--;
+						i--;
+					}
+				}
+				
+				if(cnt<1)
+				return;                     
+				
+				if(!alone)
+				{
+					foundInd=Random(0,cnt-1);
+					if(foundInd>=cnt)
+					{
+						return;
+					}
+					if(crits[foundInd].Param[(106)]==ghost.Param[(106)])
+					{
+						return;
+					}
+					if(crits[foundInd].Id==ghost.Id)
+					return;
+				}
+				if(foundInd<cnt)
+				{
+					boss.wasHit=false;
+					boss.victimId=crits[foundInd].Id;
+					crits[foundInd].Wait(1000*timer/((1)*__TimeMultiplier)+1000);
+					ghost.Wait(1000*timer/((1)*__TimeMultiplier)+1000);
+					uint16 x=crits[foundInd].HexX;
+					uint16 y=crits[foundInd].HexY;
+					map.MoveHexByDir(x,y,(crits[foundInd].Dir+3)%6,1);
+					ghost.TransitToHex(x,y,crits[foundInd].Dir);
+					ghost.Say((7),"shhhh");
+					ghost.Wait(1000*timer/((1)*__TimeMultiplier)+1000);
+					crits[foundInd].Say((11),"You can't move.");
+				}
+			}
+			
+		}
+	} 
+	
+	void AttackRecuperationEnd()
+	{
+		if(boss.wasHit)
+		return;
+		Critter@victim=GetCritter(boss.victimId);
+		Critter@ghost=GetCritter(boss.critterList[0]);
+		if((@victim!=null)&&(@ghost!=null))
+		{
+			InjureCritter(victim,Random(3000,4000),(2),(victim.Dir+3)%6,ghost.Id);
+			
+			ghost.Animate((4),(51),ghost.GetItem(0,(1)),true,true);
+			ghost.TransitToHex(2,2,0);
+			boss.victimId=0;
+			
+		}
+		
+	}
+};
+
+class GhostBoss:CBoss
+{
+	bool wasHit;
+	int targetType;
+	uint victimId;
+	GhostBoss(Map&map,uint x,uint y,uint id,int targetType)
+	{
+		this.id=id;
+		this.targetType=targetType;
+		Critter@ghost=map.AddNpc(126,x,y,3,null,null,"_BossGhostInit");
+		if((@ghost!=null))
+		AddCritter(ghost);
+		patern=false;
+		AddAttack(SilentKill(this,((4)*__TimeMultiplier)),1,((16)*__TimeMultiplier),((4)*__TimeMultiplier));
+		
+		wasHit=false;
+		victimId=0;
+	}
+	
+	void aggressionStart()
+	{
+		if(critterList.length()<1)
+		{
+			Log("No critter boss error.");
+			return;
+		}
+		Critter@boss=GetCritter(critterList[0]);
+		if(!(@boss!=null))
+		{
+			Log("No critter boss error.");
+			return;
+		}
+		
+		Map@map=boss.GetMap();
+		if(!(@map!=null))
+		{
+			Log("Boss not on map.");
+			return;
+		}
+		
+		uint searchFlags=(0x03); 
+		
+		if(targetType==1)
+		searchFlags|=(0x20);
+		
+		array<Critter@>crits;
+		map.GetCritters(0,searchFlags,crits);
+		for(uint i=0;i<crits.length();i++)
+		{
+			if((targetType==0&&(!isMerc(crits[i])&&!crits[i].IsPlayer()))||(targetType==1&&isMerc(crits[i]))||isMod(crits[i])||isSameTeam(boss,crits[i]))
+			continue;
+			boss.AddEnemyInStack(crits[i].Id);
+			AddAttackPlane(boss,180,crits[i],true);
+		}
+	}
+	
+	void bossSee(Critter&cr,Critter&shownCr)
+	{
+		if(!cr.CheckEnemyInStack(shownCr.Id)&&!isSameTeam(cr,shownCr)&&!isMod(shownCr)&&
+		(targetType>1||(shownCr.IsPlayer()&&targetType==0)||
+		(targetType==0&&isMerc(shownCr))||(shownCr.IsNpc()&&!isMerc(shownCr)&&targetType==1)))
+		{
+			cr.AddEnemyInStack(shownCr.Id);
+			AddAttackPlane(cr,180,shownCr,true);
+		}
+	}
+	
+	bool bossAttacked(Critter&cr,Critter&attacker)
+	{
+		if(!cr.CheckEnemyInStack(attacker.Id))
+		{
+			cr.AddEnemyInStack(attacker.Id);
+			AddAttackPlane(cr,180,attacker,true);
+		}
+		
+		return true;
+	}
+	
+	void bossHit(Critter&cr,Critter@attacker,int dmg)
+	{
+		if(dmg<11)
+		{ 
+			
+		}
+		else
+		{
+			cr.Say((1),"Damn!");
+			cr.TransitToHex(2,2,0);
+			wasHit=true;
+			if(victimId!=0)
+			{
+				Critter@victim=GetCritter(victimId);
+				if((@victim!=null))
+				victim.Wait(0);
+				victimId=0;
+			}
+		}
+	}
+	
+	void bossKilled(Critter&cr,Critter@attacker)
+	{
+		if(timeEvent!=0)
+		EraseTimeEvent(timeEvent);
+		timeEvent=0;
+		if((@attacker!=null))
+		attacker.Say((4),"Got Him!");
+		
+	}
+	
+	void bossFinish(Critter&cr,bool deleted)
+	{
+		if(timeEvent!=0)
+		EraseTimeEvent(timeEvent);
+		timeEvent=0;
+	}
+};
+
+void _BossGhostInit(Critter&boss,bool firstTime)
+{
+	boss.ParamBase[(7)]=985;
+	if(firstTime)
+	boss.ParamBase[72]=1000;
+	boss.StatBase[(13)]=5;
+	boss.ParamBase[(315)]=20;
+	boss.ParamBase[(208)]=300;
+	boss.ParamBase[(542)]=int(0xFFFFFFFF);
+	boss.ParamBase[(522)]=1;
+	boss.ParamBase[(510)]=1;
+	boss.ParamBase[(316)]=1;
+	boss.AddItem((116),1);
+	boss.SetFavoriteItem((1),(116));
+	boss.ParamBase[(106)]=17;
+}       
+
+class PatternBoss:CBoss
+{
+	PatternBoss()
+	{ 
+		
+		patern=false;
+	} 
+	
+	void aggressionStart()
+	{} 
+	
+	void bossSee(Critter&cr,Critter&shownCr)
+	{} 
+	
+	bool bossAttacked(Critter&cr,Critter&attacker)
+	{ 
+		
+		return false;
+	} 
+	
+	void bossHit(Critter&cr,Critter@attacker,int dmg)
+	{} 
+	
+	void bossKilled(Critter&cr,Critter@attacker)
+	{}
+	
+	void bossFinish(Critter&cr,bool deleted)
+	{}
+};

@@ -1,0 +1,602 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_vault13.fos
+//
+// Vault 13's event by worldremaker
+//
+
+#include "_animation.fos"
+#include "_macros.fos"
+#include "_maps.fos"
+#include "elevators_h.fos"
+#include "mapdata_h.fos"
+#include "lockers.fos"
+#include "broadcast_h.fos"
+#include "triggers.fos"
+#include "mob_dynamic_h.fos"
+#define EVENT_TIME                (20)            // in real minutes
+
+import void AddBonusOrNot(Item@ it) from "item_bonus";
+import void AddSpecialBonusLow(Item@ it) from "item_bonus";
+import void AddSpecialBonus(Item@ it) from "item_bonus";
+import void FillMapByMobs(Map& map, uint8 reqNumMobs, uint8 kindof, uint8 subtype, uint8 weapgroup) from "mob_dynamic";
+import void ImmaAttack(Map& map, Critter& mob) from "mob_dynamic";
+import void SetWeapon(Critter& mob, uint8 weaponforgroup) from "mob_dynamic";
+import void SetParatersToMob(Critter& mob, Map& map, bool MobIsBoss) from "mob_dynamic";
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+
+//
+// Initialize map.
+//
+
+// elevator 1-2
+CElevator FirstElevator(ELEVATOR_PLUG_MILITARY_12);
+// elevator 2-3 //TODO: Elevator 2-3
+CElevator SecondElevator(ELEVATOR_PLUG_MILITARY_23);
+
+bool ElevatorsAdded = false;
+
+void map_init(Map& map, bool firstTime)
+{
+    /* if(firstTime)
+    {
+    // placing blockers to vault door
+	Item@ blocker = map.AddItem(106, 84, PID_UNVISIBLE_BLOCK, 1);
+	Item@ blocker2 = map.AddItem(106, 85, PID_UNVISIBLE_BLOCK, 1);
+    } */
+    // to add only one for all floors
+	if(firstTime && map.GetProtoId() == MAP_Vault13Level1) InitializeDynamicMob(map);
+	
+    if(!ElevatorsAdded)
+    {
+        // add elevators
+        AddElevator(FirstElevator);
+        AddElevator(SecondElevator);
+        ElevatorsAdded = true;
+    }
+    // parse elevators floors
+    uint16 x = 0, y = 0;
+
+    switch(map.GetProtoId())
+    {
+    case MAP_Vault13Level1:
+        if(map.GetEntireCoords(1, 0, x, y))
+            FirstElevator.AddFloor(map.Id, 1);
+		break;
+    case MAP_Vault13Level2:
+        if(map.GetEntireCoords(1, 0, x, y))
+            FirstElevator.AddFloor(map.Id, 1);
+		if(map.GetEntireCoords(2, 0, x, y))
+            SecondElevator.AddFloor(map.Id, 2);
+        break;
+    case MAP_Vault13Level3:
+        if(map.GetEntireCoords(2, 0, x, y))
+            SecondElevator.AddFloor(map.Id, 2);
+        break;
+    default:
+    }
+}
+
+//
+// Elevator triggers
+//
+void t_ElevatorFirst(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(FirstElevator, critter, entered);
+}
+void t_ElevatorSecond(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(SecondElevator, critter, entered);
+}
+
+// Main Vault 13 event
+
+void door_console(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseDoorConsole");
+	item.SetEvent(ITEM_EVENT_USE_ON_ME, "_UseKeyOnConsole");
+}
+
+void overseer(Critter& overseer, bool firstTime)
+{
+	overseer.SetEvent(CRITTER_EVENT_ATTACKED, "mob_dynamic@_Alert");
+	overseer.SetEvent(CRITTER_EVENT_IDLE, "mob_dynamic@_DontMove");
+	overseer.SetEvent(CRITTER_EVENT_DEAD, "_OverSeerIsDead");
+	if(firstTime)
+	{
+		SetWeapon(overseer, 0);
+		SetParatersToMob(overseer, overseer.GetMap(), true);
+		//Generate S.P.E.C.I.A.L.
+		uint8 S = 1, P = 1, E = 1, C = 1, I = 1, A = 1, L = 1;
+		for(uint8 i = 1; i < 33; i++ )
+		{
+			switch(Random(1, 7)) //Generate S.P.E.C.I.A.L.
+			{
+				case 1 : if(S == 10) i--; else S++; break;
+				case 2 : if(P == 10) i--; else P++; break;
+				case 3 : if(E == 10) i--; else E++; break;
+				case 4 : if(C == 10) i--; else C++; break;
+				case 5 : if(I == 10) i--; else I++; break;
+				case 6 : if(A == 10) i--; else A++; break;
+				case 7 : if(L == 10) i--; else L++; break;
+			}
+		}
+		
+		overseer.StatBase[ST_STRENGTH] = S;
+		overseer.StatBase[ST_PERCEPTION] = P;
+		overseer.StatBase[ST_ENDURANCE] = E;
+		overseer.StatBase[ST_CHARISMA] = C;
+		overseer.StatBase[ST_INTELLECT] = I;
+		overseer.StatBase[ST_AGILITY] = A;
+		overseer.StatBase[ST_LUCK] = L;
+		
+		overseer.StatBase[ST_LEVEL] = 20;
+		overseer.StatBase[ST_KILL_EXPERIENCE] = 2500;
+		overseer.StatBase[ST_MAX_LIFE] = 3000;
+		overseer.StatBase[ST_CURRENT_HP] = 3000;
+	}
+	
+	_CritSetMode(overseer, MODE_NO_STEAL);
+    _CritSetMode(overseer, MODE_NO_DROP);
+    _CritSetMode(overseer, MODE_NO_LOOT);
+	_CritSetMode(overseer, MODE_UNLIMITED_AMMO);
+	_CritSetMode(overseer, MODE_NO_TALK);
+    _CritSetMode(overseer, MODE_NO_BARTER);
+	_CritUnsetMode(overseer, MODE_NO_LOOSE_LIMBS);
+    // overseer.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_MobShowCritterAggr");
+    // overseer.SetEvent(CRITTER_EVENT_HIDE_CRITTER, "_MobHideCritter");
+    // overseer.SetEvent(CRITTER_EVENT_ATTACKED, "_MobAttacked");
+    _CritSetExtMode(overseer, MODE_EXT_MOB);
+}
+
+bool _UseDoorConsole(Item& item, Critter& player, int skill)
+{
+	// Opening / Closing
+	player.Animate(ANIM1_UNARMED, ANIM2_USE, item, true, true);
+	
+    if((skill == -1) || (skill == SK_LOCKPICK))
+    {	
+		Map@ map = GetMap(item.MapId);
+		Item@ vaultdoor=map.GetItem(106, 83, 2173);
+		/* Item@ vaultgate=map.GetItem(106, 67, 2008);
+		array<uint> vaultdata = { vaultdoor.Id, vaultgate.Id, map.Id }; */
+		
+		if(FLAG(vaultdoor.LockerCondition, LOCKER_ISOPEN))
+		{
+			player.Say(SAY_NETMSG, "You can't close those vault door manually.");
+		}
+        else
+            {
+				if(player.CountItem(PID_V13_KEY) > 0)
+					player.Say(SAY_NETMSG, "Try with this unique vault key. It should fit to the keyhole.");
+				/* if(skill == SK_LOCKPICK)
+				{
+					ServerEventCNTSet("Vault's 13 outer door has been open. It will remain in this state for the next %COUNTDOWN%.", LOCATION_Vault13, EVENT_TYPE_V13_IS_OPEN, REAL_MINUTE(EVENT_TIME));
+					array<Item@> blockers;
+					// for(uint i = 0, j = map.GetItems(PID_UNVISIBLE_BLOCK, blockers); i < j; i++)
+					// DeleteItem(blockers[i]);
+					CreateTimeEvent(AFTER(REAL_MINUTE(EVENT_TIME)), "EndV13Event", vaultdata, false);
+					SwitchState(vaultdoor);
+					SwitchState(vaultgate);
+				} */
+				else
+					player.Say(SAY_NETMSG, "Message from console: We can't open this vault from inside. Try find an access key.");
+			}
+		
+        return true;
+    }
+	
+	
+    return false;
+}
+
+bool _UseKeyOnConsole(Item& item, Critter& player, Item@ usedItem)
+{
+	if(usedItem.GetProtoId() == PID_V13_KEY)
+    {
+        player.Animate(ANIM1_UNARMED, ANIM2_USE, item, true, true);
+		Map@ map = GetMap(item.MapId);
+		Item@ vaultdoor=map.GetItem(106, 83, 2173);
+		Item@ vaultgate=map.GetItem(106, 67, 2008);
+		array<uint> vaultdata = { vaultdoor.Id, vaultgate.Id, map.Id };
+		
+		if(FLAG(vaultdoor.LockerCondition, LOCKER_ISOPEN))
+		{
+			player.Say(SAY_NETMSG, "You can't close those vault door manually. Even by vault key.");
+		}
+		else
+        {
+		
+			ServerEventCNTSet("Vault's 13 outer door has been open. It will remain in this state for the next %COUNTDOWN%.", LOCATION_Vault13, EVENT_TYPE_V13_IS_OPEN, REAL_MINUTE(EVENT_TIME));
+			array<Item@> blockers;
+			// for(uint i = 0, j = map.GetItems(PID_UNVISIBLE_BLOCK, blockers); i < j; i++)
+			// DeleteItem(blockers[i]);
+			CreateTimeEvent(AFTER(REAL_MINUTE(EVENT_TIME)), "EndV13Event", vaultdata, true);
+			FillContainers(map);
+			WriteROMToComputers(map);
+			SwitchState(vaultdoor);
+			SwitchState(vaultgate);
+			//spawn Mobs on maps
+			array<Map@> maps;
+			map.GetLocation().GetMaps(maps);
+			for(uint8 i=0; i < maps.length(); i++)
+			{
+				if(!valid(maps[i]))
+					continue;
+				uint reqNumMobs;
+				
+				if(maps[i].GetProtoId() == MAP_Vault13Level3)
+				{
+					uint lookforseer = maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_ALL);
+									
+					for(uint8 j = 0; j < lookforseer; j++)
+					{
+						Critter@ OverSeer = maps[i].GetNpc(ROLE_MOB_DYNAMIC, FIND_ALL, j);
+						if(OverSeer.GetProtoId() == 882 || OverSeer.GetProtoId() == 901)
+						{
+							if(OverSeer.IsDead()) OverSeer.ToLife();
+							OverSeer.StatBase[ST_CURRENT_HP] = 3000;
+						}
+					}
+					
+					//spawn forcefield
+					Item@ forcefield = maps[i].GetItem(64, 99, PID_FORCEFIELD_YELLOW_1);
+					if(!valid(forcefield)) maps[i].AddItem(64, 99, PID_FORCEFIELD_YELLOW_1, 1);
+					@forcefield = map.GetItem(63, 99, PID_UNVISIBLE_BLOCK);
+					if(!valid(forcefield)) maps[i].AddItem(63, 99, PID_UNVISIBLE_BLOCK, 1);
+					@forcefield = map.GetItem(65, 99, PID_UNVISIBLE_BLOCK);
+					if(!valid(forcefield)) maps[i].AddItem(65, 99, PID_UNVISIBLE_BLOCK, 1);
+				}
+				
+				if(maps[i].GetProtoId() == MAP_Vault13Level1)
+				{
+					uint lookformobs = maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO);
+					uint realNum = 0;
+					
+					for(uint8 j = 0; j < lookformobs; j++)
+					{
+						Critter@ dweller = maps[i].GetNpc(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO, j);
+						if(dweller.GetProtoId() == 898 || dweller.GetProtoId() == 899 || dweller.GetProtoId() == 900)
+						{
+							realNum++;
+						}
+					}
+					reqNumMobs = 15 - realNum;
+				}
+				
+				switch(maps[i].GetProtoId())
+				{
+					//case MAP_Vault13Level1 :
+						
+					case MAP_Vault13Level2 :
+						reqNumMobs = 15 - maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO); break;
+					case MAP_Vault13Level3 :
+						reqNumMobs = 16 - maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO); break;
+				}
+				FillMapByMobs(maps[i], reqNumMobs, FROM_GROUP_VAULT_13, 0, WEAPONGROUP_ENCLAVE);
+				
+				/*array<Critter@> mobs;
+				maps[i].GetCritters(0, FIND_LIFE_AND_KO, mobs);
+				for(uint8 j = 0; j < mobs.length(); j++)
+				{
+					if(!valid(mobs[j])) continue;
+					
+					if(mobs[j].GetProtoId() ==  882 || mobs[j].GetProtoId() == 901
+					|| mobs[j].GetProtoId() ==  898 || mobs[j].GetProtoId() == 899 || mobs[j].GetProtoId() == 900)
+						ImmaAttack(maps[i], mobs[j]);
+				}*/
+				
+			}
+			DeleteItem(usedItem);
+			player.Say(SAY_NETMSG, "Unfortunately, the key was destroyed.");
+		}
+		
+		return true;
+	}
+	else
+	{
+		player.Say(SAY_NETMSG, "It doesn't fit into the keyhole.");
+		return true;
+	}
+}
+
+uint EndV13Event(array<uint>@ values)
+{
+	Item@ vaultdoor = GetItem(values[0]);
+	Item@ vaultgate = GetItem(values[1]);
+	Map@ vault = GetMap(values[2]);	
+	
+    if(!valid(vaultdoor))
+        return 0;
+	
+	if(!valid(vaultgate))
+		return 0;
+	
+	// collecting blocking critters
+	array<Critter@> critters;
+	
+	vault.GetCrittersHex(106, 83, 0, FIND_LIFE_AND_KO, critters);
+	vault.GetCrittersHex(106, 84, 0, FIND_LIFE_AND_KO, critters);
+	vault.GetCrittersHex(106, 85, 0, FIND_LIFE_AND_KO, critters);
+	vault.GetCrittersHex(105, 86, 0, FIND_LIFE_AND_KO, critters);
+	vault.GetCrittersHex(107, 86, 0, FIND_LIFE_AND_KO, critters);
+	vault.GetCrittersHex(105, 67, 0, FIND_LIFE_AND_KO, critters);
+	vault.GetCrittersHex(105, 68, 0, FIND_LIFE_AND_KO, critters);
+	vault.GetCrittersHex(106, 67, 0, FIND_LIFE_AND_KO, critters);
+	
+	// and now kill them all
+	for(uint i = 0, j = critters.length(); i < j; i++)
+	{
+		if(valid(critters[i]))
+		{
+			critters[i].Say(SAY_NETMSG, "You were squeezed by vault door.");
+			critters[i].ToDead(ANIM2_DEAD_EXPLODE, null);
+		}
+	}	
+		
+	if(FLAG(vaultdoor.LockerCondition, LOCKER_ISOPEN))
+	{
+		LockerClose(vaultdoor);
+		// Item@ blocker = vault.AddItem(106, 84, PID_UNVISIBLE_BLOCK, 1);
+		// Item@ blocker2 = vault.AddItem(106, 85, PID_UNVISIBLE_BLOCK, 1);
+	}
+	
+	if(FLAG(vaultgate.LockerCondition, LOCKER_ISOPEN))
+	{
+		LockerClose(vaultgate);
+		// Item@ blocker = vault.AddItem(106, 84, PID_UNVISIBLE_BLOCK, 1);
+		// Item@ blocker2 = vault.AddItem(106, 85, PID_UNVISIBLE_BLOCK, 1);
+	}
+	return 0;
+}
+
+void _OverSeerIsDead(Critter& overseer, Critter@ killer)
+{
+	//remove forcefield
+	Map@ map = overseer.GetMap();
+	
+	Item@ forcefield = map.GetItem(64, 99, PID_FORCEFIELD_YELLOW_1);
+	if(valid(forcefield)) DeleteItem(forcefield);
+	@forcefield = map.GetItem(63, 99, PID_UNVISIBLE_BLOCK);
+	if(valid(forcefield)) DeleteItem(forcefield);
+	@forcefield = map.GetItem(65, 99, PID_UNVISIBLE_BLOCK);
+	if(valid(forcefield)) DeleteItem(forcefield);
+	
+	//and clear enemystack
+	overseer.ClearEnemyStack();
+}
+
+
+void FillContainers(Map& map)
+{
+	if(!valid(map))
+		return;
+	
+	Location@ loc = map.GetLocation();
+	array<Map@> maps;
+	loc.GetMaps(maps);
+	for(uint i = 0, j = maps.length(); i < j; i++)
+	{
+		if(valid(maps[i]))
+		{
+			if(maps[i].GetProtoId() == MAP_Vault13Level1)
+			{
+				array<Item@> lockers;
+				maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers);
+				for(uint k = 0, l = lockers.length; k < l; k++)
+				{
+					if(!valid(lockers[k]))
+						return;
+						
+					ClearContainer(lockers[k]);
+					if(FLAG(lockers[k].LockerCondition, LOCKER_ISOPEN))
+						LockerClose(lockers[k]);
+						
+					if(lockers[k].GetProtoId() != PID_VAULT_DWELLER_BONES)
+					{
+						lockers[k].AddItem(PID_RADAWAY, Random(0, 10), 0);
+						lockers[k].AddItem(PID_RAD_X, Random(0, 10), 0);
+						lockers[k].AddItem(PID_SUPER_STIMPAK, Random(0, 5), 0);
+						lockers[k].AddItem(PID_HEALING_POWDER, Random(0, 20), 0);
+						lockers[k].AddItem(PID_STIMPAK, Random(0, 15), 0);
+						lockers[k].AddItem(PID_HYPO, Random(0, 1), 0);
+					}
+				}
+
+			}
+			if(maps[i].GetProtoId() == MAP_Vault13Level2)
+			{
+				array<Item@> lockers;
+				maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers);
+				for(uint k = 0, l = lockers.length; k < l; k++)
+				{
+					if(!valid(lockers[k]))
+						return;
+						
+					ClearContainer(lockers[k]);
+					if(FLAG(lockers[k].LockerCondition, LOCKER_ISOPEN))
+						LockerClose(lockers[k]);
+						
+					uint8 losuj = Random(1, 10);
+					
+					if(losuj >= 1 && losuj <=5 )
+					{
+						Item@ it = lockers[k].AddItem( AddT3Item(), 1, 0);
+						AddSpecialBonusLow(it);
+					}
+					
+					if(losuj >= 6 && losuj <= 9)
+					{
+						Item@ it = lockers[k].AddItem( AddT3Item(), 1, 0);
+						AddSpecialBonus(it);
+					}
+					if(losuj == 10)
+						lockers[k].AddItem( AddT4Item(), 1, 0);
+					
+				}
+			}
+			if(maps[i].GetProtoId() == MAP_Vault13Level3)
+			{
+				array<Item@> lockers;
+				maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, lockers);
+				for(uint k = 0, l = lockers.length; k < l; k++)
+				{
+					if(!valid(lockers[k]))
+						return;
+						
+					ClearContainer(lockers[k]);
+					if(FLAG(lockers[k].LockerCondition, LOCKER_ISOPEN))
+						LockerClose(lockers[k]);
+						
+					uint8 losuj = Random(1, 20);
+						
+					if(losuj >= 1 && losuj <=12 )
+					{
+						Item@ it = lockers[k].AddItem( AddT3Item(), 1, 0);
+						AddSpecialBonus(it);
+					}
+					
+					if(losuj >= 13 && losuj <= 18)
+					{
+						Item@ it = lockers[k].AddItem( AddT4Item(), 1, 0);
+						AddBonusOrNot(it);
+					}
+					if(losuj == 19)
+						lockers[k].AddItem( AddT4BP(), 1, 0);
+						
+					if(losuj == 20)
+						lockers[k].AddItem( AddImplant(), 1, 0);
+						
+					losuj = Random(1, 10);
+						
+					if(losuj >= 1 && losuj <=7 )
+						lockers[k].AddItem( AddTypicalAmmo(), Random(10, 50), 0);
+					
+					if(losuj >= 8 && losuj <= 10)
+						lockers[k].AddItem( AddRareAmmo(), Random(10, 30), 0);
+						
+				}
+			}
+			
+		}
+	}
+	return;
+	
+}
+
+void WriteROMToComputers(Map& map)
+{
+	if(!valid(map))
+		return;
+	
+	Location@ loc = map.GetLocation();
+	array<Map@> maps;
+	loc.GetMaps(maps);
+	
+	for(uint i = 0, j = maps.length(); i < j; i++)
+	{
+		if(valid(maps[i]))
+		{
+			if(maps[i].GetProtoId() == MAP_Vault13Level1)
+			{
+				array<Item@> computers;
+				maps[i].GetItems(PID_VAULT_COMPUTER_CLEAN_SW, computers);
+				maps[i].GetItems(PID_VAULT_COMPUTER_CLEAN_SE, computers);
+				
+				for(uint k = 0, l = computers.length; k < l; k++)
+				{
+					if(!valid(computers[k]))
+						return;
+					
+					computers[k].SetEvent(ITEM_EVENT_SKILL, "_UseComputer1");	
+				}
+			}
+			
+			if(maps[i].GetProtoId() == MAP_Vault13Level2)
+			{
+				array<Item@> computers;
+				maps[i].GetItems(PID_VAULT_COMPUTER_CLEAN_SW, computers);
+				maps[i].GetItems(PID_VAULT_COMPUTER_CLEAN_SE, computers);
+				
+				for(uint k = 0, l = computers.length; k < l; k++)
+				{
+					if(!valid(computers[k]))
+						return;
+						
+					computers[k].SetEvent(ITEM_EVENT_SKILL, "_UseComputer2");
+				}
+			}
+			if(maps[i].GetProtoId() == MAP_Vault13Level3)
+			{
+				array<Item@> computers;
+				maps[i].GetItems(PID_VAULT_COMPUTER_CLEAN_SW, computers);
+				maps[i].GetItems(PID_VAULT_COMPUTER_CLEAN_SE, computers);
+  
+
+				for(uint k = 0, l = computers.length; k < l; k++)
+				{
+					if(!valid(computers[k]))
+						return;
+					
+					if(Random(1,20) == 1)
+						computers[k].SetEvent(ITEM_EVENT_SKILL, "_UseComputer3Special");
+					else
+						computers[k].SetEvent(ITEM_EVENT_SKILL, "_UseComputer3Regullar");
+				}
+			}
+		}
+		
+	}
+	
+	return;
+}
+
+bool _UseComputer1(Item& item, Critter& player, int skill)
+{
+	player.Animate(ANIM1_UNARMED, ANIM2_USE, item, true, true);
+	if((skill == -1) || (skill == SK_REPAIR) || (skill == SK_SCIENCE))
+    {	
+		player.Say(SAY_NETMSG, "This computer machine seems to be broken. Maybe you should try one on lower level?");
+		return true;
+	}
+	else
+		return false;
+}
+
+bool _UseComputer2(Item& item, Critter& player, int skill)
+{
+	player.Animate(ANIM1_UNARMED, ANIM2_USE, item, true, true);
+	if((skill == -1) || (skill == SK_REPAIR) || (skill == SK_SCIENCE))
+    {	
+		player.Say(SAY_NETMSG, "This computer machine directs you to the database on the last, lowest floor and then hangs.");
+		return true;
+	}
+	else
+		return false;
+}
+
+bool _UseComputer3Regullar(Item& item, Critter& player, int skill)
+{
+	player.Animate(ANIM1_UNARMED, ANIM2_USE, item, true, true);
+	if((skill == -1) || (skill == SK_REPAIR) || (skill == SK_SCIENCE))
+    {	
+		player.Say(SAY_NETMSG, "Display says: Connection to database is busy now - try again later.");
+		return true;
+	}
+	else
+		return false;
+}
+
+bool _UseComputer3Special(Item& item, Critter& player, int skill)
+{
+	player.Animate(ANIM1_UNARMED, ANIM2_USE, item, true, true);
+	if((skill == -1) || (skill == SK_REPAIR) || (skill == SK_SCIENCE))
+    {	
+		player.Say(SAY_NETMSG, "You can't understand what these string on computer display says...");
+		return true;
+	}
+	else
+		return false;
+}

@@ -1,0 +1,298 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+
+shared class Sprite
+{
+	Sprite()
+	{
+		Id=0;
+		Width=0;
+		Height=0;
+		FrmCount=0;
+	}
+	
+	bool Load(string&name,int path)
+	{
+		if(name.length()>0)
+		{
+			Id=LoadSprite(name,path);
+			Filename=name;
+		}
+		else
+		Id=0;
+		RefreshData();
+		return Id!=0;
+	}
+	
+	void LoadHash(uint nameHash,uint8 dir)
+	{
+		Id=LoadSprite(nameHash,dir);
+		RefreshData();
+	}
+	
+	void LoadByIni(string&iniKey,int path)
+	{
+		string@name=GetIfaceIniStr(iniKey);
+		if(@name!=null&&name.length()>0)
+		Id=LoadSprite(name,path);
+		else
+		Id=0;
+		RefreshData();
+	}
+	
+	void Draw(int x,int y)
+	{
+		if(Id!=0)
+		DrawSprite(Id,-1,x,y,0);
+	}
+	
+	private void RefreshData()
+	{
+		if(Id!=0)
+		{
+			Width=GetSpriteWidth(Id,0);
+			Height=GetSpriteHeight(Id,0);
+			FrmCount=GetSpriteCount(Id);
+		}
+		else
+		{
+			Width=0;
+			Height=0;
+			FrmCount=0;
+			Filename="";
+		}
+	}
+	
+	uint Id;
+	int Width;
+	int Height;
+	uint FrmCount;
+	string Filename;
+};                    
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+
+bool IsThrowingWeapon(ItemCl@item)
+{
+	if(!(@item!=null))
+	return false;
+	if(item.GetType()!=(3))
+	return false;
+	uint8 use=((item.Mode)&0xF);
+	return((use)==0?item.Proto.Weapon_Skill_0:((use)==1?item.Proto.Weapon_Skill_1:((use)==2?item.Proto.Weapon_Skill_2:0)))==(205);
+}
+
+uint GetMaxRange(CritterCl&cr,ItemCl@item)
+{
+	if(!(@item!=null))
+	return 0;
+	
+	uint bonus=6*(cr.Perk[(336)]);
+	uint max=3*cr.Stat[(0)];
+	if(IsThrowingWeapon(item))
+	{
+		uint8 use=((item.Mode)&0xF);
+		return bonus+(((((use)==0?item.Proto.Weapon_MaxDist_0:((use)==1?item.Proto.Weapon_MaxDist_1:((use)==2?item.Proto.Weapon_MaxDist_2:0))))<(max))?(((use)==0?item.Proto.Weapon_MaxDist_0:((use)==1?item.Proto.Weapon_MaxDist_1:((use)==2?item.Proto.Weapon_MaxDist_2:0)))):(max));
+	}
+	else
+	{
+		float lbs=((item.Proto.Weight)/453);
+		lbs=(((lbs)>(1.0f))?(lbs):(1.0f));
+		lbs=sqrt(lbs);
+		return(bonus+uint(float(max)/lbs));
+	}
+}
+
+bool IsThrowable(ProtoItem&weapon)
+{
+	if(!(@weapon!=null))
+	false;
+	return!(weapon.Type==(3)&&weapon.Weapon_IsUnarmed);
+}
+
+int ThrowingToHit(CritterCl&cr,uint16 tx,uint16 ty,ProtoItem&weapon)
+{
+	if(!(@weapon!=null))
+	return 0;
+	if(weapon.Type==(3)&&weapon.Weapon_IsUnarmed)
+	return 0;
+	if(!cr.IsLife())
+	return 0;
+	
+	int dist=GetDistantion(cr.HexX,cr.HexY,tx,ty);
+	
+	int toHit=int(cr.Skill[(205)]);
+	int weaponPerk=weapon.Weapon_Perk;
+	int blockers=0;  
+	
+	int distmod1=2;
+	int distmod2=0;
+	
+	int perception=cr.Stat[(1)];
+	int acc=dist;
+	
+	if(dist<distmod2)
+	acc+=distmod2;
+	else
+	{
+		if(cr.IsPlayer())
+		acc-=(perception-2)*distmod1;
+		else
+		acc-=perception*distmod1;
+	}
+	
+	if(-2*perception>acc)
+	acc=-2*perception;
+	
+	acc-=2*cr.Perk[(315)];
+	
+	if(acc>=0)
+	{
+		if(cr.Damage[(502)]!=0)
+		acc*=-12;
+		else
+		acc*=-4;
+	}
+	else
+	acc*=-4;
+	
+	toHit+=acc;     
+	
+	blockers=GetCrittersPath(cr.HexX,cr.HexY,tx,ty,0.0f,dist,(0x01),null); 
+	
+	toHit-=10*blockers;
+	
+	if(cr.Damage[(502)]!=0)
+	toHit-=25;
+	toHit=(((toHit)>(95))?(95):(((toHit)<(5))?(5):(toHit)));
+	
+	return toHit;
+}
+
+int ActionPointsCost(ItemCl&item,uint8 brofBonus)
+{
+	if(IsThrowingWeapon(item))
+	{
+		uint8 use=((item.Mode)&0xF);
+		return((use)==0?item.Proto.Weapon_ApCost_0:((use)==1?item.Proto.Weapon_ApCost_1:((use)==2?item.Proto.Weapon_ApCost_2:0)))-brofBonus;
+	}
+	float lbs=((item.Proto.Weight)/453);
+	lbs=(((lbs)>(1.0f))?(lbs):(1.0f));
+	lbs=sqrt(lbs)+3;
+	return int(lbs);
+}
+
+bool IsThrowableThere(CritterCl&cr,ItemCl@item,uint16 tx,uint16 ty)
+{
+	if(!(@item!=null)||!IsThrowable(item.Proto)||!cr.IsLife())
+	return false;    
+	
+	return GetMaxRange(cr,item)>=GetDistantion(cr.HexX,cr.HexY,tx,ty);
+	
+}                                                                                                                  
+
+bool Active=false;
+int LastCursor=0;
+
+bool ThrowingMouseDown(int click)
+{
+	if(!IsThrowingActive())
+	return false;
+	TryThrow();
+	return true;
+}
+
+bool IsThrowingActive()
+{
+	return Active;
+}
+
+void ThrowingKeyDown(uint8 key,string&keyText)
+{
+	if(key==0x29&&!__ConsoleActive)
+	SetThrowing(true);
+}
+
+void ThrowingKeyUp(uint8 key,string&keyText)
+{
+	if(key==0x29)
+	SetThrowing(false);
+}
+
+void ThrowingInputLost()
+{
+	SetThrowing(false);
+}
+
+void SetThrowing(bool enabled)
+{
+	if(enabled)
+	{
+		Active=true;
+		LastCursor=::GetCurrentCursor();
+		ChangeCursor(1);
+	}
+	else
+	{
+		Active=false;
+		ChangeCursor(LastCursor);
+	}
+}
+
+void RenderThrowing()
+{
+	if(!IsThrowingActive())
+	return;
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return;
+	
+	uint16 hx=0,hy=0;
+	if(!GetMonitorHex(__MouseX,__MouseY,hx,hy))
+	return;
+	
+	ItemCl@item=chosen.GetItem(0,(1));
+	if(!IsThrowableThere(chosen,item,hx,hy))
+	return; 
+	
+	int x=0,y=0;
+	if(!GetHexPos(hx,hy,x,y))
+	return;
+	
+	uint tohit=::ThrowingToHit(chosen,hx,hy,item.Proto);
+	uint8 brofBonus=(chosen.Perk[(306)]>0)?1:0;
+	int ap=::ActionPointsCost(item,brofBonus);
+	bool hasAp=ap<=chosen.Stat[(75)]; 
+	
+	int sprite=LoadSprite(item.Proto.PicInv,0);
+	::DrawSprite(sprite,-1,x-50,y-15,30,30,false,false,((uint((0xFF<<24)|(((0xFF)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0xFF)&0xFF)))));
+	DrawText(tohit+"%",x+20,y-10,40,20,((uint((0xFF<<24)|(((0xAB)&0xFF)<<16)|(((0xAB)&0xFF)<<8)|((0xAB)&0xFF)))),(5),(0x0200));
+	DrawText(ap+" AP",x+20,y,40,20,hasAp?((uint((0xFF<<24)|(((0xAB)&0xFF)<<16)|(((0xAB)&0xFF)<<8)|((0xAB)&0xFF)))):((uint((0xFF<<24)|(((0xC8)&0xFF)<<16)|(((0)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0200));
+}
+
+void TryThrow()
+{
+	
+	if(!IsThrowingActive())
+	return;
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return;
+	
+	uint16 hx=0,hy=0;
+	if(!GetMonitorHex(__MouseX,__MouseY,hx,hy))
+	return;
+	
+	ItemCl@item=chosen.GetItem(0,(1));
+	if(!IsThrowableThere(chosen,item,hx,hy))
+	return; 
+	
+	RunServerScriptUnsafe("throwing@unsafe_Throw",hx,hy,0,null,null);
+}
+

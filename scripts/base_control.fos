@@ -1,0 +1,2103 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// base_control.fos
+//
+
+/*
+Main scenario:
+- Run some terminal (hi repair or science skills required).
+- Protect yourself (and your team) from mob's waves.
+- Collect reward from container (check the team id of player who started the timer - opener must have the same team id).
+- Add scores to player who started the timer.
+*/
+
+#include "_defines.fos"
+#include "_maps.fos"
+#include "_vars.fos"
+#include "broadcast_h.fos"
+#include "_entires.fos"
+#include "factions_h.fos"
+#include "serializator.fos"
+//#include "follower_common_h.fos"
+//#include "mapdata_h.fos"
+#include "npc_common_h.fos"
+#include "npc_roles_h.fos"
+#include "npc_planes_h.fos"
+#include "polygon_h.fos"
+
+//import bool _Alert(Critter& mob, Critter& attacker) from "mob_dynamic";
+import void AddBonusOrNot(Item@ it) from "item_bonus";
+import bool IsNukaColaWorker(Critter& mob) from "mob_dynamic";
+import bool IsCurrentController(Critter& cr) from "mob_dynamic";
+
+#define CONTROLLING_TIME                       (12) // in minutes
+#define CONTROLLING_TIME_BY_NPC                (30) // in minutes
+//#define CONTROLLING_TIME                       (1) // in minutes
+#define CONTROLLING_BEST_SCORE_BASE            (44)
+#define ANTI_ATTACK_BUFFOR                     (15) // in seconds
+
+bool CanTakeWaterworks = true, CanTakeArea51 = true, CanTakeNukaCola = true, CanTakeMariposa = true, CanTakeHawthorne = true,
+	IsTakingByNpcWW = false, IsTakingByNpcA51 = false, IsTakingByNpcNC = false, IsTakingByNpcMB = false, IsTakingByNpcHMB = false;
+array<uint> PlayersInWW;
+array<uint> PlayersInA51;
+array<uint> PlayersInNC;
+array<uint> PlayersInMB;
+array<uint> PlayersInHMB;
+array<uint> RewardSpawners; // { spawnerId from WW, spawnerId from A51, spawnerId from NC, spawnerId from MB, spawnerId from HMB, }
+
+uint TakingWW, TakingA51, TakingNC, TakingMB, TakingHMB,
+	RetakeWW = 0, RetakeA51 = 0, RetakeNC = 0, RetakeMB = 0, RetakeHMB = 0;
+	
+bool debuger = false;
+
+// Initialize
+
+void InitBaseControl()  // EXPORT
+{
+	Log("Initializing Base Control system...");
+	if(GetGvar(GVAR_waterworks_score) == 0)
+	{	
+		SetBestScore(SCORE_WATERWORKS_CUR, null, "None");
+		uint16 location = LOCATION_Waterworks;
+		Location@ baseLoc = GetLocationByPid(location, 0);
+
+		array<uint> controllingdata = { 0, location, baseLoc.Id, FACTION_SLAGS };
+		CreateTimeEvent(AFTER(REAL_MINUTE(Random(5, 30))), "e_TakeControlByNPC", controllingdata, false);
+	}
+		
+	if(GetGvar(GVAR_area51_score) == 0)
+	{
+		SetBestScore(SCORE_AREA51_CUR, null, "None");
+		uint16 location = LOCATION_Area51;
+		Location@ baseLoc = GetLocationByPid(location, 0);
+
+		array<uint> controllingdata = { 0, location, baseLoc.Id, FACTION_AREA51_SYSTEM };
+		CreateTimeEvent(AFTER(REAL_MINUTE(Random(5, 30))), "e_TakeControlByNPC", controllingdata, false);
+	}
+	if(GetGvar(GVAR_nukacola_score) == 0)
+	{	
+		SetBestScore(SCORE_NUKACOLA_CUR, null, "None");
+		uint16 location = LOCATION_SaltLake;
+		Location@ baseLoc = GetLocationByPid(location, 0);
+
+		array<uint> controllingdata = { 0, location, baseLoc.Id, FACTION_SALTLAKE };
+		CreateTimeEvent(AFTER(REAL_MINUTE(Random(5, 30))), "e_TakeControlByNPC", controllingdata, false);
+	}
+	if(GetGvar(GVAR_mariposa_score) == 0)
+	{
+		SetBestScore(SCORE_MARIPOSA_CUR, null, "None");
+		
+		uint16 location = LOCATION_MariposaMilitaryBase;
+		Location@ baseLoc = GetLocationByPid(location, 0);
+
+		array<uint> controllingdata = { 0, location, baseLoc.Id, FACTION_MARIPOSA_MUTANTS };
+		CreateTimeEvent(AFTER(REAL_MINUTE(Random(5, 30))), "e_TakeControlByNPC", controllingdata, false);
+	}
+	if(GetGvar(GVAR_hawthorne_score) == 0)
+	{
+		SetBestScore(SCORE_SIERRA_CUR, null, "None");
+		uint16 location = LOCATION_Hawthorne;
+		Location@ baseLoc = GetLocationByPid(location, 0);
+
+		array<uint> controllingdata = { 0, location, baseLoc.Id, FACTION_ARMY_OF_HAWTHORNE };
+		CreateTimeEvent(AFTER(REAL_MINUTE(Random(5, 30))), "e_TakeControlByNPC", controllingdata, false);
+	}
+
+	Log("Base Control is initialized.");
+	
+}
+
+void CollectRewardSpawners(Map& map) //EXPORT
+{
+	// Log("Setting up reward containers.");
+	RewardSpawners.resize(5);
+	Location@ location = map.GetLocation();
+	uint8 checkValidation = 0;
+	array<Map@> maps;
+	array<Item@> spawners;
+	array<uint> wrongspawners;
+	
+	location.GetMaps(maps);
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, spawners);		
+	}
+	
+	for(uint16 i = 0; i < spawners.length(); i++)
+	{
+		//get name of script
+		
+		if(spawners[i].GetScriptId() > 0)
+		if(GetScriptName(spawners[i].GetScriptId()) == "base_control@RewardSpawner")
+		{
+			switch(location.GetProtoId())
+			{
+				case LOCATION_Waterworks :
+					RewardSpawners[0] = spawners[i].Id;
+					break;
+				case LOCATION_Area51 :
+					RewardSpawners[1] = spawners[i].Id;
+					break;
+				case LOCATION_SaltLake :
+					RewardSpawners[2] = spawners[i].Id;
+					break;
+				case LOCATION_MariposaMilitaryBase :
+					RewardSpawners[3] = spawners[i].Id;
+					break;
+				case LOCATION_Hawthorne :
+					RewardSpawners[4] = spawners[i].Id;
+					break;
+				default:
+					Log("This is not base control location.");
+					return;
+			}
+			checkValidation++;
+			wrongspawners.resize(checkValidation);
+			wrongspawners[checkValidation-1] = spawners[i].Id;
+		}
+	}
+	
+	if(checkValidation == 0)
+		Log("Couldn't find the Reward locker");
+		
+	if(checkValidation > 1)
+	{
+		Log("Too many reward spawners in location Id " + location.Id + ".");
+		string spawnersId = "";
+		
+		for(uint8 i = 0; i < wrongspawners.length(); i++)
+		{
+			spawnersId = spawnersId + ( i == 0 ? "<" : " <") + wrongspawners[i] + ">";
+		}
+		Log("Wrong spawners: " + spawnersId + ".");
+	}
+}
+
+void CallMobsToTakeBase(uint playerid, uint location, uint baseLocId, uint NPCFaction)
+{
+	//debugpart - comment it
+	//Log("Calling mobs to take base...");
+	
+	/*string dbgmsg = "Controllingdata array: ";
+	for(uint8 i = 0; i < controllingdata.length(); i++)
+		dbgmsg = dbgmsg + controllingdata[i] + " ";*/
+	
+	// end of debug part
+	//uint16 location = controllingdata[1];
+	array<uint> controllingdata = { 0, location, baseLocId, NPCFaction };
+	
+	/*string dbgmsg = "Controllingdata array: ";
+	for(uint8 i = 0; i < controllingdata.length(); i++)
+		dbgmsg = dbgmsg + controllingdata[i] + " ";
+		
+	Log(dbgmsg);*/
+	
+	switch(location)
+	{
+		case LOCATION_Waterworks :
+			if(CanTakeWaterworks)
+			{
+				if(RetakeWW != 0)
+				{
+					EraseTimeEvent(RetakeWW);
+					RetakeWW = 0;
+				}
+				CreateTimeEvent(AFTER(0), "e_TakeControlByNPC", controllingdata, false);
+			}
+			break;
+		case LOCATION_Area51 :
+			if(CanTakeArea51)
+			{
+				if(RetakeA51 != 0)
+				{
+					EraseTimeEvent(RetakeA51);
+					RetakeA51 = 0;
+				}
+				CreateTimeEvent(AFTER(0), "e_TakeControlByNPC", controllingdata, false);
+			}
+			break;
+		case LOCATION_SaltLake :
+			if(CanTakeNukaCola)
+			{
+				if(RetakeNC != 0)
+				{
+					EraseTimeEvent(RetakeNC);
+					RetakeNC = 0;
+				}
+				CreateTimeEvent(AFTER(0), "e_TakeControlByNPC", controllingdata, false);
+			}
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			if(CanTakeMariposa)
+			{
+				if(RetakeMB != 0)
+				{
+					EraseTimeEvent(RetakeMB);
+					RetakeMB = 0;
+				}
+				CreateTimeEvent(AFTER(0), "e_TakeControlByNPC", controllingdata, false);
+			}
+			break;
+		case LOCATION_Hawthorne :
+			if(CanTakeHawthorne)
+			{
+				if(RetakeHMB != 0)
+				{
+					EraseTimeEvent(RetakeHMB);
+					RetakeHMB = 0;
+				}
+				CreateTimeEvent(AFTER(0), "e_TakeControlByNPC", controllingdata, false);
+			}
+			break;
+	}
+}
+
+uint e_TakeControlByNPC(array<uint>@ controllingdata)
+{
+	Location@ baseLoc = GetLocation(controllingdata[2]);
+	if(!valid(baseLoc)) return 0;
+	
+	uint16 location = controllingdata[1];
+	uint TakingTime = CONTROLLING_TIME_BY_NPC * 60;
+	int16 faction = controllingdata[3];
+	string locationName, factionname;
+	GetFactionNameStr(faction, factionname);
+	
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	array<Critter@> critters;
+	uint npcscounter = 0;
+	for(uint8 i=0; i<maps.length(); i++)
+	{
+		if(baseLoc.GetProtoId() == LOCATION_SaltLake)
+		{
+			if(maps[i].GetProtoId() == MAP_SaltLake)
+			{
+				array<Critter@> npcsinpolygon;
+				maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_NPC, npcsinpolygon);
+								
+				for(uint8 j=0; j<npcsinpolygon.length(); j++)
+				{
+					IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
+					if(IsNukaColaWorker(npcsinpolygon[j]))
+					{
+						npcscounter++;
+					}
+				}
+			}
+			else if(maps[i].GetProtoId() == MAP_SaltLake_NukaCola)
+			{
+				npcscounter = npcscounter + maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO);
+			}
+			else
+			{
+				continue;
+			}
+		}
+		else
+		{
+			npcscounter = npcscounter + maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO);
+		}
+	}
+	if(npcscounter == 0)
+		return REAL_MINUTE(Random(5, 30));;
+		
+	switch(location)
+	{
+		case LOCATION_Waterworks :
+			if(!CanTakeWaterworks)
+			{
+				return 0;
+			}
+			if(RetakeHMB != 0) RetakeHMB = 0;
+			if(GetGvar(GVAR_waterworks_score) == faction)
+			{
+				return 0;			
+			}
+			locationName = "Waterworks Station";
+			CanTakeWaterworks = false;
+			break;
+		case LOCATION_Area51 :
+			if(!CanTakeArea51)
+			{
+				return 0;
+			}
+			if(RetakeA51 != 0) RetakeA51 = 0;
+			if(GetGvar(GVAR_area51_score) == faction)
+			{
+				return 0;		
+			}
+			locationName = "Area 51 Air Force Facility";
+			CanTakeArea51 = false;
+			break;
+		case LOCATION_SaltLake :
+			if(!CanTakeNukaCola)
+			{
+				return 0;
+			}
+			if(RetakeNC != 0) RetakeNC = 0;
+			if(GetGvar(GVAR_nukacola_score) == faction)
+			{
+				return 0;			
+			}
+			locationName = "Nuka Cola Bottling Plant";
+			CanTakeNukaCola = false;
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			if(!CanTakeMariposa)
+			{
+				return 0;
+			}
+			if(RetakeMB != 0) RetakeMB = 0;
+			if(GetGvar(GVAR_mariposa_score) == faction)
+			{
+				return 0;			
+			}
+			locationName = "Mariposa Military Base";
+			CanTakeMariposa = false;
+			break;
+		case LOCATION_Hawthorne :
+			if(!CanTakeHawthorne)
+			{
+				return 0;
+			}
+			if(RetakeHMB != 0) RetakeHMB = 0;
+			if(GetGvar(GVAR_hawthorne_score) == faction)
+			{
+				return 0;			
+			}
+			locationName = "Hawthorne Base";
+			CanTakeHawthorne = false;
+			break;
+		default:
+			//player.Say(SAY_NETMSG, "This is not base control location.");
+			return 0;
+	}
+	
+	//CountPlayers(baseLoc, faction);
+	// RunDialog(player, DIALOG_no_dialog_yet, terminal.HexX, terminal.HexY, false);
+	
+	// Collecting all data
+	ServerEventCNTSet(factionname + ((location == LOCATION_Area51 || location == LOCATION_Hawthorne) ? " is" : " are") + " trying to get control over " + locationName + ": %COUNTDOWN% left.", location, EVENT_TYPE_BASECONTROL, REAL_SECOND(TakingTime));
+		//ServerEventCNTSet(player.Name + " from " + factionname + " has started controlling " + locationName + ": %COUNTDOWN% left.", location, EVENT_TYPE_BASECONTROL, REAL_SECOND(TakingTime));
+		// ServerEventCNTSet(player.Name + " is started controlling " + locationName + ": %COUNTDOWN% left.", location, EVENT_TYPE_BASECONTROL, REAL_SECOND(TakingTime));
+	switch(location)
+	{
+		case LOCATION_Waterworks :
+			TakingWW = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+			break;
+		case LOCATION_Area51 :
+			TakingA51 = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+			break;
+		case LOCATION_SaltLake :
+			TakingNC = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			TakingMB = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+			break;
+		case LOCATION_Hawthorne :
+			TakingHMB = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+			break;
+	}
+	
+	// Controls that player or his teammates are in taken base.
+	SetIsTakingByMobs(baseLoc, true);
+	CreateTimeEvent(AFTER(REAL_SECOND(1)), "e_CheckPlayers", controllingdata, false);
+	
+	return 0;
+}
+
+// Set it up by dialog, via computer or other tech device (depends by map)
+
+bool s_Terminal(Critter& player, Scenery& terminal, int skill, Item@ item)
+{
+    if(!player.IsPlayer() || (skill != -1 && skill != SK_SCIENCE) || valid(item))
+        return false;
+		
+	/* if(player.Stat[SK_SCIENCE] < 100)
+	{
+		player.Say(SAY_NETMSG, "You don't have any idea how to use this computer machine.");
+		return true;
+	}
+	*/
+	
+		
+	int16 faction = player.Stat[ST_TEAM_ID]; // Not factioned yet. //Yes it is!
+	
+	if(faction < 200 && player.GetAccess() <= ACCESS_TESTER)
+	{
+		player.Say(SAY_NETMSG, "You have to belong to some player driven faction.");
+		return true;
+	}
+	else if(faction >= 2 && player.GetAccess() >= ACCESS_MODER)
+	{
+		player.Say(SAY_NETMSG, "Running Base Control event as debug....");
+	}
+	
+    
+	Map@ baseMap = player.GetMap();
+	Location@ baseLoc = baseMap.GetLocation();
+	uint16 location = baseLoc.GetProtoId();
+	uint TakingTime = CONTROLLING_TIME * 60 - player.Skill[SK_SCIENCE];
+	//uint TakingTime = CONTROLLING_TIME * 60;
+	string locationName, factionname;
+	uint8 byPlayer = 1;
+	
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	uint16 numLifeMobs = 0;
+	
+	for(uint8 i = 0; i < maps.length(); i++)
+		numLifeMobs = numLifeMobs + maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_LIFE_AND_KO);
+	
+	//if(numLifeMobs > 0) MobsAreKilled(baseLoc, player); //TODO: Done but without poligons. Finish it for killallmobs requirements
+	
+	GetFactionNameStr(faction, factionname);
+	
+	switch(location)
+	{
+		case LOCATION_Waterworks :
+			if(!CanTakeWaterworks)
+			{
+				player.Say(SAY_NETMSG, "You can't start it again.");
+				return true;
+			}
+			if(GetGvar(GVAR_waterworks_score) == faction)
+			{
+				player.Say(SAY_NETMSG, "Your faction already has control over this base.");
+				return true;			
+			}
+			locationName = "Waterworks Station";
+			CanTakeWaterworks = false;
+			break;
+		case LOCATION_Area51 :
+			if(!CanTakeArea51)
+			{
+				player.Say(SAY_NETMSG, "You can't start it again.");
+				return true;
+			}
+			if(GetGvar(GVAR_area51_score) == faction)
+			{
+				player.Say(SAY_NETMSG, "Your faction already has control over this base.");
+				return true;			
+			}
+			locationName = "Area 51 Air Force Facility";
+			CanTakeArea51 = false;
+			break;
+		case LOCATION_SaltLake :
+			if(!CanTakeNukaCola)
+			{
+				player.Say(SAY_NETMSG, "You can't start it again.");
+				return true;
+			}
+			if(GetGvar(GVAR_nukacola_score) == faction)
+			{
+				player.Say(SAY_NETMSG, "Your faction already has control over this base.");
+				return true;			
+			}
+			locationName = "Nuka Cola Bottling Plant";
+			CanTakeNukaCola = false;
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			if(!CanTakeMariposa)
+			{
+				player.Say(SAY_NETMSG, "You can't start it again.");
+				return true;
+			}
+			if(GetGvar(GVAR_mariposa_score) == faction)
+			{
+				player.Say(SAY_NETMSG, "Your faction already has control over this base.");
+				return true;			
+			}
+			locationName = "Mariposa Military Base";
+			CanTakeMariposa = false;
+			break;
+		case LOCATION_Hawthorne :
+			if(!CanTakeHawthorne)
+			{
+				player.Say(SAY_NETMSG, "You can't start it again.");
+				return true;
+			}
+			if(GetGvar(GVAR_hawthorne_score) == faction)
+			{
+				player.Say(SAY_NETMSG, "Your faction already has control over this base.");
+				return true;			
+			}
+			locationName = "Hawthorne Base";
+			CanTakeHawthorne = false;
+			break;
+		default:
+			player.Say(SAY_NETMSG, "This is not base control location.");
+			return true;
+	}
+	
+	// CountPlayers(baseLoc, faction); //TODO: Done but without poligons. Finish it for players qty requirements
+	// RunDialog(player, DIALOG_no_dialog_yet, terminal.HexX, terminal.HexY, false);
+	
+	// Collecting all data
+	array<uint> controllingdata = { player.Id, location, baseLoc.Id, byPlayer };
+	if(player.GetAccess() == ACCESS_ADMIN)
+	{
+		ServerEventCNTSet(factionname + " are trying to get control over " + locationName + ": %COUNTDOWN% left.", location, EVENT_TYPE_BASECONTROL, REAL_SECOND(60));
+		switch(location)
+		{
+			case LOCATION_Waterworks :
+				TakingWW = CreateTimeEvent(AFTER(REAL_SECOND(60)), "e_FinishTimer", controllingdata, false);
+				PlayersInWW.resize(0);
+				break;
+			case LOCATION_Area51 :
+				TakingA51 = CreateTimeEvent(AFTER(REAL_SECOND(60)), "e_FinishTimer", controllingdata, false);
+				PlayersInA51.resize(0);
+				break;
+			case LOCATION_SaltLake :
+				TakingNC = CreateTimeEvent(AFTER(REAL_SECOND(60)), "e_FinishTimer", controllingdata, false);
+				PlayersInNC.resize(0);
+				break;
+			case LOCATION_MariposaMilitaryBase :
+				TakingMB = CreateTimeEvent(AFTER(REAL_SECOND(60)), "e_FinishTimer", controllingdata, false);
+				PlayersInMB.resize(0);
+				break;
+			case LOCATION_Hawthorne :
+				TakingHMB = CreateTimeEvent(AFTER(REAL_SECOND(60)), "e_FinishTimer", controllingdata, false);
+				PlayersInHMB.resize(0);
+				break;
+		}
+	}
+	else
+	{
+		ServerEventCNTSet(factionname + " are trying to get control over " + locationName + ": %COUNTDOWN% left.", location, EVENT_TYPE_BASECONTROL, REAL_SECOND(TakingTime));
+		//ServerEventCNTSet(player.Name + " from " + factionname + " has started controlling " + locationName + ": %COUNTDOWN% left.", location, EVENT_TYPE_BASECONTROL, REAL_SECOND(TakingTime));
+		// ServerEventCNTSet(player.Name + " is started controlling " + locationName + ": %COUNTDOWN% left.", location, EVENT_TYPE_BASECONTROL, REAL_SECOND(TakingTime));
+		switch(location)
+		{
+			case LOCATION_Waterworks :
+				TakingWW = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+				PlayersInWW.resize(0);
+				break;
+			case LOCATION_Area51 :
+				TakingA51 = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+				PlayersInA51.resize(0);
+				break;
+			case LOCATION_SaltLake :
+				TakingNC = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+				PlayersInNC.resize(0);
+				break;
+			case LOCATION_MariposaMilitaryBase :
+				TakingMB = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+				PlayersInMB.resize(0);
+				break;
+			case LOCATION_Hawthorne :
+				TakingHMB = CreateTimeEvent(AFTER(REAL_SECOND(TakingTime)), "e_FinishTimer", controllingdata, false);
+				PlayersInHMB.resize(0);
+				break;
+		}
+		
+	}
+	
+	// Controls that player or his teammates are in taken base.
+	SetIsTakingByMobs(baseLoc, false);
+	CreateTimeEvent(AFTER(REAL_SECOND(1)), "e_CheckPlayers", controllingdata, false);
+	
+    return true;
+}
+
+bool MobsAreKilled(Location& baseLoc, Critter& player)
+{
+	switch(baseLoc.GetProtoId())
+	{
+		case LOCATION_Waterworks :
+			player.Say(SAY_NETMSG, "Slag bandits are still here.");
+			return true;
+		case LOCATION_Area51 :
+			player.Say(SAY_NETMSG, "Aliens are still here.");
+			return true;
+		case LOCATION_SaltLake :
+			player.Say(SAY_NETMSG, "Bottlers are still here.");
+			return true;
+		case LOCATION_MariposaMilitaryBase :
+			player.Say(SAY_NETMSG, "Mutants are still here.");
+			return true;
+		case LOCATION_Hawthorne :
+			player.Say(SAY_NETMSG, "Hawthorne soldiers are still here.");
+			return true;
+	}
+	return true;
+}
+
+// Initialize time event, chacking players inside.
+uint e_CheckPlayers(array<uint>@ values)
+{
+	uint location = values[1];
+	bool byPlayer = (values[3] == 1 ? true : false);
+	
+	if(debuger)
+	{
+		Log("Array length: " + values.length());
+		Log("Values: {" + values[0] + ", " + values[1] + ", " + values[2] + ", " + values[3] + "}");
+	}
+	
+	if(byPlayer)
+	{
+		Critter@ player = GetCritter(values[0]);
+		if(!valid(player))
+		{
+			ServerEventCNTStop(location, EVENT_TYPE_BASECONTROL);
+			switch(location)
+			{
+				case LOCATION_Waterworks :
+					CanTakeWaterworks = true;
+					EraseTimeEvent(TakingWW);
+					break;
+				case LOCATION_Area51 :
+					CanTakeArea51 = true;
+					EraseTimeEvent(TakingA51);
+					break;
+				case LOCATION_SaltLake :
+					CanTakeNukaCola = true;
+					EraseTimeEvent(TakingNC);
+					break;
+				case LOCATION_MariposaMilitaryBase :
+					CanTakeMariposa = true;
+					EraseTimeEvent(TakingMB);
+					break;
+				case LOCATION_Hawthorne :
+					CanTakeHawthorne = true;
+					EraseTimeEvent(TakingHMB);
+					break;
+			}
+			return 0;
+		}
+	
+	
+		//Checking location is ready to take. If yes stop then checking players inside.
+		switch(location)
+		{
+			case LOCATION_Waterworks :
+				if(CanTakeWaterworks)
+				{
+					//EraseTimeEvent(TakingWW);
+					return 0;
+				}
+				break;
+			case LOCATION_Area51 :
+				if(CanTakeArea51)
+				{
+					//EraseTimeEvent(TakingA51);
+					return 0;
+				}
+				break;
+			case LOCATION_SaltLake :
+				if(CanTakeNukaCola)
+				{
+					//EraseTimeEvent(TakingNC);
+					return 0;
+				}
+				break;
+			case LOCATION_MariposaMilitaryBase :
+				if(CanTakeMariposa)
+				{
+					//EraseTimeEvent(TakingMB);
+					return 0;
+				}
+				break;
+			case LOCATION_Hawthorne :
+				if(CanTakeHawthorne)
+				{
+					//EraseTimeEvent(TakingHMB);
+					return 0;
+				}
+				break;
+		}
+	
+		// Player left base location
+		Map@ baseMap = player.GetMap();
+		/*if(!valid(baseMap))
+		{
+			player.Say(SAY_NETMSG, "You've left base during taking control.");
+			ServerEventCNTStop(location, EVENT_TYPE_BASECONTROL);
+			switch(location)
+			{
+				case LOCATION_Waterworks :
+					CanTakeWaterworks = true;
+					EraseTimeEvent(TakingWW);
+					break;
+				case LOCATION_Area51 :
+					CanTakeArea51 = true;
+					EraseTimeEvent(TakingA51);
+					break;
+				case LOCATION_SaltLake :
+					CanTakeNukaCola = true;
+					EraseTimeEvent(TakingNC);
+					break;
+				case LOCATION_MariposaMilitaryBase :
+					CanTakeMariposa = true;
+					EraseTimeEvent(TakingMB);
+					break;
+				case LOCATION_Hawthorne :
+					CanTakeHawthorne = true;
+					EraseTimeEvent(TakingHMB);
+					break;
+			}
+			return 0;
+		}*/
+		
+		//if(!valid(baseMap)) return 0;
+		Location@ baseLoc = GetLocationByPid(location, 0);
+	
+		array<Map@> maps;
+		baseLoc.GetMaps(maps);
+		uint8 playersQty = 0;
+		
+		if(debuger) Log("Found " + maps.length() + " maps in location.");
+		for(uint8 i=0; i<maps.length(); i++)
+		{
+			array<Critter@> players;
+			if(maps[i].GetProtoId() == MAP_Hawthorne) //Polygon is there
+			{
+				array<Critter@> playersinpolygon;
+				maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+				uint8 polygonsPlayerQty = 0;
+				
+				for(uint8 j=0; j<playersinpolygon.length(); j++)
+				{
+					IPolygon@ HawthorneMilitaryBase = ::LoadShapeFromEntires(maps[i], HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
+					if(HawthorneMilitaryBase.IsWithin(playersinpolygon[j]))
+					{
+						polygonsPlayerQty++;
+						players.resize(polygonsPlayerQty);
+						@players[polygonsPlayerQty-1] = @playersinpolygon[j];
+					}
+				}
+			}
+			else if(baseLoc.GetProtoId() == LOCATION_SaltLake)
+			{
+				if(maps[i].GetProtoId() == MAP_SaltLake)
+				{
+					array<Critter@> playersinpolygon;
+					maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+					uint8 polygonsPlayerQty = 0;
+				
+					for(uint8 j=0; j<playersinpolygon.length(); j++)
+					{
+						IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
+						if(NukaColaBottlePlant.IsWithin(playersinpolygon[j]))
+						{
+							polygonsPlayerQty++;
+							players.resize(polygonsPlayerQty);
+							@players[polygonsPlayerQty-1] = @playersinpolygon[j];
+						}
+					}
+				}
+				else if(maps[i].GetProtoId() == MAP_SaltLake_NukaCola)
+				{
+					maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, players);
+				}
+				else
+				{
+					continue;
+				}
+			}
+			else
+			{
+				maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, players);
+			}
+			
+			for(uint8 j=0; j<players.length(); j++)
+			{
+				if(!valid(players[j])) continue;
+				
+				if(players[j].Stat[ST_TEAM_ID] == player.Stat[ST_TEAM_ID] && players[j].Mode[MODE_HIDE] == 0)
+				{
+					playersQty++;
+					if(baseLoc.GetProtoId() == LOCATION_Waterworks)
+					{
+						bool addthisplayer = true;
+						for(uint8 k=0; k<PlayersInWW.length(); k++)
+						{
+							if(players[j].Id == PlayersInWW[k])
+							addthisplayer = false;
+						}
+					
+						if(addthisplayer)
+						{
+							uint8 expand = PlayersInWW.length() + 1;
+							PlayersInWW.resize(expand);
+							PlayersInWW[expand-1] = players[j].Id;
+						}
+					}
+				
+					if(baseLoc.GetProtoId() == LOCATION_Area51)
+					{
+						bool addthisplayer = true;
+						for(uint8 k=0; k<PlayersInA51.length(); k++)
+						{
+							if(players[j].Id == PlayersInA51[k])
+								addthisplayer = false;
+						}
+					
+						if(addthisplayer)
+						{
+							uint8 expand = PlayersInA51.length() + 1;
+							PlayersInA51.resize(expand);
+							PlayersInA51[expand-1] = players[j].Id;
+						}
+					}
+				
+					if(baseLoc.GetProtoId() == LOCATION_SaltLake)
+					{
+						bool addthisplayer = true;
+						for(uint8 k=0; k<PlayersInNC.length(); k++)
+						{
+							if(players[j].Id == PlayersInNC[k])
+								addthisplayer = false;
+						}
+					
+						if(addthisplayer)
+						{
+							uint8 expand = PlayersInNC.length() + 1;
+							PlayersInNC.resize(expand);
+							PlayersInNC[expand-1] = players[j].Id;
+						}
+					}
+				
+					if(baseLoc.GetProtoId() == LOCATION_MariposaMilitaryBase)
+					{
+						bool addthisplayer = true;
+						for(uint8 k=0; k<PlayersInMB.length(); k++)
+						{
+							if(players[j].Id == PlayersInMB[k])
+								addthisplayer = false;
+						}
+					
+						if(addthisplayer)
+						{
+							uint8 expand = PlayersInMB.length() + 1;
+							PlayersInMB.resize(expand);
+							PlayersInMB[expand-1] = players[j].Id;
+						}
+					}
+				
+					if(baseLoc.GetProtoId() == LOCATION_Hawthorne)
+					{
+						bool addthisplayer = true;
+						for(uint8 k=0; k<PlayersInHMB.length(); k++)
+						{
+							if(players[j].Id == PlayersInHMB[k])
+								addthisplayer = false;
+						}
+						
+						if(addthisplayer)
+						{
+							uint8 expand = PlayersInHMB.length() + 1;
+							PlayersInHMB.resize(expand);
+							PlayersInHMB[expand-1] = players[j].Id;
+						}
+					}
+				}
+			}
+		}
+	
+		if(playersQty == 0)
+		{
+			if(baseLoc.GetProtoId() == LOCATION_Waterworks)
+			{	
+				for(uint8 i=0; i<PlayersInWW.length(); i++)
+					{
+						Critter@ playerfromarray = GetCritter(PlayersInWW[i]);
+						if(!playerfromarray.IsDead())
+							playerfromarray.Say(SAY_NETMSG, "You've left base during taking control.");
+						else
+							playerfromarray.Say(SAY_NETMSG, "You've lost base.");
+					}
+				PlayersInWW.resize(0);
+			}
+			if(baseLoc.GetProtoId() == LOCATION_Area51)
+			{	
+				for(uint8 i=0; i<PlayersInA51.length(); i++)
+					{
+						Critter@ playerfromarray = GetCritter(PlayersInA51[i]);
+						if(!playerfromarray.IsDead())
+							playerfromarray.Say(SAY_NETMSG, "You've left base during taking control.");
+						else
+							playerfromarray.Say(SAY_NETMSG, "You've lost base.");
+					}
+				PlayersInA51.resize(0);
+			}
+			if(baseLoc.GetProtoId() == LOCATION_SaltLake)
+			{
+				for(uint8 i=0; i<PlayersInNC.length(); i++)
+					{
+						Critter@ playerfromarray = GetCritter(PlayersInNC[i]);
+						if(!playerfromarray.IsDead())
+							playerfromarray.Say(SAY_NETMSG, "You've left base during taking control.");
+						else
+							playerfromarray.Say(SAY_NETMSG, "You've lost base.");
+						
+					}
+				PlayersInNC.resize(0);
+			}
+			if(baseLoc.GetProtoId() == LOCATION_MariposaMilitaryBase)
+			{
+				for(uint8 i=0; i<PlayersInMB.length(); i++)
+					{
+						Critter@ playerfromarray = GetCritter(PlayersInMB[i]);
+						if(!playerfromarray.IsDead())
+							playerfromarray.Say(SAY_NETMSG, "You've left base during taking control.");
+						else
+							playerfromarray.Say(SAY_NETMSG, "You've lost base.");
+					}
+				PlayersInMB.resize(0);	
+			}
+			if(baseLoc.GetProtoId() == LOCATION_Hawthorne)
+			{
+				for(uint8 i=0; i<PlayersInHMB.length(); i++)
+					{
+						Critter@ playerfromarray = GetCritter(PlayersInHMB[i]);
+						if(!playerfromarray.IsDead())
+							playerfromarray.Say(SAY_NETMSG, "You've left base during taking control.");
+						else
+							playerfromarray.Say(SAY_NETMSG, "You've lost base.");
+					}
+				PlayersInHMB.resize(0);
+			}
+				
+			ServerEventCNTStop(location, EVENT_TYPE_BASECONTROL);
+			switch(location)
+			{
+				case LOCATION_Waterworks :
+					CanTakeWaterworks = true;
+					EraseTimeEvent(TakingWW);
+					break;
+				case LOCATION_Area51 :
+					CanTakeArea51 = true;
+					EraseTimeEvent(TakingA51);
+					break;
+				case LOCATION_SaltLake :
+					CanTakeNukaCola = true;
+					EraseTimeEvent(TakingNC);
+					break;
+				case LOCATION_MariposaMilitaryBase :
+					CanTakeMariposa = true;
+					EraseTimeEvent(TakingMB);
+					break;
+				case LOCATION_Hawthorne :
+					CanTakeHawthorne = true;
+					EraseTimeEvent(TakingHMB);
+					break;
+			}
+		
+			return 0;
+		}
+	
+		/*if((baseLoc.GetProtoId() != location) || !valid(baseLoc) || player.IsDead())
+		{
+			if(!player.IsDead())
+				player.Say(SAY_NETMSG, "You've left base during taking control.");
+			else
+				player.Say(SAY_NETMSG, "You've lost base.");
+			ServerEventCNTStop(location, EVENT_TYPE_BASECONTROL);
+			switch(location)
+			{
+				case LOCATION_Waterworks :
+					CanTakeWaterworks = true;
+					break;
+				case LOCATION_Area51 :
+					CanTakeArea51 = true;
+					break;
+				case LOCATION_SaltLake :
+					CanTakeNukaCola = true;
+					break;
+				case LOCATION_MariposaMilitaryBase :
+					CanTakeMariposa = true;
+					break;
+				case LOCATION_Hawthorne :
+					CanTakeHawthorne = true;
+					break;
+			}
+			return 0;
+		}*/
+	}
+	else
+	{
+		//Checking location is ready to take. If yes stop then checking npcs inside.
+		switch(location)
+		{
+			case LOCATION_Waterworks :
+				if(CanTakeWaterworks)
+				{
+					//EraseTimeEvent(TakingWW);
+					return 0;
+				}
+				break;
+			case LOCATION_Area51 :
+				if(CanTakeArea51)
+				{
+					//EraseTimeEvent(TakingA51);
+					return 0;
+				}
+				break;
+			case LOCATION_SaltLake :
+				if(CanTakeNukaCola)
+				{
+					//EraseTimeEvent(TakingNC);
+					return 0;
+				}
+				break;
+			case LOCATION_MariposaMilitaryBase :
+				if(CanTakeMariposa)
+				{
+					//EraseTimeEvent(TakingMB);
+					return 0;
+				}
+				break;
+			case LOCATION_Hawthorne :
+				if(CanTakeHawthorne)
+				{
+					//EraseTimeEvent(TakingHMB);
+					return 0;
+				}
+				break;
+		}
+	
+		Location@ baseLoc = GetLocation(values[2]);
+		if(!valid(baseLoc))
+			return 0;
+	
+		array<Map@> maps;
+		baseLoc.GetMaps(maps);
+		uint npcscounter = 0;
+		for(uint8 i=0; i<maps.length(); i++)
+		{
+			if(baseLoc.GetProtoId() == LOCATION_SaltLake)
+			{
+				if(maps[i].GetProtoId() == MAP_SaltLake)
+				{
+					array<Critter@> npcsinpolygon;
+					maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_NPC, npcsinpolygon);
+									
+					for(uint8 j=0; j<npcsinpolygon.length(); j++)
+					{
+						IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
+						if(IsNukaColaWorker(npcsinpolygon[j]))
+						{
+							npcscounter++;
+						}
+					}
+				}
+				else if(maps[i].GetProtoId() == MAP_SaltLake_NukaCola)
+				{
+					npcscounter = npcscounter + maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO);
+				}
+				else
+				{
+					continue;
+				}
+			}
+			else
+			{
+				npcscounter = npcscounter + maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO);
+			}
+		}
+		if(npcscounter == 0)
+		{
+			SetIsTakingByMobs(baseLoc, false);
+			
+			ServerEventCNTStop(location, EVENT_TYPE_BASECONTROL);
+			switch(baseLoc.GetProtoId())
+			{
+				case LOCATION_Waterworks :
+					CanTakeWaterworks = true;
+					EraseTimeEvent(TakingWW);
+					break;
+				case LOCATION_Area51 :
+					CanTakeArea51 = true;
+					EraseTimeEvent(TakingA51);
+					break;
+				case LOCATION_SaltLake :
+					CanTakeNukaCola = true;
+					EraseTimeEvent(TakingNC);
+					break;
+				case LOCATION_MariposaMilitaryBase :
+					CanTakeMariposa = true;
+					EraseTimeEvent(TakingMB);
+					break;
+				case LOCATION_Hawthorne :
+					CanTakeHawthorne = true;
+					EraseTimeEvent(TakingHMB);
+					break;
+			}
+			
+			CreateTimeEvent(AFTER(REAL_MINUTE(Random(240, 2880))), "e_TakeControlByNPC", values, true);
+			return 0;
+		}
+	}
+	
+	return REAL_SECOND(1);
+}
+
+void CountPlayers(Location& baseLoc, uint16 faction)
+{
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	uint8 playercounter = 0;
+	for(uint8 i=0; i<maps.length(); i++)
+	{
+		array<Critter@> players;
+		maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_PLAYERS, players);
+		for(uint8 j=0; j<players.length(); j++)
+		{
+			if(players[j].Stat[ST_TEAM_ID] == faction)
+				switch(baseLoc.GetProtoId())
+				{
+					case LOCATION_Waterworks :
+						playercounter++;
+						PlayersInWW.resize(playercounter);
+						PlayersInWW[playercounter-1] = players[j].Id;
+						break;
+					case LOCATION_Area51 :
+						playercounter++;
+						PlayersInA51.resize(playercounter);
+						PlayersInA51[playercounter-1] = players[j].Id;
+						break;
+					case LOCATION_SaltLake :
+						playercounter++;
+						PlayersInNC.resize(playercounter);
+						PlayersInNC[playercounter-1] = players[j].Id;
+						break;
+					case LOCATION_MariposaMilitaryBase :
+						playercounter++;
+						PlayersInMB.resize(playercounter);
+						PlayersInMB[playercounter-1] = players[j].Id;
+						break;
+					case LOCATION_Hawthorne :
+						playercounter++;
+						PlayersInHMB.resize(playercounter);
+						PlayersInHMB[playercounter-1] = players[j].Id;
+						break;
+				}
+		}
+	}
+}
+// Spawn mobs during taking the control. Entire 220?
+
+// Timer end - take the reward from container and set scores.
+uint e_FinishTimer(array<uint>@ values)
+{
+	Critter@ player = GetCritter(values[0]);
+	
+	uint location = values[1], faction;
+	bool byPlayer = (values[3] == 1 ? true : false);
+	//uint location = values[1];
+	uint8 id;
+	string factionname;
+	
+	if(byPlayer) faction = player.Stat[ST_TEAM_ID];
+	else faction = values[3];
+	
+	GetFactionNameStr(faction, factionname);
+	
+	switch(location)
+	{
+		case LOCATION_Waterworks :
+			id = 1;
+			break;
+		case LOCATION_Area51 :
+			id = 2;
+			break;
+		case LOCATION_SaltLake :
+			id = 3;
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			id = 4;
+			break;
+		case LOCATION_Hawthorne :
+			id = 5;
+			break;
+	}
+	
+	if(byPlayer && !valid(player))
+		return 0;
+	
+	// Player left base location
+	/*Map@ baseMap = player.GetMap();
+	Location@ baseLoc = baseMap.GetLocation();
+	if(baseLoc.GetProtoId() != location)
+		return 0;*/
+		
+	Location@ baseLoc = GetLocation(values[2]);
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	uint8 countplayers = 0;
+	array<Critter@> critters;
+	if(byPlayer)
+	{
+		for(uint8 i=0; i<maps.length(); i++)
+		{
+			maps[i].GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO , critters);
+		}
+		if(critters.length() == 0)
+			return 0;
+	}
+	else
+	{
+		uint npcscounter = 0;
+		for(uint8 i=0; i<maps.length(); i++)
+		{
+			npcscounter = npcscounter + maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO);
+		}
+		if(npcscounter == 0)
+			return 0;
+	}
+	
+	// SetBaseControlScore(id); // Not working - factioned mode
+	
+	// Set scores for player
+	// Spawn reward in some container and remove it after one minute. Access to container must belong to player who started the timer or his teammates.
+	
+	switch(location)
+	{
+		case LOCATION_Waterworks :
+			if(!CanTakeWaterworks)
+			{
+				if(byPlayer) SetNewController(player, baseLoc, id, factionname);
+				else SetNPCController(values[3], baseLoc, id, factionname);
+			}
+			break;
+		case LOCATION_Area51 :
+			if(!CanTakeArea51)
+			{
+				if(byPlayer) SetNewController(player, baseLoc, id, factionname);
+				else SetNPCController(values[3], baseLoc, id, factionname);
+			}
+			break;
+		case LOCATION_SaltLake :
+			if(!CanTakeNukaCola)
+			{
+				if(byPlayer) SetNewController(player, baseLoc, id, factionname);
+				else SetNPCController(values[3], baseLoc, id, factionname);
+			}
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			if(!CanTakeMariposa)
+			{
+				if(byPlayer) SetNewController(player, baseLoc, id, factionname);
+				else SetNPCController(values[3], baseLoc, id, factionname);
+			}
+			break;
+		case LOCATION_Hawthorne :
+			if(!CanTakeHawthorne)
+			{
+				if(byPlayer) SetNewController(player, baseLoc, id, factionname);
+				else SetNPCController(values[3], baseLoc, id, factionname);
+			}
+			break;
+	}
+	
+	return 0;
+}
+
+void SetNewController(Critter& player, Location& baseLoc, uint8 id, string factionname)
+{
+	if(!valid(player))
+		return;
+		
+	if(!valid(baseLoc))
+		return;
+	
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	
+	for(uint8 i=0; i<maps.length(); i++)
+		{
+			array<Critter@> players;
+			maps[i].GetCritters(0, FIND_ALL | FIND_ONLY_PLAYERS, players);
+			for(uint8 j=0; j<players.length(); j++)
+			{
+				if(players[j].Stat[ST_TEAM_ID] == player.Stat[ST_TEAM_ID])
+				{
+					switch(baseLoc.GetProtoId())
+					{
+						case LOCATION_Waterworks :
+							if(!CanTakeWaterworks)
+							{
+								if(RetakeWW != 0) EraseTimeEvent(RetakeWW);
+								SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+								CanTakeWaterworks = true;
+								players[j].Say(SAY_NETMSG, "Your faction now has control over Waterworks Station.");
+								PlayersInWW.resize(0);
+								array<uint> controllingdata = { 0, baseLoc.GetProtoId(), baseLoc.Id, FACTION_SLAGS };
+								RetakeWW = CreateTimeEvent(AFTER(REAL_MINUTE(Random(2880, 8640))), "e_TakeControlByNPC", controllingdata, true);
+							}
+							break;
+						case LOCATION_Area51 :
+							if(!CanTakeArea51)
+							{
+								if(RetakeA51 != 0) EraseTimeEvent(RetakeA51);
+								SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+								CanTakeArea51 = true;
+								players[j].Say(SAY_NETMSG, "Your faction now has control over Area 51 Air Force Facility.");
+								PlayersInA51.resize(0);
+								array<uint> controllingdata = { 0, baseLoc.GetProtoId(), baseLoc.Id, FACTION_AREA51_SYSTEM };
+								RetakeA51 = CreateTimeEvent(AFTER(REAL_MINUTE(Random(2880, 8640))), "e_TakeControlByNPC", controllingdata, true);
+							}
+							break;
+						case LOCATION_SaltLake :
+							if(!CanTakeNukaCola)
+							{
+								if(RetakeNC != 0) EraseTimeEvent(RetakeNC);
+								SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+								CanTakeNukaCola = true;
+								players[j].Say(SAY_NETMSG, "Your faction now has control over Nuka Cola Bottle Plant.");
+								PlayersInNC.resize(0);
+								array<uint> controllingdata = { 0, baseLoc.GetProtoId(), baseLoc.Id, FACTION_SALTLAKE };
+								RetakeNC = CreateTimeEvent(AFTER(REAL_MINUTE(Random(2880, 8640))), "e_TakeControlByNPC", controllingdata, true);
+							}
+							break;
+						case LOCATION_MariposaMilitaryBase :
+							if(!CanTakeMariposa)
+							{
+								if(RetakeMB != 0) EraseTimeEvent(RetakeMB);
+								SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+								CanTakeMariposa = true;
+								players[j].Say(SAY_NETMSG, "Your faction now has control over Mariposa Military Base.");
+								PlayersInMB.resize(0);
+								array<uint> controllingdata = { 0, baseLoc.GetProtoId(), baseLoc.Id, FACTION_MARIPOSA_MUTANTS };
+								RetakeMB = CreateTimeEvent(AFTER(REAL_MINUTE(Random(2880, 8640))), "e_TakeControlByNPC", controllingdata, true);
+							}
+							break;
+						case LOCATION_Hawthorne :
+							if(!CanTakeHawthorne)
+							{
+								if(RetakeHMB != 0) EraseTimeEvent(RetakeHMB);
+								SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+								CanTakeHawthorne = true;
+								players[j].Say(SAY_NETMSG, "Your faction now has control over Hawthorne Base.");
+								PlayersInHMB.resize(0);
+								array<uint> controllingdata = { 0, baseLoc.GetProtoId(), baseLoc.Id, FACTION_ARMY_OF_HAWTHORNE };
+								RetakeHMB = CreateTimeEvent(AFTER(REAL_MINUTE(Random(2880, 8640))), "e_TakeControlByNPC", controllingdata, true);
+							}
+							break;
+					}
+				}
+			}
+		}
+	
+	SetGvar(61010 + id, player.Stat[ST_TEAM_ID]);
+	AntiAttackBuffor(baseLoc);
+	RemoveControllerFromStack(baseLoc);
+}
+
+void SetNPCController(uint16 MobTeam, Location& baseLoc, uint8 id, string factionname)
+{
+	if(!valid(baseLoc))
+		return;
+	
+	SetIsTakingByMobs(baseLoc, false);
+		
+	switch(baseLoc.GetProtoId())
+	{
+		case LOCATION_Waterworks :
+			if(!CanTakeWaterworks)
+			{
+				SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+				CanTakeWaterworks = true;
+				PlayersInWW.resize(0);
+			}
+			break;
+		case LOCATION_Area51 :
+			if(!CanTakeArea51)
+			{
+			SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+			CanTakeArea51 = true;
+			PlayersInA51.resize(0);
+			}
+			break;
+		case LOCATION_SaltLake :
+			if(!CanTakeNukaCola)
+			{
+				SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+				CanTakeNukaCola = true;
+				PlayersInNC.resize(0);
+			}
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			if(!CanTakeMariposa)
+			{
+				SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+				CanTakeMariposa = true;
+				PlayersInMB.resize(0);
+			}
+			break;
+		case LOCATION_Hawthorne :
+			if(!CanTakeHawthorne)
+			{
+				SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+				CanTakeHawthorne = true;
+				PlayersInHMB.resize(0);
+			}
+			break;
+	}
+	SetGvar(61010 + id, MobTeam);
+	AntiAttackBuffor(baseLoc);
+	RemoveControllerFromStack(baseLoc);
+}
+
+void RemoveControllerFromStack(Location& baseLoc)
+{
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		if(!valid(maps[i])) continue;
+		
+		uint8 numLifeMobs = maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_ALL);
+		for(uint8 j = 0; j < numLifeMobs; j++)
+		{
+			Critter@ mob = maps[i].GetNpc(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_ALL, j);
+			if(!valid(mob)) continue;
+			
+			array<uint> enemyStack;
+			mob.GetEnemyStack(enemyStack);
+			
+			for(uint8 k = 0; k < enemyStack.length(); k++)
+			{
+				Critter@ enemy = GetCritter(enemyStack[k]);
+				if(!valid(enemy)) continue;
+				
+				switch(baseLoc.GetProtoId())
+				{
+					case LOCATION_Waterworks :
+						if(GetGvar(GVAR_waterworks_score) == enemy.Stat[ST_TEAM_ID])
+						{
+							mob.ErasePlane(AI_PLANE_ATTACK, true);
+							mob.EraseEnemyFromStack(enemy.Id);
+						}
+						break;
+					case LOCATION_Area51 :
+						if(GetGvar(GVAR_area51_score) == enemy.Stat[ST_TEAM_ID])
+						{
+							mob.ErasePlane(AI_PLANE_ATTACK, true);
+							mob.EraseEnemyFromStack(enemy.Id);
+						}
+						break;
+					case LOCATION_SaltLake :
+						if(GetGvar(GVAR_nukacola_score) == enemy.Stat[ST_TEAM_ID])
+						{
+							mob.ErasePlane(AI_PLANE_ATTACK, true);
+							mob.EraseEnemyFromStack(enemy.Id);
+						}
+						break;
+					case LOCATION_MariposaMilitaryBase :
+						if(GetGvar(GVAR_mariposa_score) == enemy.Stat[ST_TEAM_ID])
+						{
+							mob.ErasePlane(AI_PLANE_ATTACK, true);
+							mob.EraseEnemyFromStack(enemy.Id);
+						}
+						break;
+					case LOCATION_Hawthorne :
+						if(GetGvar(GVAR_hawthorne_score) == enemy.Stat[ST_TEAM_ID])
+						{
+							mob.ErasePlane(AI_PLANE_ATTACK, true);
+							mob.EraseEnemyFromStack(enemy.Id);
+						}
+						break;
+				}
+			}
+		}
+	}
+}
+
+void AntiAttackBuffor(Location& baseLoc)
+{
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	for(uint8 i = 0; i < maps.length(); i++)
+	{
+		uint8 numLifeMobs = maps[i].GetNpcCount(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_ALL);
+		for(uint8 j = 0; j < numLifeMobs; j++)
+		{
+			Critter@ mob = maps[i].GetNpc(ROLE_MOB_DYNAMIC, FIND_ONLY_NPC | FIND_ALL, j);
+			mob.SetEvent(CRITTER_EVENT_ATTACKED, "_IgnoreControllerAttack");
+			CreateTimeEvent(AFTER(REAL_SECOND(ANTI_ATTACK_BUFFOR)), "e_SetAlertEvent", mob.Id, true);
+		}
+	}
+}
+
+uint e_SetAlertEvent(array<uint>@ values)
+{
+	Critter@ mob = GetCritter(values[0]);
+	if(!valid(mob)) return 0;
+	
+	mob.SetEvent(CRITTER_EVENT_ATTACKED, "_Alert");
+	return 0;
+}
+
+bool _Alert(Critter& mob, Critter& attacker)
+{
+	if(!valid(mob))
+		return true;
+		
+	if(!valid(attacker))
+		return true;
+		
+	if(attacker.Stat[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+		return true;
+	
+	uint radius = (mob.Param[ST_STRENGTH] + mob.Param[ST_ENDURANCE]) * 2;
+	
+	array<Critter@> mobstoalert;
+	mob.GetMap().GetCrittersHex(mob.HexX, mob.HexY, radius, FIND_LIFE_AND_KO | FIND_ONLY_NPC, mobstoalert);
+	
+	for(uint8 i = 0; i < mobstoalert.length(); i++)
+	{
+		if(!valid(mobstoalert[i])) continue;
+		if(mobstoalert[i].Param[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+		{
+			mobstoalert[i].AddEnemyInStack(attacker.Id);
+			AddAttackPlane(mobstoalert[i], 0, attacker);
+		}
+		
+	}
+	
+	return false;
+}
+
+/* void SpawnReward(Critter& player, Location& baseLoc) //nope - bullshit
+{
+	// Get map with proper locker - find via entire 182
+	array<Map@> maps;
+	baseLoc.GetMaps(maps);
+	
+	if(!valid(player))
+		return;
+	
+	for(uint i = 0, j = maps.length(); i < j; i++)
+	{
+		if(valid(maps[i]))
+		{
+			array<Item@> containers;
+			maps[i].GetItemsByType(ITEM_TYPE_CONTAINER, containers);
+			uint16 entireX = 0, entireY = 0;
+			maps[i].GetEntireCoords(ENTIRE_BASE_CONT_REWARD, 0, entireX, entireY);
+
+			for(uint k = 0, l = containers.length; k < l; k++)
+				{
+					uint16 containerX = 0, containerY = 0;
+					containers[k].GetMapPosition(containerX, containerY);
+					if(entireX == containerX && entireY == containerY)
+					{
+						containers[k].Val5 = player.Stat[ST_TEAM_ID];
+						// container[k].AddItem(somestuff cyka);
+						array<uint> controllingdata = { containers[k].Id };
+						CreateTimeEvent(AFTER(REAL_MINUTE(1)), "e_DeleteReward", controllingdata, false); // For reward spawner
+					}
+				}
+		}
+		
+	}
+	// Get faction id from all players from map
+	
+}*/
+
+void RewardSpawner(Item& item, bool firstTime)
+{
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseRewardSpawner");
+}
+
+bool _UseRewardSpawner(Item& spawner, Critter& player, int skill)
+{
+	// Opening / Closing
+    if((skill == -1) || (skill == SK_STEAL))
+    {
+		//if(spawner.Val5 != player.Stat[ST_TEAM_ID])
+		if((player.GetMap().GetLocation().GetProtoId() == LOCATION_Waterworks && GetGvar(GVAR_waterworks_score) != player.Stat[ST_TEAM_ID]) ||
+		(player.GetMap().GetLocation().GetProtoId() == LOCATION_Area51 && GetGvar(GVAR_area51_score) != player.Stat[ST_TEAM_ID]) ||
+		(player.GetMap().GetLocation().GetProtoId() == LOCATION_SaltLake && GetGvar(GVAR_nukacola_score) != player.Stat[ST_TEAM_ID]) ||
+		(player.GetMap().GetLocation().GetProtoId() == LOCATION_MariposaMilitaryBase && GetGvar(GVAR_mariposa_score) != player.Stat[ST_TEAM_ID]) ||
+		(player.GetMap().GetLocation().GetProtoId() == LOCATION_Hawthorne && GetGvar(GVAR_hawthorne_score) != player.Stat[ST_TEAM_ID]))
+        {
+			player.Say(SAY_NETMSG, "You don't have access to this locker.");
+            return true;
+        }
+		
+        // open it if closed
+        if(_LockerIsClose(spawner))
+        {		
+            return false;
+        }
+    }
+    return false;
+}
+
+//Export to main.fos
+//void SpawnBCReward(uint hour)
+void SpawnBCReward(uint16 locPid)
+{
+	uint8 randomVar = Random(0, 200);
+	Item@ buffedItem = null;
+	Location@ location = GetLocationByPid(locPid, 0);
+	
+	array<Map@> maps;
+	location.GetMaps(maps);
+	
+	array<Item@> rewardspawner;
+	
+	//for(uint8 i = 0; i < RewardSpawners.length(); i++ )
+	for(uint8 i = 0; i < maps.length(); i++ )
+	{
+		//Item@ spawner = GetItem(RewardSpawners[i]);
+		maps[i].GetItems(22990, rewardspawner);
+	}
+	
+	if(rewardspawner.length() == 0) Log("ERR: Didn't find BC reward spawner in location PID <" + locPid + ">.");
+	
+	Item@ spawner = null;
+	for(uint8 i = 0; i < rewardspawner.length(); i++ )
+	{
+		if(rewardspawner[i].GetScriptId() > 0)
+			if(GetScriptName(rewardspawner[i].GetScriptId()) == "base_control@RewardSpawner")
+				@spawner = @rewardspawner[i];
+	}
+	
+	if(!valid(spawner))
+	{
+		Log("ERR: Didn't find BC reward spawner in location PID <" + locPid + "> in array.");
+		return;
+	}
+	
+		//Map@ map = GetMap(spawner.MapId);
+		//Location@ location = map.GetLocation();
+		switch(locPid)
+		{
+			case LOCATION_Waterworks :
+				//an example
+				//if(hour == 1 || hour == 12)
+				{
+					//AddItems here
+					if(randomVar != 200) ClearContainer(spawner);
+					if(randomVar < 100) @buffedItem = spawner.AddItem(AddT3Item(), 1, 0);
+					else if(randomVar < 150) @buffedItem = spawner.AddItem(AddT4Item(), 1, 0);
+					if(valid(buffedItem)) AddBonusOrNot(buffedItem);
+					
+					if(randomVar >= 195 && randomVar < 200) spawner.AddItem(AddT4BP(), 1, 0);
+					else if(randomVar > 190) spawner.AddItem(AddImplant(), 1, 0);
+					else if(randomVar > 125) spawner.AddItem(AddRareAmmo(), Random(50, 100), 0);
+					else if(randomVar > 90) spawner.AddItem(AddTypicalAmmo(), Random(500, 1000), 0);
+				}
+				break;
+			case LOCATION_Area51 :
+				//an example
+				//if(hour == 15)
+				{
+					//AddItems here
+					if(randomVar != 200) ClearContainer(spawner);
+					if(randomVar < 100) @buffedItem = spawner.AddItem(AddT3Item(), 1, 0);
+					else if(randomVar < 150) @buffedItem = spawner.AddItem(AddT4Item(), 1, 0);
+					if(valid(buffedItem)) AddBonusOrNot(buffedItem);
+					
+					if(randomVar >= 195 && randomVar < 200) spawner.AddItem(AddT4BP(), 1, 0);
+					else if(randomVar > 190) spawner.AddItem(AddImplant(), 1, 0);
+					else if(randomVar > 125) spawner.AddItem(AddRareAmmo(), Random(50, 100), 0);
+					else if(randomVar > 90) spawner.AddItem(AddTypicalAmmo(), Random(500, 1000), 0);
+				}
+				//AddItems here
+				break;
+			case LOCATION_SaltLake :
+				//an example
+				//if(hour == 23)
+				{
+					//AddItems here
+					if(randomVar != 200) ClearContainer(spawner);
+					if(randomVar < 100) @buffedItem = spawner.AddItem(AddT3Item(), 1, 0);
+					else if(randomVar < 150) @buffedItem = spawner.AddItem(AddT4Item(), 1, 0);
+					if(valid(buffedItem)) AddBonusOrNot(buffedItem);
+					
+					if(randomVar >= 195 && randomVar < 200) spawner.AddItem(AddT4BP(), 1, 0);
+					else if(randomVar > 190) spawner.AddItem(AddImplant(), 1, 0);
+					else if(randomVar > 125) spawner.AddItem(AddRareAmmo(), Random(50, 100), 0);
+					else if(randomVar > 90) spawner.AddItem(AddTypicalAmmo(), Random(500, 1000), 0);
+				}
+				//AddItems here
+				break;
+			case LOCATION_MariposaMilitaryBase :
+				//an example
+				//if(hour == 8 || hour == 20)
+				{
+					//AddItems here
+					if(randomVar != 200) ClearContainer(spawner);
+					if(randomVar < 100) @buffedItem = spawner.AddItem(AddT3Item(), 1, 0);
+					else if(randomVar < 150) @buffedItem = spawner.AddItem(AddT4Item(), 1, 0);
+					if(valid(buffedItem)) AddBonusOrNot(buffedItem);
+					
+					if(randomVar >= 195 && randomVar < 200) spawner.AddItem(AddT4BP(), 1, 0);
+					else if(randomVar > 190) spawner.AddItem(AddImplant(), 1, 0);
+					else if(randomVar > 125) spawner.AddItem(AddRareAmmo(), Random(50, 100), 0);
+					else if(randomVar > 90) spawner.AddItem(AddTypicalAmmo(), Random(500, 1000), 0);
+				}
+				//AddItems here
+				break;
+			case LOCATION_Hawthorne :
+				//an example
+				//if(hour == 4 || hour == 19)
+				{
+					//AddItems here
+					if(randomVar != 200) ClearContainer(spawner);
+					if(randomVar < 100) @buffedItem = spawner.AddItem(AddT3Item(), 1, 0);
+					else if(randomVar < 150) @buffedItem = spawner.AddItem(AddT4Item(), 1, 0);
+					if(valid(buffedItem)) AddBonusOrNot(buffedItem);
+					
+					if(randomVar >= 195 && randomVar < 200) spawner.AddItem(AddT4BP(), 1, 0);
+					else if(randomVar > 190) spawner.AddItem(AddImplant(), 1, 0);
+					else if(randomVar > 125) spawner.AddItem(AddRareAmmo(), Random(50, 100), 0);
+					else if(randomVar > 90) spawner.AddItem(AddTypicalAmmo(), Random(500, 1000), 0);
+				}
+				//AddItems here
+				break;
+		}
+}
+	//an example
+	//if(hour == 12)
+
+
+
+uint e_DeleteReward(array<uint>@ values)
+{
+	// Get this spawner from array
+	Item@ spawner = GetItem(values[0]);
+	if(!valid(spawner))
+		return 0;
+	 
+	spawner.Val5 = 0;
+	ClearContainer(spawner);
+	return 0;
+}
+
+bool _IgnoreControllerAttack(Critter& mob, Critter& attacker)
+{
+	Location@ location = attacker.GetMap().GetLocation();
+	switch(location.GetProtoId())
+	{
+		case LOCATION_Waterworks :
+			if(GetGvar(GVAR_waterworks_score) == attacker.Stat[ST_TEAM_ID])
+				return true;
+			break;
+		case LOCATION_Area51 :
+			if(GetGvar(GVAR_area51_score) == attacker.Stat[ST_TEAM_ID])
+				return true;
+			break;
+		case LOCATION_SaltLake :
+			if(GetGvar(GVAR_nukacola_score) == attacker.Stat[ST_TEAM_ID])
+				return true;
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			if(GetGvar(GVAR_mariposa_score) == attacker.Stat[ST_TEAM_ID])
+				return true;
+			break;
+		case LOCATION_Hawthorne :
+			if(GetGvar(GVAR_hawthorne_score) == attacker.Stat[ST_TEAM_ID])
+				return true;
+			break;
+	}
+	
+	// Typical _Alert
+	if(attacker.Stat[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+		return true;
+	
+	uint radius = (mob.Param[ST_STRENGTH] + mob.Param[ST_ENDURANCE]) * 2;
+	
+	array<Critter@> mobstoalert;
+	mob.GetMap().GetCrittersHex(mob.HexX, mob.HexY, radius, FIND_LIFE_AND_KO | FIND_ONLY_NPC, mobstoalert);
+	
+	for(uint8 i = 0; i < mobstoalert.length(); i++)
+	{
+		if(!valid(mobstoalert[i])) continue;
+		if(mobstoalert[i].Param[ST_NPC_ROLE] == ROLE_MOB_DYNAMIC)
+		{
+			mobstoalert[i].AddEnemyInStack(attacker.Id);
+			AddAttackPlane(mobstoalert[i], 0, attacker);
+		}
+		
+	}
+	
+	return false;
+}
+
+/// SETTING BEST SCORES FOR FACTIONS - in preparing
+/* float GetInfluence(uint factionId)
+    {
+        uint len = factionInfluence.length();
+        for(uint i = 0; i < len; i += 2)
+        {
+            if(uint(factionInfluence[i]) == factionId)
+                return(factionInfluence[i + 1]);
+        }
+        return 0.0f;
+    }
+
+void SetInfluence(uint factionId, float value)
+    {
+        uint len = factionInfluence.length();
+        bool found;
+        for(uint i = 0; i < len; i += 2)
+        {
+            if(uint(factionInfluence[i]) == factionId)
+            {
+                DLog("factionId=" + factionId + ",value=" + value);
+                DLog("factionInfluence[" + (i + 1) + "]==" + factionInfluence[i + 1]);
+                factionInfluence[i + 1] = value;
+                factionInfluence[i + 1] = CLAMP(factionInfluence[i + 1], 0.0f, 50000.0f);
+                found = true;
+            }
+        }
+        if(found)
+            return;
+
+        DLog("inserting " + factionId + " into influence data");
+        factionInfluence.insertLast(factionId);
+        factionInfluence.insertLast(value);
+    }
+
+
+void ModifyInfluence(uint factionId, float value)
+    {
+        SetInfluence(factionId, GetInfluence(factionId) + value);
+    }
+
+		
+void SetBaseControlScore(uint8 id)
+{		
+		ModifyInfluence(faction,1);
+	    string factionname;
+        GetFactionNameStr(faction, factionname);
+		GameVar@ bestScore = GetGlobalVar(61010+id);
+		float bestScoreVar=bestScore.GetValue();
+		if(GetInfluence(faction)>bestScoreVar) 
+		{
+		bestScore+=1;
+		if(factionname == "")
+        {SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, "None");}
+		else
+		SetBestScore(CONTROLLING_BEST_SCORE_BASE + id, null, factionname);
+		}
+}
+*/
+
+// For later - loads and saves
+// Saving and loading event IDs
+/*uint e_Load(array<uint>@ emptyarray)
+{
+	if(LoadBaseData()) Log("Success...");
+	else Log("Failed...");
+	
+	return 0;
+}
+
+uint e_Save(array<uint>@ emptyarray)
+{
+	if(SaveBaseData()) Log("Success...");
+	else Log("Failed...");
+	
+	return 0;
+}*/
+
+bool LoadBaseData()
+{
+	Serializator@ BaseData = @Serializator();
+	BaseData.Clear();
+	
+	array<uint> BaseEvents;
+	
+	if(!IsAnyData("BaseControlData"))
+		return false;
+
+	if(!BaseData.Load("BaseControlData"))
+	{
+		return false;
+	}
+	BaseData.Get(BaseEvents);
+	
+	RetakeWW = BaseEvents[0];
+	RetakeA51 = BaseEvents[1];
+	RetakeNC = BaseEvents[2];
+	RetakeMB = BaseEvents[3];
+	RetakeHMB = BaseEvents[4];
+	
+	Log("Base Control Data Loaded...");
+	Log("Events: " + RetakeWW + ", " + RetakeA51 + ", " + RetakeNC + ", " + RetakeMB + ", " + RetakeHMB +".");
+	
+	return true;
+}
+
+bool SaveBaseData()
+{
+	Log("Saving Base Control data...");
+	Serializator@ BaseData = @Serializator();
+	BaseData.Clear();
+	
+	array<uint> BaseEvents = {RetakeWW, RetakeA51, RetakeNC, RetakeMB, RetakeHMB};
+	Log("Events: " + RetakeWW + ", " + RetakeA51 + ", " + RetakeNC + ", " + RetakeMB + ", " + RetakeHMB +".");
+    return BaseData.Set(BaseEvents).Save("BaseControlData");
+}
+
+bool BaseIsTakingByMobs(Location& loc)
+{
+		
+	switch(loc.GetProtoId())
+	{
+		case LOCATION_Waterworks :
+			return IsTakingByNpcWW;
+		case LOCATION_Area51 :
+			return IsTakingByNpcA51;
+		case LOCATION_SaltLake :
+			return IsTakingByNpcNC;
+		case LOCATION_MariposaMilitaryBase :
+			return IsTakingByNpcMB;
+		case LOCATION_Hawthorne :
+			return IsTakingByNpcHMB;
+	}
+	return false;
+}
+
+void SetIsTakingByMobs(Location& loc, bool setTake)
+{
+		
+	switch(loc.GetProtoId())
+	{
+		case LOCATION_Waterworks :
+			if(setTake) IsTakingByNpcWW = true;
+			else IsTakingByNpcWW = false;
+			break;
+		case LOCATION_Area51 :
+			if(setTake) IsTakingByNpcA51 = true;
+			else IsTakingByNpcA51 = false;
+			break;
+		case LOCATION_SaltLake :
+			if(setTake) IsTakingByNpcNC = true;
+			else IsTakingByNpcNC = false;
+			break;
+		case LOCATION_MariposaMilitaryBase :
+			if(setTake) IsTakingByNpcMB = true;
+			else IsTakingByNpcMB = false;
+			break;
+		case LOCATION_Hawthorne :
+			if(setTake) IsTakingByNpcHMB = true;
+			else IsTakingByNpcHMB = false;
+			break;
+	}
+}
+
+uint e_AntiLogOut(array<uint>@ logoutdata)
+{
+	Critter@ abuser = GetCritter(logoutdata[0]);
+	if(!valid(abuser)) return 0;
+	
+	Location@ baseLoc = GetLocation(logoutdata[1]);
+	if(!valid(baseLoc)) return 0;
+	
+	array<Map@> maps;
+	array<Critter@> players;
+	baseLoc.GetMaps(maps);
+	//uint8 playersQty = 0;
+	bool foundAbusers = true;
+		
+	if(debuger) Log("Found " + maps.length() + " maps in location.");
+	for(uint8 i=0; i<maps.length(); i++)
+	{
+		
+		if(maps[i].GetProtoId() == MAP_Hawthorne) //Polygon is there
+		{
+			array<Critter@> playersinpolygon;
+			maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+			uint8 polygonsPlayerQty = 0;
+			
+			for(uint8 j=0; j<playersinpolygon.length(); j++)
+			{
+				IPolygon@ HawthorneMilitaryBase = ::LoadShapeFromEntires(maps[i], HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
+				if(HawthorneMilitaryBase.IsWithin(playersinpolygon[j]))
+				{
+					polygonsPlayerQty++;
+					players.resize(polygonsPlayerQty);
+					@players[polygonsPlayerQty-1] = @playersinpolygon[j];
+				}
+			}
+		}
+		else if(baseLoc.GetProtoId() == LOCATION_SaltLake)
+		{
+			if(maps[i].GetProtoId() == MAP_SaltLake)
+			{
+				array<Critter@> playersinpolygon;
+				maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+				uint8 polygonsPlayerQty = 0;
+			
+				for(uint8 j=0; j<playersinpolygon.length(); j++)
+				{
+					IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
+					if(NukaColaBottlePlant.IsWithin(playersinpolygon[j]))
+					{
+						polygonsPlayerQty++;
+						players.resize(polygonsPlayerQty);
+						@players[polygonsPlayerQty-1] = @playersinpolygon[j];
+					}
+				}
+			}
+			else if(maps[i].GetProtoId() == MAP_SaltLake_NukaCola)
+			{
+				maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, players);
+			}
+			else
+			{
+				continue;
+			}
+		}
+		else
+		{
+			maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, players);
+		}
+	}	
+		//Log("Found " + players.length() + " players.");
+		
+		if(players.length() == 0) return 0;
+		
+		for(uint8 j=0; j<players.length(); j++)
+		{
+			//if(!valid(players[j])) continue;
+			
+			if(IsCurrentController(players[j]) && _IsOnline(players[j]))
+			{
+				//Log(players[j].Name + " is still online.");
+				return REAL_MINUTE(2);
+			}
+		}
+	
+	
+	if(foundAbusers)
+	{
+		uint16 NPCFaction = 0;
+		
+		if(valid(baseLoc)) switch(baseLoc.GetProtoId())
+		{
+			case LOCATION_Waterworks :
+				NPCFaction = FACTION_SLAGS;
+				break;
+			case LOCATION_Area51 :
+				NPCFaction = FACTION_AREA51_SYSTEM;
+				break;
+			case LOCATION_SaltLake :
+				NPCFaction = FACTION_SALTLAKE;
+				break;
+			case LOCATION_MariposaMilitaryBase :
+				NPCFaction = FACTION_MARIPOSA_MUTANTS;
+				break;
+			case LOCATION_Hawthorne :
+				NPCFaction = FACTION_ARMY_OF_HAWTHORNE;
+				break;
+		}
+		
+		//array<uint> controllingdata = { 0, baseLoc.GetProtoId(), baseLoc.Id, NPCFaction };
+		CallMobsToTakeBase( 0, baseLoc.GetProtoId(), baseLoc.Id, NPCFaction );
+	}
+	return 0;
+}

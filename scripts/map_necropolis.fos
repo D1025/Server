@@ -1,0 +1,81 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_necropolis.fos
+//
+
+#include "_macros.fos"
+#include "elevators_h.fos"
+#include "_maps.fos"
+#include "_town.fos"
+#include "mapdata_h.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import bool AddMilitia(Map@ map) from "town";
+import void SpawnInitMilitia(Map@ map) from "town";
+
+//
+// Initialize map.
+//
+
+// elevator 1-2
+CElevator FirstElevator(ELEVATOR_PLUG_MILITARY_12);
+// elevator 2-3 //TODO: Elevator 2-3
+CElevator SecondElevator(ELEVATOR_PLUG_MILITARY_23);
+
+bool ElevatorsAdded = false;
+
+void map_init(Map& map, bool firstTime)
+{
+	//Dynamic mobs
+	if(firstTime) InitializeDynamicMob(map);
+	DLog("Initializing necropolis");
+    map.SetData(MAP_DATA_TOWN, TOWN_NECRO);
+
+    if(firstTime)
+        SpawnInitMilitia(map);
+
+   // to add only one for all floors
+    if(!ElevatorsAdded)
+    {
+        // add elevators
+        AddElevator(FirstElevator);
+        AddElevator(SecondElevator);
+        ElevatorsAdded = true;
+    }
+    // parse elevators floors
+    uint16 x = 0, y = 0;
+
+    switch(map.GetProtoId())
+    {
+    case MAP_NecropolisVaultLevel1:
+        if(map.GetEntireCoords(1, 0, x, y))
+            FirstElevator.AddFloor(map.Id, 1);
+		break;
+    case MAP_NecropolisVaultLevel2:
+        if(map.GetEntireCoords(1, 0, x, y))
+            FirstElevator.AddFloor(map.Id, 1);
+		if(map.GetEntireCoords(2, 0, x, y))
+            SecondElevator.AddFloor(map.Id, 2);
+        break;
+    case MAP_NecropolisVaultLevel3:
+        if(map.GetEntireCoords(2, 0, x, y))
+            SecondElevator.AddFloor(map.Id, 2);
+        break;
+    default:
+    }
+}
+
+//
+// Elevator triggers
+//
+void t_ElevatorFirst(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(FirstElevator, critter, entered);
+}
+void t_ElevatorSecond(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(SecondElevator, critter, entered);
+}
+

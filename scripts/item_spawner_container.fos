@@ -1,0 +1,227 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// item_spawner_container.fos
+//
+// Modifications
+// FOnline: Aftertimes
+// worldremaker
+
+// This script turns an item into a spawning container. See spawner_container.fos for details.
+
+#include "spawner_container_h.fos"
+#include "_maps.fos"
+#include "_defines.fos"
+#include "_macros.fos"
+import bool IsLockableContainer(uint pid) from "lockers";
+import bool IsDungeon(Map@ map) from "utils";
+import bool IsTown(Map@ map) from "utils";
+import bool IsGuarded(Map@ map) from "utils";
+import bool IsPublic(Map@ map) from "utils";
+import bool IsEncounterMap(Map@ map) from "utils";
+import bool IsBase(Map@ map) from "world_common";
+import bool IsTent(Map@ map) from "world_common";
+import bool IsInstancedQuest(Map@ map) from "utils";
+import void ClearContainer(Item@ container) from "utils";
+
+void item_init(Item& item, bool firstTime)
+{
+    Map@ map = GetMap(item.MapId);
+	
+	
+	// exception for containers near grids and not lockables on dungeons
+	if(IsDungeon(map) && !IsLockableContainer(item.GetProtoId()) && item.Val4 != FAT_PROTECTED_TOWN_CONTAINER && !DontChangeSpawners(map))
+	{
+		Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to town spawner with Val4 <" + FAT_PROTECTED_TOWN_CONTAINER + ">.");
+		item.Val4 = FAT_PROTECTED_TOWN_CONTAINER;
+	}
+	
+	// exception when Val4 is higher than last spawner index
+	if(item.Val4 > END_OF_CONTAINERS || (item.Val4 >= GM_BASE_SG_CONTAINER && item.Val4 <= GM_TEST_LOCKER_MED_TEST))
+	{
+		if((item.Val4 >= GM_BASE_SG_CONTAINER && item.Val4 <= GM_TEST_LOCKER_MED_TEST) && (!IsTent(map) || !IsBase(map)))
+		{
+			Log("Message from item_spawner_container: GMLocker <" + item.Id + "> with Val4 <" + item.Val4 + "> detected at MapId <" + map.Id + ">. Clearing...");
+			ClearContainer(item);
+		}
+		
+		if(IsDungeon(map) && IsLockableContainer(item.GetProtoId()) && IsPublic(map))
+		{
+			uint8 newvalue = Random(FAT_BATTEL_LOCKER, FAT_MIX_AMMO);
+			Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to public dungeon spawner with Val4 <" + newvalue + ">.");
+			item.Val4 = newvalue;
+		}
+		
+		else if((IsDungeon(map) && (!IsPublic(map)) || IsInstancedQuest(map)))
+		{
+			uint8 newvalue = Random(ONCE_CONTAINER_SG_LOW, ONCE_CONTAINER_BP_CHEM_ALL);
+			Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to private dungeon spawner with Val4 <" + newvalue + ">.");
+			item.Val4 = newvalue;
+		}
+		
+		else if(IsDungeon(map) && !IsLockableContainer(item.GetProtoId()))
+		{
+			Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to town spawner with Val4 <" + FAT_PROTECTED_TOWN_CONTAINER + ">.");
+			item.Val4 = FAT_PROTECTED_TOWN_CONTAINER;
+		}
+	}
+	
+	if((IsEncounterMap(map)/* || IsCityEncounter(map)*/) && item.Val4 != FAT_ENCOUNTER_STATIC_CONTAINER)
+	{
+		Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to static encounter spawner with Val4 <" + FAT_ENCOUNTER_STATIC_CONTAINER + ">.");
+		item.Val4 = FAT_ENCOUNTER_STATIC_CONTAINER;
+	}
+	
+	if((IsInstancedQuest(map) || IsSpecialEncounter(map)) && (item.Val4 < ONCE_CONTAINER_SG_LOW || item.Val4 > ONCE_CONTAINER_BP_CHEM_ALL))
+	{
+		uint8 newvalue = Random(ONCE_CONTAINER_SG_LOW, ONCE_CONTAINER_BP_CHEM_ALL);
+		Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to static encounter spawner with Val4 <" + newvalue + ">.");
+		item.Val4 = newvalue;
+	}
+	
+	if(IsTown(map))
+	{
+		if(IsGuarded(map) && item.Val4 != FAT_PROTECTED_TOWN_CONTAINER && ((!DontChangeSpawners(map) || item.Val0 != 1) && not(item.Val4 <= END_OF_CONTAINERS)))
+		{
+			Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to town spawner with Val4 <" + FAT_PROTECTED_TOWN_CONTAINER + ">.");
+			item.Val4 = FAT_PROTECTED_TOWN_CONTAINER;
+		}
+		
+		if(!IsGuarded(map) && item.Val4 != FAT_TOWN_CONTAINER && ((!DontChangeSpawners(map) || item.Val0 != 1) && not(item.Val4 <= END_OF_CONTAINERS)))
+		{
+			Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> has been changed to town spawner with Val4 <" + FAT_TOWN_CONTAINER + ">.");
+			item.Val4 = FAT_TOWN_CONTAINER;
+		}
+	}
+	
+	if(item.Val4 > END_OF_CONTAINERS)
+		Log("ERROR: Found unrecognized locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + "> out of index and can't change it.");
+	
+	if(item.Val4 >= GM_TEST_SG_CONTAINER && item.Val4 <= GM_TEST_LOCKER_MED_TEST)
+		Log("Warn: Found GM test locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + ">.");
+	
+	if(item.Val4 >= GM_BASE_SG_CONTAINER && item.Val4 <= GM_BASE_ARMOR_CONTAINER_BONUS_HI)
+		Log("Warn: Found GM base locker <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + ">.");
+		
+	//Check it when Ghost Town will be activated
+	if(item.Val4 == GHOST_TOWN_HIGH && map.GetLocation().GetProtoId() != LOCATION_GhostTown)
+	{
+		Log("Warn: Found Ghost Town spawner <" + item.Id + "> at MapId <" + map.Id + "> with Val4 <" + item.Val4 + ">.");
+		if(IsTown(map))
+		{
+			Log("Clearing...");
+			ClearContainer(item);
+			
+			if(IsGuarded(map))
+			{
+				Log("Changing to guarded town spawner...");
+				item.Val4 = FAT_PROTECTED_TOWN_CONTAINER;
+			}
+			else
+			{
+				Log("Changing to unguarded town spawner...");
+				item.Val4 = FAT_TOWN_CONTAINER;
+			}
+		}
+		else if(IsDungeon(map) && IsPublic(map))
+		{
+			Log("Clearing...");
+			ClearContainer(item);
+			
+			uint8 changeTo = Random(FAT_DESK, FAT_MIX_AMMO);
+			Log("Changing to dungeon spawner with Val4 = " + changeTo + "...");
+			item.Val4 = changeTo;
+		}
+		else
+		{
+			Log("Warn: Couldn't find exception! Map PID: " + map.GetProtoId() + ", ID: " + map.Id + ", Location PID: " + map.GetLocation().GetProtoId() + ".");
+		}
+		
+	}
+		
+	MakeSpawnerContainer(item, item.Val4);
+}
+
+bool DontChangeSpawners(Map@ map)
+{
+	/*if(!valid(map))
+        return false;*/
+	switch(map.GetProtoId())
+	{
+		case MAP_SanFranTanker_2:
+			Log("Warn: Spawner containers at MapId <" + map.Id + "> will be not changed!");
+			return true;		
+	}
+		
+    switch(map.GetLocation().GetProtoId())
+	{
+		// Examples:
+		// Note: After add/remove use ~regenmap there.
+		// case LOCATION_Tunnel :
+		// case LOCATION_Temple : 
+		case LOCATION_Abbey :
+		case LOCATION_Warehouse :
+		case LOCATION_MutantsHideout :
+		// case LOCATION_Laboratory_X7 :
+		// case LOCATION_Strange_Farm :
+			Log("Warn: Spawner containers at MapId <" + map.Id + "> will be not changed!");
+			return true;
+	}
+	
+	return false;
+}
+
+bool IsSpecialEncounter(Map@ map)
+{
+	/*if(!valid(map))
+        return false;*/
+
+    switch(map.GetLocation().GetProtoId())
+	{
+		// Examples:
+		// Note: Don't use ~regenmap there.
+		case LOCATION_SecretBunker :
+		case LOCATION_SecretTreasure :
+		case LOCATION_Howitzer :
+		case LOCATION_DeadBody :
+		case LOCATION_SpecialEncounter_OldWarehouse :
+		case LOCATION_OldFactory :
+		case LOCATION_Hospital :
+		case LOCATION_SpecialEncounter_BusStop :
+			return true;
+		default:
+			return false;
+	}
+	
+	return false;
+}
+
+void for_event_init(Item& item, bool firstTime)
+{
+	MakeSpawnerContainer(item, item.Val4);
+	item.SetEvent(ITEM_EVENT_SKILL, "_UseEventContainer");
+}
+
+bool _UseEventContainer(Item& item, Critter& crit, int skill)
+{
+	// Opening / Closing
+    if((skill == -1) || (skill == SK_STEAL))
+    {
+		if(crit.GetAccess() < ACCESS_MODER)
+        {
+			crit.Say(SAY_NETMSG,"You don't have access to this locker. Better keep your hands away from it.");		
+            return true;
+        }
+		
+        // open it if closed
+        if(_LockerIsClose(item))
+        {
+			//item.LockerId = 0;
+			//item.LockerId = Random(98989, 989898);
+			//item.LockerComplexity = Random(50,50);			
+            return false;
+        }
+    }
+    return false;
+}

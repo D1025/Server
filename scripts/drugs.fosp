@@ -1,0 +1,946 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
+import void VerboseAction(Critter&cr,string&text)from"utils";
+import void VerboseAction(Critter&cr,Critter&target,string&text)from"utils";
+
+import void AffectPoison(Critter&cr,int value)from"poison";
+
+import void AffectRadiation(Critter&cr,int value)from"radiation";
+import void DropRadiation(Critter&cr)from"radiation";                    
+
+const int[]DrugsIdentifiers=
+{
+	(40),(48),(49),(109),(144),(260),(9655),(273),(525),
+	(106),(124),(125),(310),(311),(469),(53),(87),(110),(259),
+	(71),(81),(103),(378),(334),(473),(480),
+	(481),(482),(424),(541),(605),(533)
+};
+
+const int[]DrugEffects=
+{
+	
+	-1,0,0,0,0,0,
+	-2,10,0,0,0,0,
+	(72),50,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	(474),10,120,120,14160,10080,
+	(74),-25,-50,-75,0,0,
+	(30),0,0,0,-20,20,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,10,10,0,0,
+	(73),-25,-25,-25,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	(472),25,600,2,2,1200,
+	(4),2,-2,0,0,0,
+	(3),2,-2,0,0,0,
+	(8),0,0,0,-1,1,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,120,360,0,0,
+	-2,1,0,0,0,0,
+	(72),4,0,0,0,0,
+	(74),0,1,1,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,360,0,0,0,
+	-2,4,0,0,0,0,
+	(72),20,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	(471),25,600,2,2,1200,
+	(0),2,-2,0,0,0,
+	(5),-1,1,0,0,0,
+	(2),2,-2,0,0,0,
+	(8),0,0,0,-1,1,
+	-1,0,0,0,0,0,
+	
+	-1,0,360,0,0,0,
+	-2,4,0,0,0,0,
+	(72),20,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	(470),15,600,2,2,1200,
+	(5),1,-1,0,0,0,
+	(8),0,0,0,-1,1,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,1440,1440,0,0,
+	(30),50,-25,-25,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	(473),30,600,2,2,1200,
+	(23),15,-15,0,0,0,
+	(0),1,-1,0,0,0,
+	(2),1,-1,0,0,0,
+	(1),-2,2,0,0,0,
+	(8),0,0,0,-1,1,
+	
+	(478),0,600,2,2,1200,
+	(1),-2,2,0,0,0,
+	(23),5,-5,0,0,0,
+	(3),1,-1,0,0,0,
+	(8),0,0,0,-1,1,
+	-1,0,0,0,0,0,
+	
+	-1,0,400,0,0,0,
+	-2,4,0,0,0,0,
+	(72),20,0,0,0,0,
+	(1),-2,2,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,10,10,0,0,
+	(72),80,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	(475),100,600,2,2,2,
+	(8),2,-2,0,-1,1,
+	(3),-1,1,0,0,0,
+	(0),-2,2,0,0,0,
+	
+	(23),-10,10,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,360,0,0,0,
+	-2,8,0,0,0,0,
+	(72),30,0,0,0,0,
+	(1),0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,30,0,0,0,
+	-2,4,0,0,0,0,
+	(72),20,0,0,0,0,
+	(74),0,1,1,0,0,
+	(1),-1,1,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,30,0,0,0,
+	-2,4,0,0,0,0,
+	(72),20,0,0,0,0,
+	(74),0,1,1,0,0,
+	(1),-2,2,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,360,0,0,0,
+	-2,10,0,0,0,0,
+	(72),20,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,60,60,0,0,
+	(0),3,-6,3,0,0,
+	(5),3,-6,3,0,0,
+	(23),50,-50,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,30,0,0,0,
+	-2,4,0,0,0,0,
+	(72),20,0,0,0,0,
+	(1),-2,2,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,1440,8640,0,0,
+	(7),-3,0,3,0,0,
+	(73),2,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,60,0,0,0,
+	(5),1,-1,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,60,0,0,0,
+	(4),1,-1,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,60,0,0,0,
+	(0),1,-1,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,0,0,0,0,
+	-2,100,0,0,0,0,
+	(72),150,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	(477),15,600,2,2,1200,
+	(1),1,-1,0,0,0,
+	(3),-1,1,0,0,0,
+	(8),0,0,0,-1,1,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,0,0,0,0,
+	-2,1,0,0,0,0,
+	(72),4,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,360,0,0,0,
+	-2,8,0,0,0,0,
+	(72),20,0,0,0,0,
+	(1),-1,1,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	
+	-1,0,0,0,0,0,
+	-2,1,0,0,0,0,
+	(72),4,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0,
+	-1,0,0,0,0,0
+};
+
+int GetDrugTableIndex(uint16 drugPid)
+{
+	int index=0;
+	switch(drugPid)
+	{
+		case(40):
+		index=0;
+		break;
+		case(48):
+		index=1;
+		break;
+		case(49):
+		index=2;
+		break;
+		case(53):
+		index=3;
+		break;
+		case(71):
+		index=4;
+		break;
+		case(81):
+		index=5;
+		break;
+		case(87):
+		index=6;
+		break;
+		case(103):
+		index=7;
+		break;
+		case(106):
+		index=8;
+		break;
+		case(109):
+		index=9;
+		break;
+		case(110):
+		index=10;
+		break;
+		case(124):
+		index=11;
+		break;
+		case(125):
+		index=12;
+		break;
+		case(144):
+		index=13;
+		break;
+		case(259):
+		index=14;
+		break;
+		case(260):
+		index=15;
+		break;
+		case(273):
+		index=16;
+		break;
+		case(310):
+		index=17;
+		break;
+		case(311):
+		index=18;
+		break;
+		case(334):
+		index=19;
+		break;
+		case(378):
+		index=20;
+		break;
+		case(424):
+		index=21;
+		break;
+		case(469):
+		index=22;
+		break;
+		case(473):
+		index=23;
+		break;
+		case(480):
+		index=24;
+		break;
+		case(481):
+		index=25;
+		break;
+		case(482):
+		index=26;
+		break;
+		case(525):
+		index=27;
+		break;
+		case(541):
+		index=28;
+		break;
+		case(605):
+		index=29;
+		break;
+		case(9655):
+		index=30;
+		break;
+		case(533):
+		index=31;
+		break;
+		default:
+		break;
+	}
+	index*=36;
+	return index;
+}           
+
+void UseDrug(Critter&cr,Item&drug)
+{
+	uint pid=drug.GetProtoId();
+	SetDrug(cr,pid);
+	do{if(drug.GetCount()>(1)) drug.SetCount(drug.GetCount()-(1));else DeleteItem(drug);}while(false);
+	if(pid==(40)||pid==(144)||pid==(525))
+	{
+		if(pid==(40))VerboseAction(cr,"injects stimpak");
+		else if(pid==(144))VerboseAction(cr,"injects super stimpak");
+		else VerboseAction(cr,"injects hypo");
+		if(cr.GetMapProtoId()!=(3))
+		{
+			if(Random(0,1)==0)
+			cr.AddItem((318),1);
+		}
+	}
+	else if(pid==(541))
+	{
+		VerboseAction(cr,"lights a cigarette");
+		cr.PlaySound("smoking.ogg",true);
+	}
+	else if(pid==(124)||pid==(310)||
+	pid==(106)||
+	pid==(605)||
+	pid==(533)||
+	pid==(125)||
+	pid==(311)||
+	pid==(469))
+	{
+		string item="something";
+		uint16 freeItem=0;
+		
+		if(pid==(124)||pid==(310))
+		{
+			if(Random(1,100)<=15)
+			item="warm beer";
+			else
+			item="beer";
+			if(cr.GetMapProtoId()!=(3))
+			{
+				if(Random(0,1)==0)cr.AddItem((542),1);
+				freeItem=(41);
+			}
+			cr.PlaySound("beer.acm",true);
+		}
+		else if(pid==(106))
+		{
+			item="nuka-cola";
+			if(cr.GetMapProtoId()!=(3))
+			{
+				if(Random(0,1)==0)cr.AddItem((542),1);
+				freeItem=(41);
+			}
+			cr.PlaySound("nukacola.ogg",true);
+		}
+		else if(pid==(605)||pid==(533))
+		{
+			item="water";
+			if(pid==(605))
+			freeItem=(609);
+			else if(pid==(533))
+			freeItem=(532);
+		}
+		else if(pid==(125))
+		{
+			item="booze";
+			if(Random(0,1)==0)cr.AddItem((542),1);
+			cr.PlaySound("beer.acm",true);
+		}
+		else if(pid==(311))
+		{
+			item="rum";
+			if(Random(0,1)==0)cr.AddItem((542),1);
+			if(Random(1,100)==100)
+			item+="**  **Yarr!";
+			cr.PlaySound("beer.acm",true);
+		}
+		
+		VerboseAction(cr,"drinks "+item);
+		if(freeItem>0)
+		cr.AddItem(freeItem,1);
+	} 
+	
+	else if(pid==(259))
+	{
+		VerboseAction(cr,"inhales jet");
+		if(cr.GetMapProtoId()!=(3))
+		{
+			if(Random(0,1)==0)cr.AddItem((416),1);
+		}
+		cr.PlaySound("jet.ogg",true);
+	}
+	else if(pid==(110))
+	{
+		VerboseAction(cr,"injects psycho");
+		cr.PlaySound("psycho.ogg",true);
+	}
+	else if(pid==(87))
+	{
+		VerboseAction(cr,"swallows buffout");
+		cr.PlaySound("pills.ogg",true);
+	}
+	else if(pid==(53))
+	{
+		VerboseAction(cr,"swallows mentats");
+		cr.PlaySound("pills.ogg",true);
+	}
+	else if(pid==(260))
+	VerboseAction(cr,"drinks drug antidote"); 
+	
+	else if(pid==(273))
+	VerboseAction(cr,"uses healing powder");
+	else if(pid==(109))
+	{
+		VerboseAction(cr,"swallows rad-x");
+		cr.PlaySound("pills.ogg",true);
+	}
+	else if(pid==(48))
+	{
+		VerboseAction(cr,"injects radaway");
+		cr.PlaySound("psycho.ogg",true);
+	}
+	else if(pid==(49))
+	{
+		VerboseAction(cr,"drinks antidote");
+		cr.PlaySound("beer.acm",true);
+	} 
+	
+	else if(pid==(378))
+	VerboseAction(cr,"eats a "+((Random(0,10)==0)?"delicious ":"")+"cookie");
+	else if(pid==(81))
+	VerboseAction(cr,"eats iguana");
+	else if(pid==(71))
+	VerboseAction(cr,"eats a fruit");
+	else if(pid==(103))
+	VerboseAction(cr,"eats some meat");
+	else if(pid==(473)||pid==(485)||pid==(484))
+	VerboseAction(cr,"eats something disgusting");
+}
+
+void UseDrugOn(Critter&cr,Critter&onCr,Item&drug)
+{
+	if(onCr.IsDead())
+	{
+		cr.SayMsg((11),(3),(3400));
+		return;
+	}
+	
+	uint pid=drug.GetProtoId();
+	bool isGoodDrug=(pid==(40)||pid==(144)||
+	pid==(48)||pid==(605)||pid==(533)||pid==(273)||
+	pid==(49)||pid==(109));
+	
+	if(isGoodDrug)
+	{
+		onCr.SayMsg((11),(3),(10306));
+		SetDrug(onCr,drug.GetProtoId());
+		do{if(drug.GetCount()>(1)) drug.SetCount(drug.GetCount()-(1));else DeleteItem(drug);}while(false);
+		
+		if((pid==(40)||pid==(144)))
+		{
+			VerboseAction(cr,onCr,"injects stimpak to TARGET");
+			if(Random(0,1)==0)
+			cr.AddItem((318),1);
+		}
+		else if(pid==(273))
+		VerboseAction(cr,onCr,"uses healing powder on TARGET");
+		else if(pid==(109))
+		VerboseAction(cr,onCr,"uses rad-x on TARGET");
+		else if(pid==(48))
+		VerboseAction(cr,onCr,"uses radaway on TARGET");
+		else if(pid==(49))
+		VerboseAction(cr,onCr,"gives antidote to TARGET");
+		else if(pid==(605)||pid==(533))
+		{
+			VerboseAction(cr,onCr,"gives some water to TARGET");
+			if(pid==(605))
+			cr.AddItem((609),1);
+			else if(pid==(533))
+			cr.AddItem((532),1);
+		}
+	}
+	else
+	{
+		onCr.SayMsg((11),(3),(10307));
+	}
+}
+
+void DropDrugsEffectsHinkley(Critter&cr)
+{
+	cr.Say((11),"Clearing Hinkley drugs.");
+	array<int>identifiers;
+	array<uint>indexes;
+	array<uint>rates;
+	
+	uint count=cr.GetTimeEvents(DrugsIdentifiers,identifiers,indexes,null,rates);
+	for(uint i=0;i<count;i++)
+	{
+		if(identifiers[i]!=(48)&&identifiers[i]!=(109))
+		{
+			DropDrug(cr,identifiers[i],((rates[i])&0xFFFFFF));
+			cr.EraseTimeEvents(identifiers[i]);
+		}
+	}
+}
+
+void DropDrugEffects(Critter&cr)
+{
+	DropDrugEffects(cr,true);
+}
+
+void DropDrugEffects(Critter&cr,bool dropAddictions)
+{
+	cr.Say((11),"Clearing effects of drugs."); 
+	
+	array<int>identifiers;
+	array<uint>rates;
+	uint count=cr.GetTimeEvents(DrugsIdentifiers,identifiers,null,null,rates);
+	for(uint i=0;i<count;i++)
+	DropDrug(cr,identifiers[i],((rates[i])&0xFFFFFF));
+	
+	cr.EraseTimeEvents(DrugsIdentifiers); 
+	
+	if(dropAddictions)
+	for(uint i=(__AddictionBegin);i<=(__AddictionEnd);i++)
+	cr.AddictionBase[i]=0;
+}
+
+void SetDrug(Critter&cr,uint16 drugPid)
+{
+	
+	if(drugPid==(260))
+	{                       
+		
+		DropDrugEffects(cr,true);
+		
+		return;
+	} 
+	
+	uint flags=0;  
+	
+	if(cr.Trait[(550)]!=0)
+	((flags)=(flags)|((8)));
+	
+	if(cr.Trait[(561)]!=0)
+	{
+		((flags)=(flags)|((16)));
+		((flags)=(flags)|((32)));
+	}
+	if(cr.Trait[(562)]!=0)
+	((flags)=(flags)|((64))); 
+	
+	array<uint>indexes;
+	array<uint>rates;
+	uint count=cr.GetTimeEvents(drugPid,indexes,null,rates);
+	int index=GetDrugTableIndex(drugPid); 
+	
+	if(DrugEffects[index+(0)]>=0)
+	{
+		
+		bool isBlocked=false;
+		
+		if(((drugPid)==(53)||(drugPid)==(87)||(drugPid)==(110)||(drugPid)==(259)||(drugPid)==(124)||(drugPid)==(106)||(drugPid)==(541)))
+		{
+			for(uint i=0;i<count;i++)
+			{
+				uint stage=((rates[i])&0xFFFFFF);
+				if(stage<=1)
+				{
+					isBlocked=true;
+					break;
+				}
+				;
+			}
+		}
+		else
+		{
+			uint positive=0;
+			uint negative=0;
+			for(uint i=0;i<count;i++)
+			{
+				uint stage=((rates[i])&0xFFFFFF);
+				if(stage<=1)
+				positive++;
+				else if(stage==2)
+				negative++;
+			}
+			isBlocked=positive>=2-negative/2;
+		}
+		
+		if(isBlocked)
+		{
+			
+			if(cr.Trait[(561)]!=0)
+			{
+				int addict=DrugEffects[index+(0)];
+				int addictProc=DrugEffects[index+(1)]; 
+				
+				if(cr.Addiction[addict]==0&&Random(1,100)<=addictProc)
+				cr.AddictionBase[addict]=1; 
+				
+			}
+			
+			if(drugPid!=(48))
+			{
+				RefreshDrug(cr,drugPid,((((flags)&0xFF)<<24)|((0)&0xFFFFFF)));
+				UpdateDrugs(cr);
+			}
+			return;
+		}
+	} 
+	
+	uint deleted=0;
+	for(uint i=0;i<count;i++)
+	{
+		uint stage=((rates[i])&0xFFFFFF);
+		if(stage>=2)
+		{
+			DropDrug(cr,drugPid,stage);
+			cr.EraseTimeEvent(indexes[i]-deleted);
+			deleted++;
+		}
+	} 
+	
+	cr.AddTimeEvent("cte_Drug",0,drugPid,((((flags)&0xFF)<<24)|((0)&0xFFFFFF)));
+}
+
+uint ProcessDrug(Critter&cr,uint16 drugPid,uint&rate)
+{
+	uint stage=((rate)&0xFFFFFF);
+	uint flags=((rate)>>24);
+	
+	if(cr.IsDead())
+	return((5)*__TimeMultiplier*60);
+	if(drugPid==(259)&&stage>=4)
+	return((25)*__TimeMultiplier*31536000);
+	
+	int index=GetDrugTableIndex(drugPid);
+	uint duration=0;
+	
+	if(stage==0||
+	stage==1||
+	stage==2||
+	stage==3||
+	stage==4)
+	{
+		if(!(((flags)&((64)))!=0)||stage<3)
+		{
+			for(uint i=0;i<5;i++)
+			{
+				int stat=DrugEffects[index+(6+(i)*6)];
+				int amount=DrugEffects[index+(7+(stage)+(i)*6)];
+				if(i==1&&DrugEffects[index+(6+(0)*6)]==-2)
+				amount=Random(DrugEffects[index+(7+(stage)+(0)*6)],amount);
+				if(stat<0)
+				continue;
+				
+				int statVal=cr.Stat[stat];
+				if(stat<(32))
+				cr.StatBase[(32)+stat]+=amount;
+				else if(stat==(72))
+				{
+					if(amount>0&&cr.Trait[(562)]!=0)
+					amount/=2;
+					cr.StatBase[(72)]=(((statVal+amount)>(cr.Stat[(7)]))?(cr.Stat[(7)]):(((statVal+amount)<(-9999))?(-9999):(statVal+amount)));
+					if(amount<0&&cr.Stat[(72)]<0)
+					cr.ToDead(Random(0,1)==0?(102):(103),null);
+				}
+				else if(stat==(73))
+				AffectPoison(cr,amount);
+				else if(stat==(74))
+				AffectRadiation(cr,amount);
+				else
+				continue;
+				
+				statVal=cr.Stat[stat]-statVal;
+				if(statVal>0)
+				cr.SayMsg((11),(3),(10300),"$name @msg game "+(100000+(stat)*10+1)+"@$value"+statVal);
+				else if(statVal<0)
+				cr.SayMsg((11),(3),(10301),"$name @msg game "+(100000+(stat)*10+1)+"@$value"+(-statVal));
+			}
+		} 
+		
+		int addict=DrugEffects[index+(0)];
+		
+		if(stage==0)
+		{
+			duration=DrugEffects[index+(2+(stage))];
+			if((((flags)&((16)))!=0))
+			duration*=2;
+			if((((flags)&((8)))!=0))
+			duration/=2; 
+			
+			if(cr.Trait[(561)]!=0)
+			{
+				
+				int addictProc=DrugEffects[index+(1)]; 
+				
+				if(stage==0&&addict>=0&&Random(1,100)<=addictProc)
+				cr.AddictionBase[addict]=1;
+			}
+			
+			SetDrugTimer(cr,drugPid,((duration)*60));
+		}
+		else if(stage==1)
+		{
+			duration=DrugEffects[index+(2+(stage))];
+			if((((flags)&((16)))!=0))
+			duration*=2;
+			if((((flags)&((8)))!=0))
+			duration/=2;
+		}
+		
+		else if(cr.Trait[(561)]!=0)
+		{
+			if(stage==2&&addict>=0&&cr.Addiction[addict]!=0)
+			{
+				
+				array<uint>rates;
+				uint count=cr.GetTimeEvents(drugPid,null,null,rates);
+				bool isPresent=false;
+				for(uint i=0;i<count;i++)
+				{
+					if(((rates[i])&0xFFFFFF)>=3)
+					{
+						isPresent=true;
+						break;
+					}
+				}
+				if(!isPresent)
+				{
+					duration=DrugEffects[index+(2+(stage))];
+					if((((flags)&((16)))!=0))
+					duration*=2;
+					if((((flags)&((8)))!=0))
+					duration/=2;
+				}
+			}
+			else if(stage==3)
+			{
+				duration=DrugEffects[index+(2+(stage))];
+				if((((flags)&((16)))!=0))
+				duration*=2;
+				if((((flags)&((8)))!=0))
+				duration/=2;
+				
+				if((((flags)&((32)))!=0))
+				duration=__TimeMultiplier*5*365*24*60;
+			}
+			else if(stage==4)
+			{
+				cr.SayMsg((11),(3),(10302));
+				if(addict>=0&&cr.Addiction[addict]!=0)
+				cr.AddictionBase[addict]=0;
+			}
+		}
+	}
+	
+	stage++;
+	rate=((((flags)&0xFF)<<24)|((stage)&0xFFFFFF));
+	return((duration)*60);
+}
+
+void DropDrug(Critter&cr,uint16 drugPid,uint stage)
+{
+	SetDrugTimer(cr,drugPid,0);
+	if(stage==0||stage==3)
+	return;
+	
+	int index=GetDrugTableIndex(drugPid);
+	
+	if(stage==1||
+	stage==2||
+	(stage==4&&cr.Trait[(562)]==0))
+	{
+		for(uint i=0;i<5;i++)
+		{
+			int stat=DrugEffects[index+(6+(i)*6)];
+			int amount=DrugEffects[index+(7+(stage+(stage==1?-1:0))+(i)*6)];
+			if(stage==1)
+			amount=-amount;
+			if(stat<(32))
+			cr.StatBase[(32)+stat]+=amount;
+		}
+	}
+}
+
+uint cte_Drug(Critter&cr,int identifier,uint&rate)
+{
+	return ProcessDrug(cr,identifier,rate);
+}
+
+void SetDrugTimer(Critter&cr,uint16 drugPid,uint timer)
+{
+	
+	switch(drugPid)
+	{
+		case(53):
+		cr.TimeoutBase[(253)]=((__FullSecond)+(timer));
+		break;
+		case(87):
+		cr.TimeoutBase[(254)]=((__FullSecond)+(timer));
+		break;
+		case(106):
+		cr.TimeoutBase[(247)]=((__FullSecond)+(timer));
+		break;
+		case(110):
+		cr.TimeoutBase[(250)]=((__FullSecond)+(timer));
+		break;
+		case(124):
+		cr.TimeoutBase[(248)]=((__FullSecond)+(timer));
+		break;
+		case(259):
+		cr.TimeoutBase[(251)]=((__FullSecond)+(timer));
+		break;
+		case(541):
+		cr.TimeoutBase[(246)]=((__FullSecond)+(timer));
+		break;
+		case(48):
+		cr.TimeoutBase[(255)]=((__FullSecond)+(timer*2));
+		break;
+		case(109):
+		cr.TimeoutBase[(256)]=((__FullSecond)+(timer));
+		break;
+		default:
+		break;
+	}
+}
+
+void UpdateDrugs(Critter&cr)
+{
+	if(cr.IsPlayer())
+	{
+		array<int>identifiers;
+		array<uint>indexes;
+		array<uint>durations;
+		array<uint>rates;
+		
+		uint count=cr.GetTimeEvents(DrugsIdentifiers,identifiers,indexes,durations,rates);
+		for(uint i=0;i<count;i++)
+		{
+			if(((rates[i])&0xFFFFFF)==1)
+			SetDrugTimer(cr,identifiers[i],durations[i]);
+		}
+	}
+}
+
+bool RefreshDrug(Critter&cr,uint16 drugPid,uint&rate)
+{
+	if(cr.IsPlayer())
+	{
+		
+		int index=GetDrugTableIndex(drugPid);
+		uint flags=((rate)>>24);
+		uint stage=((rate)&0xFFFFFF);
+		int addict=DrugEffects[index+(0)];
+		uint duration=DrugEffects[index+(2+(stage))];
+		
+		if((((flags)&((16)))!=0))
+		duration*=2;
+		if((((flags)&((8)))!=0))
+		duration/=2; 
+		
+		if(cr.Trait[(561)]!=0)
+		{
+			
+			int addictProc=DrugEffects[index+(1)];
+			if(addict>=0&&Random(1,100)<=addictProc)
+			cr.AddictionBase[addict]=1;
+		}
+		
+		array<int>identifiers;
+		array<uint>indexes;
+		array<uint>durations;
+		array<uint>rates;
+		
+		uint count=cr.GetTimeEvents(DrugsIdentifiers,identifiers,indexes,durations,rates);
+		for(uint i=0;i<count;i++)
+		{
+			if(((rates[i])&0xFFFFFF)==1)
+			if(identifiers[i]==drugPid)
+			{
+				cr.Say((11),"Refreshing drug effects.");
+				cr.ChangeTimeEvent(indexes[i],((duration)*60),rates[i]);
+				return true;
+			}
+		}
+		return false;
+	}
+	return false;
+}

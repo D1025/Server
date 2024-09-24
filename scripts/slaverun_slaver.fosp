@@ -1,0 +1,91 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+
+int GetRootMapData(Map&map,uint index)
+{
+	return map.GetLocation().GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Map&map,uint index,int val)
+{
+	map.GetLocation().GetMapByIndex(0).SetData(index,val);
+}   
+
+int GetRootMapData(Location&loc,uint index)
+{
+	return loc.GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Location&loc,uint index,int val)
+{
+	loc.GetMapByIndex(0).SetData(index,val);
+}                                                                                                                                                                                                  
+
+bool dbInitTable(string@,string@){return true;}
+bool dbLog(string@,string@){return true;}                   
+
+void InitDBLogs(){}
+
+void LogExperience(Critter&cr,int amount){}
+void LogExperience(Critter&cr,int amount,string@info){}
+void LogExperience(Critter&cr,int amount,int skill){}
+void LogExperience(Critter&cr,int amount,int skill,string@info){}
+void LogExperience(Critter&cr,int amount,int skill,int param){}
+void LogExperience(Critter&cr,int amount,int skill,string@info,int param){}
+void LogQuestExperience(Critter&cr,int amount,string@info){}
+void LogQuestExperience(Critter&cr,int amount,int skill,string@info){}
+void LogAttack(Map@map,Critter&cr,Critter&target,ProtoItem&weapon,ProtoItem@ammo,uint8 aim,bool isBurst,uint ammoRound,uint weaponRound,bool isHit,bool isCritical,uint critfailFlags){}
+void LogDamage(Map@map,Critter@attacker,Critter&target,Item@weapon,ProtoItem@ammo,uint8 aim,bool isBurst,uint damage,bool isCritical,uint eff,uint rounds){}
+void LogGathering(Critter&,uint16,int){}                        
+
+void critter_init(Critter&npc,bool firstTime)
+{
+	npc.SetEvent((2),"_SlaverOnDead");
+	npc.SetEvent((0),"_Idle");
+	npc.KarmaBase[(489)]=1;
+}
+
+void _SlaverOnDead(Critter&crit,Critter@killer)
+{
+	uint id=crit.GetMap().GetData((21));
+	GameVar@slavers_killed=GetLocalVar((11109),id);
+	slavers_killed+=1;
+	
+	GameVar@slavers=GetLocalVar((11106),id);
+	GameVar@status=GetLocalVar((11100),id);
+	Critter@player=GetCritter(id);
+	
+	uint ustatus=status.GetValue();
+	
+	if((((ustatus)&((0x10)))!=0))
+	return;
+	
+	if(2*(slavers-slavers_killed)<slavers)
+	{
+		if((@player!=null))
+		player.Say((11),"Too many of your fellow slavers have died. You've failed at your task.");
+		((ustatus)=(ustatus)|((0x10)));
+	}
+	else
+	{
+		if((((ustatus)&((0x8)))!=0))
+		{
+			if((@player!=null))
+			player.Say((11),"You've killed too many of the tame stock and let your fellow slavers die. You've failed at your task.");
+			((ustatus)=(ustatus)|((0x10)));
+		}
+		else
+		{
+			if((@player!=null))
+			player.Say((11),"Many of your fellow slavers died.");
+			((ustatus)=(ustatus)|((0x4)));
+		}
+	}
+	status=ustatus;
+}
+
+void _Idle(Critter&npc)
+{
+	if(Random(0,5)==0)
+	npc.MoveRandom();
+	npc.Wait(Random(2000,10000));
+}

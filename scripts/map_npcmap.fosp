@@ -1,0 +1,22 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
+void map_init(Map&map,bool firstTime)
+{
+	map.SetLoopTime(0,5000);
+	map.SetEvent((1),"_Loop0");
+} 
+
+void _Loop0(Map&map)
+{
+	array<Critter@>crits;
+	uint n=map.GetCritters(0,(0x0F)|(0x10),crits);
+	for(uint i=0;i<n;i++)
+	if(crits[i].GetAccess()<(3)&&((31<crits[i].HexY)&&(crits[i].HexY<50)&&(54<crits[i].HexX)&&(crits[i].HexX<66)))
+	{
+		int inv=crits[i].ModeBase[(527)];
+		crits[i].ModeBase[(527)]=0;
+		crits[i].ToDead((116),null);
+		if(inv!=0)
+		crits[i].ModeBase[(527)]=inv;
+	}
+}

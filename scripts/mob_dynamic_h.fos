@@ -1,0 +1,135 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// mob_dynamic_h.fos
+//
+// Header file for dynamic mobs.
+// Configs, imports, etc...
+//
+
+#define IDLE_NORMAL       (5000)
+#define IDLE_ALERTED      (1000)
+#define IDLE_ALERTED_2    (200)
+#define BROADCAST_DISPLAY_TIME                   (30) // in seconds, for town raiders
+
+#define MOB_IS_REGULAR                           (0)
+#define MOB_IS_BOSS                              (1)
+#define MOB_FOR_EVENT                            (2)
+
+// Spawn types for e_TrySpawnMob
+#define SPAWN_TOWN_RAIDERS                       (0)
+#define SPAWN_MOBS_TO_FILL                       (1)
+#define SPAWN_CALLED_MOBS                        (2)
+#define SPAWN_DUNGEON_MOB                        (3)
+#define SPAWN_DUNGEON_BOSS                       (4)
+#define SPAWN_EVENT_MOBS                         (5)
+
+//
+// Weapon groups
+//
+#define WEAPONGROUP_UNARMED                      (0)
+#define WEAPONGROUP_MEDIUM                       (1)
+#define WEAPONGROUP_ENCLAVE                      (7)
+#define WEAPONGROUP_FOR_MUTANTS                  (13)
+#define WEAPONGROUP_FOR_MASTERS_ELITE            (14)
+#define WEAPONGROUP_FOR_MELCHIOR                 (20)
+
+//
+// Weapon types
+//
+#define WEAPONTYPE_PISTOLS                       (1)
+#define WEAPONTYPE_RIFLES                        (2)
+#define WEAPONTYPE_SHOTGUNS                      (3)
+#define WEAPONTYPE_SMGS                          (4)
+#define WEAPONTYPE_BIG_GUNS                      (5)
+#define WEAPONTYPE_ENERGY_PISTOLS                (6)
+#define WEAPONTYPE_ENERGY_RIFLES                 (7)
+#define WEAPONTYPE_ENERGY_MINIGUNS               (8)
+#define WEAPONTYPE_GRENADES                      (9)
+#define WEAPONTYPE_KNIFES                        (10)
+#define WEAPONTYPE_SPEARS                        (11)
+#define WEAPONTYPE_MELEE                         (12)
+#define WEAPONTYPE_POWER_FISTS                   (13)
+#define WEAPONTYPE_HAMMERS                       (14)
+#define WEAPONTYPE_SPECIAL                       (15)
+
+#define WEAPONLEVEL_LOW                          (1)
+#define WEAPONLEVEL_MEDIUM                       (2)
+#define WEAPONLEVEL_HIGH                         (3)
+
+#define WEAPONSPECIAL_CLAW                       (1)
+#define WEAPONSPECIAL_SENTRYBOTS_TYPICAL         (2)
+#define WEAPONSPECIAL_FIRE_GECKO_FLAME           (3)
+#define WEAPONSPECIAL_TURRETS_TYPICAL            (4)
+#define WEAPONSPECIAL_ROBOEYE_TYPICAL            (5)
+#define WEAPONSPECIAL_LASER_TURRETS              (6)
+#define WEAPONSPECIAL_PLASMA_TURRETS             (7)
+
+//
+// Kind of mobs to generate
+//
+#define FROM_GROUP_SLAG_BANDITS                  (1)
+#define FROM_GROUP_VIPERS_RAIDERS                (2)
+#define FROM_GROUP_JACKALS_RAIDERS               (3)
+#define FROM_GROUP_ENCLAVE                       (4)
+#define FROM_GROUP_RENEGADES                     (5)
+#define FROM_GROUP_SLAVERS                       (6)
+#define FROM_GROUP_ALIENS                        (7)
+#define FROM_GROUP_DEATHCLAWS                    (8)
+#define FROM_GROUP_CENTAURS_ONLY                 (9)
+#define FROM_GROUP_FLOATERS_ONLY                 (10)
+#define FROM_GROUP_FLOATERS_AND_CENTAURS         (11)
+#define FROM_GROUP_MERCENARIES                   (12)
+#define FROM_GROUP_SUPER_MUTANT_REMNATS          (13)
+#define FROM_GROUP_MASTERS_ELITE_CREW            (14)
+#define FROM_GROUP_GHOULS                        (15)
+#define FROM_GROUP_SPIDERS                       (16)
+#define FROM_GROUP_DOGS                          (17)
+#define FROM_GROUP_RADSCORPIONS                  (18)
+#define FROM_GROUP_MELCHIOR                      (19)
+#define FROM_GROUP_ROBOTS                        (20)
+#define FROM_GROUP_VAULT_13                      (21)
+#define FROM_GROUP_NCR_SOLDIERS_AND_RANGERS      (22)
+#define FROM_GROUP_RATS                          (23)
+#define FROM_GROUP_SCAVENGERS                    (24)
+
+//
+// Subtypes of mobs to generate
+//
+// Slag bandits - additionally characters in combat armors will be generated here
+#define TYPE_ALSO_IN_JACKETS_AND_LEATHERS        (0) //default
+#define TYPE_ALSO_IN_LEATHERS                    (1)
+#define TYPE_IN_METAL_ARMORS                     (2)
+// Deathclaws
+#define TYPE_REGULAR_DEATHCLAWS                  (0) //default
+#define TYPE_GORIS_ONLY                          (1)
+// Ghouls
+#define TYPE_GLOWING_AND_BROWN_GHOULS            (0) //default
+#define TYPE_ADD_REACTOR_GHOULS                  (1)
+#define TYPE_ADD_BROWN_GHOULS                    (2)
+#define TYPE_ADD_BROWN_AND_REACTOR_GHOULS        (3)
+#define TYPE_REACTOR_GHOULS_ONLY                 (4)
+// Robots
+#define TYPE_ALL_ROBOTS                          (0) //default
+#define TYPE_MRHANDY_ONLY                        (1)
+#define TYPE_ROBOBRAIN_ONLY                      (2)
+#define TYPE_EYEBOT_ONLY                         (3)
+#define TYPE_SENTRYBOT_ONLY                      (4)
+// Melchior and his pets
+#define TYPE_MELCHIOR_PETS_ONLY                  (0) //default
+#define TYPE_MELCHIOR_WITH_PETS                  (1)
+// Rats
+#define TYPE_ALL_RATS                            (0) //default
+#define TYPE_MOLERATS_ONLY                       (1)
+#define TYPE_RATS_ONLY                           (2)
+#define TYPE_PIGRATS_ONLY                        (3)
+#define TYPE_RATS_AND_PIGRATS                    (4)
+#define TYPE_RATS_AND_MOLERATS                   (5)
+#define TYPE_PIGRATS_AND_MOLERATS                (6)
+
+// Bind functions
+
+/*import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void InitializeDynamicMob(Map& map, bool withBoss) from "mob_dynamic";
+import int GetDistance(Critter& mob) from "mob_dynamic";*/

@@ -1,0 +1,20 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 &
+
+[engl]
+{100}{}{Soldier from Sierra}
+{200}{}{You see an Soldier from Sierra.}
+{210}{}{Looks for someone who was born before The Great War.}
+{1000}{}{Predialogue installations}
+{1010}{}{Answer text}
+{2000}{}{Alert! Alert!@@Move! Move!@@One... Two... Go, go, go.@@Push forward!}
+

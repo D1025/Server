@@ -1,0 +1,121 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// dialog_altruist.fos
+//
+
+#include "_macros.fos"
+
+import void DropDrugEffects(Critter& cr) from "drugs";
+import bool SupportPerkCheck(Critter& cr, uint perk) from "perks";
+import void PerkUp(Critter& cr, uint perk, int fromlevel) from "perks";
+
+void init_altruist(Critter& altruist, bool firstTime)
+{
+	//Set SPECIAL
+	altruist.StatBase[ST_AGILITY] = 10;
+	altruist.StatBase[ST_LUCK] = 10;
+	altruist.StatBase[ST_CRITICAL_CHANCE] = 95;
+	altruist.StatBase[ST_ACTION_POINTS] = 1000;
+	
+	//Set combat skills
+	altruist.SkillBase[SK_SMALL_GUNS] = 300;
+	altruist.SkillBase[SK_BIG_GUNS] = 300;
+	altruist.SkillBase[SK_ENERGY_WEAPONS] = 300;
+	altruist.SkillBase[SK_UNARMED] = 300;
+	//Set support skills
+	altruist.SkillBase[SK_DOCTOR] = 300;
+	altruist.SkillBase[SK_FIRST_AID] = 300;
+	//Other params
+	altruist.StatBase[ST_NORMAL_RESIST] = 95;
+	altruist.StatBase[ST_LASER_RESIST] = 95;
+	altruist.StatBase[ST_FIRE_RESIST] = 95;
+	altruist.StatBase[ST_PLASMA_RESIST] = 95;
+	altruist.StatBase[ST_ELECTRO_RESIST] = 95;
+	altruist.StatBase[ST_EXPLODE_RESIST] = 95;
+	//Modes
+	_CritSetMode(altruist, MODE_NO_STEAL);
+    _CritSetMode(altruist, MODE_NO_DROP);
+    _CritSetMode(altruist, MODE_NO_LOOT);
+	_CritSetMode(altruist, MODE_UNLIMITED_AMMO);
+    _CritSetMode(altruist, MODE_NO_BARTER);
+	//Replication
+	/*altruist.Wait(1000);
+	altruist.ParamBase[ST_REPLICATION_TIME] = 15;*/
+	CreateTimeEvent(AFTER(REAL_SECOND(2)), "e_ChangeReplication", altruist.Id, false);
+}
+
+uint e_ChangeReplication(array<uint>@ values)
+{
+	Critter@ altruist = GetCritter(values[0]);
+	if(!valid(altruist)) return 0;
+	
+	altruist.ParamBase[ST_REPLICATION_TIME] = 15;
+	
+	return 0;
+}
+
+bool d_CanTakePerk(Critter& cr, Critter@ npc, int val)
+{
+    if(val >= PE_PROFESSION_BEGIN && val <= PE_PROFESSION_END)
+        return false;
+    return SupportPerkCheck(cr, val);
+}
+
+void r_GivePerk(Critter& cr, Critter@ npc, int val)
+{
+    if(val >= PE_PROFESSION_BEGIN && val <= PE_PROFESSION_END)
+        return;
+    if(SupportPerkCheck(cr, val))
+        cr.PerkBase[val] += 1;
+}
+
+void r_Give(Critter& player, Critter@ npc, int val)
+{
+    switch(val)
+    {
+    case 0:
+    {
+        int level = player.Stat[ST_LEVEL];
+		if(level > 149 && player.GetAccess() == ACCESS_CLIENT)
+        {
+            player.Say(SAY_NORM_ON_HEAD, "Wait, it can't be that good.");
+            return;
+        }
+        level++;
+        int exp = level * (level - 1) * 500;
+        player.StatBase[ST_EXPERIENCE] += (exp - player.StatBase[ST_EXPERIENCE]);
+        return;
+    }
+    case 1:
+    {
+        int level = player.Stat[ST_LEVEL];
+		if(level > 147 && player.GetAccess() == ACCESS_CLIENT)
+        {
+            player.Say(SAY_NORM_ON_HEAD, "No, wait.");
+            return;
+        }
+        level += 3;
+        int exp = level * (level - 1) * 500;
+        player.StatBase[ST_EXPERIENCE] += (exp - player.StatBase[ST_EXPERIENCE]);
+        return;
+    }
+    case 2:
+        player.AddItem(41, 100000);
+        break;
+    case 3:
+	{
+        for(uint i = 0; i < REPUTATION_COUNT; i++)
+            if(player.Reputation[i] != 0)
+                player.ReputationBase[i] = 0;
+		if(player.Param[KARMA_GRAVE_DIGGER] != 0) player.ParamBase[KARMA_GRAVE_DIGGER] = 0;
+		if(player.Param[KARMA_CHILDKILLER] != 0) player.ParamBase[KARMA_CHILDKILLER] = 0;		
+        break;
+	}
+    case 4:
+        DropDrugEffects(player);
+        break;
+    default:
+    }
+}

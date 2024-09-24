@@ -1,0 +1,24 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 &
+[engl]
+{100}{}{Brotherhood Guard}
+{200}{}{You see a Brotherhood Guard.}
+{210}{}{You see a Brotherhood Paladin Guard.}
+{1000}{}{Predialogue installations}
+{2000}{}{This is a property of Brotherhood of Steel. Nothing to see here. Move along!@@This is a property of Brotherhood of Steel. Nothing to see here. Move along!}
+{100000001}{}{This is a property of Brotherhood of Steel. Nothing to see here. Move along!}
+{100000001}{}{This is a property of Brotherhood of Steel. Nothing to see here. Move along!}
+{100000001}{}{This is a property of Brotherhood of Steel. Nothing to see here. Move along!}
+{100000001}{}{This is a property of Brotherhood of Steel. Nothing to see here. Move along!}
+{100000001}{}{This is a property of Brotherhood of Steel. Nothing to see here. Move along!}
+{100000001}{}{This is a property of Brotherhood of Steel. Nothing to see here. Move along!}
+

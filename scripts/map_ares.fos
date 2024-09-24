@@ -1,0 +1,62 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_ares.fos
+//
+
+#include "_maps.fos"
+#include "_vars.fos"
+#include "_macros.fos"
+#include "mapdata_h.fos"
+#include "messages_h.fos"
+#include "guard_h.fos"
+#include "npc_common_h.fos"
+#include "npc_planes_h.fos"
+#include "utils_h.fos"
+#include "elevators_h.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void InitializeDynamicMob(Map& map, bool withBoss) from "mob_dynamic";
+
+// elevator 1
+CElevator Elevator(ELEVATOR_MILITARY_12);
+
+bool ElevatorsAdded = false;
+
+// =============================================
+// Map
+// =============================================
+void map_init(Map& map, bool firstTime)
+{
+    if(!ElevatorsAdded)
+    {
+        // add elevators
+        AddElevator(Elevator);
+        ElevatorsAdded = true;
+    }
+	
+	//Dynamic mobs
+	if(firstTime)
+		switch(map.GetProtoId())
+		{
+			case MAP_AresMilitaryBase_Entrance : InitializeDynamicMob(map); break;
+			case MAP_AresMilitaryBase_Level1 : InitializeDynamicMob(map); break;
+			case MAP_AresMilitaryBase_Level2 : InitializeDynamicMob(map); break;
+			case MAP_Ares_level3 : InitializeDynamicMob(map, true); break;
+			case MAP_Ares_level4 : InitializeDynamicMob(map, true); break;
+		}
+	/*if(map.GetProtoId() != MAP_AresMilitaryBase_Entrance)
+		InitAresAreas(map);*/
+    // parse elevators floors
+    uint16 x = 0, y = 0;
+
+    // num1 for elevator
+    if(map.GetEntireCoords(2, 0, x, y))
+        Elevator.AddFloor(map.Id, 2);
+}
+
+void t_Elevator(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(Elevator, critter, entered);
+}

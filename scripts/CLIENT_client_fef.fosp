@@ -1,0 +1,297 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                             
+
+import string GetCritterLexems(CritterCl&critter)from"lexems";
+import string GetItemLexems(ItemCl&item)from"lexems";
+
+import bool IsLexem(CritterCl&critter,string&lex)from"lexems";
+import bool IsLexem(ItemCl&it,string&lex)from"lexems";
+import bool IsLexem(string&lexems,string&lex)from"lexems";
+
+import string GetLexem(CritterCl&critter,string&lex)from"lexems";
+import string GetLexem(ItemCl&item,string&lex)from"lexems";
+import string GetLexem(string&lexems,string&lex)from"lexems";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 
+
+shared class Sprite
+{
+	Sprite()
+	{
+		Id=0;
+		Width=0;
+		Height=0;
+		FrmCount=0;
+	}
+	
+	bool Load(string&name,int path)
+	{
+		if(name.length()>0)
+		{
+			Id=LoadSprite(name,path);
+			Filename=name;
+		}
+		else
+		Id=0;
+		RefreshData();
+		return Id!=0;
+	}
+	
+	void LoadHash(uint nameHash,uint8 dir)
+	{
+		Id=LoadSprite(nameHash,dir);
+		RefreshData();
+	}
+	
+	void LoadByIni(string&iniKey,int path)
+	{
+		string@name=GetIfaceIniStr(iniKey);
+		if(@name!=null&&name.length()>0)
+		Id=LoadSprite(name,path);
+		else
+		Id=0;
+		RefreshData();
+	}
+	
+	void Draw(int x,int y)
+	{
+		if(Id!=0)
+		DrawSprite(Id,-1,x,y,0);
+	}
+	
+	private void RefreshData()
+	{
+		if(Id!=0)
+		{
+			Width=GetSpriteWidth(Id,0);
+			Height=GetSpriteHeight(Id,0);
+			FrmCount=GetSpriteCount(Id);
+		}
+		else
+		{
+			Width=0;
+			Height=0;
+			FrmCount=0;
+			Filename="";
+		}
+	}
+	
+	uint Id;
+	int Width;
+	int Height;
+	uint FrmCount;
+	string Filename;
+};                                                                                         
+
+shared interface Buffer
+{
+	bool IsRaw(uint len);
+	
+	Buffer@opCom();
+	
+	Buffer@opNeg();                    
+	
+	 Buffer@opShr(int8&value); Buffer@opShl(int8 value); Buffer@Get(int8&value); Buffer@Set(int8&value);
+	 Buffer@opShr(int16&value); Buffer@opShl(int16 value); Buffer@Get(int16&value); Buffer@Set(int16&value);
+	 Buffer@opShr(int32&value); Buffer@opShl(int32 value); Buffer@Get(int32&value); Buffer@Set(int32&value);
+	 Buffer@opShr(int64&value); Buffer@opShl(int64 value); Buffer@Get(int64&value); Buffer@Set(int64&value);
+	 Buffer@opShr(uint8&value); Buffer@opShl(uint8 value); Buffer@Get(uint8&value); Buffer@Set(uint8&value);
+	 Buffer@opShr(uint16&value); Buffer@opShl(uint16 value); Buffer@Get(uint16&value); Buffer@Set(uint16&value);
+	 Buffer@opShr(uint32&value); Buffer@opShl(uint32 value); Buffer@Get(uint32&value); Buffer@Set(uint32&value);
+	 Buffer@opShr(uint64&value); Buffer@opShl(uint64 value); Buffer@Get(uint64&value); Buffer@Set(uint64&value);
+	 Buffer@opShr(bool&value); Buffer@opShl(bool value); Buffer@Get(bool&value); Buffer@Set(bool&value);
+	 Buffer@opShr(string&value); Buffer@opShl(string value); Buffer@Get(string&value); Buffer@Set(string&value);
+	 Buffer@opShr(float&value); Buffer@opShl(float value); Buffer@Get(float&value); Buffer@Set(float&value);
+	
+	 Buffer@opShr(array<int8>&value); Buffer@opShl(array<int8>&value); Buffer@Get(array<int8>&value); Buffer@Set(array<int8>&value);
+	 Buffer@opShr(array<int16>&value); Buffer@opShl(array<int16>&value); Buffer@Get(array<int16>&value); Buffer@Set(array<int16>&value);
+	 Buffer@opShr(array<int32>&value); Buffer@opShl(array<int32>&value); Buffer@Get(array<int32>&value); Buffer@Set(array<int32>&value);
+	 Buffer@opShr(array<int64>&value); Buffer@opShl(array<int64>&value); Buffer@Get(array<int64>&value); Buffer@Set(array<int64>&value);
+	 Buffer@opShr(array<uint8>&value); Buffer@opShl(array<uint8>&value); Buffer@Get(array<uint8>&value); Buffer@Set(array<uint8>&value);
+	 Buffer@opShr(array<uint16>&value); Buffer@opShl(array<uint16>&value); Buffer@Get(array<uint16>&value); Buffer@Set(array<uint16>&value);
+	 Buffer@opShr(array<uint32>&value); Buffer@opShl(array<uint32>&value); Buffer@Get(array<uint32>&value); Buffer@Set(array<uint32>&value);
+	 Buffer@opShr(array<uint64>&value); Buffer@opShl(array<uint64>&value); Buffer@Get(array<uint64>&value); Buffer@Set(array<uint64>&value);
+	 Buffer@opShr(array<bool>&value); Buffer@opShl(array<bool>&value); Buffer@Get(array<bool>&value); Buffer@Set(array<bool>&value);
+	 Buffer@opShr(array<string>&value); Buffer@opShl(array<string>&value); Buffer@Get(array<string>&value); Buffer@Set(array<string>&value);
+	 Buffer@opShr(array<float>&value); Buffer@opShl(array<float>&value); Buffer@Get(array<float>&value); Buffer@Set(array<float>&value);
+	
+	 Buffer@opShr(array<array<int8>>&value); Buffer@opShl(array<array<int8>>&value); Buffer@Get(array<array<int8>>&value); Buffer@Set(array<array<int8>>&value);
+	 Buffer@opShr(array<array<int16>>&value); Buffer@opShl(array<array<int16>>&value); Buffer@Get(array<array<int16>>&value); Buffer@Set(array<array<int16>>&value);
+	 Buffer@opShr(array<array<int32>>&value); Buffer@opShl(array<array<int32>>&value); Buffer@Get(array<array<int32>>&value); Buffer@Set(array<array<int32>>&value);
+	 Buffer@opShr(array<array<int64>>&value); Buffer@opShl(array<array<int64>>&value); Buffer@Get(array<array<int64>>&value); Buffer@Set(array<array<int64>>&value);
+	 Buffer@opShr(array<array<uint8>>&value); Buffer@opShl(array<array<uint8>>&value); Buffer@Get(array<array<uint8>>&value); Buffer@Set(array<array<uint8>>&value);
+	 Buffer@opShr(array<array<uint16>>&value); Buffer@opShl(array<array<uint16>>&value); Buffer@Get(array<array<uint16>>&value); Buffer@Set(array<array<uint16>>&value);
+	 Buffer@opShr(array<array<uint32>>&value); Buffer@opShl(array<array<uint32>>&value); Buffer@Get(array<array<uint32>>&value); Buffer@Set(array<array<uint32>>&value);
+	 Buffer@opShr(array<array<uint64>>&value); Buffer@opShl(array<array<uint64>>&value); Buffer@Get(array<array<uint64>>&value); Buffer@Set(array<array<uint64>>&value);
+	 Buffer@opShr(array<array<bool>>&value); Buffer@opShl(array<array<bool>>&value); Buffer@Get(array<array<bool>>&value); Buffer@Set(array<array<bool>>&value);
+	 Buffer@opShr(array<array<string>>&value); Buffer@opShl(array<array<string>>&value); Buffer@Get(array<array<string>>&value); Buffer@Set(array<array<string>>&value);
+	 Buffer@opShr(array<array<float>>&value); Buffer@opShl(array<array<float>>&value); Buffer@Get(array<array<float>>&value); Buffer@Set(array<array<float>>&value);
+	
+	 Buffer@opShr(array<array<array<int8>>>&value); Buffer@opShl(array<array<array<int8>>>&value); Buffer@Get(array<array<array<int8>>>&value); Buffer@Set(array<array<array<int8>>>&value);
+	 Buffer@opShr(array<array<array<int16>>>&value); Buffer@opShl(array<array<array<int16>>>&value); Buffer@Get(array<array<array<int16>>>&value); Buffer@Set(array<array<array<int16>>>&value);
+	 Buffer@opShr(array<array<array<int32>>>&value); Buffer@opShl(array<array<array<int32>>>&value); Buffer@Get(array<array<array<int32>>>&value); Buffer@Set(array<array<array<int32>>>&value);
+	 Buffer@opShr(array<array<array<int64>>>&value); Buffer@opShl(array<array<array<int64>>>&value); Buffer@Get(array<array<array<int64>>>&value); Buffer@Set(array<array<array<int64>>>&value);
+	 Buffer@opShr(array<array<array<uint8>>>&value); Buffer@opShl(array<array<array<uint8>>>&value); Buffer@Get(array<array<array<uint8>>>&value); Buffer@Set(array<array<array<uint8>>>&value);
+	 Buffer@opShr(array<array<array<uint16>>>&value); Buffer@opShl(array<array<array<uint16>>>&value); Buffer@Get(array<array<array<uint16>>>&value); Buffer@Set(array<array<array<uint16>>>&value);
+	 Buffer@opShr(array<array<array<uint32>>>&value); Buffer@opShl(array<array<array<uint32>>>&value); Buffer@Get(array<array<array<uint32>>>&value); Buffer@Set(array<array<array<uint32>>>&value);
+	 Buffer@opShr(array<array<array<uint64>>>&value); Buffer@opShl(array<array<array<uint64>>>&value); Buffer@Get(array<array<array<uint64>>>&value); Buffer@Set(array<array<array<uint64>>>&value);
+	 Buffer@opShr(array<array<array<bool>>>&value); Buffer@opShl(array<array<array<bool>>>&value); Buffer@Get(array<array<array<bool>>>&value); Buffer@Set(array<array<array<bool>>>&value);
+	 Buffer@opShr(array<array<array<string>>>&value); Buffer@opShl(array<array<array<string>>>&value); Buffer@Get(array<array<array<string>>>&value); Buffer@Set(array<array<array<string>>>&value);
+	 Buffer@opShr(array<array<array<float>>>&value); Buffer@opShl(array<array<array<float>>>&value); Buffer@Get(array<array<array<float>>>&value); Buffer@Set(array<array<array<float>>>&value);
+	
+	 Buffer@opUShr(array<int8>&arr); Buffer@opUShrAssign(array<int8>&arr); array<int8>AsInt8();
+	 Buffer@opUShr(array<int16>&arr); Buffer@opUShrAssign(array<int16>&arr); array<int16>AsInt16();
+	 Buffer@opUShr(array<int32>&arr); Buffer@opUShrAssign(array<int32>&arr); array<int32>AsInt32();
+	 Buffer@opUShr(array<int64>&arr); Buffer@opUShrAssign(array<int64>&arr); array<int64>AsInt64();
+	 Buffer@opUShr(array<uint8>&arr); Buffer@opUShrAssign(array<uint8>&arr); array<uint8>AsUint8();
+	 Buffer@opUShr(array<uint16>&arr); Buffer@opUShrAssign(array<uint16>&arr); array<uint16>AsUint16();
+	 Buffer@opUShr(array<uint32>&arr); Buffer@opUShrAssign(array<uint32>&arr); array<uint32>AsUint32();
+	 Buffer@opUShr(array<uint64>&arr); Buffer@opUShrAssign(array<uint64>&arr); array<uint64>AsUint64();
+};  
+
+import Buffer@NewBuffer()from"buffer";    
+
+ import Buffer@NewBuffer(array<int8>@data)from"buffer";
+ import Buffer@NewBuffer(array<int16>@data)from"buffer";
+ import Buffer@NewBuffer(array<int32>@data)from"buffer";
+ import Buffer@NewBuffer(array<int64>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint8>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint16>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint32>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint64>@data)from"buffer";       
+
+string GmapEncStr;
+int[]coords={190,25,500,10};
+
+bool isInitialized=false;
+array<array<uint8>>groups;
+void InitDrawEncounters()
+{
+	if(!isInitialized)
+	{
+		
+		file f;
+		
+		if(f.open("data/Encounters.dat","r")>=0)
+		{
+			array<uint8>data;
+			
+			f.readData(0,data);
+			f.close();
+			
+			Buffer@buff=NewBuffer(data);
+			buff>>groups;
+		}
+		else
+		return;
+		
+		isInitialized=true; 
+		
+		GmapEncStr=GetIfaceIniStr("GmapEncounters");
+		if(@GmapEncStr==null||GmapEncStr=="")
+		return;
+		array<string@>@valuesStr=splitEx(GmapEncStr," ");
+		if(valuesStr.length()<4)
+		return;
+		
+		if(!StrToInt(valuesStr[0],coords[0]))
+		return;
+		if(!StrToInt(valuesStr[1],coords[1]))
+		return;
+		if(!StrToInt(valuesStr[2],coords[2]))
+		return;
+		if(!StrToInt(valuesStr[3],coords[3]))
+		return;
+	}
+}
+
+uint mzxOld=uint(-1),mzyOld=uint(-1);
+array<array<string>>encounters;
+
+void EncountersProcess()
+{
+	if(!(@GetChosen()!=null)||!__GmapActive||!isInitialized)
+	{
+		__HideCursor=false;
+		return;
+	}
+	
+	if(GetChosen().Perk[(346)]==0)
+	return; 
+	
+	int mx=int((__MouseX-__GmapOffsetX)*__GmapZoom);
+	int my=int((__MouseY-__GmapOffsetY)*__GmapZoom); 
+	
+	uint mzx=mx/__GlobalMapZoneLength;
+	uint mzy=my/__GlobalMapZoneLength;
+	
+	if(mzx==mzxOld&&mzy==mzyOld)
+	return;
+	
+	encounters.resize(0);
+	
+	mzxOld=mzx;
+	mzyOld=mzy; 
+	
+	int mfog=(mzx<__GlobalMapWidth&&mzy<__GlobalMapHeight?GetFog(mzx,mzy):0);
+	
+	if(mfog==(3))
+	{
+		encounters.resize(2);
+		for(uint i=0,j=groups[((mzy)*__GlobalMapWidth+(mzx))].length;i<j;i++)
+		{
+			uint8 group=groups[((mzy)*__GlobalMapWidth+(mzx))][i];
+			string descr=GetMsgStr((4),20000000+(group==uint8(-1)?(-1):group));
+			if(group>=135&&group<=144&&encounters[1].find(descr)<0)
+			encounters[1].insertLast(descr);
+			else if(encounters[0].find(descr)<0)
+			encounters[0].insertLast(descr);
+		}
+		
+		encounters[0].sortAsc();
+		encounters[1].sortAsc();
+	}
+}
+
+void EncountersDraw()
+{
+	if(!__GmapActive||encounters.length()!=2)
+	return;
+	
+	if(!(@GetChosen()!=null)||GetChosen().Perk[(346)]==0)
+	return;
+	
+	uint8 encountersNormal=encounters[0].length;
+	uint8 encountersCaravan=encounters[1].length;
+	uint yy=0;
+	
+	if(encountersNormal>0)
+	{
+		DrawText("Encounters in zone "+mzxOld+":"+mzyOld,coords[0],coords[1]+yy,coords[2],coords[3],((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0200));
+		for(uint i=0;i<encountersNormal;i++)
+		{
+			yy+=10;
+			DrawText(encounters[0][i],coords[0],coords[1]+yy,coords[2],coords[3],((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))),(5),0);
+		}
+	}
+	
+	if(encountersCaravan>0)
+	{
+		if(encountersNormal>0)
+		yy+=15;
+		
+		DrawText("Caravan encounters"+(encountersNormal==0?" in zone "+mzxOld+":"+mzyOld:""),coords[0],coords[1]+yy,coords[2],coords[3],((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0200));
+		for(uint i=0;i<encountersCaravan;i++)
+		{
+			yy+=10;
+			DrawText(encounters[1][i],coords[0],coords[1]+yy,coords[2],coords[3],((uint((0xFF<<24)|(((0)&0xFF)<<16)|(((0xFF)&0xFF)<<8)|((0)&0xFF)))),(5),0);
+		}
+	}
+} 
+

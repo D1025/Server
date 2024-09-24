@@ -1,0 +1,270 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+
+import bool IsArenaItem(Item@item)from"arena";
+import bool IsInsideArena(Critter&cr)from"arena";
+import bool IsInsideArena(uint16 x,uint16 y)from"arena";
+import void WearItem(Critter&cr,Item&item,int wearCount)from"repair";           
+
+int SelectWeaponBonus(Item@RealWeapon,int Int_Val_WeaponBonus)
+{
+	if((@RealWeapon!=null))
+	{
+		if(RealWeapon.Val0==Int_Val_WeaponBonus)return RealWeapon.Val5;
+		if(RealWeapon.Val1==Int_Val_WeaponBonus)return RealWeapon.Val6;
+		if(RealWeapon.Val2==Int_Val_WeaponBonus)return RealWeapon.Val7;
+		if(RealWeapon.Val3==Int_Val_WeaponBonus)return RealWeapon.Val8;
+		if(RealWeapon.Val4==Int_Val_WeaponBonus)return RealWeapon.Val9;
+		return 0;
+	}
+	else return 0;
+}
+
+bool IsHexShotWeapon(Item@item)
+{
+	if(!(@item!=null))
+	return false;
+	if(item.GetType()!=(3))
+	return false;
+	
+	return(item.GetProtoId()==(13)
+	||item.GetProtoId()==(619)
+	||item.GetProtoId()==(620)
+	||item.GetProtoId()==(22120));
+}
+
+uint HexShotGetMaxRange(Critter&cr,Item@item)
+{
+	if(!(@item!=null))
+	return 0;
+	uint viewRange=20+3*cr.Stat[(1)]+6*cr.Perk[(315)];
+	if(IsHexShotWeapon(item))
+	{
+		uint8 use=((item.Mode)&0xF);
+		uint bonusRange=SelectWeaponBonus(item,(106));
+		return(((((use)==0?item.Proto.Weapon_MaxDist_0:((use)==1?item.Proto.Weapon_MaxDist_1:((use)==2?item.Proto.Weapon_MaxDist_2:0)))+bonusRange)<(viewRange))?(((use)==0?item.Proto.Weapon_MaxDist_0:((use)==1?item.Proto.Weapon_MaxDist_1:((use)==2?item.Proto.Weapon_MaxDist_2:0)))+bonusRange):(viewRange));
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+bool IsHexShotable(ProtoItem&weapon)
+{
+	if(!(@weapon!=null))
+	false;
+	return true;
+}
+
+int HexShotingToHit(Critter&cr,uint16 tx,uint16 ty,ProtoItem&weapon,Item&realWeapon)
+{
+	if(!(@weapon!=null))
+	return 0;
+	if(!cr.IsLife())
+	return 0;
+	
+	int weaponPerk=weapon.Weapon_Perk;
+	int skillNum=((0)==0?weapon.Weapon_Skill_0:((0)==1?weapon.Weapon_Skill_1:((0)==2?weapon.Weapon_Skill_2:0)));
+	int toHit=int(cr.Skill[skillNum]);
+	
+	if(cr.Damage[(502)]!=0)
+	toHit-=25; 
+	
+	if(cr.Trait[(553)]!=0)
+	toHit+=((((weapon.Flags)&((0x00000080)))!=0)?-40:20);
+	int handlingStrength=cr.Stat[(0)];
+	int reqStrength=weapon.Weapon_MinStrength;
+	if(cr.Perk[(407)]!=0)
+	handlingStrength+=2;
+	if(handlingStrength<reqStrength)
+	toHit-=(reqStrength-handlingStrength)*20;
+	
+	if(weaponPerk==(2))
+	toHit+=20;
+	
+	toHit+=SelectWeaponBonus(realWeapon,(104)); 
+	
+	int distmod1=2;
+	int distmod2=0;
+	if(weaponPerk==(1))
+	distmod1=4;
+	
+	int perception=cr.Stat[(1)];
+	int dist=GetDistantion(cr.HexX,cr.HexY,tx,ty);
+	
+	int acc=dist;
+	
+	if(dist<distmod2)
+	acc+=distmod2;
+	else
+	acc-=(perception-2)*distmod1;
+	
+	if(-2*perception>acc)
+	acc=-2*perception;
+	
+	acc-=2*cr.Perk[(315)];
+	
+	if(acc>=0&&cr.Damage[(502)]!=0)
+	acc*=-12;
+	else
+	acc*=-4;
+	
+	toHit+=acc;
+	
+	int blockers=0; 
+	
+	Map@map=cr.GetMap();
+	blockers=map.GetCrittersPath(cr.HexX,cr.HexY,tx,ty,0.0f,dist,(0x01),null);    
+	
+	toHit-=10*blockers;
+	
+	toHit=(((toHit)>(95))?(95):(((toHit)<(5))?(5):(toHit)));
+	
+	return toHit;
+}
+
+int HexShotActionPointsCost(Item&item,Critter&cr)
+{
+	if(IsHexShotWeapon(item))
+	{
+		uint8 use=((item.Mode)&0xF);
+		int apCost=(cr.Perk[(306)]>0)?-1:0;
+		apCost+=((use)==0?item.Proto.Weapon_ApCost_0:((use)==1?item.Proto.Weapon_ApCost_1:((use)==2?item.Proto.Weapon_ApCost_2:0)));  
+		
+		return apCost;
+	}
+	return 0;
+}
+
+bool IsHexShotableThere(Critter&cr,Item@item,uint16 tx,uint16 ty)
+{
+	if(!(@item!=null)||!IsHexShotable(item.Proto)||!cr.IsLife())
+	return false;
+	
+	if(cr.Stat[(75)]<HexShotActionPointsCost(item,cr))
+	return false;
+	if(HexShotActionPointsCost(item,cr)==0)
+	return false;
+	
+	if(cr.Damage[(503)]!=0||cr.Damage[(504)]!=0)
+	return false;
+	if(HexShotGetMaxRange(cr,item)==0||GetDistantion(cr.HexX,cr.HexY,tx,ty)==0)
+	return false; 
+	
+	uint16 pbx=tx;
+	uint16 pby=ty;
+	uint16 bx=tx;
+	uint16 by=ty; 
+	
+	Map@map=cr.GetMap();
+	map.GetCrittersPath(cr.HexX,cr.HexY,tx,ty,0.0f,0,0,null,pbx,pby,bx,by);    
+	
+	if(bx!=tx||by!=ty)
+	return false;
+	
+	return(HexShotGetMaxRange(cr,item)>=GetDistantion(cr.HexX,cr.HexY,tx,ty));
+	
+}  
+
+import void CommenceExplosionHexEx(Critter@attacker,Map@map,uint16 tx,uint16 ty,Critter@target,uint weapPid,Item@usedWeapon,uint ammoPid,bool isCritical,uint intentionallyId,bool isRocket,bool isExplodeRocket)from"combat";
+
+void unsafe_HexShot(Critter&player,int px,int py,int p2,string@param3,array<int>@param4)
+{
+	if(!player.IsLife())
+	return;
+	
+	Map@map=player.GetMap();
+	if(!(@map!=null))
+	return;
+	
+	if(px<0||px>=int(map.GetWidth())||py<0||py>=int(map.GetHeight()))
+	return;
+	
+	Item@item=player.GetItem(0,(1));
+	if(!IsHexShotableThere(player,item,px,py))
+	return;
+	
+	if(item.AmmoCount<=0)
+	return;
+	
+	uint16 tx=px;
+	uint16 ty=py; 
+	
+	uint16 pbx=tx;
+	uint16 pby=ty;
+	uint16 bx=tx;
+	uint16 by=ty;
+	
+	map.GetCrittersPath(player.HexX,player.HexY,tx,ty,0.0f,0,0,null,pbx,pby,bx,by);
+	
+	int tohit=HexShotingToHit(player,pbx,pby,item.Proto,item);
+	if(tohit>=Random(1,100))
+	{
+		CommenceHexShoting(player,map,item,pbx,pby);
+	}
+	else
+	{
+		uint dist=GetDistantion(player.HexX,player.HexY,tx,ty)+1;
+		map.MoveHexByDir(tx,ty,Random(0,5),Random(1,dist/2));
+		map.GetCrittersPath(player.HexX,player.HexY,tx,ty,0.0f,0,(0x03),null,pbx,pby,bx,by);
+		tx=pbx;
+		ty=pby;
+		CommenceHexShoting(player,map,item,tx,ty);
+		player.Say((11),"You missed.");
+	}
+	
+}
+
+void CommenceHexShoting(Critter&cr,Map&map,Item&item,uint16 tx,uint16 ty)
+{
+	uint8 dir=GetDirection(cr.HexX,cr.HexY,tx,ty);
+	cr.SetDir(dir);
+	cr.Animate(0,(54),null,true,true);
+	if(cr.Mode[(510)]!=0)
+	{
+		if(!cr.IsPlayer()||cr.GetAccess()==(0))
+		cr.ModeBase[(510)]=0;
+	}
+	cr.Wait(__Breaktime);
+	cr.StatBase[(75)]-=100*HexShotActionPointsCost(item,cr);
+	
+	map.RunFlyEffect(((item.Mode)==0?item.Proto.Weapon_Effect_0:((item.Mode)==1?item.Proto.Weapon_Effect_1:((item.Mode)==2?item.Proto.Weapon_Effect_2:0))),cr,null,cr.HexX,cr.HexY,tx,ty);
+	
+	uint16 pid=item.GetProtoId();
+	if(!IsArenaItem(item)||(IsInsideArena(cr)&&IsInsideArena(tx,ty)))
+	{
+		if(cr.Timeout[(238)]<int(__TimeoutBattle))
+		cr.TimeoutBase[(238)]=((__FullSecond)+(__TimeoutBattle));
+		if(!map.IsTurnBased()&&map.IsTurnBasedAvailability())
+		map.BeginTurnBased(cr);
+		uint[]values={map.Id,tx,ty,pid,cr.Id,item.AmmoPid};
+		CreateTimeEvent(((__FullSecond)+(((0)*__TimeMultiplier))),"e_HexShotExplode",values,false);
+		item.AmmoCount-=1;
+		item.Update();
+	}
+}
+
+uint e_HexShotExplode(array<uint>@values)
+{
+	Map@map=GetMap(values[0]);
+	Critter@cr=GetCritter(values[4]);
+	if(!(@map!=null)||!(@cr!=null))
+	return 0;
+	
+	bool isRocket=(values[5]==(37)
+	||values[5]==(14)
+	||values[5]==(621));
+	bool isExplodeRocket=(values[5]==(14))||(values[5]==(621));
+	
+	Item@usedWeapon=cr.GetItem(0,(1));
+	if(!(@usedWeapon!=null))
+	return 0;
+	int skillVal=cr.Skill[((0)==0?usedWeapon.Proto.Weapon_Skill_0:((0)==1?usedWeapon.Proto.Weapon_Skill_1:((0)==2?usedWeapon.Proto.Weapon_Skill_2:0)))];
+	
+	if(usedWeapon.IsDeteriorable()&&!((cr.Mode[(534)]&((0x00000200)))!=0))
+	WearItem(cr,usedWeapon,((__SkillMaxValue)-(((skillVal)<(200))?(skillVal):(200)))/6);
+	
+	CommenceExplosionHexEx(cr,map,values[1],values[2],null,values[3],usedWeapon,values[5],false,0,isRocket,isExplodeRocket);
+	return 0;
+}                                                                                                                                                                                                                                
+

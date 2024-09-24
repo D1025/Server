@@ -1,0 +1,72 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_sf_china.fos
+//
+
+#include "_macros.fos"
+#include "economy_h.fos"
+#include "_defines.fos"
+#include "mapdata_h.fos"
+#include "reinforcements_h.fos"
+#include "_maps.fos"
+
+#include "factions_vc_q_scoutsf.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+
+//
+// map.Data:
+// 2 - Bank ID, for more information check _economy.fos
+//
+
+void map_init(Map& map, bool firstTime)
+{
+    if(firstTime)
+    {
+        // 2 - Bank ID, for more information check _economy.fos
+        map.SetData(MAP_DATA_BANK, BANK_SANFRANCISCO);         // This map contains the San Fran bank
+    }
+	
+	Critter@ rewardgiver = map.GetNpc(205, FIND_ALL | FIND_ONLY_NPC, 0);
+	if(valid(rewardgiver))
+	{
+		rewardgiver.ModeBase[MODE_NO_LOOT] = 1;
+		rewardgiver.ModeBase[MODE_NO_STEAL] = 1;
+		rewardgiver.ModeBase[MODE_NO_BARTER] = 1;
+	}
+	
+	
+    map.SetEvent(MAP_EVENT_IN_CRITTER, "OnInCritter");
+	if(map.GetProtoId() == MAP_SanFranChina && firstTime)
+		InitializeDynamicMob(map);
+
+    // FISH
+    if(firstTime)
+    {
+        uint[] maxes = { 20, 15 };
+        SetAlertMap(map, maxes);
+    }
+}
+
+uint e_PushForward(array<uint>@ sometrash)
+{
+	return 0;
+}
+
+uint e_SetCountDownToRide(array<uint>@ sometrash)
+{
+	return 0;
+}
+
+void OnInCritter(Map& map, Critter& player)
+{
+    // We are only interested in players
+    if(!player.IsPlayer())
+        return;
+
+    // Quest related method.
+    ScoutSFMap(map, player);
+
+}

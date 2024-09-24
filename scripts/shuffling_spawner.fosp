@@ -1,0 +1,256 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
+import void WLog(string&type,string&message)from"debug";
+import void WLog(string&type,string&message,int level)from"debug";
+import void InitDebug()from"debug";     
+
+class SpawnData
+{
+	private array<uint16>pids;
+	private array<uint>chances;
+	private uint totalChance;
+	private uint delay;
+	
+	SpawnData()
+	{
+		totalChance=0;
+		delay=0;
+	}
+	
+	SpawnData@Add(uint16 pid,uint chance)
+	{
+		if(chance==0)
+		return this;
+		pids.insertLast(pid);
+		chances.insertLast(chance);
+		totalChance+=chance;
+		return this;
+	}
+	
+	SpawnData@SetDelay(uint time)
+	{
+		delay=time;
+		return this;
+	}
+	
+	bool TryRespawn(Map&map,Item&marker,Item&item)
+	{
+		if(delay==0)
+		return Respawn(map,marker,item);
+		
+		DeleteItem(item);
+		array<uint>val={map.Id,marker.Id};
+		return CreateTimeEvent(((__FullSecond)+(delay)),"e_Respawn",val,true)!=0;
+	}
+	
+	bool Respawn(Map&map,Item&marker,Item@item)
+	{
+		
+		if(totalChance==0)
+		return false;
+		
+		array<bool>spawned(pids.length(),false);
+		array<Item@>markers; 
+		
+		uint len=map.GetItems((21002),markers);
+		for(uint i=0;i<len;)
+		{
+			if(markers[i].Id==marker.Id||
+			(markers[i].Val0)!=(marker.Val0)||
+			checkSpawned(map,markers[i],spawned))
+			{
+				len--;
+				@markers[i]=markers[len];
+				continue;
+			}
+			i++;
+		} 
+		
+		if(len==0)
+		return false;
+		Item@spawnMarker=markers[Random(0,len-1)]; 
+		
+		int idx=spawned.find(false);
+		if(idx<0)
+		for(uint acc=chances[++idx],roll=Random(1,totalChance);acc<roll;acc+=chances[++idx])
+		;
+		
+		Item@spawnedItem=map.AddItem(spawnMarker.HexX,spawnMarker.HexY,pids[idx],1);
+		
+		if(!(@spawnedItem!=null))
+		return false;
+		
+		spawnedItem.Dir=spawnMarker.Dir;
+		spawnedItem.Update();
+		
+		if((@item!=null))
+		DeleteItem(item);
+		
+		return true;
+	}
+	
+	private bool checkSpawned(Map&map,Item&marker,array<bool>&spawned)
+	{
+		array<Item@>items;
+		for(uint i=0,j=map.GetItems(marker.HexX,marker.HexY,items);i<j;i++)
+		{
+			int idx=pids.find(items[i].GetProtoId());
+			if(idx<0)
+			continue;
+			spawned[idx]=true; 
+			
+			return true;
+		}
+		return false;
+	}
+};
+
+array<SpawnData@>Data;
+
+SpawnData@NewSpawnData(uint index)
+{
+	if(index>=Data.length())
+	Data.resize(index+1);
+	
+	SpawnData@data=SpawnData();
+	@Data[index]=data;
+	return data;
+}
+
+SpawnData@GetSpawnData(uint num)
+{
+	if(num>=Data.length())
+	return null;
+	return Data[num];
+}
+
+bool ShuffleItem(Item&item)
+{
+	if(item.IsNotValid)
+	return false;
+	if(item.Accessory!=(2))
+	{
+		WLog("shuffler","item "+item.Id+" is not on a map",20);
+		return false;
+	}
+	
+	uint16 hx=0,hy=0;
+	Map@map=item.GetMapPosition(hx,hy);
+	
+	if(!(@map!=null)||map.IsNotValid)
+	{
+		WLog("shuffler","item "+item.Id+" is not on a valid map",20);
+		return false;
+	}
+	
+	array<Item@>items;
+	if(map.GetItems(hx,hy,1,(21002),items)==0)
+	{
+		WLog("shuffler","item "+item.Id+" is not placed over a shuffle marker",20);
+		return false;
+	}
+	
+	Item@marker=items[0];
+	
+	SpawnData@data=GetSpawnData((marker.Val0));
+	if(!(@data!=null))
+	{
+		WLog("shuffler","item marker "+marker.Id+" has an invalid spawn data: "+(marker.Val0),20);
+		return false;
+	}
+	
+	return data.TryRespawn(map,marker,item);
+}
+
+uint e_Respawn(array<uint>@values)
+{
+	Map@map=GetMap(values[0]);
+	if(!(@map!=null))
+	return 0;
+	Item@marker=GetItem(values[1]);
+	if(!(@marker!=null))
+	return 0;
+	
+	SpawnData@data=GetSpawnData((marker.Val0));
+	if(!(@data!=null))
+	{
+		WLog("shuffler","item marker "+marker.Id+" has an invalid spawn data: "+(marker.Val0),20);
+		return 0;
+	}
+	
+	data.Respawn(map,marker,null);
+	return 0;
+}
+
+void InitShufflingSpawns()
+{  
+	
+	NewSpawnData(0);
+	NewSpawnData(1).Add((22000),50).Add((22002),50);
+	NewSpawnData(2).Add((22000),50).Add((22002),50);
+	NewSpawnData(3).Add((22000),50).Add((22002),50).SetDelay(((1200)*__TimeMultiplier*60));
+	NewSpawnData(4).Add((22000),10).Add((22002),10).Add((22001),40).Add((22003),40);
+	NewSpawnData(5).Add((22000),15).Add((22002),15).Add((22001),30).Add((22003),30).Add((22005),10);
+	NewSpawnData(6).Add((22000),15).Add((22002),15).Add((22001),30).Add((22003),30).Add((22004),10);
+	NewSpawnData(7).Add((22001),20).Add((22003),20).Add((22000),30).Add((22002),30).SetDelay(((120)*__TimeMultiplier));
+	NewSpawnData(8).Add((22006),100);
+	NewSpawnData(9).Add((1825),50).Add((1826),50).SetDelay(((210)*__TimeMultiplier));
+	NewSpawnData(10).Add((22006),60).Add((22007),40);
+}   
+
+void _InitSpot(Item&item,bool firstTime)
+{
+	if(firstTime&&item.Val0==0)
+	{
+		array<uint>values={item.Id};
+		CreateTimeEvent(((__FullSecond)+(0)),"e_InitSpot",values,true);
+	}
+}
+uint e_InitSpot(array<uint>@values)
+{
+	Item@item=GetItem(values[0]);
+	if((@item!=null)&&item.MapId>0)
+	{
+		Map@map=GetMap(item.MapId);
+		if((@map!=null))
+		{
+			switch(map.GetProtoId())
+			{
+				case(375):
+				case(376):
+				case(379):
+				case(373):
+				item.Val0=1;
+				break;
+				case(269):
+				item.Val0=2;
+				break;
+				case(237):
+				item.Val0=3;
+				break;
+				case(378):
+				item.Val0=4;
+				break;
+				case(63):
+				item.Val0=5;
+				break;
+				case(117):
+				item.Val0=6;
+				break;
+				case(371):
+				item.Val0=7;
+				break;
+				case(12):
+				item.Val0=8;
+				break;
+				case(9):
+				item.Val0=9;
+				break;
+				case(565):
+				item.Val0=10;
+				break;
+			}
+		}
+	}
+	return 0;
+}

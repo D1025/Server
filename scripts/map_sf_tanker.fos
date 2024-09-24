@@ -1,0 +1,38 @@
+//
+// FOnline: 2238
+// Rotators
+//
+// map_sf_tanker.fos
+//
+
+#include "_macros.fos"
+
+#include "factions_h.fos"
+#include "mapdata_h.fos"
+#include "reinforcements_h.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+
+//
+// Initialize map, and store the Tanker Vagrants faction id
+// to be read by their terminal
+//
+void map_init(Map& map, bool firstTime)
+{
+    if(map.GetProtoId() != MAP_SanFranTanker_2) //Exclude unique dungeon in guarded location
+	{
+		if(firstTime)
+		{
+			// this map belongs to that faction
+			map.SetData(MAP_DATA_FACTION, FACTION_VAGRANTS);
+
+			uint[] maxes = { 7, 3 };
+			SetAlertMap(map, maxes);
+		}
+		// assign event handlers
+		map.SetEvent(MAP_EVENT_IN_CRITTER, "map_playerfaction_hq@_OnInCritter");
+	}
+	
+	//Dynamic mobs
+	if(firstTime && map.GetProtoId() == MAP_SanFranTanker_2) InitializeDynamicMob(map);
+}

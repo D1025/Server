@@ -1,0 +1,70 @@
+                                                                                                                
+
+string GetCritterLexems(CritterCl&critter)
+{
+	
+	return(critter.Lexems);      
+	
+}
+
+string GetItemLexems(ItemCl&item)
+{
+	
+	return(item.Lexems);      
+	
+}
+
+bool IsLexem(CritterCl&critter,string&lex)
+{
+	return(IsLexem(GetCritterLexems(critter),lex));
+}
+
+bool IsLexem(ItemCl&item,string&lex)
+{
+	return(IsLexem(GetItemLexems(item),lex));
+}
+
+bool IsLexem(string&lexems,string&lex)
+{
+	if(lexems.length()<3||lex.length()<2)
+	return(false);
+	
+	int pos=findFirst(lexems,lex);
+	if(pos<0)
+	return(false);
+	else
+	return(true);
+}
+
+string GetLexem(CritterCl&critter,string&lex)
+{
+	return(GetLexem(GetCritterLexems(critter),lex));
+}
+
+string GetLexem(ItemCl&item,string&lex)
+{
+	return(GetLexem(GetItemLexems(item),lex));
+}
+
+string GetLexem(string&lexems,string&lex)
+{
+	if(lexems.rawLength()<3||lex.rawLength()<2)
+	return("");
+	
+	if(lex.rawGet(0)!='$')
+	return("");
+	
+	if(!IsLexem(lexems,lex))
+	return("");
+	
+	array<string@>@lexem=split(lexems,"$");
+	for(uint l=0;l<lexem.length();l++)
+	{
+		if(("$"+substring(lexem[l],0,lex.rawLength()-1))==lex)
+		{
+			return(substring(lexem[l],lex.rawLength()-1,lexem[l].length()-(lex.rawLength()-1)));
+		}
+	}
+	return("");
+}                                                                                                                                                                                                                                                    
+

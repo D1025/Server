@@ -1,0 +1,64 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
+import string GetCritterLexems(CritterCl&critter)from"lexems";
+import string GetItemLexems(ItemCl&item)from"lexems";
+
+import bool IsLexem(CritterCl&critter,string&lex)from"lexems";
+import bool IsLexem(ItemCl&it,string&lex)from"lexems";
+import bool IsLexem(string&lexems,string&lex)from"lexems";
+
+import string GetLexem(CritterCl&critter,string&lex)from"lexems";
+import string GetLexem(ItemCl&item,string&lex)from"lexems";
+import string GetLexem(string&lexems,string&lex)from"lexems";                                        
+
+void DrawIcons()
+{
+	CritterCl@[]players;
+	GetCritters(0,(0x0F)|(0x10),players);
+	for(uint i=0;i<players.length();i++)
+	{
+		
+		if(!(@players[i]!=null))
+		return;
+		
+		if(!__ShowPlayerNames)
+		return;
+		
+		if(!__ConfigShowFactionIcons||__GmapActive||GetCurrentMapPid()==0)
+		return; 
+		
+		if(IsLexem(players[i],"$faction")&&players[i].IsPlayer())
+		{
+			
+			string PathToIcon="faction_icons/"+GetLexem(players[i],"$faction")+".png"; 
+			
+			file iconfile;
+			if(iconfile.open("data/"+PathToIcon,"r")>=0)
+			{
+				iconfile.close();
+				
+				int x=0;
+				int y=0;
+				if(GetNameTextInfo(players[i],x,y))
+				{
+					int lines=0;
+					int w=0;
+					int h=0;
+					string name=players[i].Name;
+					if(((((players[i].Flags)&((0x00080000)))!=0)))
+					name+=__PlayerOffAppendix;
+					
+					GetTextInfo(name,200,70,-1,(0x0004)|(0x0020)|(0x0200),w,h,lines);
+					x+=100-(w/2);
+					y+=70-h;
+					
+					if(x>0&&y>0&&x<__ScreenWidth&&y<__ScreenHeight)
+					DrawSprite(LoadSprite(PathToIcon,(1)),-1,x-18,y-4,16,16,false,true,0);
+				}
+			}
+			
+		}
+	}
+	players.resize(0);
+}                                                    
+

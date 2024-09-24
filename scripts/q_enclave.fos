@@ -1,0 +1,1178 @@
+//
+// FOnline Aftertimes
+// KompreSor
+//
+// q_enclave.fos
+//
+
+
+
+
+
+#include "_colors.fos"
+#include "_maps.fos"
+#include "_vars.fos"
+#include "_macros.fos"
+#include "mapdata_h.fos"
+#include "messages_h.fos"
+#include "npc_common_h.fos"
+#include "npc_planes_h.fos"
+#include "npc_roles_h.fos"
+#include "utils_h.fos"
+#include "elevators_h.fos"
+#include "MsgStr.h"
+#include "worldmap_h.fos"
+#include "_client_defines.fos"
+#include "broadcast_h.fos"
+#include "guard_h.fos"
+#include "npc_common_h.fos"
+#include "npc_planes_h.fos"
+//#include "mob_wave.fos"
+#include "mob_dynamic_h.fos"
+
+
+#define DELAYDOOR (REAL_SECOND(10))
+#define DELAYDOORCLOSE (REAL_SECOND(60))
+#define DELAYBOSS (REAL_SECOND(20))
+#define DELAYHACK (REAL_SECOND(5))
+#define DELAYWAVE (REAL_SECOND(10))
+//time to explode after damage a reactor
+#define DELAYRESET(REAL_MINUTE(30))
+//recreating Cooldown
+#define DELAYCREATE(REAL_MINUTE(60))
+
+import void PlaySound(Critter& cr, string& soundName) from "media";
+import bool LockerOpen(Item& item) from "lockers";
+import bool LockerClose(Item& item) from "lockers";
+import void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId) from "combat";
+import void FillMapByMobs(Map& map, uint8 reqNumMobs, uint8 kindof, uint8 subtype, uint8 weapgroup) from "mob_dynamic";
+import void AddSpecialBonus(Item@ it) from "item_bonus";
+
+void map_init(Map& map, bool firstTime)
+{
+	if(firstTime)
+	{
+	array<Critter@> nobody;
+	int newcrashed = CreateLocation(LOCATION_CRASHED_VERTI, 620, 1450, nobody);
+	//reset fuctions
+	reactor = true; hackcd = false; fightstarted = false; rea = 0; uses = 0; stage = 1; shield = 1;
+
+	topleft = false; topmid = false; topright = false; midleft = false; midmid = false; midright = false; botleft = false; botmid = false; botright = false;
+	startedonmap1 = false;
+	startedonmap2 = false;
+	}
+}
+
+///spawners
+void SpawnBuffItem(Item& container, uint16 pid)
+{
+	Item@ it = container.AddItem(pid, 1, 0);
+	AddSpecialBonus(it);
+}
+
+void init_reward0(Item& item, bool firstTime)
+{
+		switch(Random(1,10)) //tier IV
+		{
+		case 1: {item.AddItem(PID_M203, 1, 0); item.AddItem(PID_ROCKET_AP,Random(10,30),0);break;}
+		case 2: {item.AddItem(PID_POWERED_ARMOR, 1, 0); break;}
+		case 3: {item.AddItem(PID_SAIGA12, 1, 0); break;}
+		case 4: {item.AddItem(PID_M72_GAUSS_RIFLE, 1, 0); item.AddItem(PID_2MM_EC_AMMO,Random(5,40),0); break;}
+		case 5: {item.AddItem(PID_PK12_GAUSS_PISTOL, 1, 0); item.AddItem(PID_2MM_EC_AMMO,Random(5,40),0); break;}
+		case 6: {item.AddItem(PID_HK_G11E, 1, 0); item.AddItem(PID_4_7MM_CASELESS,Random(50,250),0); break;}
+		case 7: {item.AddItem(PID_VINDICATOR_MINIGUN, 1, 0); item.AddItem(PID_4_7MM_CASELESS,Random(120,460),0); break;}
+		case 8: {item.AddItem(PID_BOZAR, 1, 0); item.AddItem(PID_223_FMJ,Random(120,150),0); break;}
+		case 9: {item.AddItem(PID_YK42B_PULSE_RIFLE, 1, 0); item.AddItem(PID_MICRO_FUSION_CELL,Random(12,90),0); break;}
+		case 10: {item.AddItem(PID_SOLAR_SCORCHER, 1, 0); break;}
+		}
+}
+
+void init_reward1(Item& item, bool firstTime)
+{
+		switch(Random(1,10)) //tier IV
+		{
+		case 1: {SpawnBuffItem(item, PID_PLASMA_GATLING); item.AddItem(PID_MICRO_FUSION_CELL,Random(90,300),0);break;}
+		case 2: {SpawnBuffItem(item, PID_POWERED_ARMOR); break;}
+		case 3: {SpawnBuffItem(item, PID_ADVANCED_POWER_ARMOR); break;}
+		case 4: {SpawnBuffItem(item, PID_M72_GAUSS_RIFLE); item.AddItem(PID_2MM_EC_AMMO,Random(5,40),0); break;}
+		case 5: {SpawnBuffItem(item, PID_APA_HELMET); break;}
+		case 6: {SpawnBuffItem(item, PID_HK_G11E); item.AddItem(PID_4_7MM_CASELESS,Random(50,250),0); break;}
+		case 7: {SpawnBuffItem(item, PID_VINDICATOR_MINIGUN); item.AddItem(PID_4_7MM_CASELESS,Random(120,460),0); break;}
+		case 8: {SpawnBuffItem(item, PID_BOZAR); item.AddItem(PID_223_FMJ,Random(120,150),0); break;}
+		case 9: {SpawnBuffItem(item, PID_YK42B_PULSE_RIFLE); item.AddItem(PID_MICRO_FUSION_CELL,Random(12,90),0); break;}
+		case 10: {item.AddItem(PID_HOLY_HAND_GRENADE, Random(1,3), 0); break;}
+		}
+}
+
+void init_reward2(Item& item, bool firstTime)
+{
+	for( int i =1; i <= 5; i++ )
+		{
+		switch(Random(1,4)) //tier IV
+			{
+			case 1: {item.AddItem(PID_POWERED_ARMOR, 1, 0); break;}
+			case 2: {item.AddItem(PID_HARDENED_POWER_ARMOR, 1, 0); break;}
+			case 3: {item.AddItem(PID_ADVANCED_POWER_ARMOR, 1, 0); break;}
+			case 4: {item.AddItem(PID_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}
+			}
+	}
+}
+
+void init_reward3(Item& item, bool firstTime)
+{
+		for( int i =1; i <= Random(1,2); i++ )
+			{
+		switch(Random(1,14)) //tier IV
+		{
+		case 1: {item.AddItem(PID_BLUEPRINT_SAIGA_12, 1, 0); break;}
+		case 2: {item.AddItem(PID_BLUEPRINT_METAL_ARMOR_MK_III, 1, 0); break;}
+		case 3: {item.AddItem(PID_BLUEPRINT_M72_GAUSS_RIFLE, 1, 0); break;}
+		case 4: {item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}
+		case 5: {item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}
+		case 6: {item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2, 1, 0); break;}
+		case 7: {item.AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 1, 0); break;}
+		case 8: {item.AddItem(PID_BLUEPRINT_YK42B_PULSE_RIFLE, 1, 0); break;}
+		case 9: {item.AddItem(PID_BLUEPRINT_TURBO_PLASMA_RIFLE, 1, 0); break;}
+		case 10: {item.AddItem(PID_BLUEPRINT_VINDICATOR_MINIGUN, 1, 0); break;}
+		case 11: {item.AddItem(PID_BLUEPRINT_M203, 1, 0); break;}
+		case 12: {item.AddItem(PID_BLUEPRINT_BOZAR, 1, 0); break;}
+		case 13: {item.AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 1, 0); break;}
+		case 14: {item.AddItem(PID_BLUEPRINT_SOLAR_SCORCHER, 1, 0); break;}
+		
+		}
+	}
+}
+
+void init_reward4(Item& item, bool firstTime)
+{
+	for( int i =1; i <= Random(1,3); i++ )
+	{
+		switch(Random(1,7)) //tier IV
+		{
+		case 1: {item.AddItem(PID_IMPLANT_STRENGTH, 1, 0); break;}
+		case 2: {item.AddItem(PID_IMPLANT_PERCEPTION, 1, 0); break;}
+		case 3: {item.AddItem(PID_IMPLANT_ENDURANCE, 1, 0); break;}
+		case 4: {item.AddItem(PID_IMPLANT_CHARISMA, 1, 0); break;}
+		case 5: {item.AddItem(PID_IMPLANT_INTELLIGENCE, 1, 0); break;}
+		case 6: {item.AddItem(PID_IMPLANT_AGILITY, 1, 0); break;}
+		case 7: {item.AddItem(PID_IMPLANT_LUCK, 1, 0); break;}
+		}
+	}
+}
+
+void init_reward5(Item& item, bool firstTime)
+{
+	item.AddItem(PID_BOTTLE_CAPS, Random(1000000,2000000), 0);
+}
+
+void init_reward6(Item& item, bool firstTime)
+{
+	item.AddItem(PID_HYPO, Random(20,40), 0);
+}
+
+void init_reward7(Item& item, bool firstTime)
+{
+	for( int i =1; i <= Random(4,10); i++ )
+	{
+		switch(Random(1,13)) //tier IV
+		{
+		case 1: {item.AddItem(PID_ABSORBER, 1, 0); break;}
+		case 2: {item.AddItem(PID_ADVANCED_SHELL, 1, 0); break;}
+		case 3: {item.AddItem(PID_CARBON_POLYMER, 1, 0); break;}
+		case 4: {item.AddItem(PID_CYLINDRICAL_LOCK, 1, 0); break;}
+		case 5: {item.AddItem(PID_ELECTRIC_AMPLIFIER, 1, 0); break;}
+		case 6: {item.AddItem(PID_ELECTROMAGNETIC, 1, 0); break;}
+		case 7: {item.AddItem(PID_HIFLO, 1, 0); break;}
+		case 8: {item.AddItem(PID_PA_FUEL, 1, 0); break;}
+		case 9: {item.AddItem(PID_PLASMA_ACCELERATOR, 1, 0); break;}
+		case 10: {item.AddItem(PID_PLASMA_PARTS, 1, 0); break;}
+		case 11: {item.AddItem(PID_ROTARY_CHAMBER, 1, 0); break;}
+		case 12: {item.AddItem(PID_SERVOMOTORS, 1, 0); break;}
+		case 13: {item.AddItem(PID_PA_SHELL, 1, 0); break;}	
+		}
+	}
+}
+
+void init_reward8(Item& item, bool firstTime)
+{
+	item.AddItem(PID_2MM_EC_AMMO, Random(100,300), 0);
+	item.AddItem(PID_4_7MM_CASELESS, Random(500,1500), 0);
+}
+
+void init_reward9(Item& item, bool firstTime)
+{
+	switch(Random(1,3)) //tier IV
+		{
+		case 1: {item.AddItem(PID_IMPLANT_DERMAL, 1, 0); break;}
+		case 2: {item.AddItem(PID_IMPLANT_PHOENIX, 1, 0); break;}
+		case 3: {item.AddItem(PID_IMPLANT_NEMEAN, 1, 0); break;}
+		}
+}
+
+////map control:
+
+//door sounds
+void soundtrapdoor(Critter& cr)
+{
+	PlaySound(cr, "SODOORSA.ACM");
+}
+//IDK where to find a sound list so is placeholders
+void soundclose(Critter& cr)
+{
+	PlaySound(cr, "SODOORSR.ACM");
+}
+//IDK where to find a sound list so is placeholders
+void soundopen(Critter& cr)
+{
+	PlaySound(cr, "SODOORSS.ACM");
+}
+
+//open single door
+
+
+bool OpenIt(Critter& player, Scenery& terminal, int skill, Item@ item, int entireNum)
+{
+    uint16 hexX = 0;
+    uint16 hexY = 0;
+    Map@   map = player.GetMap();
+
+    map.GetEntireCoords(entireNum, 0, hexX, hexY);
+    Item@  door = map.GetDoor(hexX, hexY);
+	int[] data = {entireNum, map.Id};
+	if(door.LockerCondition == LOCKER_ISOPEN)
+	{
+	soundopen(player);
+	CreateTimeEvent( __FullSecond + DELAYDOOR, "e_closeit", data, false);
+	//door.LockerClose();
+	return true;
+	}
+	else
+	{
+	soundclose(player);
+    door.LockerOpen();
+	return true;
+	}
+}
+
+uint e_closeit(array<uint>@ values)
+{	
+	int entireNum = values[0];
+	Map@ map = GetMap(values[1]);
+	if(!valid(map))
+		return 0;
+	uint16 hexX = 0;
+    uint16 hexY = 0;
+	map.GetEntireCoords(entireNum, 0, hexX, hexY);
+    Item@  door = map.GetDoor(hexX, hexY);
+	door.LockerClose();
+	return 0;
+}
+//open 3 doors
+
+bool OpenLast(Critter& player, Scenery& terminal, int skill, Item@ item, int entireNum, int entireNum2, int entireNum3)
+{
+    uint16 hexX = 0;
+    uint16 hexY = 0;
+    Map@   map = player.GetMap();
+    map.GetEntireCoords(entireNum, 0, hexX, hexY);
+    Item@  door = map.GetDoor(hexX, hexY);
+	map.GetEntireCoords(entireNum2, 0, hexX, hexY);
+    Item@  door2 = map.GetDoor(hexX, hexY);
+	map.GetEntireCoords(entireNum3, 0, hexX, hexY);
+    Item@  door3 = map.GetDoor(hexX, hexY);
+	if(door.LockerCondition == LOCKER_ISOPEN)
+	{
+	door.LockerClose();
+	door2.LockerClose();
+	door3.LockerClose();
+	soundclose(player);
+	return true;
+	}
+	else
+	{
+    door.LockerOpen();
+	door2.LockerOpen();
+	door3.LockerOpen();
+	soundopen(player);
+	return true;
+	}
+}
+
+//reactor terminal
+
+bool reactor = true;
+bool hackcd = false;
+int rea = 0;
+
+bool OpenRea(Critter& player, Scenery& terminal, int skill, Item@ item, int entireNum)
+{
+    uint16 hexX = 0;
+    uint16 hexY = 0;
+    Map@   map = player.GetMap();
+	Location@ current_loc=map.GetLocation();
+    map.GetEntireCoords(entireNum, 0, hexX, hexY);
+    Item@  door = map.GetDoor(hexX, hexY);
+	if(reactor && rea >= 100)
+	{
+    door.LockerOpen();
+	oilbroadcast(player, DELAYRESET, 0, 0);
+	CreateTimeEvent( __FullSecond + DELAYRESET, "e_reset", current_loc.Id, false);
+	//placeholder here, use proper english
+	player.Say(SAY_NORM_ON_HEAD, "Unlock the evacuation door, reactor is damaged, critical failure");
+	reactor = false;
+	return true;
+	}
+	else if(!reactor)
+	{
+	//placeholder here, use proper english
+	player.Say(SAY_NORM_ON_HEAD, "Reactor damaged, soon to explode");
+	return true;
+	}
+	else if(!reactor && door.LockerCondition == LOCKER_LOCKED)
+	{
+	    door.LockerOpen();
+		return true;
+	}
+	else if(reactor && rea<100 && !hackcd)
+	{
+	Tryhacking(player, skill);
+	//placeholder here, use proper english
+	player.Say(SAY_NORM_ON_HEAD, "hacking " + rea + "%, try again in 5 second");
+	return true;
+	}
+	return true;
+}
+
+void Tryhacking(Critter& player, int skill)
+{
+	int add = Random(1,5);
+	int addplus = Random(4,5);
+	switch(Random(1,2))
+	{
+		case 1:
+		{
+		rea += add;
+		hackcd = true;
+		CreateTimeEvent( __FullSecond + DELAYHACK, "e_rea", cddoor, false);
+		break;
+		}
+		case 2:
+		{
+		if(player.Skill[SK_SCIENCE] > 125)
+			{
+			rea += addplus;
+			hackcd = true;
+			CreateTimeEvent( __FullSecond + DELAYHACK, "e_rea", cddoor, false);
+			break;
+			}
+		else
+			{
+			rea += add;
+			hackcd = true;
+			CreateTimeEvent( __FullSecond + DELAYHACK, "e_rea", cddoor, false);		
+			break;
+			}
+		}
+	}
+}
+
+//broadcast when reactor going to explode
+
+void oilbroadcast(Critter& player, uint time, int, int)
+{
+	array<int> oilrig;
+    AddBroadcastBuffer(BROADCAST_SERVER_EVENT_MSG, time, 0, "Enclave Oil Rig will be destroyed soon.", oilrig, time, BROADCAST_FILTER_NONE)
+    .SendToAll();
+}	
+
+uint e_rea(array<uint>@ values)
+{	
+	hackcd = false;
+	return 0;
+}	
+
+uint e_reset(array<uint>@ values)
+{	
+	Location@ loc = GetLocation(values[0]);
+	CreateTimeEvent( __FullSecond + DELAYCREATE, "e_create", loc.Id, false);
+	DeleteLocation(loc.Id);
+    return 0;	 
+}
+
+//recreating location
+	
+uint e_create(array<uint>@ values)
+{
+	Location@ loc = GetLocation(values[0]);
+	if(!valid(loc)) 
+		return 0;
+	array<Critter@> players;
+	uint            count = GetAllPlayers(players);
+	                                                     //Ocean area
+	int newOil = CreateLocation(LOCATION_ENCLAVE_OIL_RIG, 124, 1626, players);
+	return 0;	
+}
+
+//boss door
+
+int uses = 0;
+uint16 cddoor = 10;
+bool OpenBoss(Critter& player, Scenery& terminal, int skill, Item@ item, int entireNum, int entireNum2)
+{
+		uint16 hexX = 0;
+        uint16 hexY = 0;
+        Map@   map = player.GetMap();
+        map.GetEntireCoords(entireNum, 0, hexX, hexY);
+        Item@  door = map.GetDoor(hexX, hexY);
+        map.GetEntireCoords(entireNum2, 0, hexX, hexY);
+        Item@  door2 = map.GetDoor(hexX, hexY);
+		
+		//CHANGE MY ENGLISH IS ONLY PLACEHOLDERS
+		
+		switch(uses)
+		{
+		case 0: 
+			{
+		player.Say(SAY_NORM_ON_HEAD, "Before you go on the road, you need to gather the team");
+		uses += 1;
+		return true;
+			}
+		case 1: 
+			{
+			soundclose(player);
+            door.LockerClose();
+			player.Say(SAY_NORM_ON_HEAD, "The Control doors can be opened in 10 seconds");
+			CreateTimeEvent( __FullSecond + DELAYDOOR, "e_rduse", cddoor, false);
+			return true;
+			}
+        case 2:
+			{
+			soundopen(player);
+            door2.LockerOpen();
+			player.Say(SAY_NORM_ON_HEAD, "The Control door will be closed in 60 seconds and will NOT open again");
+			CreateTimeEvent( __FullSecond + DELAYDOORCLOSE, "e_thuse", map.Id, false);
+			return true;
+			}
+		case 3:
+		{
+			player.Say(SAY_NORM_ON_HEAD, "Quickly! before the door will closed");
+			return true;
+		}
+		case 4:
+		{
+			player.Say(SAY_NORM_ON_HEAD, "I do not open it anymore, I have to finish with myself");
+			uses +=1;
+			return true;
+		}
+		case 5:
+		{
+		if(player.IsLife())
+			{
+			InjureCritter(player, Random(500,9999), DAMAGE_ELECTR, cddoor, 0);
+			}
+		}
+		}	
+		return true;
+}
+
+//triger which will close boss door
+
+void CloseIt(Critter& player, Scenery& trigger, bool entered, uint8 Dir, int entireNum) 
+{
+	uint16 hexX = 0;
+    uint16 hexY = 0;
+    Map@   map = player.GetMap();
+    map.GetEntireCoords(entireNum, 0, hexX, hexY);
+    Item@  door = map.GetDoor(hexX, hexY);
+	if(uses == 3)
+		{
+			if(entered)
+				{
+					soundclose(player);
+					door.LockerClose();
+					uses += 1;
+				}
+		}
+}
+
+uint e_rduse(array<uint>@ values)
+{	
+	uses += 1;
+	return 0;
+}
+
+uint e_thuse(array<uint>@ values)
+{	
+	uint16 hexX = 0;
+    uint16 hexY = 0;
+	Map@ map = GetMap(values[0]);
+	if(!valid(map))
+		return 0;
+	map.GetEntireCoords(512, 0, hexX, hexY);
+	Item@  door = map.GetDoor(hexX, hexY);
+	door.LockerClose();
+	uses += 1;
+	return 0;
+}
+//reset boss door
+bool TrapIt(Critter& player, Scenery& terminal, int skill, Item@ item, int entireNum, int entireNum2)
+{
+		uint16 hexX = 0;
+        uint16 hexY = 0;
+        Map@   map = player.GetMap();
+        map.GetEntireCoords(entireNum, 0, hexX, hexY);
+        Item@  door = map.GetDoor(hexX, hexY);
+        map.GetEntireCoords(entireNum2, 0, hexX, hexY);
+        Item@  door2 = map.GetDoor(hexX, hexY);
+
+        if(door.LockerCondition == LOCKER_ISOPEN)
+        {
+			soundopen(player);
+			soundclose(player);
+            door.LockerClose();
+            door2.LockerOpen();
+			uses = 0;
+        }
+        else
+        {
+			soundopen(player);
+			soundclose(player);
+            door2.LockerClose();
+            door.LockerOpen();
+			uses = 0;
+        }
+        return true;
+}
+
+//trap door puzzle
+bool topleft = false; bool topmid = false; bool topright = false;
+bool midleft = false; bool midmid = false; bool midright = false;
+bool botleft = false; bool botmid = false; bool botright = false;
+
+bool TrapDoor(Critter& player, Scenery& terminal, int skill, Item@ item, int enctrap)
+{
+		uint16 hexX = 0; uint16 hexY = 0;
+		Map@   map = player.GetMap();
+        map.GetEntireCoords(520, 0, hexX, hexY); Item@  door2n = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(521, 0, hexX, hexY); Item@  door2e = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(522, 0, hexX, hexY); Item@  door3s = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(523, 0, hexX, hexY); Item@  door6s = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(524, 0, hexX, hexY); Item@  door2s = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(525, 0, hexX, hexY); Item@  door5e = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(526, 0, hexX, hexY); Item@  door5s = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(527, 0, hexX, hexY); Item@  door8e = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(528, 0, hexX, hexY); Item@  door1e = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(529, 0, hexX, hexY); Item@  door4e = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(530, 0, hexX, hexY); Item@  door7e = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(531, 0, hexX, hexY); Item@  door1s = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(532, 0, hexX, hexY); Item@  door4s = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(533, 0, hexX, hexY); Item@  door6e = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(534, 0, hexX, hexY); Item@  door4w = map.GetDoor(hexX, hexY);
+		map.GetEntireCoords(535, 0, hexX, hexY); Item@  door8s = map.GetDoor(hexX, hexY);
+		
+		switch(enctrap)
+			{
+			//RESET
+			case 0: { door2n.LockerClose(); door2e.LockerClose(); door3s.LockerClose(); door6s.LockerClose(); door2s.LockerClose(); door5e.LockerClose(); door5s.LockerClose(); door8e.LockerClose(); door1e.LockerClose(); door4e.LockerClose(); door7e.LockerClose(); door1s.LockerClose(); door4s.LockerClose(); door6e.LockerClose(); door4w.LockerClose(); door8s.LockerClose();
+			topleft = false; topmid = false; topright = false; midleft = false; midmid = false; midright = false; botleft = false; botmid = false; botright = false;
+			return true;
+				}
+			case 1:
+				{
+				if(!topleft)
+					{
+					door1s.LockerOpen();	door1e.LockerClose();
+					door2s.LockerOpen();	door2e.LockerClose();
+					door3s.LockerOpen();	door7e.LockerClose();
+					topleft = true;			soundtrapdoor(player); 					return true;
+					}
+				else 
+					{
+					door1s.LockerClose();	door1e.LockerOpen();
+					door2s.LockerClose();	door2e.LockerOpen();
+					door3s.LockerClose();	door7e.LockerOpen();
+					topleft = false;		soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 2:
+				{
+				if(!topmid)
+					{
+					door1e.LockerOpen();	door2n.LockerClose();
+					door2e.LockerOpen();	door4w.LockerClose();
+					door4e.LockerOpen();	door6e.LockerClose();
+					door7e.LockerOpen();	door8s.LockerClose();
+					topmid = true;			soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door1e.LockerClose();	door2n.LockerOpen();
+					door2e.LockerClose();	door4w.LockerOpen();
+					door4e.LockerClose();	door6e.LockerOpen();
+					door7e.LockerClose();	door8s.LockerOpen();
+					topmid = false;			soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 3:
+				{
+				if(!topright)
+					{
+					door3s.LockerOpen();	door4w.LockerClose();
+					door4e.LockerOpen();	door6e.LockerClose();
+					door4s.LockerOpen();	
+					topright = true;		soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door3s.LockerClose();	door4w.LockerOpen();
+					door4e.LockerClose();	door6e.LockerOpen();
+					door4s.LockerClose();	
+					topright = false;		soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 4:
+				{
+				if(!midleft)
+					{
+					door4w.LockerOpen();	door1s.LockerClose();
+					door4e.LockerOpen();	door2s.LockerClose();
+					door5e.LockerOpen();	door3s.LockerClose();
+					door6e.LockerOpen();	door4s.LockerClose();
+											door5s.LockerClose();
+											door6s.LockerClose();
+					midleft = false;			soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door4w.LockerClose();	door1s.LockerOpen();
+					door4e.LockerClose();	door2s.LockerOpen();
+					door5e.LockerClose();	door3s.LockerOpen();
+					door6e.LockerClose();	door4s.LockerOpen();
+											door5s.LockerOpen();
+											door6s.LockerOpen();
+					midleft = true;			soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 5:
+				{
+				if(!midmid)
+					{
+					door3s.LockerOpen();	door1s.LockerClose();
+					door4w.LockerOpen();	door2s.LockerClose();
+					door5e.LockerOpen();	door4e.LockerClose();
+					topmid = false;			soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door3s.LockerClose();	door1s.LockerOpen();
+					door4w.LockerClose();	door2s.LockerOpen();
+					door5e.LockerClose();	door4e.LockerOpen();
+					topmid = true;			soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 6:
+				{
+				if(!midright)
+					{
+					door2s.LockerOpen();	door3s.LockerClose();
+					door4w.LockerOpen();	door4e.LockerClose();
+					door5e.LockerOpen();	door4s.LockerClose();
+					door6e.LockerOpen();	door5s.LockerClose();
+											door6s.LockerClose();
+					midright = false;		soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door2s.LockerClose();	door3s.LockerOpen();
+					door4w.LockerClose();	door4e.LockerOpen();
+					door5e.LockerClose();	door4s.LockerOpen();
+					door6e.LockerClose();	door5s.LockerOpen();
+											door6s.LockerOpen();
+					midright = true;		soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 7:
+				{
+				if(!botleft)
+					{
+					door4w.LockerOpen();	door1s.LockerClose();
+					door5s.LockerOpen();	door2s.LockerClose();
+					door7e.LockerOpen();	door5e.LockerClose();
+					botleft = false;		soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door4w.LockerClose();	door1s.LockerOpen();
+					door5s.LockerClose();	door2s.LockerOpen();
+					door7e.LockerClose();	door5e.LockerOpen();
+					botleft = true;		soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 8:
+				{
+				if(!botmid)
+					{
+					door6s.LockerOpen();	door3s.LockerClose();
+					door6e.LockerOpen();	door5s.LockerClose();
+					door8e.LockerOpen();	door5e.LockerClose();
+											door7e.LockerClose();
+					botmid = false;			soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door6s.LockerClose();	door3s.LockerOpen();
+					door6e.LockerClose();	door5s.LockerOpen();
+					door8e.LockerClose();	door5e.LockerOpen();
+											door7e.LockerOpen();
+					botmid = true;			soundtrapdoor(player); 					return true;
+					}
+				}
+				
+			case 9:
+				{
+				if(!botright)
+					{
+					door2n.LockerOpen();	
+					door4w.LockerOpen();	
+					door8s.LockerOpen();	
+					door6e.LockerOpen();	
+					botright = false;	soundtrapdoor(player); 					return true;
+					}
+				else
+					{
+					door2n.LockerClose();	
+					door4w.LockerClose();
+					door8s.LockerClose();	
+					door6e.LockerClose();	
+					botright = true;	soundtrapdoor(player); 					return true;
+					}
+				}
+			}
+		return true;
+}
+
+//dmg each time, player step on trigger, smart players should use tesla armor
+
+void TrapDmg(Critter& player, Scenery& trigger, bool entered, uint8 Dir) 
+{
+	if(entered)
+	{
+		if(player.IsLife())
+		{
+		InjureCritter(player, Random(100,200), DAMAGE_ELECTR, player.Dir, 0);
+		}
+	}
+}
+
+
+void Exit(Critter& player, Scenery& trigger, bool entered, uint8 Dir)
+{
+	Map@   map = player.GetMap();
+	if(entered && !reactor)
+	{
+		if(player.IsLife())
+		{					
+		switch(Random(1,4))
+		{							//enclave_end id, hexX, hexY
+		case 1: {InjureCritter(player, Random(100,300), DAMAGE_NORMAL, player.Dir, 0); player.TransitToMap(map.Id + 3, 81, 76, player.Dir); break;}
+		case 2: {InjureCritter(player, Random(100,300), DAMAGE_NORMAL, player.Dir, 0); player.TransitToMap(map.Id + 3, 73, 83, player.Dir); break;}
+		case 3: {InjureCritter(player, Random(100,300), DAMAGE_NORMAL, player.Dir, 0); player.TransitToMap(map.Id + 3, 74, 54, player.Dir); break;}
+		case 4: {InjureCritter(player, Random(100,300), DAMAGE_NORMAL, player.Dir, 0); player.TransitToMap(map.Id + 3, 58, 62, player.Dir); break;}
+		}
+		}
+	}
+}
+
+
+
+//////////////////mob section//////////////////////////
+#define ROLE_DEFAULT      (0)
+#define ROLE_AGRESSIVE    (1)
+#define ROLE_PASSIVE      (2)
+
+#define ALERTED           # (cr)           (cr.StatBase[ST_VAR1]) 
+
+#define IDLE_NORMAL       (5000)
+#define IDLE_ALERTED      (1000)
+bool fightstarted = false;	 
+int stage = 1;
+int shield = 1;
+
+
+//boss fight: stage 1 boss have shield and turrets, player can remove shield with click on terminal, but better first kill turrets
+bool r_boss(Critter& player, Scenery& terminal, int skill, Item@ item)
+{
+	Map@ map = player.GetMap();
+	array<Critter@> bosss;
+	for(uint j = 0; j < map.GetCritters(1879, FIND_ONLY_NPC | FIND_ALL, bosss); j++)
+		{
+		if(bosss[j].IsLife() && !fightstarted)
+			{
+			//stage 2: frank can be hurt, he get a gun
+			bosss[j].ModeBase[MODE_NO_WALK] = 0;
+			bosss[j].StatBase[ST_NORMAL_ABSORB] = 16;
+			bosss[j].StatBase[ST_LASER_ABSORB] = 16;
+			bosss[j].StatBase[ST_PLASMA_ABSORB] = 16;
+			bosss[j].StatBase[ST_ELECTRO_ABSORB] = 16;
+			bosss[j].StatBase[ST_EXPLODE_ABSORB] = 16;
+			bosss[j].StatBase[ST_NORMAL_RESIST] = 50;
+			bosss[j].StatBase[ST_LASER_RESIST] = 50;
+			bosss[j].StatBase[ST_PLASMA_RESIST] = 50;
+			bosss[j].StatBase[ST_ELECTRO_RESIST] = 50;
+			bosss[j].StatBase[ST_EXPLODE_RESIST] = 50;
+			bosss[j].StatBase[ST_HEALING_RATE] = 16;
+			//heal in case players try be smart
+			bosss[j].StatBase[ST_CURRENT_HP] = 9999;
+			bosss[j].AddItem(PID_BOSS_RIFLE, 1);
+			CreateTimeEvent(__FullSecond + DELAYWAVE, "e_waveboss", map.Id, false);
+			fightstarted = true;
+			return true;
+			}
+		//if player wanna be smart and kill boss via flat dmg and dont start fight
+		else if(!fightstarted && bosss[j].IsDead())
+		{
+		if(player.IsLife())
+			{
+			CreateTimeEvent(__FullSecond + DELAYWAVE, "e_waveboss", map.Id, false);
+			player.Say(SAY_NORM_ON_HEAD, ":( It not working guys...");
+			InjureCritter(player, Random(500,9999), DAMAGE_ELECTR, cddoor, 0);
+			return true;
+			}
+		}
+		}
+	return true;
+}
+	
+void bosstrigger(Critter& player, Scenery& trigger, bool entered, uint8 Dir)
+{
+	uint16 hexX = 0; uint16 hexY = 0;
+	Map@ map = player.GetMap();
+	map.GetEntireCoords(513, 0, hexX, hexY); 
+	Item@  door = map.GetDoor(hexX, hexY);
+	
+	array<Critter@> bosss;
+	for(uint j = 0; j < map.GetCritters(1879, FIND_ONLY_NPC | FIND_ALL, bosss); j++)
+		{
+		//it for change boss's weapons
+		Item@ bossr = bosss[j].GetItem(PID_BOSS_RIFLE, -1);
+		Item@ bossf = bosss[j].GetItem(PID_BOSS_FLAMER, -1);
+		//stage 3: frank get more tanky
+		if(bosss[j].Stat[ST_CURRENT_HP] <= 8000 && stage == 1)
+		{
+			bosss[j].ModeBase[MODE_NO_WALK] = 0;
+			bosss[j].StatBase[ST_NORMAL_ABSORB] = 17;
+			bosss[j].StatBase[ST_LASER_ABSORB] = 17;
+			bosss[j].StatBase[ST_PLASMA_ABSORB] = 37;
+			bosss[j].StatBase[ST_ELECTRO_ABSORB] = 17;
+			bosss[j].StatBase[ST_EXPLODE_ABSORB] = 17;
+			bosss[j].StatBase[ST_FIRE_ABSORB] = 17;
+			bosss[j].StatBase[ST_FIRE_RESIST] = 60;
+			bosss[j].StatBase[ST_NORMAL_RESIST] = 60;
+			bosss[j].StatBase[ST_LASER_RESIST] = 60;
+			bosss[j].StatBase[ST_PLASMA_RESIST] = 60;
+			bosss[j].StatBase[ST_ELECTRO_RESIST] = 60;
+			bosss[j].StatBase[ST_EXPLODE_RESIST] = 60;
+			bosss[j].StatBase[ST_HEALING_RATE] = 17;
+			stage += 1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 6000 && stage == 2)
+		{
+			//stage 4: time to weapon change, for sure players took tesla armor BURN!@
+			bosss[j].StatBase[ST_NORMAL_ABSORB] = 18;
+			bosss[j].StatBase[ST_LASER_ABSORB] = 18;
+			bosss[j].StatBase[ST_PLASMA_ABSORB] = 18;
+			bosss[j].StatBase[ST_ELECTRO_ABSORB] = 18;
+			bosss[j].StatBase[ST_EXPLODE_ABSORB] = 18;
+			bosss[j].StatBase[ST_FIRE_ABSORB] = 38;
+			bosss[j].StatBase[ST_FIRE_RESIST] = 70;
+			bosss[j].StatBase[ST_NORMAL_RESIST] = 70;
+			bosss[j].StatBase[ST_LASER_RESIST] = 70;
+			bosss[j].StatBase[ST_PLASMA_RESIST] = 70;
+			bosss[j].StatBase[ST_ELECTRO_RESIST] = 70;
+			bosss[j].StatBase[ST_EXPLODE_RESIST] = 70;
+			bosss[j].StatBase[ST_HEALING_RATE] = 18;
+			DeleteItem(bossr);
+			bosss[j].AddItem(PID_BOSS_FLAMER, 1);
+			stage += 1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 4000 && stage == 3)
+		{
+			//stage 5: tanky tanky
+			bosss[j].StatBase[ST_NORMAL_ABSORB] = 19;
+			bosss[j].StatBase[ST_LASER_ABSORB] = 19;
+			bosss[j].StatBase[ST_PLASMA_ABSORB] = 19;
+			bosss[j].StatBase[ST_ELECTRO_ABSORB] = 19;
+			bosss[j].StatBase[ST_EXPLODE_ABSORB] = 19;
+			bosss[j].StatBase[ST_FIRE_ABSORB] = 39;
+			bosss[j].StatBase[ST_FIRE_RESIST] = 80;
+			bosss[j].StatBase[ST_NORMAL_RESIST] = 80;
+			bosss[j].StatBase[ST_LASER_RESIST] = 80;
+			bosss[j].StatBase[ST_PLASMA_RESIST] = 80;
+			bosss[j].StatBase[ST_ELECTRO_RESIST] = 80;
+			bosss[j].StatBase[ST_EXPLODE_RESIST] = 80;
+			bosss[j].StatBase[ST_HEALING_RATE] = 19;
+			stage += 1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 2000 && stage == 4)
+		{
+			//Stage 6: time to knife them, weapon change again and more tanky
+			bosss[j].StatBase[ST_NORMAL_ABSORB] = 20;
+			bosss[j].StatBase[ST_LASER_ABSORB] = 20;
+			bosss[j].StatBase[ST_PLASMA_ABSORB] = 20;
+			bosss[j].StatBase[ST_ELECTRO_ABSORB] = 20;
+			bosss[j].StatBase[ST_EXPLODE_ABSORB] = 20;
+			bosss[j].StatBase[ST_FIRE_ABSORB] = 20;
+			bosss[j].StatBase[ST_FIRE_RESIST] = 90;
+			bosss[j].StatBase[ST_NORMAL_RESIST] = 90;
+			bosss[j].StatBase[ST_LASER_RESIST] = 90;
+			bosss[j].StatBase[ST_PLASMA_RESIST] = 90;
+			bosss[j].StatBase[ST_ELECTRO_RESIST] = 90;
+			bosss[j].StatBase[ST_EXPLODE_RESIST] = 90;
+			bosss[j].StatBase[ST_HEALING_RATE] = 20;
+			DeleteItem(bossf);
+			bosss[j].AddItem(PID_BOSS_KNIFE, 1);
+			stage += 1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 0 && entered && fightstarted)
+		{
+		door.LockerOpen();
+		}
+		//when shield is on and boss is attacked
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 9970 && !fightstarted && shield == 1)
+		{
+		bosss[j].Say(SAY_NORM_ON_HEAD, "haha, You cannot kill until my shield is up.");
+		shield +=1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 9950 && !fightstarted && shield == 2)
+		{
+		bosss[j].Say(SAY_NORM_ON_HEAD, "Gave up!");
+		shield +=1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 9930 && !fightstarted && shield == 3)
+		{
+		bosss[j].Say(SAY_NORM_ON_HEAD, "better turn off shield.");
+		shield +=1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 9910 && !fightstarted && shield == 4)
+		{
+		bosss[j].Say(SAY_NORM_ON_HEAD, "hahahaha, are You still tring?");
+		shield +=1;
+		}
+		else if(bosss[j].Stat[ST_CURRENT_HP] <= 9910 && !fightstarted && shield == 5)
+		{
+		bosss[j].Say(SAY_NORM_ON_HEAD, "I told you, you can NOT kill me.");
+		bosss[j].StatBase[ST_CURRENT_HP] = 9999;
+		shield = 1;
+		}
+	}
+}
+
+bool startedonmap1 = false;
+bool startedonmap2 = false;
+
+void mobtrigger(Critter& cr, Scenery& trigger, bool entered, uint8 Dir)
+{
+	Map@ map = cr.GetMap();
+	//start mob wave from mob_wave.fos
+	if(entered && !startedonmap1)
+	{
+	startedonmap1 = true;
+	CreateTimeEvent(__FullSecond + DELAYWAVE, "e_wave", map.Id, false);
+	}
+
+}
+
+void mobtrigger2(Critter& cr, Scenery& trigger, bool entered, uint8 Dir)
+{
+	Map@ map = cr.GetMap();
+	//start mob wave from mob_wave.fos
+	if(entered && !startedonmap2)
+	{
+	startedonmap2 = true;
+	CreateTimeEvent(__FullSecond + DELAYWAVE, "e_wave", map.Id, false);
+	}
+}
+
+
+//below copied(stolen,map_ares.fos) mob reacting
+
+void _Mob(Critter& mob, bool firstTime)
+{
+    mob.ModeBase[MODE_NO_LOOT] = 1;
+    mob.ModeBase[MODE_NO_DROP] = 1;
+    mob.ModeBase[MODE_NO_STEAL] = 1;
+    mob.ModeBase[MODE_UNLIMITED_AMMO] = 1;
+    _CritSetExtMode(mob, MODE_EXT_MOB);
+    mob.SetEvent(CRITTER_EVENT_ATTACKED, "mob_dynamic@_Alert");
+	mob.SetEvent(CRITTER_EVENT_IDLE, "mob_dynamic@_DontMove");
+}
+
+
+void _DontMove(Critter& mob, bool firstTime)
+{
+    _Mob(mob, firstTime);
+    mob.SetEvent(CRITTER_EVENT_IDLE, "_MobIdle2");
+}
+
+void _MobIdle(Critter& mob)
+{
+    if(!mob.IsLife())
+    {
+        mob.Wait(IDLE_NORMAL);
+        return;
+    }
+
+    array<Critter@> crits;
+    uint            num = mob.GetCritters(false, FIND_ONLY_PLAYERS | FIND_LIFE, crits);
+    uint dist = GetDistance(mob);
+    for(uint i = 0; i < num; i++)
+    {
+        uint curDist = GetCrittersDistantion(mob, crits[i]);
+        if(curDist > dist)
+            continue;
+        else
+        {
+            if(crits[i].Mode[MODE_HIDE] != 0 || curDist < 5)
+            {
+                AttackCritter(mob, crits[i]);
+            }
+            else
+            {
+                mob.AddEnemyInStack(crits[i].Id);
+            }
+            return;
+        }
+    }
+    if(crits.length() > 0)
+    {
+        mob.Wait(IDLE_ALERTED);
+    }
+    else
+    {
+        MoveMob(mob, false);
+        mob.Wait(IDLE_NORMAL);
+    }
+}
+
+void _MobIdle2(Critter& mob)
+{
+    array<Critter@> crits;
+    uint            num = mob.GetCritters(false, FIND_ONLY_PLAYERS | FIND_LIFE, crits);
+    uint dist = GetDistance(mob);
+    for(uint i = 0; i < num; i++)
+    {
+        uint curDist = GetCrittersDistantion(mob, crits[i]);
+        if(curDist > dist)
+            continue;
+        else
+        {
+            if(crits[i].Mode[MODE_HIDE] != 0 || curDist < 5)
+            {
+                AttackCritter(mob, crits[i]);
+            }
+            else
+            {
+                mob.AddEnemyInStack(crits[i].Id);
+            }
+            return;
+        }
+    }
+    if(ALERTED(mob) > 0)
+    {
+        mob.Wait(IDLE_ALERTED);
+    }
+    else
+    {
+        mob.Wait(IDLE_NORMAL);
+    }
+}
+
+void MoveMob(Critter& cr, bool run)
+{
+    int dist = Random(0, (cr.Stat[ST_NPC_ROLE] % 100 / 10));
+    if(dist == 0)
+    {
+        cr.MoveRandom();
+    }
+    else
+    {
+        uint16 hexX = cr.HexX;
+        uint16 hexY = cr.HexY;
+        cr.GetMap().MoveHexByDir(hexX, hexY, Random(0, 5), dist);
+        AddWalkPlane(cr, 0, hexX, hexY, 0xff, run, 0);
+    }
+}
+
+uint GetDistance(Critter& cr)
+{
+    uint base = __LookNormal + 3 * cr.Stat[ST_PERCEPTION];
+
+    int role = int(cr.Stat[ST_NPC_ROLE]);
+    switch(role)
+    {
+    case ROLE_DEFAULT:
+        return base / 3;
+    case ROLE_AGRESSIVE:
+        return base / 2;
+    case ROLE_PASSIVE:
+        return base / 4;
+    }
+    return base / 3;
+}
+
+void _MobShowCritter(Critter& cr, Critter& showCrit)
+{
+    if(showCrit.IsPlayer())
+        ALERTED(cr) += 1;
+}
+
+void _MobHideCritter(Critter& cr, Critter& hideCrit)
+{
+    if(hideCrit.IsPlayer())
+        ALERTED(cr) -= 1;
+}
+
+
+uint e_wave(array<uint>@ values)
+{	
+	Map@ map = GetMap(values[0]);
+	if(!valid(map))
+		return 0;
+	array<Critter@> players;
+	uint playercount = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+	uint npccount = map.GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO | FIND_ONLY_NPC);
+	if(npccount < 50)
+	FillMapByMobs(map, Random(2,8), FROM_GROUP_ENCLAVE, 0, WEAPONGROUP_MEDIUM);
+	
+    return REAL_SECOND(60);
+
+}
+
+uint e_waveboss(array<uint>@ values)
+{	
+	Map@ map = GetMap(values[0]);
+	if(!valid(map))
+		return 0;
+	array<Critter@> players;
+	uint playercount = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+	uint npccount = map.GetNpcCount(ROLE_MOB_DYNAMIC, FIND_LIFE_AND_KO | FIND_ONLY_NPC);
+	if(npccount < 50 && playercount>0)
+	FillMapByMobs(map, Random(2,6), FROM_GROUP_ENCLAVE, 0, WEAPONGROUP_MEDIUM);
+	
+    return REAL_SECOND(120);
+
+}
+//I lrean a lot when making this, thanks for using it in Your project.
+
+
+
+
+
+

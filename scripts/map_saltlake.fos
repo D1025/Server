@@ -1,0 +1,33 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// map_saltlake.fos
+//
+
+#include "_macros.fos"
+#include "factions_h.fos"
+#include "economy_h.fos"
+#include "_defines.fos"
+#include "_entires.fos"
+#include "_maps.fos"
+#include "utils_h.fos"
+#include "mapdata_h.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void CollectRewardSpawners(Map& map) from "base_control";
+
+void map_init(Map& map, bool firstTime)
+{
+    CollectRewardSpawners(map);
+	if(map.GetProtoId() == MAP_SaltLake)
+	{
+		map.SetData(MAP_DATA_BANK, BANK_SALT_LAKE);
+		if(firstTime) InitializeDynamicMob(map);
+	}
+}
+
+bool d_IsInCafeteria(Critter& master, Critter@ slave)
+{
+	return slave.GetMap().GetProtoId() == MAP_SaltLake_NukaCola;
+}

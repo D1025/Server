@@ -1,0 +1,179 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+uint ValidToolForTarget(ItemCl@tool,ItemCl@target)
+{
+	if((@tool!=null)&&(@target!=null)&&(((target.Flags)&((0x10000000)))!=0))
+	{
+		switch(target.Proto.ProtoId)
+		{
+			
+			case(1817):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(4)||pid==(236)||pid==(45)||pid==(319)||pid==(522)||pid==(517))
+				{
+					return(7);
+				}
+				return(0);
+			}
+			
+			case(1854):
+			case(1855):
+			case(1856):
+			case(1857):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(600)||pid==(289))
+				{
+					return(8);
+				}
+				return(0);
+			}
+			
+			case(1820):
+			case(1821):
+			case(1822):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(1863)||pid==(543))
+				{
+					return(9);
+				}
+				return(0);
+			}
+			
+			case(22000):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(1863)||pid==(6)||pid==(115))
+				{
+					return(1);
+				}
+				return(0);
+			}
+			case(22002):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(1863)||pid==(6)||pid==(115))
+				{
+					return(3);
+				}
+				return(0);
+			}
+			case(22001):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(6)||pid==(115))
+				{
+					return(2);
+				}
+				return(0);
+			}
+			case(22003):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(6)||pid==(115))
+				{
+					return(4);
+				}
+				return(0);
+			}
+			case(22004):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(115))
+				{
+					return(5);
+				}
+				return(0);
+			}
+			case(22005):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(115))
+				{
+					return(6);
+				}
+				return(0);
+			}
+			case(1823):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				
+				if(pid==(4)||pid==(236))
+				{
+					return(11);
+				}
+				return(0);
+			}
+			
+			case(344):
+			case(345):
+			{
+				uint16 pid=tool.Proto.ProtoId;
+				if(pid==(600)||pid==(289))
+				{
+					if((not((target.LockerCondition&(0x01))!=0)))
+					return(10);
+				}
+				return(0);
+			}
+			
+		}
+	}
+	return(0);
+}  
+
+bool TryUseSmartCursor(int click)
+{
+	if(GetCurrentCursor()!=(0)||click!=(0))
+	return false;
+	
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return false;  
+	
+	ItemCl@handItem=chosen.GetItem(0,(1)); 
+	
+	ItemCl@target=GetMonitorItem(__MouseX,__MouseY,false);
+	
+	if(ValidToolForTarget(handItem,target)!=(0))
+	{
+		uint[]action={(6),handItem.Id,handItem.Proto.ProtoId,(3),target.Id,(4),0};
+		SetChosenActions(action);
+		return true;
+	}
+	
+	return false;
+}
+
+void TryDrawSmartCursor()
+{
+	CritterCl@chosen=GetChosen();
+	if(!(@chosen!=null))
+	return;
+	if(GetCurrentCursor()==(0))
+	{ 
+		
+		ItemCl@handItems=chosen.GetItem(0,(1));  
+		
+		ItemCl@target=GetMonitorItem(__MouseX,__MouseY,false); 
+		
+		uint smartResult=ValidToolForTarget(handItems,target);
+		if(smartResult!=(0))
+		{
+			DrawText(GetMsgStr((0),1800+smartResult),__MouseX+2,__MouseY-12,__ScreenWidth,20,((uint((0xFF<<24)|(((60)&0xFF)<<16)|(((248)&0xFF)<<8)|((0)&0xFF)))),(5),(0x0100)|(0x0200));
+		}
+	}
+	return;
+}
+

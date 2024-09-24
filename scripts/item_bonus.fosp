@@ -1,0 +1,296 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+
+import void SetLexem(Item&item,string&lex,string&value)from"lexems";
+
+uint BonusNumber(Item@it)
+{
+	uint number=0;
+	if(it.Val5!=0)return 5;
+	else if(it.Val4!=0)return 4;
+	else if(it.Val3!=0)return 3;
+	else if(it.Val2!=0)return 2;
+	else if(it.Val1!=0)return 1;
+	else return 0;
+}
+
+void AddBonusOrNot(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>=50)AddWeaponBonus(it,1);
+		if(roll>=60)AddWeaponBonus(it,2);
+		if(roll>=70)AddWeaponBonus(it,3);
+		if(roll>=80)AddWeaponBonus(it,4);
+		if(roll>=90)AddWeaponBonus(it,5);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>=50)AddArmorBonus(it,1);
+		if(roll>=60)AddArmorBonus(it,2);
+		if(roll>=70)AddArmorBonus(it,3);
+		if(roll>=80)AddArmorBonus(it,4);
+		if(roll>=90)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddSpecialBonusLow(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddWeaponBonus(it,1);
+		if(roll>34)AddWeaponBonus(it,2);
+		if(roll>59)AddWeaponBonus(it,3);
+		if(roll>74)AddWeaponBonus(it,4);
+		if(roll>84)AddWeaponBonus(it,5);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddArmorBonus(it,1);
+		if(roll>34)AddArmorBonus(it,2);
+		if(roll>59)AddArmorBonus(it,3);
+		if(roll>74)AddArmorBonus(it,4);
+		if(roll>84)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddSpecialBonus(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		AddWeaponBonus(it,1);
+		AddWeaponBonus(it,2);
+		AddWeaponBonus(it,3);
+		AddWeaponBonus(it,4);
+		if(Random(0,1)==0)AddWeaponBonus(it,5);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		AddArmorBonus(it,1);
+		AddArmorBonus(it,2);
+		AddArmorBonus(it,3);
+		AddArmorBonus(it,4);
+		if(Random(0,1)==0)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddBonuses(Item@it,string@crafter)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>55)AddWeaponBonus(it,1,true);
+		if(roll>76)AddWeaponBonus(it,2,true);
+		if(roll>88)AddWeaponBonus(it,3,true);
+		if(roll>95)AddWeaponBonus(it,4,true);
+		if(roll==99)AddWeaponBonus(it,5,true);
+		SetLexem(it,"$crafter",crafter);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>55)AddArmorBonus(it,1);
+		if(roll>76)AddArmorBonus(it,2);
+		if(roll>88)AddArmorBonus(it,3);
+		if(roll>95)AddArmorBonus(it,4);
+		if(roll==99)AddArmorBonus(it,5);
+		SetLexem(it,"$crafter",crafter);
+	}
+	return;
+} 
+
+void AddBonusHinkley(Item@it)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddWeaponBonus(it,1);
+		if(roll>34)AddWeaponBonus(it,2);
+		if(roll>59)AddWeaponBonus(it,3);
+		if(roll>74)AddWeaponBonus(it,4);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		int roll=Random(0,99);
+		if(roll>=0)AddArmorBonus(it,1);
+		if(roll>34)AddArmorBonus(it,2);
+		if(roll>59)AddArmorBonus(it,3);
+		if(roll>74)AddArmorBonus(it,4);
+	}
+	return;
+}
+
+void AddBonuses(Item@it,int magic)
+{
+	if(it.GetType()==(3)&&!it.IsStackable())
+	{
+		if(magic>=1)AddWeaponBonus(it,1,true);
+		if(magic>=2)AddWeaponBonus(it,2,true);
+		if(magic>=3)AddWeaponBonus(it,3,true);
+		if(magic>=4)AddWeaponBonus(it,4,true);
+		if(magic>=5)AddWeaponBonus(it,5,true);
+	}
+	
+	else if(it.GetType()==(1))
+	{
+		if(magic>=1)AddArmorBonus(it,1);
+		if(magic>=2)AddArmorBonus(it,2);
+		if(magic>=3)AddArmorBonus(it,3);
+		if(magic>=4)AddArmorBonus(it,4);
+		if(magic>=5)AddArmorBonus(it,5);
+	}
+	return;
+}
+
+void AddArmorBonus(Item@it,int number)
+{
+	int minRoll=1;
+	int maxRoll=1;
+	
+	uint bonusType=0;
+	uint maxBonusType=(123); 
+	
+	if(it.GetProtoId()>=725&&it.GetProtoId()<=741)maxBonusType=(111); 
+	
+	do
+	{
+		bonusType=Random(100,maxBonusType);
+	}
+	while(HasBonusAlready(it,bonusType));
+	
+	switch(bonusType)
+	{
+		
+		case(100):{maxRoll=5;break;}
+		case(101):{maxRoll=5;break;}
+		case(102):{maxRoll=5;break;}
+		case(103):{maxRoll=5;break;}
+		case(104):{maxRoll=5;break;}
+		case(105):{maxRoll=10;break;}
+		case(106):{maxRoll=10;break;}
+		case(107):{maxRoll=10;break;}
+		case(108):{maxRoll=10;break;}
+		case(109):{maxRoll=10;break;}
+		case(110):{minRoll=-7;maxRoll=-1;break;}
+		case(111):{minRoll=-7;maxRoll=-1;break;}
+		
+		case(112):break;
+		case(113):{minRoll=10;maxRoll=30;break;}
+		case(114):{minRoll=10;maxRoll=30;break;}
+		case(115):break;
+		case(116):break;
+		case(117):break;
+		case(118):break;
+		case(119):break;
+		case(120):break;
+		case(121):break;
+		case(122):{minRoll=5;maxRoll=20;break;}
+		case(123):{minRoll=1;maxRoll=5;break;}
+		default:break;
+	} 
+	
+	int roll=Random(minRoll,maxRoll); 
+	
+	switch(number)
+	{
+		case 1:{it.Val0=bonusType;it.Val5=roll;break;}
+		case 2:{it.Val1=bonusType;it.Val6=roll;break;}
+		case 3:{it.Val2=bonusType;it.Val7=roll;break;}
+		case 4:{it.Val3=bonusType;it.Val8=roll;break;}
+		case 5:{it.Val4=bonusType;it.Val9=roll;break;}
+		default:break;
+	}
+	
+	it.Update();
+	return;
+} 
+
+void AddWeaponBonus(Item@it,int number,bool isCrafting=false)
+{
+	
+	uint minRoll=1;
+	uint maxRoll=1;
+	
+	uint bonusType=0;
+	
+	int skillNum=it.Proto.Weapon_Skill_0;
+	bool isRangeWeapon=(skillNum==(200)||skillNum==(201)||skillNum==(202));
+	
+	do
+	{
+		if(isRangeWeapon)
+		bonusType=Random(100,(106));
+		else
+		bonusType=Random(100,(105));
+	}
+	while(HasBonusAlready(it,bonusType)||IsBonusExcluded(isCrafting,bonusType));
+	
+	switch(bonusType)
+	{
+		case(100):{maxRoll=7;break;}
+		case(101):{maxRoll=7;break;}
+		case(102):{minRoll=10;maxRoll=25;break;}
+		case(103):{minRoll=10;maxRoll=25;break;}
+		case(104):{minRoll=5;maxRoll=25;break;}
+		case(106):{minRoll=1;maxRoll=4;break;}
+		case(105):break;
+		default:break;
+	} 
+	
+	uint roll=Random(minRoll,maxRoll); 
+	
+	switch(number)
+	{
+		case 1:{it.Val0=bonusType;it.Val5=roll;break;}
+		case 2:{it.Val1=bonusType;it.Val6=roll;break;}
+		case 3:{it.Val2=bonusType;it.Val7=roll;break;}
+		case 4:{it.Val3=bonusType;it.Val8=roll;break;}
+		case 5:{it.Val4=bonusType;it.Val9=roll;break;}
+		default:break;
+	}
+	
+	it.Update();
+	return;
+} 
+
+bool IsBonusExcluded(bool isCrafting,int bonusType)
+{
+	if(!isCrafting)
+	return false;
+	
+	if(bonusType==(105))
+	return true;
+	
+	return false;
+} 
+
+bool HasBonusAlready(Item@it,int bonusType)
+{
+	if(it.Val0==bonusType)return true;
+	if(it.Val1==bonusType)return true;
+	if(it.Val2==bonusType)return true;
+	if(it.Val3==bonusType)return true;
+	if(it.Val4==bonusType)return true;
+	return false;
+}  
+
+int checkBonus(Item@it,int bonusType)
+{
+	if(it.Val0==bonusType)return it.Val5;
+	if(it.Val1==bonusType)return it.Val6;
+	if(it.Val2==bonusType)return it.Val7;
+	if(it.Val3==bonusType)return it.Val8;
+	if(it.Val4==bonusType)return it.Val9;
+	return 0;
+}

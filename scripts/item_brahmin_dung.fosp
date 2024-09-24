@@ -1,0 +1,310 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+
+shared interface IGatherCallback
+{
+	void Callback(Item&item,Critter&cr,Item@usedItem);
+}; 
+
+import bool IsOverweighted(Critter&cr)from"production";
+import void CheckPrimitiveTool(Critter&crit,Item&item)from"production";
+import bool Gather(Item&item,Critter&cr,Item@used_item,uint16 pid,uint batch,uint text,uint text_empty,IGatherCallback@callback)from"production";
+import uint get_RegenerationInterval()from"production";
+import void Regenerate(Item&item,uint16 pid,int capacity,uint pool,int total_count)from"production";
+import void ReduceCounter(uint16 pid,int value)from"production";
+import uint GetFacilities(const Map&map,string@script_name,array<Item@>&spots)from"production";  
+
+class PicHashes
+{
+	array<uint>hashes;
+	
+	PicHashes(const array<string@>&picnames)
+	{
+		hashes.resize(picnames.length());
+		for(uint i=0,iend=picnames.length();i<iend;i++)
+		hashes[i]=GetStrHash(picnames[i]);
+	}
+	PicHashes&AddHash(string@picname)
+	{
+		hashes.insertLast(GetStrHash(picname));
+		return this;
+	}
+	uint GetRandom()const
+	{
+		return hashes[Random(0,hashes.length()-1)];
+	}
+};     
+
+void StartRegeneration(Item&item,string&func_name)
+{
+	(item.Val2)=0;
+	uint time=Random(__FacilitiesRegenTimeMin,__FacilitiesRegenTimeMax);
+	CreateTimeEvent(((__FullSecond)+(((time)*__TimeMultiplier*60))),func_name,item.Id,false);
+}                   
+
+bool dbInitTable(string@,string@){return true;}
+bool dbLog(string@,string@){return true;}                   
+
+void InitDBLogs(){}
+
+void LogExperience(Critter&cr,int amount){}
+void LogExperience(Critter&cr,int amount,string@info){}
+void LogExperience(Critter&cr,int amount,int skill){}
+void LogExperience(Critter&cr,int amount,int skill,string@info){}
+void LogExperience(Critter&cr,int amount,int skill,int param){}
+void LogExperience(Critter&cr,int amount,int skill,string@info,int param){}
+void LogQuestExperience(Critter&cr,int amount,string@info){}
+void LogQuestExperience(Critter&cr,int amount,int skill,string@info){}
+void LogAttack(Map@map,Critter&cr,Critter&target,ProtoItem&weapon,ProtoItem@ammo,uint8 aim,bool isBurst,uint ammoRound,uint weaponRound,bool isHit,bool isCritical,uint critfailFlags){}
+void LogDamage(Map@map,Critter@attacker,Critter&target,Item@weapon,ProtoItem@ammo,uint8 aim,bool isBurst,uint damage,bool isCritical,uint eff,uint rounds){}
+void LogGathering(Critter&,uint16,int){}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+
+shared interface IPolygon
+{
+	IPolygon@AddVertex(uint16 x,uint16 y);
+	IPolygon@AddVertices(array<uint16>&hexes);   
+	
+	bool IsWithin(Critter&cr);
+	bool IsWithin(Item&item);  
+	
+	bool IsWithin(uint16 x,uint16 y);
+};  
+
+import IPolygon@NewPolygon()from"polygon"; 
+
+import IPolygon@LoadShapeFromEntires(Map&map,uint first,uint last)from"polygon";          
+
+import ITown@GetTownByIndex(uint index)from"towns";
+import ITown@GetTown(uint id)from"towns";
+import uint GetTownCount()from"towns";
+import uint GetTowns(array<ITown@>@towns)from"towns";  
+
+import bool AddMilitia(Map@map)from"town";
+import void InitMilitia()from"town";
+import bool IsTCTown(Map@map)from"town";
+import uint RetrieveTownId(Map@map)from"town";
+import uint RetrieveTownId(Critter&critter)from"town";
+import ITown@RetrieveTown(Critter&critter)from"town";
+import bool ValidTown(ITown@town)from"town";
+import void GainControl(Critter&player)from"town";
+import uint GetNearMembers(Critter&player)from"town";
+import bool IsPolicy(Critter&player,uint policy)from"town";
+import bool IsControllingTown(Critter&player)from"town";
+import bool AlertMilitia(Critter&cr)from"town";
+import int SelectBag(uint crpid)from"town";
+import void SpawnInitMilitia(Map@map)from"town";
+import int CountMilitia(Map@map)from"town";
+import void ClearInfluenceBuffer(Critter&cr)from"town";  
+
+class PresenceStruct
+{
+	uint factionId;
+	uint count;
+	PresenceStruct(uint factionId)
+	{
+		this.factionId=factionId;
+		this.count=1;
+	}
+};
+
+shared interface ITown
+{
+	ITown@SetMapID(uint id);
+	ITown@SetTownID(uint id);
+	ITown@SetBaseRewardValue(uint value);
+	ITown@SetInfluenceMemberRequirement(uint number);
+	ITown@SetNearbyMemberRequirement(uint number);
+	ITown@SetTotalMemberRequirement(uint number);
+	ITown@SetLimboContainer(Item@container);
+	ITown@SetRewardContainer(Item@container);
+	ITown@SetTownLeader(Critter@leader);
+	ITown@SetSpeechModifier(int modifier);
+	ITown@SetHour(uint hour);
+	ITown@SetCaptureArea(IPolygon@capturearea);
+	ITown@SetMilitiaEnabled();
+	ITown@SetRewardStartCaps(uint caps);
+	ITown@SetVersion(uint version);
+	
+	uint GetVersion();
+	
+	uint GetTownID();
+	string GetTownName();
+	bool LoadData();
+	bool SaveData();
+	bool IsMilitiaEnabled();
+	bool IsFriendlyFaction(uint factionid);
+	bool IsFriend(Critter&cr);
+	bool IsValidCaptor(Critter&cr);
+	bool IsWithinCaptureArea(Critter&cr);
+	void AreaCheck();
+	bool AddFriendlyFaction(uint factionid);
+	bool RemoveFriendlyFaction(uint factionid);
+	array<uint>GetFriendlyFactions();
+	float GetControllingInfluence();
+	uint GetMilitiaMax();
+	uint GetControllingFaction();
+	uint GetNumberOfKilledNPCs();
+	uint GetControlCycles();
+	uint GetStatus();
+	void SetStatus(uint status);
+	void SetScore();
+	void SetPreviousFaction(uint previous);
+	uint GetlastSecond();
+	void SetlastSecond(uint sec);
+	uint GetAreaCount();
+	uint GetCountdown();
+	void SetCountdownStatus(bool enabled);
+	bool GetCountdownStatus();
+	void SendCountdownTime(Critter&player);
+	uint GetMemberNearbyRequirement();
+	uint GetMemberTotalRequirement();
+	Item@GetLimboContainer();
+	Item@GetRewardContainer();
+	uint GetTownLeaderId();
+	uint GetMapID();
+	int GetSpeechModifier();
+	bool GainControl(Critter&player);
+	void IncreaseNPCDeath(uint num);
+	void ModifyInfluence(uint factionId,float value);
+	void SetInfluence(uint factionId,float value);
+	void ResetStats();
+	void ResetControl();
+	void RevertControl();
+	void ClearRewardContainer();
+	void ClearLimboContainer();
+	void ClearContainers();
+	void Update(uint hour,uint minute);
+	void UpdateCountdown();
+	void UpdateTick();
+	void TownCheck();
+	
+	bool IsLaw(uint law);
+	void SetLaw(uint law,bool enabled);
+	
+	void AddMoney(int money);
+	int GetMoney(); 
+	
+	float GetInfluence(uint faction);
+	
+	Location@GetLocation();
+};                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+
+import bool AddMiscPlane(Critter&npc,uint priority,uint waitMinute,string@funcName)from"npc_planes";
+import bool AddMiscPlane(Critter&npc,uint priority,int identifier,uint identifierExt,uint waitSecond,string@funcName)from"npc_planes";
+import bool AddWalkPlane(Critter&npc,uint priority,uint16 hexX,uint16 hexY,uint8 dir,bool run,uint cut)from"npc_planes";
+import bool AddWalkPlane(Critter&npc,uint priority,int identifier,uint identifierExt,uint16 hexX,uint16 hexY,uint8 dir,bool run,uint cut)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,uint critId)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target,int minHp)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,uint critId,int minHp)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target,bool run)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,uint16 hexX,uint16 hexY,uint16 protoId,uint useItemId,bool toOpen)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,Item@item,uint useItemId,bool toOpen)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,Item@item,uint useItemId,bool toOpen,bool run)from"npc_planes";
+import bool AddHealCritterPlane(Critter&npc,uint priority,Critter@target,bool run)from"npc_planes";
+import bool AddDoctorCritterPlane(Critter&npc,uint priority,Critter@target,bool run)from"npc_planes";
+
+import uint EraseAttackPlane(Critter&npc,uint priority,Critter&target)from"npc_planes";
+import uint EraseAttackPlane(Critter&npc,uint priority,uint critId)from"npc_planes";  
+
+import int GetGvar(uint gvar)from"utils";
+import void AddScore(Critter@cr,uint score,uint points)from"utils";   
+
+array<string@>NormalPics={"art\\items\\mstr49.fofrm","art\\items\\mstr50.fofrm","art\\items\\mstr51.fofrm","art\\items\\mstr52.fofrm"};
+PicHashes NormalPicHashes(NormalPics);
+
+void item_init(Item&item,bool firstTime)
+{
+	item.SetEvent((4),"_DungSkill");
+	item.SetEvent((7),"_DungWalk");
+	item.SetEvent((3),"_UseOnDung");
+	if(firstTime)
+	item.PicMap=NormalPicHashes.GetRandom();
+}
+
+bool _DungSkill(Item&item,Critter&crit,int skill)
+{
+	if(skill==-1)
+	{
+		if(IsOverweighted(crit))
+		{
+			crit.SayMsg((11),(3),(425));
+			return true;
+		}
+		else
+		{
+			Item@it=crit.AddItem((9627),__BrahminCrapBatch);
+			it.SetScript(null);
+			crit.SayMsg((11),(0),(3015));
+		}
+		DeleteItem(item);
+		return true;
+	}
+	else if(skill==(212)||skill==(207))
+	{
+		if(crit.Skill[(212)]>99||crit.Skill[(207)]>99)
+		crit.SayMsg((11),(0),4201);
+		else
+		crit.SayMsg((11),(0),4202);
+		return true;
+	}
+	return false;
+}
+
+void _DungWalk(Item&item,Critter&crit,bool entered,uint8 dir)
+{
+	if(!crit.IsPlayer())
+	return;
+	
+	if(entered&&Random(1,10)==1)
+	{
+		if(crit.Stat[(5)]<Random(1,10))
+		{
+			if(crit.Stat[(6)]<Random(1,10))
+			{
+				crit.ToKnockout(((Random(0,1)==0)?(82):(83)),((Random(0,1)==0)?(86):(87)),((Random(0,1)==0)?(88):(89)),4,crit.HexX,crit.HexY);
+				crit.SayMsg((11),(0),4205);
+			}
+			else
+			{
+				crit.SayMsg((11),(0),4203);
+			}
+		}
+	}
+}
+
+bool _UseOnDung(Item&item,Critter&crit,Item@usedItem)
+{
+	
+	if(usedItem.GetProtoId()==(289)||usedItem.GetProtoId()==(600))
+	{                
+		
+		crit.SayMsg((11),(0),4204); 
+		
+		AddScore(crit,(23),1);
+		
+		uint xpBonus=24/crit.StatBase[(77)];
+		if(xpBonus>0)
+		{
+			crit.StatBase[(76)]+=xpBonus*(GetGvar((62001)));
+			LogExperience(crit,xpBonus*(GetGvar((62001))),"Dung");
+		} 
+		
+		if(item.Val5!=0)
+		{  
+			
+			GameVar@var=GetUnicumVar((2021),crit.Id,item.Val5);
+			if((@var!=null))
+			{
+				var+=1;
+			}
+		}
+		else
+		{  
+			
+		}
+		
+		DeleteItem(item);
+		return true;
+	}
+	return false;
+}

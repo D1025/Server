@@ -1,0 +1,854 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+
+uint __GetColor(int r,int g,int b,int a=0xFF)
+{
+	r=(((r)>(255))?(255):(((r)<(0))?(0):(r)));
+	g=(((g)>(255))?(255):(((g)<(0))?(0):(g)));
+	b=(((b)>(255))?(255):(((b)<(0))?(0):(b)));
+	a=(((a)>(255))?(255):(((a)<(0))?(0):(a)));
+	return(uint(((a)<<24)|(((r)&0xFF)<<16)|(((g)&0xFF)<<8)|((b)&0xFF)));
+}                                                                                                                                     
+
+shared interface Buffer
+{
+	bool IsRaw(uint len);
+	
+	Buffer@opCom();
+	
+	Buffer@opNeg();                    
+	
+	 Buffer@opShr(int8&value); Buffer@opShl(int8 value); Buffer@Get(int8&value); Buffer@Set(int8&value);
+	 Buffer@opShr(int16&value); Buffer@opShl(int16 value); Buffer@Get(int16&value); Buffer@Set(int16&value);
+	 Buffer@opShr(int32&value); Buffer@opShl(int32 value); Buffer@Get(int32&value); Buffer@Set(int32&value);
+	 Buffer@opShr(int64&value); Buffer@opShl(int64 value); Buffer@Get(int64&value); Buffer@Set(int64&value);
+	 Buffer@opShr(uint8&value); Buffer@opShl(uint8 value); Buffer@Get(uint8&value); Buffer@Set(uint8&value);
+	 Buffer@opShr(uint16&value); Buffer@opShl(uint16 value); Buffer@Get(uint16&value); Buffer@Set(uint16&value);
+	 Buffer@opShr(uint32&value); Buffer@opShl(uint32 value); Buffer@Get(uint32&value); Buffer@Set(uint32&value);
+	 Buffer@opShr(uint64&value); Buffer@opShl(uint64 value); Buffer@Get(uint64&value); Buffer@Set(uint64&value);
+	 Buffer@opShr(bool&value); Buffer@opShl(bool value); Buffer@Get(bool&value); Buffer@Set(bool&value);
+	 Buffer@opShr(string&value); Buffer@opShl(string value); Buffer@Get(string&value); Buffer@Set(string&value);
+	 Buffer@opShr(float&value); Buffer@opShl(float value); Buffer@Get(float&value); Buffer@Set(float&value);
+	
+	 Buffer@opShr(array<int8>&value); Buffer@opShl(array<int8>&value); Buffer@Get(array<int8>&value); Buffer@Set(array<int8>&value);
+	 Buffer@opShr(array<int16>&value); Buffer@opShl(array<int16>&value); Buffer@Get(array<int16>&value); Buffer@Set(array<int16>&value);
+	 Buffer@opShr(array<int32>&value); Buffer@opShl(array<int32>&value); Buffer@Get(array<int32>&value); Buffer@Set(array<int32>&value);
+	 Buffer@opShr(array<int64>&value); Buffer@opShl(array<int64>&value); Buffer@Get(array<int64>&value); Buffer@Set(array<int64>&value);
+	 Buffer@opShr(array<uint8>&value); Buffer@opShl(array<uint8>&value); Buffer@Get(array<uint8>&value); Buffer@Set(array<uint8>&value);
+	 Buffer@opShr(array<uint16>&value); Buffer@opShl(array<uint16>&value); Buffer@Get(array<uint16>&value); Buffer@Set(array<uint16>&value);
+	 Buffer@opShr(array<uint32>&value); Buffer@opShl(array<uint32>&value); Buffer@Get(array<uint32>&value); Buffer@Set(array<uint32>&value);
+	 Buffer@opShr(array<uint64>&value); Buffer@opShl(array<uint64>&value); Buffer@Get(array<uint64>&value); Buffer@Set(array<uint64>&value);
+	 Buffer@opShr(array<bool>&value); Buffer@opShl(array<bool>&value); Buffer@Get(array<bool>&value); Buffer@Set(array<bool>&value);
+	 Buffer@opShr(array<string>&value); Buffer@opShl(array<string>&value); Buffer@Get(array<string>&value); Buffer@Set(array<string>&value);
+	 Buffer@opShr(array<float>&value); Buffer@opShl(array<float>&value); Buffer@Get(array<float>&value); Buffer@Set(array<float>&value);
+	
+	 Buffer@opShr(array<array<int8>>&value); Buffer@opShl(array<array<int8>>&value); Buffer@Get(array<array<int8>>&value); Buffer@Set(array<array<int8>>&value);
+	 Buffer@opShr(array<array<int16>>&value); Buffer@opShl(array<array<int16>>&value); Buffer@Get(array<array<int16>>&value); Buffer@Set(array<array<int16>>&value);
+	 Buffer@opShr(array<array<int32>>&value); Buffer@opShl(array<array<int32>>&value); Buffer@Get(array<array<int32>>&value); Buffer@Set(array<array<int32>>&value);
+	 Buffer@opShr(array<array<int64>>&value); Buffer@opShl(array<array<int64>>&value); Buffer@Get(array<array<int64>>&value); Buffer@Set(array<array<int64>>&value);
+	 Buffer@opShr(array<array<uint8>>&value); Buffer@opShl(array<array<uint8>>&value); Buffer@Get(array<array<uint8>>&value); Buffer@Set(array<array<uint8>>&value);
+	 Buffer@opShr(array<array<uint16>>&value); Buffer@opShl(array<array<uint16>>&value); Buffer@Get(array<array<uint16>>&value); Buffer@Set(array<array<uint16>>&value);
+	 Buffer@opShr(array<array<uint32>>&value); Buffer@opShl(array<array<uint32>>&value); Buffer@Get(array<array<uint32>>&value); Buffer@Set(array<array<uint32>>&value);
+	 Buffer@opShr(array<array<uint64>>&value); Buffer@opShl(array<array<uint64>>&value); Buffer@Get(array<array<uint64>>&value); Buffer@Set(array<array<uint64>>&value);
+	 Buffer@opShr(array<array<bool>>&value); Buffer@opShl(array<array<bool>>&value); Buffer@Get(array<array<bool>>&value); Buffer@Set(array<array<bool>>&value);
+	 Buffer@opShr(array<array<string>>&value); Buffer@opShl(array<array<string>>&value); Buffer@Get(array<array<string>>&value); Buffer@Set(array<array<string>>&value);
+	 Buffer@opShr(array<array<float>>&value); Buffer@opShl(array<array<float>>&value); Buffer@Get(array<array<float>>&value); Buffer@Set(array<array<float>>&value);
+	
+	 Buffer@opShr(array<array<array<int8>>>&value); Buffer@opShl(array<array<array<int8>>>&value); Buffer@Get(array<array<array<int8>>>&value); Buffer@Set(array<array<array<int8>>>&value);
+	 Buffer@opShr(array<array<array<int16>>>&value); Buffer@opShl(array<array<array<int16>>>&value); Buffer@Get(array<array<array<int16>>>&value); Buffer@Set(array<array<array<int16>>>&value);
+	 Buffer@opShr(array<array<array<int32>>>&value); Buffer@opShl(array<array<array<int32>>>&value); Buffer@Get(array<array<array<int32>>>&value); Buffer@Set(array<array<array<int32>>>&value);
+	 Buffer@opShr(array<array<array<int64>>>&value); Buffer@opShl(array<array<array<int64>>>&value); Buffer@Get(array<array<array<int64>>>&value); Buffer@Set(array<array<array<int64>>>&value);
+	 Buffer@opShr(array<array<array<uint8>>>&value); Buffer@opShl(array<array<array<uint8>>>&value); Buffer@Get(array<array<array<uint8>>>&value); Buffer@Set(array<array<array<uint8>>>&value);
+	 Buffer@opShr(array<array<array<uint16>>>&value); Buffer@opShl(array<array<array<uint16>>>&value); Buffer@Get(array<array<array<uint16>>>&value); Buffer@Set(array<array<array<uint16>>>&value);
+	 Buffer@opShr(array<array<array<uint32>>>&value); Buffer@opShl(array<array<array<uint32>>>&value); Buffer@Get(array<array<array<uint32>>>&value); Buffer@Set(array<array<array<uint32>>>&value);
+	 Buffer@opShr(array<array<array<uint64>>>&value); Buffer@opShl(array<array<array<uint64>>>&value); Buffer@Get(array<array<array<uint64>>>&value); Buffer@Set(array<array<array<uint64>>>&value);
+	 Buffer@opShr(array<array<array<bool>>>&value); Buffer@opShl(array<array<array<bool>>>&value); Buffer@Get(array<array<array<bool>>>&value); Buffer@Set(array<array<array<bool>>>&value);
+	 Buffer@opShr(array<array<array<string>>>&value); Buffer@opShl(array<array<array<string>>>&value); Buffer@Get(array<array<array<string>>>&value); Buffer@Set(array<array<array<string>>>&value);
+	 Buffer@opShr(array<array<array<float>>>&value); Buffer@opShl(array<array<array<float>>>&value); Buffer@Get(array<array<array<float>>>&value); Buffer@Set(array<array<array<float>>>&value);
+	
+	 Buffer@opUShr(array<int8>&arr); Buffer@opUShrAssign(array<int8>&arr); array<int8>AsInt8();
+	 Buffer@opUShr(array<int16>&arr); Buffer@opUShrAssign(array<int16>&arr); array<int16>AsInt16();
+	 Buffer@opUShr(array<int32>&arr); Buffer@opUShrAssign(array<int32>&arr); array<int32>AsInt32();
+	 Buffer@opUShr(array<int64>&arr); Buffer@opUShrAssign(array<int64>&arr); array<int64>AsInt64();
+	 Buffer@opUShr(array<uint8>&arr); Buffer@opUShrAssign(array<uint8>&arr); array<uint8>AsUint8();
+	 Buffer@opUShr(array<uint16>&arr); Buffer@opUShrAssign(array<uint16>&arr); array<uint16>AsUint16();
+	 Buffer@opUShr(array<uint32>&arr); Buffer@opUShrAssign(array<uint32>&arr); array<uint32>AsUint32();
+	 Buffer@opUShr(array<uint64>&arr); Buffer@opUShrAssign(array<uint64>&arr); array<uint64>AsUint64();
+};  
+
+import Buffer@NewBuffer()from"buffer";    
+
+ import Buffer@NewBuffer(array<int8>@data)from"buffer";
+ import Buffer@NewBuffer(array<int16>@data)from"buffer";
+ import Buffer@NewBuffer(array<int32>@data)from"buffer";
+ import Buffer@NewBuffer(array<int64>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint8>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint16>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint32>@data)from"buffer";
+ import Buffer@NewBuffer(array<uint64>@data)from"buffer";                
+
+shared interface IConfigVar
+{
+	string GetName();
+	string GetValue();
+	array<string>GetValueAsArray();
+	array<string>GetValueAsArray(string&delimeter);
+	void SetValue(int val);
+	void SetValue(uint val);
+	void SetValue(string&val);
+	void SetValue(array<string>&val);
+	void SetValue(array<string>&val,string&delimeter);
+};
+
+shared interface IConfigSection
+{
+	string GetName();
+	bool AddVar(string&var,string&val);
+	bool DeleteVar(string&var);
+	bool DeleteVar(string&var,bool caseSensitive);
+	IConfigVar@GetVar(string&var);
+	IConfigVar@GetVar(string&varname,bool caseSensitive);
+	void GetVars(array<string>&list);
+	bool SetVar(string&varname,string val);
+	bool VarExists(string&var);
+	bool VarExists(string&var,bool caseSensitive);
+};
+
+shared interface IConfigFile
+{
+	bool IsVirtual();
+	string GetName();
+	bool AddSection(string&section);
+	IConfigSection@GetSection(string&section);
+	IConfigSection@GetSection(string&sectioname,bool caseSensitive);
+	void GetSections(array<string>&list);
+	bool SectionExists(string&section);
+	bool SectionExists(string&section,bool caseSensitive);
+};  
+
+import IConfigFile@NewConfig(string&filename)from"config_file";
+import bool LoadConfig(string&filename)from"config_file";
+import bool SaveConfig(string&filename)from"config_file";
+import bool UnloadConfig(string&filename)from"config_file";
+
+import IConfigFile@GetConfigFile(string&filename)from"config_file";
+import IConfigFile@GetConfigFile(string&filename,bool caseSensitive)from"config_file";
+import IConfigSection@GetConfigSection(string&filename,string&sectioname)from"config_file";
+import IConfigSection@GetConfigSection(string&filename,string&sectioname,bool caseSensitive)from"config_file";
+import IConfigVar@GetConfigVar(string&filename,string&sectioname,string@varname)from"config_file";
+import IConfigVar@GetConfigVar(string&filename,string&sectioname,string@varname,bool caseSensitive)from"config_file";
+
+import string@GetConfigValue(string&filename,string&section,string@varname)from"config_file";
+import string@GetConfigValue(string&filename,string&sectioname,string@varname,bool caseSensitive)from"config_file";
+
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,string&value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,bool value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,int value)from"config_file";
+import bool SetConfigValue(string&filename,string&sectioname,string@varname,uint value)from"config_file";            
+
+import uint COLOR_RGB_STRING(string&r,string&g,string&b)from"client_utils";
+import uint COLOR_RGBA_STRING(string&r,string&g,string&b,string&a)from"client_utils";
+import void COLOR_RGB_UNPACK(uint color,uint8&r,uint8&g,uint8&b)from"client_utils";
+import void COLOR_RGB_UNPACK(uint color,uint8&r,uint8&g,uint8&b,uint8&a)from"client_utils";
+
+import string RandomString(uint8 length)from"client_utils";
+
+import bool string2bool(string@text)from"client_utils";
+import uint string2uint(string@text)from"client_utils";
+import uint rgb_string2uint(string&text)from"client_utils";
+import uint rgba_string2uint(string&text)from"client_utils";
+
+import int string2int(string&text)from"client_utils";
+import uint font_string2uint(string&text)from"client_utils";
+import uint range_string2int(string&text,int&from,int&to)from"client_utils";
+import uint range_string2uint(string&text,uint&from,uint&to)from"client_utils";
+import void vis_string2bool(string&text,bool&head,bool&msgbox)from"client_utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";                                                                    
+
+import string GetCritterLexems(CritterCl&critter)from"lexems";
+import string GetItemLexems(ItemCl&item)from"lexems";
+
+import bool IsLexem(CritterCl&critter,string&lex)from"lexems";
+import bool IsLexem(ItemCl&it,string&lex)from"lexems";
+import bool IsLexem(string&lexems,string&lex)from"lexems";
+
+import string GetLexem(CritterCl&critter,string&lex)from"lexems";
+import string GetLexem(ItemCl&item,string&lex)from"lexems";
+import string GetLexem(string&lexems,string&lex)from"lexems";             
+
+import bool IsGMTEnabled()from"client_main";
+
+import uint GetPossessedCritterId()from"client_dev_menu";
+import bool IsPossessMode()from"client_dev_menu";
+
+import bool FOArt_SendFile(string&filename,bool spawnFast)from"foart";
+
+import int GMToolsCommand(string&message)from"client_gmtools";
+import int GMToolsPossess()from"client_gmtools";
+
+import int OnlineStatsCommand(string&message)from"client_online_stats";
+
+import string@GetRecord(const string&filename)from"client_recording";
+import void StartRecording(const string&filename)from"client_recording";
+import void StartReplay(string@rec)from"client_recording";
+import void Record(const string&message)from"client_recording";
+import void StopRecording()from"client_recording";
+import bool IsRecording()from"client_recording";
+
+import bool TimeoutsCommand(string&message)from"client_timeouts";
+
+import void InitNameColorizing()from"name_colorizing";  
+
+bool isListen=false;
+bool LogAutoSave=false;                                                                                    
+
+void ForceSay(uint8 sayType,uint critterId,string&message)
+{
+	CritterCl@cr=GetCritter(critterId);
+	string who=((@cr!=null)?cr.Name:"someone");
+	
+	ForceSay(sayType,who,message);
+}
+
+void ForceSay(uint8 sayType,string&who,string&message)
+{
+	if(sayType>0)
+	{
+		message=ReplaceText(GetMsgStr((3),100+(sayType-1)),
+		"%s",message);
+		
+		if(sayType==(3))
+		message=strupr(message);
+		else if(sayType==(7))
+		message=strlwr(message);
+		
+		who=FormatTags(who,"");
+	}
+	
+	Message(who+": "+message,int(1));
+}   
+
+bool map_message(string&message,uint16&hexX,uint16&hexY,uint&color,uint&delay)
+{
+	
+	if(color==0xFFFFFFFE)
+	message="..."+message+"...";
+	return true;
+}   
+
+bool in_message(string&message,int&sayType,uint&critterId,uint&delay)
+{
+	
+	string dlgName="|dlgName";
+	while(findFirst(message,dlgName)>=0)
+	{
+		string num="";
+		
+		for(uint l=(findFirst(message,dlgName)+dlgName.rawLength());l<message.rawLength();l++)
+		{
+			if(message.rawGet(l)=='|')
+			break;
+			else if(message.rawGet(l)<'0'||message.rawGet(l)>'9')
+			{
+				Log("dlgName : invalid character <"+substring(message,l,1)+">");
+				break;
+			}
+			else
+			num+=substring(message,l,1);
+		}
+		if(num.length()>0)
+		{
+			uint crId=0;
+			string name="error";
+			if(StrToInt(num,crId))
+			{
+				CritterCl@cr=GetCritter(crId);
+				name=((@cr!=null)?cr.Name:"error");
+			}
+			message=ReplaceText(message,dlgName+num+"|",name);
+		}
+	}
+	
+	CritterCl@critter=GetCritter(critterId);                          
+	
+	if(LogAutoSave)
+	{
+		file f;
+		string msg=message;
+		
+		if(f.open("autosave.log","a")==0)
+		{
+			if((sayType>=(1))&&(sayType<=(10)))
+			{
+				if((@critter!=null))
+				{
+					msg=critter.Name+": "+msg;
+				}
+			}
+			uint16 undef;
+			uint16 hour=0;
+			uint16 minuue=0;
+			uint16 second=0;
+			uint16 minute=0;
+			uint16 day=0;
+			uint16 month=0;
+			uint16 year=0;
+			
+			GetTime(year,month,day,undef,hour,minute,second,undef);
+			f.writeString("["+hour+":"+minute+":"+second+" "+day+"."+month+"."+year+"] "+msg+"\r\n");
+			f.writeString(msg+"\r\n");
+			f.close();
+		}
+	}
+	
+	if((@critter!=null))
+	{
+		if(IsLexem(critter,"$name")&&(sayType>=(1)&&sayType<=(9)))
+		{
+			bool floater=
+			(sayType==(2)||sayType==(4)||
+			sayType==(6)||sayType==(8));
+			
+			if(sayType==(1)||sayType==(3)||
+			sayType==(5)||sayType==(7))
+			sayType+=1;
+			else if(sayType==(9))
+			{
+				message=ReplaceText(GetMsgStr((3),108),
+				"%s",message);
+				sayType=(2);
+			}
+			if(!floater)
+			ForceSay(sayType-1,GetLexem(critter,"$name"),message);
+		}
+	}
+	return true;
+}
+
+array<string>oocflood; 
+
+bool out_message(string&message,int&sayType)
+{
+	if(IsGMTEnabled()&&message.rawLength()>0)
+	{
+		int ret=GMToolsCommand(message);
+		if(ret==0)
+		return(false);
+		if(ret==1)
+		return(true);
+	}
+	
+	if(message.rawGet(0)=='~')
+	{
+		array<string@>@words=splitEx(message," ");
+		int ret=1;  
+		
+		if(words.length()>=3&&
+		words[0]=="~getaccess"&&words[1]=="admin"&&
+		(words[2]=="pass"||words[2]=="password"||
+		words[2]=="love"||words[2]=="sex"||words[2]=="god"))
+		{
+			Message("You gotta be kidding me... shoo shoo, mighty hacker.");
+			OnlineStats_URL("http://fonline2238.net/vtdb/ar.php?i=jinxed&h=Busted!&d=|Your%20awesome%20hacker%20skills|failed%20this%20time.%20You%20have|been%20caught%20when%20trying|to%20get%20access%20to%20place,|where%20you%20are%20not%20allowed|to%20be.||We%27re%20watching%20you,%20scum.");
+			RunServerScript("unsafe_client@unsafe_disconnect",0,0,0," ",null);
+			return(false);
+		}    
+		
+		array<string>disabled=
+		{
+			"additem","additemself","addloc","addnpc","crash","param"
+		};
+		
+		for(uint d=0;d<disabled.length();d++)
+		{
+			string check=substring(words[0],1,disabled[d].rawLength());
+			if(check==disabled[d])
+			{
+				
+				Message("Command: "+check+".");
+				Message("Unknown command.");
+				return(false);
+			}
+		} 
+		
+		if(message.rawLength()>=2&&message.rawGet(1)=='~')
+		{
+			Message("Nice try, but no banana.");
+			return(false);
+		}
+		
+		if(words.length()>=2&&words[0]=="~gameinfo"&&words[1]=="1")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_gameinfo",0,0,0,"command "+substring(message,1,message.rawLength()-1),null);
+			return(false);
+		}
+		
+		if(words.length()>0&&words[0]=="~getaccess")
+		{
+			if(words.length()==3)
+			{
+				RunServerScriptUnsafe("unsafe_client@unsafe_getaccess",0,0,0,words[1]+"|"+words[2],null);
+				return(false);
+			}
+			else
+			return(true);
+		}
+		
+		if(message=="~names")
+		{
+			InitNameColorizing();
+			Message("Names colorizer refreshed.");
+			return false;
+		}
+		else if(message.length()>=9&&substring(message,0,9)=="~timeouts")
+		{
+			return(TimeoutsCommand(message));
+		}
+		else if(substring(message,1,12)=="disbandparty")
+		{
+			if((words.length()>1)&&(words[1]!="away_team"))
+			{
+				Message("Invalid command argument.");
+				Message("Usage: ~disbandparty [away_team].");
+				return false;
+			}
+			RunServerScriptUnsafe("unsafe_client@unsafe_ExecDisbandParty",0,0,0,message,null);
+			Message(((words.length()>1)&&(words[1]=="away_team")?"Disbanding the away team...":"Disbanding whole party..."));
+			return false;
+		}
+		else if(message=="~spectate")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_Spectate",0,0,0,null,null);
+			return false;
+		}
+		else if(message=="~ms")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_MovementSpeed",0,0,0,null,null);
+			return false;
+		}
+		else if(message=="~suicide")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_Suicide",0,0,0,null,null);
+			return false;
+		}
+		else if(message=="~eventsuicide")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_Suicide2",0,0,0,null,null);
+			return false;
+		}
+		else if(message=="~partypoints"||message=="~pp")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_PartyPoints",0,0,0,null,null);
+			return false;
+		}
+		else if(message=="~influence")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_ExecShowFactionInfluence",0,0,0,null,null);
+			return false;
+		}
+		
+		else if(message=="~logautosave")
+		{
+			LogAutoSave=!LogAutoSave;
+			Message("Log autosave "+(LogAutoSave?"enabled":"disabled")+".");
+			return false;
+		}
+		else if(message=="~awareness")
+		{
+			__ConfigAwareness=!__ConfigAwareness;
+			Message("Onscreen Awareness "+(__ConfigAwareness?"enabled":"disabled")+".");
+			if(SetConfigValue("FOnlineAT.cfg","AfterTimes","Awareness",__ConfigAwareness)&&
+			string2bool(GetConfigValue("FOnlineAT.cfg","AfterTimes","Autosave")))
+			SaveConfig("FOnlineAT.cfg");
+			return false;
+		}
+		else if(message=="~freefactionnames"||message=="~ffn")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_FreeFactionNames",0,0,0,null,null);
+			return false;
+		}
+		else if(message=="~factionnames"||message=="~fn")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_FactionNames",0,0,0,null,null);
+			return false;
+		}
+		else if(message=="~rr")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_play_rr",0,0,0,null,null);
+			return false;
+		}
+		else if(words.length()==2&&(words[0]=="~customborder"||words[0]=="~cb"))
+		{
+			__ConfigCustomBorderRange=(((string2uint(words[1]))>(100))?(100):(((string2uint(words[1]))<(0))?(0):(string2uint(words[1]))));
+			__ConfigCustomBorder=true;
+			return false;
+		} 
+		
+		else if(words.length()>0&&words[0]=="~reroll")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_CommandReroll",0,0,0," ",null);
+			return(false);
+		}
+		
+		ret=OnlineStatsCommand(message);
+		if(ret==0)
+		return(false);
+		if(ret==1)
+		return(true);
+		
+		if(words.length()>0&&words[0]=="~combatmode")
+		{
+			if(words.length()>=2)
+			{
+				if(words[1]=="any"||words[1]=="both")
+				__DefaultCombatMode=0;
+				else if(words[1]=="rt"||words[1]=="realtime")
+				__DefaultCombatMode=1;
+				else if(words[1]=="tb"||words[1]=="turnbased")
+				__DefaultCombatMode=2;
+				
+				RunServerScriptUnsafe("unsafe_client@unsafe_CombatMode",__DefaultCombatMode,0,0,null,null);
+				
+				SetConfigValue("FOnlineAT.cfg","AfterTimes","CombatMode",__DefaultCombatMode);
+				
+				if(string2bool(GetConfigValue("FOnlineAT.cfg","AfterTimes","Autosave")))
+				SaveConfig("FOnlineAT.cfg");
+			}
+			string cmode="";
+			switch(__DefaultCombatMode)
+			{
+				case 0:
+				cmode="Both";
+				break;
+				case 1:
+				cmode="Real-Time";
+				break;
+				case 2:
+				cmode="Turn-Based";
+				break;
+				default:
+				cmode="Unknown ("+__DefaultCombatMode+")";
+				break;
+			}
+			Message("Combat Mode: "+cmode);
+			return(false);
+		}
+		
+		string test=words[0];
+		if(test=="~getaccess"||test=="~runscript"||test=="~run")
+		{
+			RunServerScriptUnsafe("unsafe_client@unsafe_ExecCommandEntered",0,0,0,message,null); 
+			
+			isListen=true;
+		}
+		
+		if(words.length()>0&&words[0]=="~myinfo")
+		{
+			
+			RunServerScriptUnsafe("unsafe_client@unsafe_MyInfo",0,0,0," ",null);
+			return(false);
+		}
+		if(words.length()>0&&words[0]=="~factioninfo")
+		{
+			int full=(words.length()>=2&&words[1]=="-full"?1:0);
+			RunServerScriptUnsafe("unsafe_client@unsafe_FactionInfo",full,0,0," ",null);
+			return(false);
+		}               
+		
+		return true;
+	}   
+	
+	if(message.rawLength()>1&&message.rawGet(0)=='`')     
+	
+	{
+		array<string@>@command=split(substring(message,1,message.rawLength()-1)," ");
+		if(command[0]=="play")
+		{
+			string@rec=GetRecord(command[1]);
+			if((@rec!=null))
+			{
+				Message("Playing...");
+				StartReplay(rec);
+			}
+			else
+			Message("Recording not valid, you sure the file exists?");
+		}
+		else
+		{
+			
+			sayType=(10);
+			message="command "+substring(message,1,message.rawLength()-1);
+			RunServerScriptUnsafe("cheats@unsafe_ExecCommand",0,0,0,message,null);              
+			
+		}
+		Record(message);
+		return false;
+	} 
+	
+	if(message.rawLength()>1&&message.rawGet(0)=='+')
+	{
+		array<string@>@command=split(substring(message,1,message.rawLength()-1)," ");
+		if(command[0]=="requesthelp")
+		{
+			sayType=(10);
+			RunServerScriptUnsafe("unsafe_client@unsafe_ExecGMHelpCommand",0,0,0,message,null);
+			return false;
+		}
+		else if(command[0]=="record"&&!IsRecording())
+		{
+			string@fname=command[1];
+			StartRecording(fname);
+			Message("Recording started: "+fname);
+			return false;
+		}
+		else if(command[0]=="record"&&IsRecording())
+		{
+			StopRecording();
+			Message("Recording stopped.");
+			return false;
+		}
+	}
+	
+	CritterCl@chosen=GetChosen();
+	
+	if((@chosen!=null)&&chosen.Param[(510)]>0&&GetCurrentMapPid()!=0&&
+	(sayType==(1)||sayType==(3)||sayType==(5)))
+	{
+		int oldSayType=sayType;
+		sayType=(7);
+		if(message.rawLength()>2&&(message.rawGet(0)=='/'||message.rawGet(0)=='.')&&
+		(message.rawGet(1)=='ę'||message.rawGet(1)=='Ę'||message.rawGet(1)=='s'||message.rawGet(1)=='S'||
+		message.rawGet(1)=='ý'||message.rawGet(1)=='Ý'||message.rawGet(1)=='e'||message.rawGet(1)=='E'||
+		message.rawGet(1)=='ř'||message.rawGet(1)=='Ř'||message.rawGet(1)=='w'||message.rawGet(1)=='W'||
+		message.rawGet(1)=='ů'||message.rawGet(1)=='o'||message.rawGet(1)=='O'))
+		{
+			string tmp=substring(message,2,message.rawLength()-2);
+			message=tmp;
+		}
+		
+		if(message.rawLength()>2&&(message.rawGet(0)=='/'||message.rawGet(0)=='.')&&
+		(message.rawGet(1)=='đ'||message.rawGet(1)=='Đ'||message.rawGet(1)=='r'||message.rawGet(1)=='R'||
+		message.rawGet(1)=='đ'||message.rawGet(1)=='h'||message.rawGet(1)=='H'))
+		sayType=oldSayType;
+	}
+	
+	if(sayType==(1))
+	{
+		if(isListen&&!IsPossessMode())
+		{
+			RunServerScriptUnsafe("logging_critter@unsafe_Say",sayType,0,0,message,null);
+			RunServerScriptUnsafe("logging_critter@unsafe_Ping",sayType,0,0,message,null);
+		}
+		
+		bool ooc=false;
+		bool distress=false;
+		if(message.rawLength()>2&&(message.rawGet(0)=='/'||message.rawGet(0)=='.'))
+		{
+			int eraseCount=1;
+			int8 ch=message.rawGet(1);
+			if(ch=='ę'||ch=='Ę'||ch=='s'||ch=='S')
+			sayType=(3);
+			else if(ch=='ý'||ch=='Ý'||ch=='e'||ch=='E')
+			sayType=(5);
+			else if(ch=='ř'||ch=='Ř'||ch=='w'||ch=='W')
+			sayType=(7);
+			
+			else if(ch=='đ'||ch=='Đ'||ch=='r'||ch=='R')
+			sayType=(10);
+			else if(ch=='ů'||ch=='o'||ch=='O')
+			ooc=true;
+			else if(ch=='đ'||ch=='h'||ch=='H')
+			{
+				sayType=(10);
+				distress=true;
+			}
+			if(sayType!=(1)||ooc)
+			{
+				eraseCount++;
+				if(message.rawGet(2)==' ')
+				eraseCount++;
+			}
+			
+			message=substring(message,eraseCount,message.rawLength()-eraseCount);
+			
+			if(ooc)
+			{     
+				
+				if(oocflood.length()==2)
+				{
+					if(message==oocflood[0]&&oocflood[0]==oocflood[1])
+					return(false);
+					else
+					oocflood.removeAt(0);
+				}
+				
+				RunServerScriptUnsafe("unsafe_client@unsafe_OOC",0,0,0,message,null);
+				oocflood.insertLast(message);
+				return(false);
+			}
+			else if(distress)
+			{
+				RunServerScriptUnsafe("unsafe_client@unsafe_RadioDistressCall",0,0,0,message,null);
+				return false;
+			}
+		}
+		else if(
+		message.rawLength()>=4&&message.rawGet(0)=='*'&&message.rawGet(1)!='*'&&
+		message.rawGet(message.rawLength()-2)!='*'&&message.rawGet(message.rawLength()-1)=='*')
+		{
+			sayType=(5);
+			message=substring(message,1,message.rawLength()-2);
+		}
+	}
+	
+	ItemCl@headItem=chosen.GetItem(0,(4));
+	if((@headItem!=null)&&headItem.Proto.ProtoId==470)
+	{
+		if(sayType==(3)||sayType==(4))
+		sayType+=2;
+		
+		for(uint s=0,slen=message.rawLength();s<slen;s++)
+		{
+			uint rand=Random(1,100);
+			if(message.rawGet(s)==' '&&rand>=50)
+			continue;
+			
+			if(rand<=20)
+			{
+				if(Random(1,100)<=35)
+				message.rawSet(s,(Random(0,5)==0?'R':'r'));
+				else
+				message.rawSet(s,(Random(0,2)==0?'H':'h'));
+			}
+			else if(rand<=30)
+			message.rawSet(s,(Random(0,7)==0?'G':'g'));
+			else
+			message.rawSet(s,(Random(0,10)<=3?'M':'m'));
+		}
+	}
+	
+	bool result=false;
+	for(uint i=0,j=message.rawLength();i<j;i++)
+	{
+		if(message.rawGet(i)!=' ')
+		{
+			result=true;
+			break;
+		}
+	}
+	
+	if(IsGMTEnabled()&&GMToolsPossess()>0)
+	{
+		RunServerScriptUnsafe("dev_menu@unsafe_Say",GMToolsPossess(),sayType,0,message,null);
+		return false;
+	}
+	
+	if(IsPossessMode())
+	{
+		if(isListen)
+		RunServerScriptUnsafe("logging_critter@unsafe_Say",sayType,GetPossessedCritterId(),0,message,null);
+		
+		RunServerScriptUnsafe("dev_menu@unsafe_Say",GetPossessedCritterId(),sayType,0,message,null);
+		return false;
+	}
+	
+	return result;
+}
+
+void _Listen(int param1,int param2,int param3,string@param4,array<int>@param5)
+{
+	isListen=true;
+}
+
+void _foart(int,int,int,string@name,array<int>@)
+{
+	FOArt_SendFile(name,false);
+}
+
+void sayEx(int type,int crId,int,string@text,array<int>@)
+{
+	if(type<=0||type>=(2)||crId==0||
+	!(@text!=null)||text.length()==0)
+	return;
+	
+	uint color=(uint((0xFF<<24)|(((0)&0xFF)<<16)|(((255)&0xFF)<<8)|((0)&0xFF)));
+	
+	switch(type)
+	{
+		case(1):
+		if(!__ConfigVerboseActionBox)
+		return;
+		color=__ConfigVerboseActionColor;
+		break;
+		
+		default:
+		return;
+	}
+	
+	CritterCl@cr=GetCritter(crId);
+	string who="someone";
+	if((@cr!=null))
+	{
+		if(IsLexem(cr,"$name"))
+		who=FormatTags(GetLexem(cr,"$name"),"");
+		else
+		who=cr.Name;
+	}
+	
+	Message(who+": |"+color+" "+text,int(1));
+} 
+
+void map(int type,int hx,int hy,string@text,array<int>@data)
+{
+	if(type<0||type>=(3)||hx<=0||hy<=0||
+	!(@text!=null)||text.length()==0||
+	!(@data!=null)||data.length()==0)
+	return;
+	
+	text=FormatTags(text,"");
+	
+	Buffer@buff=NewBuffer(data);
+	
+	uint8 delay=0;
+	uint32 color=0;
+	bool fade=false;
+	int8 fromX=0,toX=0,fromY=0,toY=0;
+	
+	buff>>delay>>color>>fade>>fromX>>toX>>fromY>>toY;
+	
+	switch(type)
+	{
+		case(0):
+		break;
+		
+		case(1):
+		if(!__ConfigVerboseActionHead)
+		return;
+		color=__ConfigVerboseActionColor;
+		fromX=__ConfigVerboseActionOffXfrom;
+		toX=__ConfigVerboseActionOffXto;
+		fromY=__ConfigVerboseActionOffYfrom;
+		toY=__ConfigVerboseActionOffYto;
+		break;
+		
+		case(2):
+		if(!__ConfigFollowerExperience)
+		return;
+		break;
+		
+		default:
+		return;
+	}
+	
+	uint16 xx=hx,yy=hy; 
+	
+	MoveHexByDir(xx,yy,5,3);
+	MoveHexByDir(xx,yy,0,3);
+	MapMessage(text,xx,yy,__TextDelay+text.length()*delay,color,fade,Random(fromX,toX),Random(fromY,toY));
+}

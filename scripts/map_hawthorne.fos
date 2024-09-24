@@ -1,0 +1,24 @@
+//
+// FOnline: Aftertimes
+// worldremaker
+//
+// map_hawthorne.fos
+//
+
+#include "_maps.fos"
+
+import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void CollectRewardSpawners(Map& map) from "base_control";
+
+void map_init(Map& map, bool firstTime)
+{
+    CollectRewardSpawners(map);
+	if(firstTime) switch(map.GetProtoId())
+		{
+			case MAP_Hawthorne :
+			case MAP_HawthorneOffice :
+			case MAP_HawthorneHangar :
+				InitializeDynamicMob(map);
+				break;
+		}
+}

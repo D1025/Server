@@ -1,0 +1,440 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+
+const array<uint>@MHexData(uint16 protoId)
+{
+	switch(protoId)
+	{
+		case(344):
+		return@MHexDataGravesiteV;
+		case(345):
+		return@MHexDataGravesiteH;
+		case(3337):
+		return@MHexDataVaultCityGate;
+		case(3818):
+		return@MHexDataCorrugatedGate;
+		case(3999):
+		return@MHexDataAccessGate;
+		case(4000):
+		return@MHexDataAccessGate;
+		case(2448):
+		return@MHexDataMariposaMainDoor;
+		case(2173):
+		case(25422):
+		case(25424):
+		case(25425):
+		return@MHexDataVault13MainDoor;
+		case(2008):
+		return@MHexDataVault13MainGate;
+		case(2346):
+		return@MHexDataCathedralDoor;
+		case(3417):
+		return@MHexDataWarehouseDoor_2;
+		case(3418):
+		return@MHexDataWarehouseDoor;
+		case(4768):
+		return@MHexDataWarehouseDoorBig;
+		case(3169):
+		return@MHexDataReactorDoor;
+	}
+	return null;
+}                
+
+const array<uint>MHexDataGravesiteV=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((2)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((2)&0xFF)<<8)|((2)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200)),
+	((((1)&0xFF)<<24)|(((2)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200)),
+	((((2)&0xFF)<<24)|(((2)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200))
+};  
+
+const array<uint>MHexDataGravesiteH=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((4)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200)),
+	((((1)&0xFF)<<24)|(((4)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((5)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),((0x00000008)|(0x00000010)|(0x00000200))
+};  
+
+const array<uint>MHexDataVaultCityGate=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((2)&0xFF)<<8)|((3)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((1)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((2)&0xFF)<<8)|((1)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};  
+
+const array<uint>MHexDataCorrugatedGate=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((0)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((1)&0xFF)<<24)|(((1)&0xFF)<<16)|(((1)&0xFF)<<8)|((0)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((4)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((1)&0xFF)<<24)|(((3)&0xFF)<<16)|(((1)&0xFF)<<8)|((4)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((2)&0xFF)<<24)|(((4)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),(0|(0x00000200)),(0|(0x00000200)),
+	((((3)&0xFF)<<24)|(((4)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),(0|(0x00000200)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((4)&0xFF)<<8)|((4)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),(0|(0x00000200)),
+	((((1)&0xFF)<<24)|(((2)&0xFF)<<16)|(((3)&0xFF)<<8)|((0)&0xFF)),(0|(0x00000200)),(0|(0x00000200)),
+	((((1)&0xFF)<<24)|(((2)&0xFF)<<16)|(((4)&0xFF)<<8)|((0)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),(0|(0x00000200)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((4)&0xFF)<<8)|((0)&0xFF)),((0x00000004)|(0x00000008)|(0x00000010)),(0|(0x00000200))
+};  
+
+const array<uint>MHexDataAccessGate=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((1)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((1)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((1)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((1)&0xFF)<<24)|(((4)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};  
+
+const array<uint>MHexDataMariposaMainDoor=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((2)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};  
+
+const array<uint>MHexDataVault13MainDoor=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((2)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((2)&0xFF)<<8)|((2)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};
+
+const array<uint>MHexDataVault13MainGate=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((0)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((1)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};   
+
+const array<uint>MHexDataCathedralDoor=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((4)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};   
+
+const array<uint>MHexDataWarehouseDoor_2=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((0)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};
+
+const array<uint>MHexDataWarehouseDoor=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((5)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};
+
+const array<uint>MHexDataWarehouseDoorBig=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((1)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((1)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((1)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((1)&0xFF)<<24)|(((4)&0xFF)<<16)|(((1)&0xFF)<<8)|((3)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};
+
+const array<uint>MHexDataReactorDoor=
+{
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((0)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010)),
+	((((0)&0xFF)<<24)|(((0)&0xFF)<<16)|(((1)&0xFF)<<8)|((5)&0xFF)),(0|(0x00000200)),((0x00000004)|(0x00000008)|(0x00000010))
+};            
+
+void MultihexSpawned(Item&item)
+{
+	uint mHexId=GetLocalVar((30040),item.Id).GetValue();
+	if(mHexId==0)
+	{
+		array<uint>values={item.Id};
+		CreateTimeEvent(((__FullSecond)+(0)),"e_AddMHexes",values,true);
+	}
+	else
+	{
+		Log("WARNING: Function MultihexSpawned called multiple times for item "+
+		item.Id+" [ProtoId: "+item.GetProtoId()+"]");
+	}
+}    
+
+void MultihexDeleted(Item&item)
+{
+	DeleteMHexes(item);
+}         
+
+uint GetMHexes(Item@item,array<Item@>@mHexes)
+{
+	if(!(@item!=null))
+	{
+		return 0;
+	}
+	uint nextMHexId=GetLocalVar((30040),item.Id).GetValue();
+	for(;;)
+	{
+		if(nextMHexId==0)
+		break;
+		Item@mHex=GetItem(nextMHexId);
+		if(!(@mHex!=null))
+		break;
+		mHexes.insertLast(@mHex);
+		nextMHexId=(mHex.Val1);
+	}
+	return mHexes.length();
+}    
+
+bool IsMultihex(Item@item)
+{
+	uint mHexId=GetLocalVar((30040),item.Id).GetValue();
+	if(mHexId==0)
+	{
+		return false;
+	}
+	return true;
+}     
+
+bool IsMultihexBlocked(Item@item)
+{
+	if(!(@item!=null))
+	{
+		return false;
+	}
+	Map@map=GetMap(item.MapId);
+	if(!(@map!=null))
+	{
+		return false;
+	}
+	if((((item.Flags)&((0x00000004)))!=0))
+	{
+		if(!map.IsHexPassed(item.HexX,item.HexY))
+		{
+			return true;
+		}
+	}
+	array<Item@>mHexes;
+	uint num=GetMHexes(item,mHexes);
+	for(uint i=0;i<num;i++)
+	{
+		if((((mHexes[i].Flags)&((0x00000004)))!=0))
+		{
+			if(!map.IsHexPassed(mHexes[i].HexX,mHexes[i].HexY))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}    
+
+void MultihexClose(Item@item)
+{
+	array<Item@>mHexes;
+	uint num=GetMHexes(item,mHexes);
+	for(uint i=0;i<num;i++)
+	{
+		mHexes[i].Flags=(mHexes[i].Val2);
+		mHexes[i].Update();
+	}
+}    
+
+void MultihexOpen(Item@item)
+{
+	array<Item@>mHexes;
+	uint num=GetMHexes(item,mHexes);
+	for(uint i=0;i<num;i++)
+	{
+		mHexes[i].Flags=(mHexes[i].Val3);
+		mHexes[i].Update();
+	}
+}         
+
+uint e_AddMHexes(array<uint>@values)
+{
+	Item@item=GetItem(values[0]);
+	if((@item!=null))
+	{
+		AddMHexes(item,MHexData(item.Proto.ProtoId));
+	}
+	return 0;
+}    
+
+void AddMHexes(Item@item,const array<uint>@mHexData)
+{
+	if(!(@item!=null)||!(@mHexData!=null))
+	return;
+	if(item.Accessory!=(2))
+	return;
+	if(mHexData.length()==0||(mHexData.length()%3!=0))
+	return;
+	Map@map=GetMap(item.MapId);
+	if(!(@map!=null))
+	return;
+	
+	uint16 mHexX=0,mHexY=0;
+	uint previousMHexId=0;
+	for(uint i=0,j=mHexData.length();i<j;i+=3)
+	{
+		mHexX=item.HexX;
+		mHexY=item.HexY;
+		GetMHexPosition(mHexData[i],map,mHexX,mHexY);
+		Item@mHex=map.AddItem(mHexX,mHexY,(826),1);
+		
+		(mHex.Val0=item.Id);
+		
+		if(i==0)
+		{
+			GameVar@VarMHexId=GetLocalVar((30040),item.Id);
+			VarMHexId=mHex.Id;
+		}
+		else
+		{
+			Item@previousMHex=GetItem(previousMHexId);
+			(previousMHex.Val1=mHex.Id);
+		}
+		
+		(mHex.Val2=mHexData[i+1]);
+		(mHex.Val3=mHexData[i+2]);
+		mHex.SetEvent((7),"_Walk");
+		
+		mHex.Flags=(mHex.Val2);
+		previousMHexId=mHex.Id;
+	}
+}    
+
+void DeleteMHexes(Item@item)
+{
+	if(!(@item!=null))
+	return;
+	
+	array<Item@>mHexes;
+	uint num=GetMHexes(item,mHexes);
+	DeleteItems(mHexes);
+}     
+
+void GetMHexPosition(uint move,Map&map,uint16&x,uint16&y)
+{
+	map.MoveHexByDir(x,y,(move&0xFF),((move>>8)&0xFF));
+	if(move>65535)
+	{
+		map.MoveHexByDir(x,y,((move>>16)&0xFF),((move>>24)&0xFF));
+	}
+}      
+
+void _Init(Item&item,bool firstTime)
+{
+	item.SetEvent((0),"_Finish");
+	if(item.GetProtoId()!=(3999)&&GetMap(item.MapId).GetLocation().GetProtoId()!=(371))
+	item.Val8=400;
+	if(firstTime)
+	{
+		MultihexSpawned(item);
+	}
+}  
+
+void _Finish(Item&item,bool deleted)
+{
+	if(deleted)
+	{
+		MultihexDeleted(item);
+	}
+}   
+
+void _Walk(Item&item,Critter&cr,bool entered,uint8 dir)
+{
+	if(((item.Val0)==0))
+	{
+		DeleteItem(item);
+		return;
+	}
+	Item@multihex=GetItem((item.Val0));
+	if((@multihex!=null))
+	{
+		multihex.EventWalk(cr,entered,dir);
+	}
+}         
+
+void GuardMultihexMove(Item&item,uint8 fromSlot,uint8 toSlot)
+{
+	if(item.Proto.ProtoId==(826))
+	{
+		if(((item.Val0)==0))
+		{
+			DeleteItem(item);
+			return;
+		}
+		else
+		{
+			Item@multihex=GetItem((item.Val0));
+			if((@multihex!=null))
+			{
+				DeleteMHexes(multihex);
+				AddMHexes(multihex,MHexData(multihex.Proto.ProtoId));
+			}
+			return;
+		}
+	}
+	if(IsMultihex(item))
+	{
+		if(fromSlot==(255))
+		{
+			DeleteMHexes(item);
+		}
+		else if(toSlot==(255))
+		{
+			array<uint>values={item.Id};
+			CreateTimeEvent(((__FullSecond)+(0)),"e_AddMHexes",values,true);
+		}
+	}
+}        
+
+void close(Critter&cr,int i,int,int)
+{
+	Item@item=GetItem(i);
+	if((@item!=null))
+	if(IsMultihex(item))
+	MultihexClose(item);
+}  
+
+void open(Critter&cr,int i,int,int)
+{
+	Item@item=GetItem(i);
+	if((@item!=null))
+	if(IsMultihex(item))
+	MultihexOpen(item);
+}  
+
+void cleanup(Critter&cr,int i,int,int)
+{
+	
+}  
+
+void show(Critter&cr,int i,int,int)
+{
+	Item@item=GetItem(i);
+	if((@item!=null))
+	{
+		array<Item@>mHexes;
+		uint num=GetMHexes(item,mHexes);
+		for(uint i=0;i<num;i++)
+		{
+			if((((mHexes[i].Flags)&((0x00000004)))!=0))
+			mHexes[i].PicMap=GetStrHash("art\\intrface\\HLGRN.FRM");
+			else
+			mHexes[i].PicMap=GetStrHash("art\\intrface\\HLRED.FRM");
+			mHexes[i].Update();
+		}
+	}
+	else
+	{
+		cr.Say((11),"Invalid item Id.");
+	}
+}  
+
+void hide(Critter&cr,int i,int,int)
+{
+	Item@item=GetItem(i);
+	if((@item!=null))
+	{
+		array<Item@>mHexes;
+		uint num=GetMHexes(item,mHexes);
+		for(uint i=0;i<num;i++)
+		{
+			mHexes[i].PicMap=GetStrHash("art\\intrface\\BLANK.FRM");
+			mHexes[i].Update();
+		}
+	}
+	else
+	{
+		cr.Say((11),"Invalid item Id.");
+	}
+}
+

@@ -1,0 +1,671 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+
+import void DisableItemPerk(Critter&cr,uint8 type)from"item_perks";
+import void DisableItemPerk(Critter&cr,Item&item,uint8 type)from"item_perks";
+import void EnableItemPerk(Critter&cr,Item&item,uint8 type)from"item_perks";              
+
+import void InitLogs()from"logging";
+import void FLog(uint logindex,string&text)from"logging";
+import void ILog(string&section,string&text)from"logging";
+import void GMLog(Critter&cr,string&text)from"logging";
+import void CloseLogs()from"logging";
+import uint AddLog(string&filename)from"logging";
+import uint AddLog(string&filename,uint index)from"logging";                                                                                                                                                                               
+
+int GetRootMapData(Map&map,uint index)
+{
+	return map.GetLocation().GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Map&map,uint index,int val)
+{
+	map.GetLocation().GetMapByIndex(0).SetData(index,val);
+}   
+
+int GetRootMapData(Location&loc,uint index)
+{
+	return loc.GetMapByIndex(0).GetData(index);
+}  
+
+void SetRootMapData(Location&loc,uint index,int val)
+{
+	loc.GetMapByIndex(0).SetData(index,val);
+}                                                                                                                                                                                                                                                                                                                                                                            
+
+import Location@GetLocationOf(Critter&critter)from"utils";
+import string GetLocationName(uint locId)from"utils";
+import string GetLocationName(Location@loc)from"utils";
+import bool ReadPids(array<int>&out pids,bool removeinvalid)from"utils";
+import void ReadDefines(string@fileName,dictionary&items,array<string>@defines)from"utils";
+import bool ParseDefine(const string&in line,string&out spid,int&out id)from"utils";
+import int SkipWhitespaces(const string&in str,int start)from"utils";
+import int SkipNonWhitespaces(const string&in str,int start)from"utils";
+import bool IsParameterTag(string&str)from"utils";
+import string GetParameterString(array<string@>@arr,string&parameter)from"utils";
+import int GetIndexOfString(array<string@>@arr,string&str)from"utils";
+import string GetConcatenatedString(array<string@>@arr,uint startindex,int stopindex)from"utils";
+import string GetConditionOfCritter(Critter@cr)from"utils";
+import string GetExtConditionOfCritter(Critter@cr)from"utils";
+import uint GetAllOnlinePlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players,bool ignorePriviledges)from"utils";
+import uint GetNumberOfPlayersOnline()from"utils";
+import void SetTurnBasedAvailability(Location@loc)from"utils";
+import bool IsGuarded(Map@map)from"utils";
+import bool IsPublic(Map@map)from"utils";
+import bool IsEncounterMap(Map@map)from"utils";
+import bool IsTown(Map@map)from"utils";
+import bool IsDungeon(Map@map)from"utils";
+import bool IsBaseControl(Map@map)from"utils";
+
+import uint GetMapType(Map@map)from"utils";
+import void LockDoor(uint x,uint y,Map@map,uint complexity,uint lockid)from"utils";
+import void UnlockDoor(uint x,uint y,Map@map)from"utils";
+import void ClearContainer(Item@container)from"utils";
+import void MoveItemsCritterToCont(Critter&crFrom,Item&contTo,uint specid)from"utils";
+import string GetCritterInfo(Critter&cr)from"utils";
+import bool AddExpTeam(Critter&critter,int xp)from"utils";
+import void ClearEnemyStack(Critter&critter)from"utils";
+import void ClearEnemyStacksOnMap(Map@map)from"utils";
+import bool IsCurrentEnemy(Critter&cr,uint targetId)from"utils";
+import string@GetSafePlayerName(uint id)from"utils";
+import string GetSafePlayerName(uint id,string&onSuccess,string&onError)from"utils";
+import IDateTime@GetCurrentDateTime()from"utils";
+import string GetCurrentDateTimeString()from"utils";
+import string GetCurrentDateTimeString(bool date,bool time)from"utils";
+import Critter@GetMostSkilled(array<Critter@>@group,int skill)from"utils";
+import string GetAuthString(Critter&player)from"utils";
+import string GetAuthString(int accesslevel)from"utils";
+import bool CanRequestHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player,int minutes)from"utils";
+import Critter@GetOnlineGM()from"utils";
+import void Preprocess(Critter&player,string&commandString)from"utils";
+import bool IsHumanoid(Critter@cr)from"utils";
+import uint GetGroupIndex(Critter&cr)from"utils";
+import uint GetGroupIndex(int st)from"utils";
+import void SetGroupIndex(Critter&cr,uint val)from"utils";
+import uint GetGroupRank(Critter&cr)from"utils";
+import void SetGroupRank(Critter&cr,uint val)from"utils";
+import uint GetGroupMode(Critter&cr)from"utils";
+import void SetGroupMode(Critter&cr,uint val)from"utils";
+import void SetGroupInfo(Critter&cr,uint faction,uint rank,uint mode)from"utils";
+import void SetGroupInfoPack(Critter&cr,uint packInfo)from"utils";
+import void ClearEvents(Critter&cr)from"utils";
+
+import int GetGvar(uint gvar)from"utils";
+import void SetGvar(uint gvar,uint value)from"utils";
+import int GetLLvar(Location&location,uint llvar)from"utils";
+import int GetLLvar(uint locationId,uint llvar)from"utils";
+import void SetLLvar(Location&location,uint llvar,uint value)from"utils";
+import int GetLMvar(Map&map,uint llvar)from"utils";
+import int GetLMvar(uint mapId,uint llvar)from"utils";
+import void SetLMvar(Map&map,uint llvar,uint value)from"utils";
+import int GetLIvar(Item&item,uint llvar)from"utils";
+import int GetLIvar(uint itemId,uint llvar)from"utils";
+import void SetLIvar(Item&item,uint llvar,uint value)from"utils";
+import int GetLvar(Critter&critter,uint lvar)from"utils";
+import int GetLvar(uint id,uint lvar)from"utils";
+import void SetLvar(Critter&critter,uint lvar,uint value)from"utils";
+import void SetLvar(uint id,uint lvar,uint value)from"utils";
+import int GetUvar(uint uvar,uint key,uint index)from"utils";
+import void SetUvar(uint uvar,uint key,uint index,uint value)from"utils";
+
+import uint GetContainerValue(Item@container)from"utils";
+import uint BaseItemValue(uint pid,bool ammo)from"utils";
+import uint BaseItemValue(uint pid,uint broken,uint det,bool ammo)from"utils";
+import uint BaseItemValue(Item@item)from"utils";
+import uint BaseItemValue(Item@item,uint proc)from"utils";
+import uint BaseSingleItemValue(Item@item)from"utils";
+import uint BaseSingleItemValue(Item@item,uint proc)from"utils";
+
+import void SetBloodType(Critter@cr)from"utils";
+import string GetBloodType(Critter@cr)from"utils";
+import string GetBloodRandom()from"utils";
+
+import void LogCommandUsage(Critter&player,string&commandString)from"utils";
+import void DropTimeouts(Critter&cr)from"utils";
+
+import bool HasItem(Critter@cr,uint pid)from"utils";
+import bool HasSomeWeapon(Critter@cr)from"utils";
+import uint GetBestWeaponSkill(Critter@cr)from"utils";
+import void GiveBag(uint bag,Critter@cr)from"utils";
+import void SetQuestGarbager(uint time,uint playerid,uint locid,uint var,uint val)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import void AddScore(Critter@cr,uint score,uint points)from"utils";
+
+import bool ReloadWeapon(Critter&cr)from"utils";
+import Item@GetRadio(Critter&cr)from"utils";
+import Item@GetRepairTool(Critter&cr)from"utils";
+import Item@GetEquippedItem(Critter&cr,uint Pid)from"utils";
+import Item@GetEquippedItem(Critter&cr,array<uint>&Pids)from"utils";
+import Item@GetEquippedItemByType(Critter&cr,uint ItemType)from"utils"; 
+
+import bool SkillRoll(Critter@cr,int skill,int bonus)from"utils";
+import int SkillCheck(Critter&cr,int skill,int skillused,Item@item,int bonus)from"utils";
+import string SkillName(uint8 skill)from"utils";
+import void ChangeCrTypeSafe(Critter&cr,uint8 crType)from"utils";
+
+import bool Pickable(Item@item)from"utils";
+
+import void TransferItemsToContOnMap(Critter&cr,Map@map,int entid,int contpid,int itemtypes)from"utils";
+import void TransferItemsFromContOnMap(Critter&cr,Map@map,int entid,int contpid)from"utils";
+
+import string IpToString(uint ip)from"utils";
+
+import void VerboseAction(Critter&cr,string&text)from"utils";
+import void VerboseAction(Critter&cr,Critter&target,string&text)from"utils";
+import void VerboseExperience(Critter&cr,int xpDiff,int levelDiff)from"utils";
+
+import void SetChosenActions(Critter&cr,array<int>&actions)from"utils";
+
+import void HexLine(uint16 x0,uint16 y0,uint16 x1,uint16 y1,array<uint16>@xList,array<uint16>@yList)from"utils";
+import void HexCircle(uint16 x0,uint16 y0,uint16 radius,array<uint16>@xList,array<uint16>@yList)from"utils";
+
+import void StartPersonalDataCleanup()from"utils";
+
+import bool IsPersonalData(Location&location,string&name)from"utils";
+import bool GetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Location&location,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Location&location,string&name)from"utils";
+
+import bool IsPersonalData(Map&map,string&name)from"utils";
+import bool GetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Map&map,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Map&map,string&name)from"utils";
+
+import bool IsPersonalData(Critter&critter,string&name)from"utils";
+import bool GetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Critter&critter,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Critter&critter,string&name)from"utils";
+
+import bool IsPersonalData(Item&item,string&name)from"utils";
+import bool GetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Item&item,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Item&item,string&name)from"utils";
+
+import bool FindPreferredGridApprox(Map&map,uint16&hx,uint16&hy)from"utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";    
+
+import int FindInArray(array<int>&arr,int value)from"utils";
+import int FindInArray(array<uint>&arr,uint value)from"utils";
+import int FindInArray(array<uint16>&arr,uint16 value)from"utils";
+import int FindInArray(array<uint8>&arr,uint8 value)from"utils";
+import bool FindInArray(array<int>&arr,int id,int&index)from"utils";
+import bool FindInArray(array<uint>&arr,uint id,int&index)from"utils";
+import bool FindInArray(array<uint8>&arr,uint8 id,int&index)from"utils";
+import int FindInArray(array<string>&arr,string&value)from"utils";
+import int FindInArray(array<string@>@arr,string&value)from"utils";
+import bool Present(int what,array<int>&where)from"utils";
+import bool Present(uint what,array<uint>&where)from"utils";
+import bool Present(uint16 what,array<uint16>&where)from"utils";
+import bool Present(string&what,array<string>&where)from"utils";
+import bool Present(string&what,array<string@>@where)from"utils";
+
+import uint CreateLocationForGroup(Critter&player,uint16 pid,uint16 worldX,uint16 worldY,array<Critter@>&)from"utils";
+import bool FindFirstFreeHex(Map@map,uint16&x,uint16&y,uint8 dir,uint16 maxSteps)from"utils";
+import bool FindNearestFreeHex(Map&map,uint16&x,uint16&y,uint radius)from"utils";
+
+import bool GetItemCoordinates(Item&item,uint&mapID,uint16&x,uint16&y)from"utils";
+import bool ItemOnHex(uint16 pid,Map@map,uint16 x,uint16 y)from"utils";
+
+import void PrintCallstack()from"utils";
+import void PrintCallstack(int level)from"utils";
+
+import bool LocationHasCritters(Location&loc,uint findType)from"utils";
+import uint LocationGetCritters(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint LocationGetPlayersAndFollowers(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint MapGetPlayersAndFollowers(Map&map,uint findType,array<Critter@>@critters)from"utils";
+import uint CritterGetPlayersAndFollowers(Critter&critter,bool lookOnMe,uint findType,array<Critter@>@critters)from"utils";
+import bool LocationHasItems(Location&loc,uint16 protoId)from"utils";
+import uint LocationGetItems(Location&loc,uint16 protoId,array<Item@>@items)from"utils";
+import void LocationDeleteItems(Location&loc,uint16 protoId)from"utils";
+
+import bool IsDisposableEncounter(Location@loc)from"utils";
+
+import bool IsT4Item(Item&item)from"utils";
+import bool IsT3Item(Item&item)from"utils";
+import uint16 AddT3Item()from"utils";
+import uint16 AddT4Item()from"utils";
+import uint16 AddImplant()from"utils";
+import uint16 AddT4BP()from"utils";
+import uint16 AddRareAmmo()from"utils";
+import uint16 AddTypicalAmmo()from"utils";
+
+import void SetDeterioration(Item&item)from"utils";  
+
+shared class CPosition
+{
+	uint x;
+	uint y;
+	uint dir;
+};
+
+shared interface IRect
+{
+	bool IsWithin(Critter&cr);
+};
+
+shared class Rect:IRect
+{
+	uint x1;
+	uint y1;
+	uint x2;
+	uint y2;
+	
+	Rect(uint x1,uint y1,uint x2,uint y2)
+	{
+		this.x1=x1;
+		this.y1=y1;
+		this.x2=x2;
+		this.y2=y2;
+	}
+	
+	bool IsWithin(Critter&cr)
+	{
+		return((cr.HexX>=this.x1&&cr.HexX<=this.x2)&&(cr.HexY>=this.y1&&cr.HexY<=this.y2));
+	}
+};
+
+shared interface IDateTime
+{
+	uint16 get_Year();
+	uint16 get_Month();
+	uint16 get_DayOfWeek();
+	uint16 get_Day();
+	uint16 get_Hour();
+	uint16 get_Minute();
+	uint16 get_Second();
+	uint16 get_Milliseconds();
+	string@ToString();
+};                                         
+
+import bool GodOfTheRealm(uint)from"cheats";
+import bool GuardNotLegit(Critter@cr,Item@item,bool deleteItem)from"cheats";
+import void GuardMultihexMove(Item&item,uint8 fromSlot,uint8 toSlot)from"multihex";          
+
+bool critter_check_move_item(Critter&cr,Item&item,uint8 toSlot,Item@itemSwap)
+{
+	uint8 fromSlot=item.CritSlot;  
+	
+	if(GuardNotLegit(cr,item,true))
+	return true;  
+	
+	if(toSlot==(255))
+	{ 
+		
+		if(item.GetType()==(8)&&item.GetProtoId()!=(3856))
+		{
+			Location@loc=GetLocationOf(cr);
+			if((@loc!=null)&&!loc.IsBase()&&!loc.IsEncounter()&&!loc.IsTent())
+			{
+				cr.Say((11),"You can't drop this here.");
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	if(item.GetType()==(8)&&toSlot!=(0))
+	{
+		if(item.Proto.ProtoId!=(3856))
+		return false;
+	} 
+	
+	bool handsSwap=((fromSlot==(1)&&toSlot==(2))||(fromSlot==(2)&&toSlot==(1)));
+	if((@itemSwap!=null)&&!handsSwap)
+	return false; 
+	
+	if(toSlot==(1))
+	{
+		if(item.GetType()==(3)&&!IsCritterAnim1(cr.CrType,item.Proto.Weapon_Anim1))
+		return false;
+	} 
+	
+	if(toSlot==(3))
+	{
+		bool can=true;
+		if(item.GetType()!=(1)||item.Proto.Slot!=(3))
+		{
+			if(cr.PerkBase[(420)]==1337)
+			{
+				
+				if(GodOfTheRealm(cr.Id))
+				
+				can=true;
+			}
+			else
+			can=false;
+		}
+		
+		if(can&&!IsCritterCanArmor(cr.CrType))
+		can=false;   
+		
+		uint armor=item.GetProtoId();
+		
+		if((armor==(9654)
+		||armor==(239)||armor==(752)
+		||armor==(3)||armor==(232)
+		||armor==(348)||armor==(349))&&item.BrokenFlags==(0x40))       
+		
+		can=false;
+		
+		return(can);
+	} 
+	
+	if(toSlot==(4))
+	{
+		bool can=true;
+		
+		if(item.GetType()!=(1)||item.Proto.Slot!=(4))
+		{
+			if(cr.PerkBase[(420)]==1337)
+			{
+				
+				if(GodOfTheRealm(cr.Id))
+				
+				can=true;
+			}
+			else
+			can=false;
+		}
+		
+		uint armor=item.GetProtoId();
+		
+		if((armor==(741)
+		||armor==(727)||armor==(738)||armor==(739)
+		||armor==(721)||armor==(737)
+		||armor==(735)||armor==(736))&&item.BrokenFlags==(0x40))
+		
+		can=false;
+		
+		return(can);
+	}  
+	
+	if(toSlot>(3))
+	{
+		if(toSlot!=item.Proto.Slot)
+		{
+			if(cr.PerkBase[(420)]==1337)
+			{
+				
+				if(GodOfTheRealm(cr.Id))
+				
+				return(true);
+			}
+			return(false);
+		}
+		
+		if(toSlot==(5)&&cr.IsPlayer())
+		return(false);
+	} 
+	
+	return true;
+}
+
+const int[][]armorRedirect=
+{    
+	
+	{
+		(106),(0),-1,
+		(13),(108),
+		(12),(107),
+		(14),(109),
+	},
+	
+	{
+		(123),(0),-1,
+		(13),(122),
+		(12),(124),
+		(14),(125),
+	}, 
+	
+	{
+		(137),(1),-1,
+		(5),(137),
+	}
+};    
+
+void critter_move_item(Critter&cr,Item&item,uint8 fromSlot)
+{
+	uint8 toSlot=item.CritSlot;
+	
+	GuardMultihexMove(item,fromSlot,toSlot); 
+	
+	if(item.GetType()==(1)&&(fromSlot==(3)||toSlot==(3)))
+	{
+		if(GetCritterAnimType(cr.CrType)!=(1))
+		{
+			
+			bool isMale=(cr.Stat[(71)]==(0));
+			uint crType=cr.Stat[(112)];
+			if(crType==0)
+			crType=(isMale?((69)):((4)));
+			
+			if(toSlot==(3))
+			{
+				if(cr.Stat[(143)]==0)
+				crType=(isMale?item.Proto.Armor_CrTypeMale:item.Proto.Armor_CrTypeFemale);
+				else
+				{
+					uint over=cr.Stat[(143)];
+					if(isMale)
+					{
+						if(over==item.Proto.Armor_CrTypeMale2||
+						over==item.Proto.Armor_CrTypeMale3||
+						over==item.Proto.Armor_CrTypeMale4)
+						crType=over;
+					}
+					else
+					{
+						if(over==item.Proto.Armor_CrTypeFemale2||
+						over==item.Proto.Armor_CrTypeFemale3||
+						over==item.Proto.Armor_CrTypeFemale4)
+						crType=over;
+					}
+				}
+			} 
+			
+			if(cr.Stat[(112)]==(106)&&isMale)
+			{
+				crType=(106);
+				if(toSlot==(3))
+				{
+					crType=item.Proto.Armor_CrTypeMale;
+					if(crType==(12))
+					crType=(107);
+					else if(crType==(13))
+					crType=(108);
+					else if(crType==(14))
+					crType=(109);
+				}
+			} 
+			
+			if(cr.Stat[(112)]==(123)&&isMale)
+			{
+				crType=(123);
+				if(toSlot==(3))
+				{
+					crType=item.Proto.Armor_CrTypeMale;
+					if(crType==(12))
+					crType=(124);
+					else if(crType==(13))
+					crType=(122);
+					else if(crType==(14))
+					crType=(125);
+				}
+			} 
+			
+			if(cr.Stat[(112)]==(137)&&!isMale)
+			{
+				crType=(137);
+				if(toSlot==(3))
+				{
+					crType=item.Proto.Armor_CrTypeFemale;
+					if(crType==(5))
+					crType=(134);
+					else if(crType==(7))
+					crType=(136);
+					else if(crType==(6))
+					crType=(34); 
+					
+				}
+			} 
+			
+			if(cr.Stat[(112)]==(45)&&isMale)
+			{
+				crType=(45);
+				if(toSlot==(3))
+				{
+					crType=item.Proto.Armor_CrTypeMale;
+					if(crType==(12))
+					crType=(107);
+					else if(crType==(13))
+					crType=(108);
+					else if(crType==(14))
+					crType=(109);
+				}
+			} 
+			
+			if(cr.Stat[(112)]==(128)&&isMale)
+			{
+				crType=(128);
+				if(toSlot==(3))
+				{
+					crType=item.Proto.Armor_CrTypeMale;
+					if(crType==(12))
+					crType=(107);
+					else if(crType==(13))
+					crType=(108);
+					else if(crType==(14))
+					crType=(109);
+				}
+			}             
+			
+			if(cr.CrType!=crType)
+			cr.ChangeCrType(crType);
+		} 
+		
+		if(toSlot==(3))
+		EnableItemPerk(cr,item,(1));
+		else if(fromSlot==(3))
+		DisableItemPerk(cr,item,(1));
+	}
+	
+	if(fromSlot==(4)||toSlot==(4))
+	{
+		
+		if(toSlot==(4))
+		EnableItemPerk(cr,item,(2));
+		else if(fromSlot==(4))
+		DisableItemPerk(cr,item,(2));
+	}
+	
+	if(item.GetType()==(3)&&item.Proto.Weapon_NoRunning)
+	{
+		if(toSlot==(1)||toSlot==(2))
+		cr.ModeBase[(540)]=cr.ModeBase[(540)]+1;
+		if(fromSlot==(1)||fromSlot==(2))
+		cr.ModeBase[(540)]=cr.ModeBase[(540)]-1;
+	}    
+	
+	if(item.Proto.ProtoId==(209)||
+	item.Proto.ProtoId==(206)||
+	item.Proto.ProtoId==(545))
+	{
+		if(fromSlot==(255))
+		{
+			((cr.ParamBase[(137)])=(cr.ParamBase[(137)])|(0x1));
+			{};
+		}
+		else
+		{
+			if(!(@cr.GetItem((209),-1)!=null)&&
+			!(@cr.GetItem((206),-1)!=null)&&
+			!(@cr.GetItem((545),-1)!=null))
+			{
+				(cr.ParamBase[(137)]=((cr.ParamBase[(137)])&(~(0x1))));
+				{};
+			}
+		}
+	}      
+	
+	speedboost(cr);
+} 
+
+void speedboost(Critter&cr)
+{
+	if(cr.IsPlayer())
+	{
+		uint current_weight;
+		uint skill=cr.Skill[(203)];
+		uint bonus=skill/6;
+		current_weight=cr.ItemsWeight();
+		uint penalty=(current_weight/5000);
+		Item@CritterArmor=cr.GetItem(0,(3));
+		Item@CritterHelmet=cr.GetItem(0,(4));
+		uint8 mode=0;
+		uint8 use=((mode)&0xF);
+		ProtoItem@weapon1=cr.GetSlotProto((1),mode);
+		ProtoItem@weapon2=cr.GetSlotProto((2),mode);
+		int skillNum1=((use)==0?weapon1.Weapon_Skill_0:((use)==1?weapon1.Weapon_Skill_1:((use)==2?weapon1.Weapon_Skill_2:0)));
+		int skillNum2=((use)==0?weapon2.Weapon_Skill_0:((use)==1?weapon2.Weapon_Skill_1:((use)==2?weapon2.Weapon_Skill_2:0)));
+		
+		if((cr.Perk[(302)]!=0)&&((cr.Perk[(303)]!=0)||(cr.Perk[(326)]!=0)))bonus+=14;
+		if((cr.Perk[(304)]!=0))bonus+=10;
+		if((@weapon1!=null))
+		{
+			if((skillNum1==(201))||(weapon1.ProtoId==(28)))bonus=0;
+			if((skillNum1==(200))||(skillNum1==(202)))bonus=(((bonus)>(30))?(30):(((bonus)<(0))?(0):(bonus)));
+		}
+		if((@weapon2!=null))
+		{
+			if((skillNum2==(201))||(weapon2.ProtoId==(28)))bonus=0;
+			if((skillNum2==(200))||(skillNum2==(202)))bonus=(((bonus)>(30))?(30):(((bonus)<(0))?(0):(bonus)));
+		}
+		
+		if((@CritterArmor!=null))
+		{
+			if((CritterArmor.GetProtoId()==(74))||
+			(CritterArmor.GetProtoId()==(265))||
+			(CritterArmor.GetProtoId()==(1))||
+			(CritterArmor.GetProtoId()==(379)))
+			{
+				bonus+=6;
+			}
+			
+			if((CritterArmor.GetProtoId()==(2))||
+			(CritterArmor.GetProtoId()==(380))||
+			(CritterArmor.GetProtoId()==(240)))
+			{
+				penalty+=6;
+			}
+			
+			if((CritterArmor.GetProtoId()==(3))||
+			(CritterArmor.GetProtoId()==(232))||
+			(CritterArmor.GetProtoId()==(348))||
+			(CritterArmor.GetProtoId()==(349)))
+			{
+				penalty+=14;
+			}
+		}
+		
+		cr.StatBase[(118)]=(((200-bonus+penalty)>(214))?(214):(((200-bonus+penalty)<(120))?(120):(200-bonus+penalty)));
+	}
+}
+

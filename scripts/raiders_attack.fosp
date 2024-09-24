@@ -1,0 +1,936 @@
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
+import void AddWaitPlan(Critter&critter,uint waittime)from"npc_common";
+import bool AttackCritter(Critter&attacker,Critter&target,uint minhp)from"npc_common";
+import bool AttackCritter(Critter&attacker,Critter&target)from"npc_common";
+import bool CanUseWeapon(Critter&critter,Item@weapon)from"npc_common";
+import bool CanUseWeapon(Critter&critter,uint proto)from"npc_common";
+import void ClearIllegalFlags(Critter&critter)from"npc_common";
+import bool HasIntelligentBrain(Critter&follower)from"npc_common";
+import void SetCritterIllegalFlag(Critter&critter,int reason)from"npc_common";
+import void SetCritterIllegalFlag(Critter&critter,int location,int reason)from"npc_common";
+import bool HasSameScript(Critter&critter1,Critter&critter2)from"npc_common";
+import bool IsFlaggedAsIllegal(Critter&critter)from"npc_common";
+import bool IsFlaggedAsIllegal(Critter&critter,int location)from"npc_common";
+import bool IsInLocation(Critter&critter,int locationPID)from"npc_common";
+import bool MoveByDir(Critter&critter,uint8 dir,uint steps,bool run)from"npc_common";
+import void MoveRandom(Critter&npc,uint maxDist)from"npc_common";
+import void MoveRandom(Critter&npc,uint maxDist,bool Run)from"npc_common";
+import void MoveRandom(Critter&npc,uint maxDist,uint stepDist,bool Run)from"npc_common";
+import void TransferToNPCMap(Critter&critter)from"npc_common";
+import void UnsetCritterIllegalFlag(Critter&critter)from"npc_common";
+import void UnsetCritterIllegalFlag(Critter&critter,int location)from"npc_common";
+import void UnsetCritterIllegalFlag(uint id,int location)from"npc_common";
+import int GetCritterIllegalFlag(Critter&critter)from"npc_common";
+import int GetCritterIllegalFlag(Critter&critter,int location)from"npc_common";
+import bool HasUnusableWeapon(Critter&critter,uint bag)from"npc_common";
+import bool HasUnusableWeapon(Critter&critter)from"npc_common";
+import bool HasUnusableWeapon(uint crpid,uint bag)from"npc_common";
+import Item@ArmBestWeapon(Critter&critter)from"npc_common";
+import Item@ArmFavoriteWeapon(Critter&critter)from"npc_common";
+import void PutAwayItems(Critter&critter)from"npc_common";
+import void DropAllItems(Critter&critter)from"npc_common";
+import void PickAllItemsOnHex(Critter&critter)from"npc_common";
+import void Heal(Critter&cr)from"npc_common";
+import void TryReportOffense(Critter@cr,Critter@offender,int reputationdrop)from"npc_common";
+import uint GetCrittersWithScript(Map&map,uint16 pid,uint findType,string&scriptName,string&funcDeclaration,array<Critter@>@critters)from"npc_common";
+import uint GetCrittersLoc(Location&loc,uint16 pid,uint findType,array<Critter@>@critters)from"npc_common";
+import uint GetNearGuards(Map@map,uint16 hexX,uint16 hexY,uint radius,array<Critter@>@crits)from"npc_common";
+import uint GetNearFactionGuards(Map@map,uint16 hexX,uint16 hexY,uint radius,uint faction,array<Critter@>@crits)from"npc_common";
+import string GenerateNewName(Critter&critter)from"npc_common";
+import string GetStoredName(Critter&critter)from"npc_common";
+import string GetStoredFirstName(Critter&critter)from"npc_common";
+import bool Flee(Critter&cr)from"npc_common";
+import bool Flee(Critter&cr,bool Run)from"npc_common";
+import void FindFreeHexes(Map@map,uint16 hexX,uint16 hexY,int&num,array<uint16>&coordsX,array<uint16>&coordsY)from"npc_common";
+import bool FindNearestFreeHex(Map@map,uint16 hexX,uint16 hexY,uint16&outX,uint16&outY)from"npc_common";
+import void SetDeleteEvent(Critter&cr,uint time)from"npc_common";
+import void DropDeleteEvent(Critter&cr)from"npc_common";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+
+shared class Entire
+{
+	int Number;
+	uint16 HexX;
+	uint16 HexY;
+	uint8 Direction;
+};
+
+uint ParseEntires(Map&map,array<Entire>&entires,int number)
+{
+	uint oldCount=entires.length();
+	uint count=map.CountEntire(number);
+	entires.resize(oldCount+count);
+	
+	for(uint i=0;i<count;i++)
+	{
+		Entire@ent=entires[oldCount+i];
+		if(map.GetEntireCoords(number,i,ent.HexX,ent.HexY,ent.Direction)==false)
+		return 0;
+		ent.Number=number;
+	}
+	
+	return count;
+}
+
+bool IsEntireFree(uint mappid,int number)
+{
+	Map@map=GetMapByPid(mappid,0);
+	return IsEntireFree(map,number);
+}
+
+bool IsEntireFree(Map&map,int number)
+{
+	uint16 x,y;
+	x=0;
+	y=0;
+	return GetEntireFreeHex(map,number,x,y);
+}
+
+bool GetEntireFreeHex(Map&map,int number,uint16&hx,uint16&hy,uint skip=0)
+{
+	uint count=map.CountEntire(number); 
+	
+	for(uint i=skip;i<count;i++)
+	{
+		if(map.GetEntireCoords(number,i,hx,hy)&&map.IsHexPassed(hx,hy))
+		return true;
+	}
+	
+	if(hx==0||hy==0||hx>=map.GetWidth()-1||hy>=map.GetHeight()-1)
+	return false; 
+	
+	for(uint i=0;i<count;i++)
+	{
+		if(map.GetEntireCoords(number,i,hx,hy))
+		{
+			for(int x=-1;x<=1;x++)
+			{
+				for(int y=-1;y<=1;y++)
+				{
+					if(x==0&&y==0)
+					continue;
+					if(__MapHexagonal)
+					{
+						if((hx%2)==1&&((x==-1&&y==1)||(x==1&&y==1)))
+						continue;
+						if((hx%2)==0&&((x==-1&&y==-1)||(x==1&&y==-1)))
+						continue;
+					}
+					
+					if(map.IsHexPassed(hx+x,hy+y))
+					{
+						hx+=x;
+						hy+=y;
+						return true;
+					}
+				}
+			}
+		}
+	}
+	return false;
+}
+
+bool GetNearEntire(Map&map,int number,uint16&hx,uint16&hy)
+{
+	uint16 hxBase=hx;
+	uint16 hyBase=hy;
+	
+	array<Entire>entires;
+	uint count=ParseEntires(map,entires,number);
+	if(count==0)
+	return false;
+	
+	hx=entires[0].HexX;
+	hy=entires[0].HexY;
+	for(uint i=1;i<count;i++)
+	{
+		Entire@ent=entires[i];
+		if(GetDistantion(hxBase,hyBase,ent.HexX,ent.HexY)<GetDistantion(hxBase,hyBase,hx,hy))
+		{
+			hx=ent.HexX;
+			hy=ent.HexY;
+		}
+	}
+	
+	return true;
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
+
+import bool AddMiscPlane(Critter&npc,uint priority,uint waitMinute,string@funcName)from"npc_planes";
+import bool AddMiscPlane(Critter&npc,uint priority,int identifier,uint identifierExt,uint waitSecond,string@funcName)from"npc_planes";
+import bool AddWalkPlane(Critter&npc,uint priority,uint16 hexX,uint16 hexY,uint8 dir,bool run,uint cut)from"npc_planes";
+import bool AddWalkPlane(Critter&npc,uint priority,int identifier,uint identifierExt,uint16 hexX,uint16 hexY,uint8 dir,bool run,uint cut)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,uint critId)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target,int minHp)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,uint critId,int minHp)from"npc_planes";
+import bool AddAttackPlane(Critter&npc,uint priority,Critter&target,bool run)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,uint16 hexX,uint16 hexY,uint16 protoId,uint useItemId,bool toOpen)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,Item@item,uint useItemId,bool toOpen)from"npc_planes";
+import bool AddPickPlane(Critter&npc,uint priority,Item@item,uint useItemId,bool toOpen,bool run)from"npc_planes";
+import bool AddHealCritterPlane(Critter&npc,uint priority,Critter@target,bool run)from"npc_planes";
+import bool AddDoctorCritterPlane(Critter&npc,uint priority,Critter@target,bool run)from"npc_planes";
+
+import uint EraseAttackPlane(Critter&npc,uint priority,Critter&target)from"npc_planes";
+import uint EraseAttackPlane(Critter&npc,uint priority,uint critId)from"npc_planes";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     
+
+import Location@GetLocationOf(Critter&critter)from"utils";
+import string GetLocationName(uint locId)from"utils";
+import string GetLocationName(Location@loc)from"utils";
+import bool ReadPids(array<int>&out pids,bool removeinvalid)from"utils";
+import void ReadDefines(string@fileName,dictionary&items,array<string>@defines)from"utils";
+import bool ParseDefine(const string&in line,string&out spid,int&out id)from"utils";
+import int SkipWhitespaces(const string&in str,int start)from"utils";
+import int SkipNonWhitespaces(const string&in str,int start)from"utils";
+import bool IsParameterTag(string&str)from"utils";
+import string GetParameterString(array<string@>@arr,string&parameter)from"utils";
+import int GetIndexOfString(array<string@>@arr,string&str)from"utils";
+import string GetConcatenatedString(array<string@>@arr,uint startindex,int stopindex)from"utils";
+import string GetConditionOfCritter(Critter@cr)from"utils";
+import string GetExtConditionOfCritter(Critter@cr)from"utils";
+import uint GetAllOnlinePlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players)from"utils";
+import uint GetAuthenticatedPlayers(array<Critter@>&out players,bool ignorePriviledges)from"utils";
+import uint GetNumberOfPlayersOnline()from"utils";
+import void SetTurnBasedAvailability(Location@loc)from"utils";
+import bool IsGuarded(Map@map)from"utils";
+import bool IsPublic(Map@map)from"utils";
+import bool IsEncounterMap(Map@map)from"utils";
+import bool IsTown(Map@map)from"utils";
+import bool IsDungeon(Map@map)from"utils";
+import bool IsBaseControl(Map@map)from"utils";
+
+import uint GetMapType(Map@map)from"utils";
+import void LockDoor(uint x,uint y,Map@map,uint complexity,uint lockid)from"utils";
+import void UnlockDoor(uint x,uint y,Map@map)from"utils";
+import void ClearContainer(Item@container)from"utils";
+import void MoveItemsCritterToCont(Critter&crFrom,Item&contTo,uint specid)from"utils";
+import string GetCritterInfo(Critter&cr)from"utils";
+import bool AddExpTeam(Critter&critter,int xp)from"utils";
+import void ClearEnemyStack(Critter&critter)from"utils";
+import void ClearEnemyStacksOnMap(Map@map)from"utils";
+import bool IsCurrentEnemy(Critter&cr,uint targetId)from"utils";
+import string@GetSafePlayerName(uint id)from"utils";
+import string GetSafePlayerName(uint id,string&onSuccess,string&onError)from"utils";
+import IDateTime@GetCurrentDateTime()from"utils";
+import string GetCurrentDateTimeString()from"utils";
+import string GetCurrentDateTimeString(bool date,bool time)from"utils";
+import Critter@GetMostSkilled(array<Critter@>@group,int skill)from"utils";
+import string GetAuthString(Critter&player)from"utils";
+import string GetAuthString(int accesslevel)from"utils";
+import bool CanRequestHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player)from"utils";
+import void SetRequestedHelp(Critter&player,int minutes)from"utils";
+import Critter@GetOnlineGM()from"utils";
+import void Preprocess(Critter&player,string&commandString)from"utils";
+import bool IsHumanoid(Critter@cr)from"utils";
+import uint GetGroupIndex(Critter&cr)from"utils";
+import uint GetGroupIndex(int st)from"utils";
+import void SetGroupIndex(Critter&cr,uint val)from"utils";
+import uint GetGroupRank(Critter&cr)from"utils";
+import void SetGroupRank(Critter&cr,uint val)from"utils";
+import uint GetGroupMode(Critter&cr)from"utils";
+import void SetGroupMode(Critter&cr,uint val)from"utils";
+import void SetGroupInfo(Critter&cr,uint faction,uint rank,uint mode)from"utils";
+import void SetGroupInfoPack(Critter&cr,uint packInfo)from"utils";
+import void ClearEvents(Critter&cr)from"utils";
+
+import int GetGvar(uint gvar)from"utils";
+import void SetGvar(uint gvar,uint value)from"utils";
+import int GetLLvar(Location&location,uint llvar)from"utils";
+import int GetLLvar(uint locationId,uint llvar)from"utils";
+import void SetLLvar(Location&location,uint llvar,uint value)from"utils";
+import int GetLMvar(Map&map,uint llvar)from"utils";
+import int GetLMvar(uint mapId,uint llvar)from"utils";
+import void SetLMvar(Map&map,uint llvar,uint value)from"utils";
+import int GetLIvar(Item&item,uint llvar)from"utils";
+import int GetLIvar(uint itemId,uint llvar)from"utils";
+import void SetLIvar(Item&item,uint llvar,uint value)from"utils";
+import int GetLvar(Critter&critter,uint lvar)from"utils";
+import int GetLvar(uint id,uint lvar)from"utils";
+import void SetLvar(Critter&critter,uint lvar,uint value)from"utils";
+import void SetLvar(uint id,uint lvar,uint value)from"utils";
+import int GetUvar(uint uvar,uint key,uint index)from"utils";
+import void SetUvar(uint uvar,uint key,uint index,uint value)from"utils";
+
+import uint GetContainerValue(Item@container)from"utils";
+import uint BaseItemValue(uint pid,bool ammo)from"utils";
+import uint BaseItemValue(uint pid,uint broken,uint det,bool ammo)from"utils";
+import uint BaseItemValue(Item@item)from"utils";
+import uint BaseItemValue(Item@item,uint proc)from"utils";
+import uint BaseSingleItemValue(Item@item)from"utils";
+import uint BaseSingleItemValue(Item@item,uint proc)from"utils";
+
+import void SetBloodType(Critter@cr)from"utils";
+import string GetBloodType(Critter@cr)from"utils";
+import string GetBloodRandom()from"utils";
+
+import void LogCommandUsage(Critter&player,string&commandString)from"utils";
+import void DropTimeouts(Critter&cr)from"utils";
+
+import bool HasItem(Critter@cr,uint pid)from"utils";
+import bool HasSomeWeapon(Critter@cr)from"utils";
+import uint GetBestWeaponSkill(Critter@cr)from"utils";
+import void GiveBag(uint bag,Critter@cr)from"utils";
+import void SetQuestGarbager(uint time,uint playerid,uint locid,uint var,uint val)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,bool isMob,uint level)from"utils";
+import Critter@AddNpc(Map@map,uint16 pid,uint16 x,uint16 y,uint8 dir,array<int>params,uint dialogId,string&script,uint aiPack,uint bagId,uint teamId,uint factionRank,uint factionMode,bool isMob,uint level)from"utils";
+import void AddScore(Critter@cr,uint score,uint points)from"utils";
+
+import bool ReloadWeapon(Critter&cr)from"utils";
+import Item@GetRadio(Critter&cr)from"utils";
+import Item@GetRepairTool(Critter&cr)from"utils";
+import Item@GetEquippedItem(Critter&cr,uint Pid)from"utils";
+import Item@GetEquippedItem(Critter&cr,array<uint>&Pids)from"utils";
+import Item@GetEquippedItemByType(Critter&cr,uint ItemType)from"utils"; 
+
+import bool SkillRoll(Critter@cr,int skill,int bonus)from"utils";
+import int SkillCheck(Critter&cr,int skill,int skillused,Item@item,int bonus)from"utils";
+import string SkillName(uint8 skill)from"utils";
+import void ChangeCrTypeSafe(Critter&cr,uint8 crType)from"utils";
+
+import bool Pickable(Item@item)from"utils";
+
+import void TransferItemsToContOnMap(Critter&cr,Map@map,int entid,int contpid,int itemtypes)from"utils";
+import void TransferItemsFromContOnMap(Critter&cr,Map@map,int entid,int contpid)from"utils";
+
+import string IpToString(uint ip)from"utils";
+
+import void VerboseAction(Critter&cr,string&text)from"utils";
+import void VerboseAction(Critter&cr,Critter&target,string&text)from"utils";
+import void VerboseExperience(Critter&cr,int xpDiff,int levelDiff)from"utils";
+
+import void SetChosenActions(Critter&cr,array<int>&actions)from"utils";
+
+import void HexLine(uint16 x0,uint16 y0,uint16 x1,uint16 y1,array<uint16>@xList,array<uint16>@yList)from"utils";
+import void HexCircle(uint16 x0,uint16 y0,uint16 radius,array<uint16>@xList,array<uint16>@yList)from"utils";
+
+import void StartPersonalDataCleanup()from"utils";
+
+import bool IsPersonalData(Location&location,string&name)from"utils";
+import bool GetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Location&location,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Location&location,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Location&location,string&name)from"utils";
+
+import bool IsPersonalData(Map&map,string&name)from"utils";
+import bool GetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Map&map,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Map&map,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Map&map,string&name)from"utils";
+
+import bool IsPersonalData(Critter&critter,string&name)from"utils";
+import bool GetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Critter&critter,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Critter&critter,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Critter&critter,string&name)from"utils";
+
+import bool IsPersonalData(Item&item,string&name)from"utils";
+import bool GetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import uint GetPersonalData(Item&item,array<string>&names,array<array<uint8>>&values)from"utils";
+import bool SetPersonalData(Item&item,string&name,array<uint8>&value)from"utils";
+import bool UnsetPersonalData(Item&item,string&name)from"utils";
+
+import bool FindPreferredGridApprox(Map&map,uint16&hx,uint16&hy)from"utils";           
+
+import bool StrToInt(string@s,uint64&inout val)from"strtoint";
+import bool StrToInt(string@s,uint&inout val)from"strtoint";
+import bool StrToInt(string@s,uint16&inout val)from"strtoint";
+import bool StrToInt(string@s,uint8&inout val)from"strtoint";
+import bool StrToInt(string@s,int64&inout val)from"strtoint";
+import bool StrToInt(string@s,int16&inout val)from"strtoint";
+import bool StrToInt(string@s,int8&inout val)from"strtoint";    
+
+import int FindInArray(array<int>&arr,int value)from"utils";
+import int FindInArray(array<uint>&arr,uint value)from"utils";
+import int FindInArray(array<uint16>&arr,uint16 value)from"utils";
+import int FindInArray(array<uint8>&arr,uint8 value)from"utils";
+import bool FindInArray(array<int>&arr,int id,int&index)from"utils";
+import bool FindInArray(array<uint>&arr,uint id,int&index)from"utils";
+import bool FindInArray(array<uint8>&arr,uint8 id,int&index)from"utils";
+import int FindInArray(array<string>&arr,string&value)from"utils";
+import int FindInArray(array<string@>@arr,string&value)from"utils";
+import bool Present(int what,array<int>&where)from"utils";
+import bool Present(uint what,array<uint>&where)from"utils";
+import bool Present(uint16 what,array<uint16>&where)from"utils";
+import bool Present(string&what,array<string>&where)from"utils";
+import bool Present(string&what,array<string@>@where)from"utils";
+
+import uint CreateLocationForGroup(Critter&player,uint16 pid,uint16 worldX,uint16 worldY,array<Critter@>&)from"utils";
+import bool FindFirstFreeHex(Map@map,uint16&x,uint16&y,uint8 dir,uint16 maxSteps)from"utils";
+import bool FindNearestFreeHex(Map&map,uint16&x,uint16&y,uint radius)from"utils";
+
+import bool GetItemCoordinates(Item&item,uint&mapID,uint16&x,uint16&y)from"utils";
+import bool ItemOnHex(uint16 pid,Map@map,uint16 x,uint16 y)from"utils";
+
+import void PrintCallstack()from"utils";
+import void PrintCallstack(int level)from"utils";
+
+import bool LocationHasCritters(Location&loc,uint findType)from"utils";
+import uint LocationGetCritters(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint LocationGetPlayersAndFollowers(Location&loc,uint findType,array<Critter@>@critters)from"utils";
+import uint MapGetPlayersAndFollowers(Map&map,uint findType,array<Critter@>@critters)from"utils";
+import uint CritterGetPlayersAndFollowers(Critter&critter,bool lookOnMe,uint findType,array<Critter@>@critters)from"utils";
+import bool LocationHasItems(Location&loc,uint16 protoId)from"utils";
+import uint LocationGetItems(Location&loc,uint16 protoId,array<Item@>@items)from"utils";
+import void LocationDeleteItems(Location&loc,uint16 protoId)from"utils";
+
+import bool IsDisposableEncounter(Location@loc)from"utils";
+
+import bool IsT4Item(Item&item)from"utils";
+import bool IsT3Item(Item&item)from"utils";
+import uint16 AddT3Item()from"utils";
+import uint16 AddT4Item()from"utils";
+import uint16 AddImplant()from"utils";
+import uint16 AddT4BP()from"utils";
+import uint16 AddRareAmmo()from"utils";
+import uint16 AddTypicalAmmo()from"utils";
+
+import void SetDeterioration(Item&item)from"utils";  
+
+shared class CPosition
+{
+	uint x;
+	uint y;
+	uint dir;
+};
+
+shared interface IRect
+{
+	bool IsWithin(Critter&cr);
+};
+
+shared class Rect:IRect
+{
+	uint x1;
+	uint y1;
+	uint x2;
+	uint y2;
+	
+	Rect(uint x1,uint y1,uint x2,uint y2)
+	{
+		this.x1=x1;
+		this.y1=y1;
+		this.x2=x2;
+		this.y2=y2;
+	}
+	
+	bool IsWithin(Critter&cr)
+	{
+		return((cr.HexX>=this.x1&&cr.HexX<=this.x2)&&(cr.HexY>=this.y1&&cr.HexY<=this.y2));
+	}
+};
+
+shared interface IDateTime
+{
+	uint16 get_Year();
+	uint16 get_Month();
+	uint16 get_DayOfWeek();
+	uint16 get_Day();
+	uint16 get_Hour();
+	uint16 get_Minute();
+	uint16 get_Second();
+	uint16 get_Milliseconds();
+	string@ToString();
+};                                                                          
+
+array<CRaidersAttack@>attacks;
+
+shared interface IRaidersAttack
+{
+	void Destroy();
+	IRaidersAttack@AddCritter(Critter&cr);
+	void AddEnemy(uint id);
+	bool IsMember(Critter&cr);
+	bool DeleteCritter(Critter&cr,bool killed);
+	void SetState(uint nstate);
+	void GatherFinished();
+	void TransferCritter(Critter&cr);
+	void GotoCheckpoint(Critter&cr);
+	void GotoExit(Critter&cr);
+	
+	void ReportCritter(Critter&cr,Map&map); 
+	
+	void Process();
+};
+
+class CRaidersAttack:IRaidersAttack
+{
+	uint startNumbers;
+	uint numbers;
+	uint killed;
+	uint lastenemies;
+	uint map_out;
+	uint map_in;
+	array<uint>crits;
+	uint id;
+	uint timeid;
+	uint state;
+	uint finished;
+	uint go_exit_x;
+	uint go_exit_y;
+	
+	CRaidersAttack(uint nid)
+	{
+		startNumbers=0;
+		numbers=0;
+		killed=0;
+		lastenemies=0;
+		id=nid;
+		finished=0;
+		state=(0);
+		if(Random(0,1)==0)
+		{
+			go_exit_x=15;
+			go_exit_y=45;
+		}
+		else
+		{
+			go_exit_x=80;
+			go_exit_y=48;
+		}
+		timeid=CreateTimeEvent(((__FullSecond)+(((1)*60))),"e_ProcessAttack",nid,false);
+		Log("created attack: "+id);
+	}
+	
+	void Destroy()
+	{
+		Log("removing attack "+id);
+		@attacks[id]=null;
+		EraseTimeEvent(timeid);
+	}
+	
+	IRaidersAttack@AddCritter(Critter&cr)
+	{
+		crits.insertLast(cr.Id);
+		cr.StatBase[(90)]=id;
+		cr.StatBase[(91)]=numbers;
+		cr.StatBase[(92)]=(0);
+		numbers++;
+		startNumbers++;
+		return this;
+	}
+	
+	void AddEnemy(uint id)
+	{
+		for(uint i=0,j=crits.length();i<j;i++)
+		{
+			Critter@cr=GetCritter(crits[i]);
+			cr.AddEnemyInStack(id);
+		}
+	}
+	
+	bool IsMember(Critter&cr)
+	{
+		return(cr.Stat[(90)]==int(id))&&IsAttackingRaider(cr);
+	}
+	
+	bool DeleteCritter(Critter&cr,bool waskilled)
+	{
+		if(cr.Stat[(90)]!=int(id))
+		return false;
+		int len=crits.length();
+		if(len==0)
+		return false;
+		if(cr.Stat[(91)]>=len)
+		return false;
+		len--;
+		if(cr.Stat[(91)]<len)
+		{
+			crits[cr.Stat[(91)]]=crits[len];
+			Critter@ModCr=GetCritter(crits[len]);
+			ModCr.StatBase[(91)]=cr.Stat[(91)];
+		}
+		cr.StatBase[(90)]=-1;
+		crits.resize(len);
+		numbers--;
+		Log("critter deleted: "+id+", remaining: "+numbers);
+		if(waskilled)
+		killed++;
+		if(numbers==0)
+		Destroy();
+		else if(killed==startNumbers/2&&state!=(5)&&state!=(4))
+		SetState((5));
+		return true;
+	}
+	
+	void SetState(uint nstate)
+	{
+		if((state==(0)&&nstate==(1))||(state==(2)&&nstate==(3)))
+		{
+			for(uint i=0,j=crits.length();i<j;i++)
+			{
+				Critter@cr=GetCritter(crits[i]);
+				cr.StatBase[(92)]=state==(0)?(0):(3);
+				cr.DropPlanes();
+			}
+			finished=0;
+			array<Item@>loot;
+			array<Critter@>dead;
+			Map@map=state==(0)?GetMap(map_out):GetMap(map_in);
+			map.GetItems(0,loot);
+			map.GetCritters(0,(0x04),dead);
+			uint k=0;
+			for(uint i=0,j=dead.length();i<j;i++)
+			if(!(dead[i].Mode[(532)]>0))
+			{
+				Critter@WalkCr=GetCritter(crits[k%numbers]);
+				AddWalkPlane(WalkCr,(35)+5,(30),dead[i].Id,dead[i].HexX,dead[i].HexY,6,true,1);
+				k++;
+			}
+			for(uint i=0,j=loot.length();i<j;i++)
+			{
+				uint8 type=loot[i].GetType();
+				if(type==(1)||type==(2)||type==(3)||type==(4)||type==(5)||type==(7))
+				{
+					Critter@PickCr=GetCritter(crits[k%numbers]);
+					AddPickPlane(PickCr,(35),loot[i],0,false,true);
+					k++;
+				}
+			}
+		}
+		else if(nstate==(4))
+		{
+			for(uint i=0,j=crits.length();i<j;i++)
+			{
+				Critter@cr=GetCritter(crits[i]);
+				AddWalkPlane(cr,0,(35),0,(71),(119),6,true,1);
+			}
+		}
+		else if((nstate==(0)&&state==(1))||(nstate==(2)&&state==(3)))
+		{
+			for(uint i=0,j=crits.length();i<j;i++)
+			{
+				Critter@cr=GetCritter(crits[i]);
+				cr.DropPlanes();
+			}
+		}
+		else if(nstate==(2))
+		{
+			for(uint i=0,j=crits.length();i<j;i++)
+			{
+				Critter@cr=GetCritter(crits[i]);
+				AddWalkPlane(cr,0,(35),0,(52),(29),6,true,1);
+				ClearEnemyStack(cr);
+			}
+			
+			array<Critter@>enemies;
+			Map@MapIn=GetMap(map_in);
+			MapIn.GetCritters(0,(0x03)|(0x20),enemies);
+			for(uint i=0,j=enemies.length();i<j;i++)
+			AddEnemy(enemies[i].Id);
+		}
+		else if(nstate==(5))
+		return;
+		Log("SET STATE: "+nstate);
+		state=nstate;
+	}
+	
+	void GatherFinished()
+	{
+		finished++;
+		if(finished==numbers)
+		SetState(state==(1)?(2):(4));
+	}
+	
+	void TransferCritter(Critter&cr)
+	{
+		if(cr.GetMap().Id==map_out)
+		{
+			cr.TransitToMap(map_in,0);
+			Log("transferred in: "+cr.Id);
+		}
+		else
+		{
+			cr.TransitToMap(map_out,1);
+			Log("transferred out: "+cr.Id);
+			cr.StatBase[(92)]=(6);
+		}
+	}
+	
+	void GotoCheckpoint(Critter&cr)
+	{
+		if(cr.GetMap().Id==map_out)
+		{
+			Log("moving to outer checkpoint: "+cr.Id);
+			AddWalkPlane(cr,0,(57),(39),0xFF,true,Random(2,3));
+		}
+		else
+		{
+			Log("moving to inner checkpoint: "+cr.Id);
+			AddWalkPlane(cr,0,(69),(105),0xFF,true,Random(2,3));
+		}
+	}
+	
+	void GotoExit(Critter&cr)
+	{
+		Log("evacuating: "+cr.Id);
+		AddWalkPlane(cr,0,(29),0,go_exit_x,go_exit_y,6,true,1);
+	}           
+	
+	void ReportCritter(Critter&cr,Map&map)
+	{
+		if(IsMember(cr))
+		return;
+		if(state==(1)&&map.Id==map_out)
+		{
+			SetState((0));
+			AddEnemy(cr.Id);
+			Process();
+		}
+		else if(state==(3)&&map.Id==map_in)
+		{
+			SetState((2));
+			AddEnemy(cr.Id);
+			Process();
+		}
+	}
+	
+	void Process()
+	{
+		
+		if(state==(0)||state==(2))
+		{
+			Map@map=state==(0)?GetMap(map_out):GetMap(map_in);
+			if(!(@map!=null))
+			{
+				Destroy();
+				return;
+			}
+			array<Critter@>enemies;
+			array<Critter@>allcrits;
+			array<Critter@>lazy; 
+			
+			map.GetCritters(0,(0x03)|(0x20),allcrits);
+			
+			for(uint i=0,j=allcrits.length();i<j;i++)
+			if(!IsMember(allcrits[i]))
+			enemies.insertLast(allcrits[i]);
+			else if(!(@allcrits[i].GetCurPlane()!=null)||allcrits[i].GetCurPlane().Identifier!=(1))
+			lazy.insertLast(allcrits[i]);   
+			
+			lastenemies=enemies.length();
+			if(lastenemies>0)
+			{
+				if(lazy.length()==0)
+				return;
+				uint16 hx=0,hy=0;
+				GravityCentre(hx,hy,lazy);
+				Critter@closest=GetClosestCritter(hx,hy,enemies);
+				for(uint i=0,j=lazy.length();i<j;i++)
+				{
+					lazy[i].DropPlanes();
+					
+					AttackCritter(lazy[i],closest);
+				}
+				
+			}
+			else if(state==(0))
+			SetState((1));
+			else if(lazy.length()==numbers)
+			SetState((3));
+		}
+		
+	}
+};
+
+void GravityCentre(uint16&hx,uint16&hy,array<Critter@>crits)
+{
+	uint len=crits.length();
+	if(len==0)
+	return;
+	hx=hy=0;
+	for(uint i=0;i<len;i++)
+	{
+		hx+=crits[i].HexX;
+		hy+=crits[i].HexY;
+	}
+	hx/=len;
+	hy/=len;
+}
+
+Critter@GetClosestCritter(uint16 hx,uint16 hy,array<Critter@>&crits)
+{
+	uint len=crits.length();
+	if(len==0)
+	return null;
+	uint mindist=GetDistantion(crits[0].HexX,crits[0].HexY,hx,hy);
+	uint minidx=0;
+	for(uint i=1;i<len;i++)
+	if(GetDistantion(crits[i].HexX,crits[i].HexY,hx,hy)<mindist)
+	{
+		mindist=GetDistantion(crits[i].HexX,crits[i].HexY,hx,hy);
+		minidx=i;
+	}
+	return crits[minidx];
+}
+
+uint GetFreeAttackNumber()
+{
+	uint i=0;
+	for(uint j=attacks.length();i<j;i++)
+	if(!(@attacks[i]!=null))
+	return i;
+	attacks.insertLast(null);
+	return i;
+}
+
+CRaidersAttack@CreateAttack()
+{
+	uint n=GetFreeAttackNumber();
+	@attacks[n]=CRaidersAttack(n);
+	return attacks[n];
+}
+
+uint e_ProcessAttack(array<uint>@values)
+{
+	uint id=values[0];
+	attacks[id].Process();
+	return((1)*__TimeMultiplier);
+}
+
+uint e_GarbageAttacks(array<uint>@values)
+{
+	uint len=attacks.length();
+	if(len==0)
+	return(((30)*__TimeMultiplier*60));
+	len--;
+	if(!(@attacks[len]!=null))
+	attacks.resize(len);
+	return(((30)*__TimeMultiplier*60));
+}
+
+bool IsAttackingRaider(Critter&cr)
+{
+	if(cr.GetScriptId()==uint(-1))
+	return false;
+	if(cr.GetScriptId()==0)
+	return false;
+	return GetScriptName(cr.GetScriptId())=="raiders_attack@critter_init";
+}
+
+bool InitRaidersAttacks()
+{
+	CreateTimeEvent(((__FullSecond)+((((30)*__TimeMultiplier*60)))),"e_GarbageAttacks",false);
+	return true;
+}
+
+bool RaidersAttack(Location&loc)
+{
+	CRaidersAttack@attack=CreateAttack();
+	attack.map_out=loc.GetMapByIndex(0).Id;
+	attack.map_in=loc.GetMapByIndex(1).Id;
+	
+	array<Critter@>crits;
+	Map@MapOut=GetMap(attack.map_out);
+	MapOut.GetCritters(0,(0x03)|(0x20),crits);
+	array<Entire>entires;
+	int len=ParseEntires(MapOut,entires,0);
+	len=Random(0,len-1);
+	
+	uint16 hx=entires[len].HexX;
+	uint16 hy=entires[len].HexY;
+	
+	uint num=5;
+	for(uint i=0;i<num;i++)
+	{
+		Critter@raider=AddNpc(MapOut,250,hx,hy,Random(0,5),0,"raiders_attack@critter_init",(136),168,(5000),false,1);
+		raider.ModeBase[(527)]=1;
+		raider.ModeBase[(522)]=1;
+		attack.AddCritter(raider);
+	}
+	
+	for(uint i=0,j=crits.length();i<j;i++)
+	{
+		attack.AddEnemy(crits[i].Id);
+		Log("added enemy: "+crits[i].Id);
+	}
+	
+	return true;
+}
+
+void critter_init(Critter&cr,bool firstTime)
+{
+	if(firstTime)
+	{
+		cr.StatBase[(84)]=(-2);
+		cr.SetEvent((0),"_RaiderIdle");
+		cr.SetEvent((2),"_RaiderDead");
+		cr.SetEvent((1),"_RaiderFinish");
+		cr.SetEvent((36),"_RaiderPlaneEnd");
+		
+		cr.SetEvent((4),"_RaiderShowCritter");
+		cr.ModeBase[(517)]=1;
+		cr.StatBase[(11)]=(1<<30);
+	}
+	else
+	DeleteNpc(cr);
+}
+
+void _RaiderIdle(Critter&cr)
+{
+	if(cr.Stat[(92)]==(0)&&(attacks[cr.Stat[(90)]].state)==(1))
+	{
+		cr.StatBase[(92)]=(1);
+		attacks[cr.Stat[(90)]].GotoCheckpoint(cr);
+	}
+	else if(cr.Stat[(92)]==(1)&&(attacks[cr.Stat[(90)]].state)==(1))
+	{
+		cr.StatBase[(92)]=(2);
+		attacks[cr.Stat[(90)]].GatherFinished();
+	}
+	else if(cr.Stat[(92)]==(3)&&(attacks[cr.Stat[(90)]].state)==(3))
+	{
+		cr.StatBase[(92)]=(4);
+		attacks[cr.Stat[(90)]].GotoCheckpoint(cr);
+	}
+	else if(cr.Stat[(92)]==(4)&&(attacks[cr.Stat[(90)]].state)==(3))
+	{
+		cr.StatBase[(92)]=(5);
+		attacks[cr.Stat[(90)]].GatherFinished();
+	}
+	else if(cr.Stat[(92)]==(6))
+	{
+		cr.StatBase[(92)]=(7);
+		attacks[cr.Stat[(90)]].GotoExit(cr);
+	}
+}
+
+void _RaiderDead(Critter&cr,Critter@killer)
+{
+	Log("calling deletion of "+cr.Id);
+	if(cr.Stat[(90)]>=0)
+	attacks[cr.Stat[(90)]].DeleteCritter(cr,true);
+}
+
+void _RaiderFinish(Critter&cr,bool deleted)
+{
+	if(cr.IsDead())
+	return;
+	Log("calling deletion of "+cr.Id);
+	if(cr.Stat[(90)]>=0)
+	attacks[cr.Stat[(90)]].DeleteCritter(cr,false);
+}           
+
+bool _RaiderPlaneEnd(Critter&cr,NpcPlane&plane,int reason,Critter@someCr,Item@item)
+{
+	if(plane.Identifier==(35))
+	attacks[cr.Stat[(90)]].TransferCritter(cr);
+	else if(plane.Identifier==(29))
+	DeleteNpc(cr);
+	return true; 
+	
+}
+
+void _RaiderShowCritter(Critter&cr,Critter&showCrit)
+{
+	if(showCrit.Cond!=(3))
+	if(cr.Stat[(90)]>=0)
+	attacks[cr.Stat[(90)]].ReportCritter(showCrit,showCrit.GetMap());
+}
+
+void commence(Critter&cr,int p0,int p1,int p2)
+{
+	RaidersAttack(cr.GetMap().GetLocation());
+}
