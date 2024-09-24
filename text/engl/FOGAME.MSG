@@ -1442,8 +1442,8 @@
 
 # 102000
 # SK_SMALL_GUNS
-{102001}{}{Small Guns}
-{102002}{}{The use, care and general knowledge of small firearms - pistols, SMGs and rifles.}
+{102001}{}{Pistols}
+{102002}{}{The use, care and general knowledge of small firearms - pistols, SMGs}
 # SK_BIG_GUNS
 {102011}{}{Big Guns}
 {102012}{}{The operation and maintenance of really big guns - miniguns, rocket launchers, flamethrowers and such.}
@@ -1454,8 +1454,8 @@
 {102031}{}{Close Combat}
 {102032}{}{A combination of martial arts, non-ranged weapons in hand-to-hand, or melee combat - knives, sledgehammers, spears, clubs and so on.}
 # SK_MELEE_WEAPONS
-{102041}{}{Reserved}
-{102042}{}{This skill is no longer useful, but it might be changed some day.}
+{102041}{}{Rifles}
+{102042}{}{The use of rifles, only rifles.}
 # SK_THROWING
 {102051}{}{Throwing}
 {102052}{}{The skill of muscle-propelled ranged weapons, such as throwing knives, spears and grenades.}
