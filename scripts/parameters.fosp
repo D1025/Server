@@ -98,6 +98,7 @@ void changedParam_Experience(Critter&cr,uint,int oldValue)
 	
 	if(exp>0)
 	{
+		exp+=9*exp;
 		exp+=exp*((cr.Perk[(351)]+cr.Trait[(565)])*10)/100;
 		LogExperience(cr,exp,-2);
 		uint level=cr.Stat[(77)],oldLevel=level;  
@@ -258,14 +259,18 @@ void CritterGenerate(Critter&cr)
 	if(cr.ParamBase[(563)]!=0)
 	cr.ParamBase[(4)]-=1;                         
 	
-	cr.ParamBase[(8)]+=5;
 	cr.ParamBase[(72)]=cr.ParamBase[(7)];
 	cr.ParamBase[(75)]=cr.ParamBase[(8)]*100;
 	
 	cr.ParamBase[(136)]=4;
 	
 	if(IsHumanoid(cr))
-	cr.StatBase[(7)]+=40;
+	{
+		cr.StatBase[(7)]=150-cr.StatBase[(2)]*2-cr.StatBase[(0)]+cr.StatBase[(2)]/2;
+		cr.StatBase[(8)]=10-cr.StatBase[(5)]/2;
+		cr.StatBase[(9)]=cr.StatBase[(5)]-3*cr.StatBase[(5)];
+		cr.StatBase[(14)]=-cr.StatBase[(6)];
+	}
 	
 }                                          
 

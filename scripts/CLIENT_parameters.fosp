@@ -13,7 +13,7 @@ import string GetLexem(string&lexems,string&lex)from"lexems";
 
 import void SetChosenTabLevelUp(bool enable)from"chosen_tabs";
 import string critter_description(CritterCl&cr,int lookType)from"client_interface";
-import int GUI_GetActiveScreen()from"client_gui";                                                                                                                                                                                
+import int GUI_GetActiveScreen()from"client_gui";                                                                                                                                                                                 
 
 void changedParam_Level(CritterCl&cr,uint,int oldValue)
 {
@@ -103,9 +103,9 @@ void CritterGenerate(array<int>&data)
 	data[(9)]=0;
 	data[(7)]+=data[(2)]/2+150;
 	
-	data[(8)]+=data[(5)]/2;
+	data[(8)]+=10;
 	data[(11)]+=((25+data[(0)]*(25-data[(552)]*10))*453)+100000;
-	data[(10)]+=(data[(0)]>3?(data[(551)]>0?2*(data[(0)]):2*(data[(0)])-5):1);
+	data[(10)]+=(data[(0)]>5?(data[(551)]>0?2*(data[(0)]-5):(data[(0)])-5):1);
 	data[(31)]+=8+data[(2)]*2+data[(2)]>10?6:0+data[(2)]>15?6:0;
 	data[(30)]+=20+data[(2)]*3;
 	data[(12)]+=data[(1)]*2;
@@ -120,11 +120,10 @@ void CritterGenerate(array<int>&data)
 	
 	data[(14)]+=0; 
 	
-	data[(8)]+=5;
 	data[(72)]=data[(7)];
 	data[(75)]=data[(8)]*100;
 	
-	data[(136)]=4;   
+	data[(136)]=4;        
 	
 }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 
