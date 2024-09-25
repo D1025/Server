@@ -365,7 +365,7 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
     int special = 0;
     for(uint i = ST_STRENGTH; i <= ST_LUCK; i++)
     {
-		if(data[i] < 1 || data[i] > 10)
+		if(data[i] < 1 || data[i] > 20)
         {
             Message(GetMsgStr(TEXTMSG_GAME, STR_NET_WRONG_SPECIAL));
             return false;
