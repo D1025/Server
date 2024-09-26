@@ -519,6 +519,16 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     else
         @realTarget = target;
 
+
+    //disable crits for not-aimed attacks
+    if (aim != HIT_LOCATION_UNCALLED && aim != HIT_LOCATION_NONE)
+    {
+        isCritical = true;
+    }
+    else {
+        isCritical = false;
+    }
+
     // Initial animations
     cr.Action(ACTION_USE_WEAPON, (((!isHit && isCritical && !hitRandomly) ? 1 : 0) << 8) | (aim << 4) | use, realWeapon);
 

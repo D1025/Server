@@ -277,24 +277,24 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     //	for(uint i=SKILL_BEGIN;i<=SKILL_END;i++) _param_[i]-=10;
     // }
 
-    _param_[SK_SMALL_GUNS] += 100 + 10 * _param_[ST_AGILITY]; // gonna be changed to pistols
-    _param_[SK_BIG_GUNS] += 100 + 10 * _param_[ST_ENDURANCE];
-    _param_[SK_ENERGY_WEAPONS] += 100 + 10 * _param_[ST_INTELLECT];
-    _param_[SK_UNARMED] += 100 + 10 * _param_[ST_STRENGTH];
-    _param_[SK_MELEE_WEAPONS] += 100 + 10 * _param_[ST_PERCEPTION]; //gonna be changed to rifles
-    _param_[SK_THROWING] += 100 + 10 * _param_[ST_AGILITY];
-    _param_[SK_FIRST_AID] += 100 + 10 * _param_[ST_INTELLECT];
-    _param_[SK_DOCTOR] += 100 + 10 * _param_[ST_INTELLECT];
-    _param_[SK_SNEAK] += 100 + 10 * _param_[ST_AGILITY];
-    _param_[SK_LOCKPICK] += 100 + 10 * _param_[ST_INTELLECT];
-    _param_[SK_STEAL] += 100 + 5 * (_param_[ST_AGILITY] + _param_[ST_LUCK]);
-    _param_[SK_TRAPS] += 100 + 10 * _param_[ST_AGILITY];
-    _param_[SK_SCIENCE] += 100 + 10 * _param_[ST_INTELLECT];
-    _param_[SK_REPAIR] += 100 + 10 * _param_[ST_INTELLECT];
-    _param_[SK_SPEECH] += 100 + 10 * _param_[ST_CHARISMA];
-    _param_[SK_BARTER] += 100 + 10 * _param_[ST_CHARISMA];
-    _param_[SK_GAMBLING] += 100 + 10 * _param_[ST_CHARISMA];
-    _param_[SK_OUTDOORSMAN] += 100 + 5 * (_param_[ST_CHARISMA] + _param_[ST_INTELLECT] + _param_[ST_LUCK]);
+    _param_[SK_SMALL_GUNS] += 50 + 10 * _param_[ST_AGILITY]; // gonna be changed to pistols
+    _param_[SK_BIG_GUNS] += 50 + 10 * _param_[ST_ENDURANCE];
+    _param_[SK_ENERGY_WEAPONS] += 50 + 10 * _param_[ST_INTELLECT];
+    _param_[SK_UNARMED] += 50 + 10 * _param_[ST_STRENGTH];
+    _param_[SK_MELEE_WEAPONS] += 50 + 10 * _param_[ST_PERCEPTION]; //gonna be changed to rifles
+    _param_[SK_THROWING] += 50 + 10 * _param_[ST_AGILITY];
+    _param_[SK_FIRST_AID] += 50 + 10 * _param_[ST_INTELLECT];
+    _param_[SK_DOCTOR] += 50 + 10 * _param_[ST_INTELLECT];
+    _param_[SK_SNEAK] += 50 + 10 * _param_[ST_AGILITY];
+    _param_[SK_LOCKPICK] += 50 + 10 * _param_[ST_INTELLECT];
+    _param_[SK_STEAL] += 50 + 5 * (_param_[ST_AGILITY] + _param_[ST_LUCK]);
+    _param_[SK_TRAPS] += 50 + 10 * _param_[ST_AGILITY];
+    _param_[SK_SCIENCE] += 50 + 10 * _param_[ST_INTELLECT];
+    _param_[SK_REPAIR] += 50 + 10 * _param_[ST_INTELLECT];
+    _param_[SK_SPEECH] += 50 + 10 * _param_[ST_CHARISMA];
+    _param_[SK_BARTER] += 50 + 10 * _param_[ST_CHARISMA];
+    _param_[SK_GAMBLING] += 50 + 10 * _param_[ST_CHARISMA];
+    _param_[SK_OUTDOORSMAN] += 50 + 5 * (_param_[ST_CHARISMA] + _param_[ST_INTELLECT] + _param_[ST_LUCK]);
 
     if(_param_[TAG_SKILL1] != 0)
         _param_[_param_[TAG_SKILL1]] += 50;

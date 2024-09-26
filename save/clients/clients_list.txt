@@ -1,2 +1,0 @@
-chuj.client
-chuj1.client
