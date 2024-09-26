@@ -4,7 +4,7 @@
 
 
 # Version info
-{1}{}{FOnline: Aftertimes}
+{1}{}{FOnline: New Dawn}
 
 ####################################################################################################################################
 #
@@ -2550,7 +2550,7 @@ Shift + Enter - Radio
 
 {2000001000}{}{20} # Speed
 {2000001010}{}{
-|0xff8c8c84 FOnline: Aftertimes
+|0xff8c8c84 FOnline: New Dawn
 |0xff907824 worldremaker
 
 Special thanks to

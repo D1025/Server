@@ -696,7 +696,7 @@ void render_iface(uint layer)
 		if( mainsc == CLIENT_MAIN_SCREEN_GAME )
         {
             // Most Important Feature Ever Made By Human Race For FOnline Game
-            DrawText( "FOnline: Aftertimes", 0, 5, __ScreenWidth-5, 10, 0, FONT_FALLOUT, FT_CENTERR );
+            DrawText( "FOnline: New Dawn", 0, 5, __ScreenWidth-5, 10, 0, FONT_FALLOUT, FT_CENTERR );
             string date = DateTimeToString( __FullSecond );
             DrawText( date, 0, 15, __ScreenWidth-5, 10, 0, FONT_FALLOUT, FT_CENTERR );
         }

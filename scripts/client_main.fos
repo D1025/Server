@@ -125,7 +125,7 @@ bool start()
         // Recomendation message
         Message(GetMsgStr(TEXTMSG_GAME, STR_INVALID_RESOLUTION));
     }
-	Message("Welcome to FOnline: Aftertimes! Check out our forum for news and announcements: http://forum.fonline-aftertimes.net. Thanks and have fun!");
+	Message("Welcome to FOnline: New Dawn! Thanks and have fun!");
 
     // Additional dat files
 

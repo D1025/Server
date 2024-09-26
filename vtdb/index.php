@@ -16,7 +16,7 @@ body("style='height:100%;'");
 print( "<p style='text-align: center;'>\n" );
 string2font( 1, "Vault-Tec DB\n" );
 string2font( 3, "by WHINE TEAM\n" );
-echo "<span class='font_green'>:: FOnline: Aftertimes ::</span><br/>\n";
+echo "<span class='font_green'>:: FOnline: New Dawn ::</span><br/>\n";
 
 $who = '?';
 $when = 0;

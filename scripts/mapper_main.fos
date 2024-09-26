@@ -74,7 +74,7 @@ void start()
 
     AllowSlot(4, "Helmet");
 
-    Message("Welcome to FOnline: Aftertimes Mapper. Run #FOAT command to get the newest commands!");
+    Message("Welcome to FOnline: New Dawn Mapper. Run #FOAT command to get the newest commands!");
     Message("Maps not created in this mapper must be converted with the #PortMap command.");
     InitializeTabs();
     InitializePlugins();
@@ -397,7 +397,7 @@ void DrawMenu()
 								10, 50, int(COLOR_RED),
 								10, 10, int(COLOR_RED)};
 	DrawPrimitive(DRAW_PRIMITIVE_TRIANGLESTRIP, menubackground); */
-	DrawText("FOnline: Aftertimes Mapper", 15, 15, 195, 10, COLOR_LGREEN, FONT_FALLOUT, 0);
+	DrawText("FOnline: New Dawn", 15, 15, 195, 10, COLOR_LGREEN, FONT_FALLOUT, 0);
 	MapperMap@ map = GetActiveMap();
 	
 	if(!valid(map))

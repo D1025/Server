@@ -71,7 +71,7 @@ class RuchyMyszy : IGUIElementCallbackMouseMove
 
 void InitDateTime()
 {
-	@serverInfo = GUI_AddText(CLIENT_MAIN_SCREEN_GAME, "FOnline: Aftertimes", 0,0).AbsolutePosition(__ScreenWidth-115, 5).TextBoxSize(180, 40).Visible(true);
+	@serverInfo = GUI_AddText(CLIENT_MAIN_SCREEN_GAME, "FOnline: New Dawn", 0,0).AbsolutePosition(__ScreenWidth-115, 5).TextBoxSize(180, 40).Visible(true);
 
 	string dateTime;
 	dateTime=DateTimeToString(__FullSecond);
