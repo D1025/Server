@@ -296,6 +296,12 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     _param_[SK_GAMBLING] += 50 + 10 * _param_[ST_CHARISMA];
     _param_[SK_OUTDOORSMAN] += 50 + 5 * (_param_[ST_CHARISMA] + _param_[ST_INTELLECT] + _param_[ST_LUCK]);
 
+    if(_param_[TRAIT_BONEHEAD] != 0) {
+        _param_[TAG_SKILL1] = 0;
+        _param_[TAG_SKILL2] = 0;
+        _param_[TAG_SKILL3] = 0;
+    }
+
     if(_param_[TAG_SKILL1] != 0)
         _param_[_param_[TAG_SKILL1]] += 50;
     if(_param_[TAG_SKILL2] != 0)
@@ -313,8 +319,8 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
         _param_[ST_CRITICAL_CHANCE] += 10;
     if(_param_[TRAIT_FAST_SHOT] != 0)
         _param_[MODE_NO_AIM] = 1;
-    if(_param_[TRAIT_BONEHEAD] != 0)
-        _param_[ST_INTELLECT] -= 1;
+    // if(_param_[TRAIT_BONEHEAD] != 0)
+    //    _param_[ST_INTELLECT] -= 1;
 
     #ifdef __CLIENT
     // Runtime calculations, only for client registration
@@ -350,7 +356,7 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     {
         cr.StatBase[ST_MAX_LIFE] = 150 - cr.StatBase[ST_ENDURANCE] * 2 - cr.StatBase[ST_STRENGTH] + cr.StatBase[ST_ENDURANCE] /2;
         cr.StatBase[ST_ACTION_POINTS] = 10 - cr.StatBase[ST_AGILITY] / 2;
-        cr.StatBase[ST_ARMOR_CLASS] = cr.StatBase[ST_AGILITY] - 3*cr.StatBase[ST_AGILITY];
+        cr.StatBase[ST_ARMOR_CLASS] = cr.Trait[TRAIT_BRUISER] != 0 ? - 3*cr.StatBase[ST_AGILITY] : cr.StatBase[ST_AGILITY] - 3*cr.StatBase[ST_AGILITY];
         cr.StatBase[ST_CRITICAL_CHANCE] = - cr.StatBase[ST_LUCK];
     }
     #endif
@@ -365,16 +371,15 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
     int special = 0;
     for(uint i = ST_STRENGTH; i <= ST_LUCK; i++)
     {
-		if(data[i] < 1 || data[i] > 20)
+		if(data[i] < 1 || data[i] > 10)
         {
             Message(GetMsgStr(TEXTMSG_GAME, STR_NET_WRONG_SPECIAL));
             return false;
         }
         special += data[i];
     }
-	if((data[ST_STRENGTH]>10 && data[TRAIT_BRUISER]!=0) ||
-	(data[ST_AGILITY]>9 && data[TRAIT_SMALL_FRAME]!=0) ||
-	(data[ST_INTELLECT]==1 && data[TRAIT_BONEHEAD]!=0))
+	if((data[ST_STRENGTH]>6 && data[TRAIT_BRUISER]!=0) ||
+	(data[ST_AGILITY]>10 && data[TRAIT_SMALL_FRAME]!=0))
 		{
 			Message("Incorrect SPECIAL data.");
 			return false;
@@ -385,13 +390,24 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
         Message(GetMsgStr(TEXTMSG_GAME, STR_NET_WRONG_SPECIAL));
         return false;
     }
-    // Check choosed tag skills
-    if((data[TAG_SKILL1] < int(SKILL_BEGIN) || data[TAG_SKILL1] > int(SKILL_END)) ||
-       (data[TAG_SKILL2] < int(SKILL_BEGIN) || data[TAG_SKILL2] > int(SKILL_END)) ||
-       (data[TAG_SKILL3] < int(SKILL_BEGIN) || data[TAG_SKILL3] > int(SKILL_END)))
+    if(data[TRAIT_BONEHEAD] != 0)
     {
-        Message(GetMsgStr(TEXTMSG_GAME, STR_NET_WRONG_TAGSKILL));
-        return false;
+        if (data[TAG_SKILL1] != 0 || data[TAG_SKILL2] != 0 || data[TAG_SKILL3] != 0)
+        {
+                data[TAG_SKILL1] = 0;
+                data[TAG_SKILL2] = 0;
+                data[TAG_SKILL3] = 0;
+                return true;
+        }
+    } else {
+        // Check choosed tag skills
+        if((data[TAG_SKILL1] < int(SKILL_BEGIN) || data[TAG_SKILL1] > int(SKILL_END)) ||
+           (data[TAG_SKILL2] < int(SKILL_BEGIN) || data[TAG_SKILL2] > int(SKILL_END)) ||
+           (data[TAG_SKILL3] < int(SKILL_BEGIN) || data[TAG_SKILL3] > int(SKILL_END)))
+        {
+            Message(GetMsgStr(TEXTMSG_GAME, STR_NET_WRONG_TAGSKILL));
+            return false;
+        }
     }
     return true;
 }

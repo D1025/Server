@@ -124,45 +124,45 @@ EXPORT bool allowSlot_Hand1(uint8, Item&, Critter&, Critter& toCr)
 EXPORT int getParam_Strength(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_STRENGTH] + cr.Params[ST_STRENGTH_EXT];
-	return CLAMP(val, 1, 10);
+	return CLAMP(val, 1, 20);
 }
 
 EXPORT int getParam_Perception(CritterMutual& cr, uint)
 {
 	int val = (cr.Params[DAMAGE_EYE] ? 1 : cr.Params[ST_PERCEPTION] + cr.Params[ST_PERCEPTION_EXT]);
 	if(cr.Params[TRAIT_NIGHT_PERSON]) val += GetNightPersonBonus();
-	return CLAMP(val, 1, 10);
+	return CLAMP(val, 1, 20);
 }
 
 EXPORT int getParam_Endurance(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_ENDURANCE] + cr.Params[ST_ENDURANCE_EXT];
-	return CLAMP(val, 1, 10);
+	return CLAMP(val, 1, 20);
 }
 
 EXPORT int getParam_Charisma(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_CHARISMA] + cr.Params[ST_CHARISMA_EXT];
-	return CLAMP(val, 1, 10);
+	return CLAMP(val, 1, 20);
 }
 
 EXPORT int getParam_Intellegence(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_INTELLECT] + cr.Params[ST_INTELLECT_EXT];
 	if(cr.Params[TRAIT_NIGHT_PERSON]) val += GetNightPersonBonus();
-	return CLAMP(val, 1, 10);
+	return CLAMP(val, 1, 20);
 }
 
 EXPORT int getParam_Agility(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_AGILITY] + cr.Params[ST_AGILITY_EXT];
-	return CLAMP(val,1,10);
+	return CLAMP(val,1,20);
 }
 
 EXPORT int getParam_Luck(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_LUCK] + cr.Params[ST_LUCK_EXT];
-	return CLAMP(val, 1, 10);
+	return CLAMP(val, 1, 20);
 }
 
 EXPORT int getParam_Hp(CritterMutual& cr, uint)
