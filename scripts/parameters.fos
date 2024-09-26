@@ -372,7 +372,7 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
         }
         special += data[i];
     }
-	if((data[ST_STRENGTH]>6 && data[TRAIT_BRUISER]!=0) ||
+	if((data[ST_STRENGTH]>10 && data[TRAIT_BRUISER]!=0) ||
 	(data[ST_AGILITY]>9 && data[TRAIT_SMALL_FRAME]!=0) ||
 	(data[ST_INTELLECT]==1 && data[TRAIT_BONEHEAD]!=0))
 		{
