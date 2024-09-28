@@ -1,0 +1,6 @@
+/logs/*
+/save/*
+/save/bans
+/logs/
+/save/
+/config/GetAccess.cfg
