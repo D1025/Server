@@ -660,7 +660,7 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
             // Try set addiction perk
             int addictProc = DrugEffects[index + TABLE_DRUG_PROC];
             if(addict >= 0 && Random(1, 100) <= addictProc)
-                cr.AddictionBase[addict] = 1; 
+                cr.AddictionBase[addict] = 1;
         }
 
         array<int>  identifiers;
@@ -689,10 +689,10 @@ void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
         return;
     SetDrugTimer(cr, drugPid, REAL_SECOND(20));
     cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.Stat[ST_CURRENT_HP]+cr.Stat[ST_HEALING_RATE], -9999, cr.Stat[ST_MAX_LIFE]);
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(3), CTE_SUPERSTIMHEALING);
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(2), CTE_SUPERSTIMHEALING);
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(4), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(6), CTE_SUPERSTIMHEALING);
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(9), CTE_SUPERSTIMHEALING);
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(12), CTE_SUPERSTIMHEALING);
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(8), CTE_SUPERSTIMHEALING);
     return;
 }
 
