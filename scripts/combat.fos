@@ -1572,7 +1572,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     if(target.Mode[MODE_INVULNERABLE] != 0)
         isCritical = false;
     else 
-	if(isCritical || rounds>1 && !(target.Trait[TRAIT_BONEHEAD] != 0 && (aim == HIT_LOCATION_HEAD || aim == HIT_LOCATION_EYES)))  // CRITICAL EFFECT
+	if(isCritical || rounds>1)  // CRITICAL EFFECT
     {
 		int aim_ = aim;
         if(aim_ == HIT_LOCATION_NONE)
@@ -1700,7 +1700,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			_dmgMul[0] >>= 1;
 		}
 		
-		if(isCritical)
+		if(isCritical && !(target.Trait[TRAIT_BONEHEAD] != 0 && (aim == HIT_LOCATION_HEAD || aim == HIT_LOCATION_EYES)))
 		{
 			eff = CriticalTable[offset + 1];
 			int  stat = CriticalTable[offset + 2];
