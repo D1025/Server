@@ -1,0 +1,23 @@
+Starting Mapper of FOnline: Aftertimes (v.1.33.1)...
+Mapper initialization...
+Sprite manager initialization...
+Load sprite 'egg.png' fail. Egg disabled.
+GraphicLoader::LoadEffect - Effect file<2D_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<2D_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<2D_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<2D_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Interface_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Primitive_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Primitive_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Font_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Contour_Default.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<2D_WithoutEgg.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Flush_RenderTarget.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Flush_Primitive.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<Flush_Map.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<3D_Simple.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<3D_Simple.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<3D_Skinned.glsl> not found.
+GraphicLoader::LoadEffect - Effect file<3D_Skinned.glsl> not found.
+Default effects not loaded.
+FOnline engine initialization fail.
