@@ -270,13 +270,13 @@ EXPORT int getParam_Hp(CritterMutual& cr, uint)
 
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_MAX_LIFE] + cr.Params[ST_MAX_LIFE_EXT] + cr.Params[ST_STRENGTH] + cr.Params[ST_ENDURANCE] * 2;
+	int val = cr.Params[ST_MAX_LIFE] + cr.Params[ST_MAX_LIFE_EXT];
 	return CLAMP(val, 1, 9999);
 }
 
 EXPORT int getParam_MaxAp(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_ACTION_POINTS] + cr.Params[ST_ACTION_POINTS_EXT] + getParam_Agility(cr, 0) / 2;
+	int val = cr.Params[ST_ACTION_POINTS] + cr.Params[ST_ACTION_POINTS_EXT];
 	
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_MAX_AP)!=0) val++;
@@ -308,6 +308,7 @@ EXPORT int getParam_MoveAp(CritterMutual& cr, uint)
 
 EXPORT int getParam_MaxWeight(CritterMutual& cr, uint)
 {
+	return 400000;
 	int val = max(cr.Params[ST_CARRY_WEIGHT] + cr.Params[ST_CARRY_WEIGHT_EXT], 0);
 	val += CONVERT_GRAMM(25 + getParam_Strength(cr, 0) * (25 - cr.Params[TRAIT_SMALL_FRAME] * 10));
 	if(cr.Params[PE_PACK_RAT])
@@ -339,7 +340,7 @@ EXPORT int getParam_MeleeDmg(CritterMutual& cr, uint)
 EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 {
 	int e = getParam_Endurance(cr, 0);
-	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT] + uint(e/2)  +  uint(cr.Params[ST_MAX_LIFE] / 50);
+	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT];
 
 	if(cr.Params[TRAIT_FAST_METABOLISM]) val += 10;
 
@@ -351,7 +352,7 @@ EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 
 EXPORT int getParam_CriticalChance(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_CRITICAL_CHANCE] + cr.Params[ST_CRITICAL_CHANCE_EXT] + getParam_Luck(cr, 0);
+	int val = cr.Params[ST_CRITICAL_CHANCE] + cr.Params[ST_CRITICAL_CHANCE_EXT];
 	return CLAMP(val, 0, 100);
 }
 
@@ -364,7 +365,7 @@ EXPORT int getParam_MaxCritical(CritterMutual& cr, uint)
 int GetRunningAc(CritterMutual& cr, bool head)
 {
 	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT] +
-		(cr.Params[PE_LIVEWIRE]?2:1)*getParam_Agility(cr, 0);
+		(cr.Params[PE_LIVEWIRE]?1:0)*getParam_Agility(cr, 0);
 
 	while(cr.Params[PE_HTH_EVADE] || cr.Params[PE_HTH_EVADE_II])
 	{
@@ -396,7 +397,7 @@ EXPORT int getParam_Ac(CritterMutual& cr, uint)
 {
 	if(!IsRunning(cr))
 	{
-		int StandingAC = (GetRunningAc(cr,false)) / 2;
+		int StandingAC = (GetRunningAc(cr,false));
 		return StandingAC; // todo: turn based
 	}
 	// if(!IsRunning(cr)) return 0; // todo: turn based
@@ -531,7 +532,7 @@ EXPORT int Critter_GetAC(CritterMutual& cr, bool head)
 {
 	if(!IsRunning(cr))
 	{
-		int StandingAC = (GetRunningAc(cr,head)) / 2;
+		int StandingAC = (GetRunningAc(cr,head));
 		return StandingAC; // todo: turn based
 	}
 	

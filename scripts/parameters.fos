@@ -329,8 +329,8 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
         _param_[ST_ARMOR_CLASS] = 0;
 	_param_[ST_MAX_LIFE] += _param_[ST_ENDURANCE]/2 + 150;
 
-    _param_[ST_ACTION_POINTS] += 10;
-    _param_[ST_CARRY_WEIGHT] += LBS_TO_GRAMM(25 + _param_[ST_STRENGTH] * (25 - _param_[TRAIT_SMALL_FRAME] * 10))+100000;
+    _param_[ST_ACTION_POINTS] = 10;
+    _param_[ST_CARRY_WEIGHT] += 400000;
     _param_[ST_MELEE_DAMAGE] += (_param_[ST_STRENGTH] > 5 ? (_param_[TRAIT_BRUISER] > 0 ? 2 * (_param_[ST_STRENGTH] -5) : (_param_[ST_STRENGTH]) - 5) : 1);
     _param_[ST_POISON_RESISTANCE] += 8 + _param_[ST_ENDURANCE] * 2 + _param_[ST_ENDURANCE] > 10 ? 6 : 0 + _param_[ST_ENDURANCE] > 15 ? 6 : 0;
     _param_[ST_RADIATION_RESISTANCE] += 20 + _param_[ST_ENDURANCE] * 3;
@@ -354,12 +354,10 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     #ifdef __SERVER
     if(IsHumanoid(cr))
     {
-        cr.StatBase[ST_MAX_LIFE] = 150 - cr.StatBase[ST_ENDURANCE] * 2 - cr.StatBase[ST_STRENGTH] + cr.StatBase[ST_ENDURANCE] /2;
-        cr.StatBase[ST_ACTION_POINTS] = 10 - cr.StatBase[ST_AGILITY] / 2;
-        cr.StatBase[ST_ARMOR_CLASS] = cr.Trait[TRAIT_BRUISER] != 0 ? - 3*cr.StatBase[ST_AGILITY] : cr.StatBase[ST_AGILITY] - 3*cr.StatBase[ST_AGILITY];
-        cr.StatBase[ST_CRITICAL_CHANCE] = - cr.StatBase[ST_LUCK];
-        cr.StatBase[ST_HEALING_RATE] = 5 * cr.StatBase[ST_ENDURANCE] / 2 - 2 ;
-        if (cr.StatBase[ST_ENDURANCE] % 2 == 1) cr.StatBase[ST_HEALING_RATE] += 1;
+        cr.StatBase[ST_MAX_LIFE] = 150 + cr.StatBase[ST_ENDURANCE] /2;
+        cr.StatBase[ST_ACTION_POINTS] = 10;
+        cr.StatBase[ST_ARMOR_CLASS] = cr.Trait[TRAIT_BRUISER] != 0 ? 0 : 2*cr.StatBase[ST_AGILITY];
+        cr.StatBase[ST_HEALING_RATE] = 3 * cr.StatBase[ST_ENDURANCE] ;
     }
     #endif
 }

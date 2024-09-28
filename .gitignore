@@ -3,3 +3,9 @@
 /save/bans
 /config/GetAccess.cfg
 */save/*
+/extensions/Release/
+/extensions/extensions.opensdf
+/extensions/extensions.sdf
+/extensions/*/Release/
+/extensions/*/*.vcxproj.user
+/extensions/ipch/*
