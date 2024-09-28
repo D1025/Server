@@ -431,7 +431,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         Item@ targetWeapon = _CritGetItemHand(target);
         in_your_face_valid = (!valid(targetWeapon) && dist == 1) ||
                              (valid(targetWeapon) && targetWeapon.GetType() == ITEM_TYPE_WEAPON &&
-                              (targetWeapon.Proto.Weapon_Skill_0 == SK_MELEE_WEAPONS ||  targetWeapon.Proto.Weapon_Skill_0 == SK_UNARMED) &&
+                              targetWeapon.Proto.Weapon_Skill_0 == SK_UNARMED &&
                               _WeaponMaxDist(targetWeapon.Proto, 0) >= uint(dist));
 
         if(in_your_face_valid)
