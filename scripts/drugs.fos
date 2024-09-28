@@ -277,6 +277,12 @@ void DropDrugEffects(Critter& cr, bool dropAddictions)
 
 void SetDrug(Critter& cr, uint16 drugPid)
 {
+
+    if (drugPid == PID_SUPER_STIMPAK) {
+        ApplySuperStimHealing(cr, drugPid);
+        return;
+    }
+
     // Special drugs
     if(drugPid == PID_JET_ANTIDOTE)
     {    
@@ -606,6 +612,9 @@ void SetDrugTimer(Critter& cr, uint16 drugPid, uint timer)
 	case PID_RAD_X:
 		_SetTimeout(cr, TO_RAD_X, timer);
         break;
+    case PID_SUPER_STIMPAK:
+        _SetTimeout(cr, TO_SUPER_STIMPAK, timer);
+        break;
     default:
         break;
     }
@@ -673,4 +682,23 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
         return false;
     }
     return false;
+}
+
+void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
+    if(cr.IsDead())
+        return;
+    SetDrugTimer(cr, drugPid, REAL_SECOND(20));
+    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.Stat[ST_CURRENT_HP]+cr.Stat[ST_HEALING_RATE], -9999, cr.Stat[ST_MAX_LIFE]);
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(3), CTE_SUPERSTIMHEALING);
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(6), CTE_SUPERSTIMHEALING);
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(9), CTE_SUPERSTIMHEALING);
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(12), CTE_SUPERSTIMHEALING);
+    return;
+}
+
+uint cte_SuperStimHealing(Critter& cr, int identifier, uint& rate) {
+    if(cr.IsDead())
+        return 0;
+    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.Stat[ST_CURRENT_HP]+cr.Stat[ST_HEALING_RATE], -9999, cr.Stat[ST_MAX_LIFE]);
+    return 0;
 }

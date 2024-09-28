@@ -23,7 +23,7 @@ void InitializeGame()                  // Export
     __NoAnswerShuffle = true;
     __FixBoyDefaultExperience = 0;
     __SneakDivider = 6;
-    __LevelCap = 24;
+    __LevelCap = 30;
     __LevelCapAddExperience = false;
     __LookNormal = 20;
     __LookMinimum = 3;
@@ -106,7 +106,7 @@ void InitializeGame()                  // Export
     SETFLAG(__LookChecks, LOOK_CHECK_ITEM_SCRIPT);    // Allow bool check_look(...) in main.fos, all other defines ignored
 
     __CustomItemCost = true;
-    __RegistrationTimeout = 60;                   // In real seconds, 0 to disable
+    __RegistrationTimeout = 0;                   // In real seconds, 0 to disable
     __AccountPlayTime = 0;                      // In real seconds, 0 to disable
 
     # ifdef __DEBUG__

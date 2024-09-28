@@ -18,7 +18,7 @@ const int[] DrugEffects =
 // PID_STIMPAK
     -1,      0,             0,      0,          0,     0,
     -2,        10,      0,      0,          0,     0,
-    ST_CURRENT_HP,        50,      0,      0,          0,     0,
+    ST_CURRENT_HP,        60,      0,      0,          0,     0,
     -1,         0,      0,      0,          0,     0,
     -1,         0,      0,      0,          0,     0,
     -1,         0,      0,      0,          0,     0,
@@ -107,12 +107,12 @@ const int[] DrugEffects =
     -1,             0,      0,      0,          0,     0,
     -1,             0,      0,      0,          0,     0,
 // PID_SUPER_STIMPAK
-    -1,      0,            10,     10,          0,     0,
-    ST_CURRENT_HP,        80,     0,     0,          0,     0,
-    -1,         0,      0,      0,          0,     0,
-    -1,         0,      0,      0,          0,     0,
-    -1,         0,      0,      0,          0,     0,
-    -1,         0,      0,      0,          0,     0,
+    -1,      0,           0,      0,          0,     0,  // Brak uzależnienia i brak czasów trwania dla standardowych etapów
+    -1,       0,      0,      0,          0,     0,  // Nie używamy standardowych statystyk
+    -1,       0,      0,      0,          0,     0,
+    -1,       0,      0,      0,          0,     0,
+    -1,       0,      0,      0,          0,     0,
+    -1,       0,      0,      0,          0,     0,
 // PID_JET, special
     ADDICTION_JET,     100,          600,    2,        2,     2,    // Only after Jet Antidote was used
     ST_ACTION_POINTS,         2,     -2,      0,         -1,     1,

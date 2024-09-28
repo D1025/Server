@@ -327,7 +327,7 @@ bool _OrSkill(Critter& cr, int perk, int level, int skill1, int skill2, int mins
 bool _OrRangedSkill(Critter& cr, int perk, int level, int, int, int minskill)
 {
     return cr.SkillBase[SK_SMALL_GUNS] >= minskill || cr.SkillBase[SK_BIG_GUNS] >= minskill ||
-           cr.SkillBase[SK_ENERGY_WEAPONS] >= minskill || cr.SkillBase[SK_THROWING] >= minskill;
+           cr.SkillBase[SK_ENERGY_WEAPONS] >= minskill || cr.SkillBase[SK_THROWING] >= minskill || cr.SkillBase[SK_MELEE_WEAPONS] >= minskill;
 }
 
 bool _OrRangedGunSkill(Critter& cr, int perk, int level, int, int, int minskill)

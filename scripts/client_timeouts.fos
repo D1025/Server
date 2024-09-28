@@ -453,7 +453,7 @@ void TimeoutsDraw() // client_main@render_iface
     }
     #endif     // CUSTOM_TIMEOUTS
 
-    for(uint z = (goUp ? 1 : 21); z != (goUp ? 22 : 0); (goUp ? z++ : z--))
+    for(uint z = (goUp ? 1 : 22); z != (goUp ? 23 : 0); (goUp ? z++ : z--))
     {
         if(z == 1 && critter.Timeout[TO_GATHERING] > 0)
         {
@@ -538,6 +538,10 @@ void TimeoutsDraw() // client_main@render_iface
 		if(z == 21 && critter.Timeout[TO_GOD_MODE] > 0)
         {
             y = screen_timeouts_draw(critter, TO_GOD_MODE, "Invulnerablity", x, y, z, TimeoutsCustom[z].CustomMode);		// Spawnkill protection, check main.fos
+        }
+        if(z == 22 && critter.Timeout[TO_SUPER_STIMPAK] > 0)
+        {
+            y = screen_timeouts_draw(critter, TO_SUPER_STIMPAK, "Super Stimpak", x, y, z, TimeoutsCustom[z].CustomMode);
         }
     }
 }

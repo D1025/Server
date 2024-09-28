@@ -336,7 +336,7 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     _param_[ST_RADIATION_RESISTANCE] += 20 + _param_[ST_ENDURANCE] * 3;
     _param_[ST_SEQUENCE] += _param_[ST_PERCEPTION] * 2;
 
-	_param_[ST_HEALING_RATE] += _param_[ST_ENDURANCE] + 2 * _param_[ST_ENDURANCE];
+	_param_[ST_HEALING_RATE] += 3 * _param_[ST_ENDURANCE];
     if(_param_[TRAIT_FAST_METABOLISM] != 0)
 	{
         _param_[ST_HEALING_RATE] += 10;
@@ -358,6 +358,8 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
         cr.StatBase[ST_ACTION_POINTS] = 10 - cr.StatBase[ST_AGILITY] / 2;
         cr.StatBase[ST_ARMOR_CLASS] = cr.Trait[TRAIT_BRUISER] != 0 ? - 3*cr.StatBase[ST_AGILITY] : cr.StatBase[ST_AGILITY] - 3*cr.StatBase[ST_AGILITY];
         cr.StatBase[ST_CRITICAL_CHANCE] = - cr.StatBase[ST_LUCK];
+        cr.StatBase[ST_HEALING_RATE] = 5 * cr.StatBase[ST_ENDURANCE] / 2 - 2 ;
+        if (cr.StatBase[ST_ENDURANCE] % 2 == 1) cr.StatBase[ST_HEALING_RATE] += 1;
     }
     #endif
 }

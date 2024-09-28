@@ -53,6 +53,7 @@ class AttackStruct
     uint8      Aim = HIT_LOCATION_UNCALLED;
     bool       AimHead = false;
     bool       IsBurst = false;
+    bool       IsFlamethrower = false;
     bool       BloodyMess = false;
     bool       CombatMessage = false;
     bool       IsUnarmed = false;
@@ -66,6 +67,7 @@ class AttackStruct
     int        DRMod = 0;
     int        DMMod = 1;
     int        DDMod = 1;
+    int        ACMod = 0;
     uint       TargetId = 0;
     bool       TargetHit = false;
     bool       ShowHitAnimForce = false;
@@ -298,6 +300,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     attack.DmgMax = _WeaponDmgMax(weapon, use);
     attack.DmgType = dmgType;
     attack.BonusDmg = 0;
+    attack.IsFlamethrower = isFlamethrower;
 	
     if(valid(realWeapon))
     {
@@ -358,6 +361,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         attack.DRMod = ammo.Ammo_DrMod;
         attack.DMMod = ammo.Ammo_DmgMult;
         attack.DDMod = ammo.Ammo_DmgDiv;
+        attack.ACMod = ammo.Ammo_AcMod;
         if(attack.DMMod == 0)
             attack.DMMod = 1;
         if(attack.DDMod == 0)
@@ -2228,11 +2232,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     if(FLAG(eff, HF_DEATH))
             totalDmg = totalDmg + 125;
 
-    int ac = target.GetAC(false);
-    //TODO: Ammo AC
-    //if(valid(attack.Ammo))
-    //    ac -= attack.Ammo.Ammo_AC;
-    totalDmg = totalDmg * (100 - ac) / 100;
+    if (attack.IsFlamethrower == false) {
+        int ac = target.GetAC(false);
+        ac = ac + attack.ACMod;
+        ac = CLAMP(ac, 0, 95);
+        totalDmg = totalDmg * (100 - ac) / 100;
+    }
 
 
     if(totalDmg > 0)

@@ -432,6 +432,7 @@
 #define CTE_BURN                                 (11) // Burn Hexes Thingy
 // Drugs time events                40 (PID_STIMPAK) .. 1000
 #define CTE_CHEAT_AURA                           (1337)
+#define CTE_SUPERSTIMHEALING                     (1338)
 
 // Parameters
 /// Stats
@@ -672,6 +673,7 @@
 // Radiation drugs timeouts
 #define TO_RADAWAY							 	 (255)
 #define TO_RAD_X							 	 (256)
+#define TO_SUPER_STIMPAK                       (257)
 
 
 

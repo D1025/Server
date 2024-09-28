@@ -2444,7 +2444,7 @@ void critter_idle(Critter& cr)
     if(cr.Timeout[TO_HEALING] == 0)
     {
         //druto
-		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 /*&& cr.Timeout[TO_BATTLE] == 0*/ && cr.Stat[ST_CURRENT_HP] < cr.Stat[ST_MAX_LIFE])
+		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 && cr.Stat[ST_CURRENT_HP] < cr.Stat[ST_MAX_LIFE])
         {
             if(cr.Stat[ST_HEALING_RATE] > 0)
 			{
@@ -4194,9 +4194,12 @@ void _TryUseSS(Critter& follower) // try use Super Stimpack or stimpack when att
 		
 	if(follower.CountItem(PID_SUPER_STIMPAK)>0)
 	{
-		Item @ item = follower.GetItem(PID_SUPER_STIMPAK, -1);
-		UseDrug(follower, item);
-		_CritAnimateUse(follower);
+		if (follower.Timeout[TO_SUPER_STIMPAK] == 0)
+        {
+            Item@ item = follower.GetItem(PID_SUPER_STIMPAK, -1);
+            UseDrug(follower, item);
+            _CritAnimateUse(follower);
+        }
 	}
 	if(follower.CountItem(PID_STIMPAK)>0)
 	{

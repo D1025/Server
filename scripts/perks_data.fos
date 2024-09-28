@@ -42,7 +42,7 @@ int[][] PerksData = {
 #ifdef __SERVER
 	{ // level 1 perk up effects
 		10, 1, 10, // Melee Damage increased by 10
-		9, 1, 15, // Armor Class increased by 15
+		9, 1, 10, // Armor Class increased by 15
 	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -418,11 +418,11 @@ int[][] PerksData = {
 	{ 330, 0, 1 }, // Dodger, Levelling, 1 ranks
 	{ // level 1 requirements
 		77, 1, 3, // Level at least 3
-		5, 1, 8, // Agility at least 8
+		5, 1, 5, // Agility at least 5
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
-		9, 1, 20, // Armor Class increased by 20
+		9, 1, 15, // Armor Class increased by 20
 	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -1461,8 +1461,7 @@ int[][] PerksData = {
 
 	{ 429, 0, 1 }, // Livewire, Levelling, 1 ranks
 	{ // level 1 requirements
-		77, 1, 3, // Level at least 3
-		5, 1, 6, // Agility at least 6
+		77, 1, 15, // Level at least 12
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1554,7 +1553,7 @@ int[][] PerksData = {
     },
     #endif
 
-	{ 436, 0, 1 }, // HtH Evade+, Levelling, 1 ranks
+	{ 436, 2, 1 }, // HtH Evade+, Disabled, 1 ranks
 	{ // level 1 requirements
 		77, 1, 9, // Level at least 9
 	},
@@ -1566,7 +1565,7 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 437, 0, 1 }, // Dodger+, Levelling, 1 ranks
+	{ 437, 2, 1 }, // Dodger+, Disabled, 1 ranks
 	{ // level 1 requirements
 		77, 1, 9, // Level at least 9
 		5, 1, 8, // Agility at least 8
