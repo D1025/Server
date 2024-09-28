@@ -1817,25 +1817,25 @@
 {103842}{}{You can roll with the best of them.  You gain +20% to your gambling skill.}
 # PE_GAIN_STRENGTH
 {103851}{}{Gain Strength}
-{103852}{}{With this Perk you gain +1 to your Strength.}
+{103852}{}{With this Perk you gain +2 to your Strength. Also you gain additional skill points for strength-based skills.}
 # PE_GAIN_PERCEPTION
 {103861}{}{Gain Perception}
-{103862}{}{With this Perk you gain +1 to your Perception.}
+{103862}{}{With this Perk you gain +2 to your Perception. Also you gain additional skill points for perception-based skills.}
 # PE_GAIN_ENDURANCE
 {103871}{}{Gain Endurance}
-{103872}{}{With this Perk you gain +1 to your Endurance.}
+{103872}{}{With this Perk you gain +2 to your Endurance. Also you gain additional skill points for endurance-based skills.}
 # PE_GAIN_CHARISMA
 {103881}{}{Gain Charisma}
-{103882}{}{With this Perk you gain +1 to your Charisma.}
+{103882}{}{With this Perk you gain +2 to your Charisma. Also you gain additional skill points for charisma-based skills.}
 # PE_GAIN_INTELLIGENCE
 {103891}{}{Gain Intelligence}
-{103892}{}{With this Perk you gain +1 to your Intelligence.}
+{103892}{}{With this Perk you gain +2 to your Intelligence. Also you gain additional skill points for intelligence-based skills.}
 # PE_GAIN_AGILITY
 {103901}{}{Gain Agility}
-{103902}{}{With this Perk you gain +1 to your Agility.}
+{103902}{}{With this Perk you gain +2 to your Agility. Also you gain additional skill points for agility-based skills.}
 # PE_GAIN_LUCK
 {103911}{}{Gain Luck}
-{103912}{}{With this Perk you gain +1 to your Luck.}
+{103912}{}{With this Perk you gain +2 to your Luck. Also you gain additional skill points for luck-based skills.}
 # PE_HARMLESS
 {103921}{}{Harmless}
 {103922}{}{Your innocent demeanor makes stealing from people a little easier.  You lose only half the reputation when stealing.}
