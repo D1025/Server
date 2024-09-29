@@ -9,3 +9,4 @@
 /extensions/*/Release/
 /extensions/*/*.vcxproj.user
 /extensions/ipch/*
+/extensions/extensions.suo
