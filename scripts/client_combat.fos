@@ -204,10 +204,10 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
         toHit += 20;
 
     int acmod = target.GetAC(hitLocation == HIT_LOCATION_HEAD || hitLocation == HIT_LOCATION_EYES);
-    if(valid(ammo))
-        acmod += ammo.Ammo_AcMod;
-    if(acmod > 0)
-        toHit -= acmod;
+    //if(valid(ammo))
+        //acmod += ammo.Ammo_AcMod;
+    //if(acmod > 0)
+        //toHit -= acmod;
     // TODO: tohit+=15 if target is multihex
     // TODO: light penalty
 
