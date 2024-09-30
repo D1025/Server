@@ -16,6 +16,7 @@ import void AffectPoison(Critter& cr, int value) from "poison";
 
 import void AffectRadiation(Critter& cr, int value) from "radiation";
 import void DropRadiation(Critter& cr) from "radiation";
+import int  GetActualMaxHp(Critter@ cr) from "utils";
 
 /*
    #define DRUG_EFFECT_DIV2_WITHDRAWAL    (1)
@@ -46,7 +47,12 @@ void UseDrug(Critter& cr, Item& drug)   // Export
 {
     uint pid = drug.GetProtoId();
     SetDrug(cr, pid);
-    _SubItem(drug, 1);
+    if (pid == PID_SUPER_STIMPAK && cr.Timeout[TO_SUPER_STIMPAK] > 0) {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_FAIL);
+        return;
+    } else {
+        _SubItem(drug, 1);
+    }
     if(pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK || pid == PID_HYPO)
     {
         if(pid==PID_STIMPAK) VerboseAction(cr, "injects stimpak");
@@ -449,7 +455,7 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
                 {
                     if(amount > 0 && cr.Trait[TRAIT_CHEM_RESISTANT] != 0)
                         amount /= 2;
-                    cr.StatBase[ST_CURRENT_HP] = CLAMP(statVal + amount, -9999, cr.Stat[ST_MAX_LIFE]);
+                    cr.StatBase[ST_CURRENT_HP] = CLAMP(statVal + amount, -9999,  GetActualMaxHp(cr));
                     if(amount < 0 && cr.Stat[ST_CURRENT_HP] < 0)
                         cr.ToDead(Random(0, 1) == 0 ? ANIM2_DEAD_FRONT : ANIM2_DEAD_BACK, null);      // buggy, make macro for safety
                 }
@@ -685,10 +691,10 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
 }
 
 void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
-    if(cr.IsDead())
+    if(cr.IsDead() || cr.Timeout[TO_SUPER_STIMPAK] > 0)
         return;
-    SetDrugTimer(cr, drugPid, REAL_SECOND(20));
-    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.Stat[ST_CURRENT_HP]+cr.Stat[ST_HEALING_RATE], -9999, cr.Stat[ST_MAX_LIFE]);
+    _SetTimeout(cr, TO_SUPER_STIMPAK, REAL_SECOND(20));
+    cr.StatBase[ST_CURRENT_HP] += cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100;
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(2), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(4), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(6), CTE_SUPERSTIMHEALING);
@@ -699,6 +705,6 @@ void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
 uint cte_SuperStimHealing(Critter& cr, int identifier, uint& rate) {
     if(cr.IsDead())
         return 0;
-    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.Stat[ST_CURRENT_HP]+cr.Stat[ST_HEALING_RATE], -9999, cr.Stat[ST_MAX_LIFE]);
+    cr.StatBase[ST_CURRENT_HP] += cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100;
     return 0;
 }

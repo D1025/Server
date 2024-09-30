@@ -141,7 +141,7 @@ int HexShotingToHit(CritterMutual& cr, uint16 tx, uint16 ty, ProtoItem& weapon, 
 
     toHit -= 10 * blockers;
 
-    toHit = CLAMP(toHit, 5, 95);
+    toHit = CLAMP(toHit, 0, 100);
 
     return toHit;
 }

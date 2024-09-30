@@ -82,6 +82,7 @@ import void CompleteRepair(Item& item) from "repair";
 import void SpawnArena(Map@ map, uint16 size_x, uint16 size_y, uint16 hx, uint16 hy, uint min_room_x, uint min_room_y, uint min_path) from "arena_generator";
 import void DropDrugsEffectsHinkley(Critter& cr) from "drugs";
 import void AddBonusHinkley(Item@ it) from "item_bonus";
+import int  GetActualMaxHp(Critter@ cr) from "utils";
 //import void RemoveBonus(Item@ it) from "item_bonus";
 
 // Player ST_VAR* used:
@@ -509,7 +510,7 @@ bool ValidCritter(Critter@ cr, Contract@ contract, uint number)
             for(uint i = 0; i < num; i++)
             {
                 if((items[i].GetType() == ITEM_TYPE_WEAPON))
-                    if(items[i].Proto.Weapon_Skill_0 != SK_MELEE_WEAPONS)
+                    if(items[i].Proto.Weapon_Skill_0 != SK_UNARMED)
                     {
                         cr.Say(SAY_NETMSG, "You were not transported inside the arena. Match rules disallow having non-melee weapons.");
                         return false;
@@ -1565,7 +1566,7 @@ void OnTeleportToLobby(Critter& cr)   // export
 {
     if(cr.IsDead())
         cr.ToLife();
-    cr.StatBase[ST_CURRENT_HP] = cr.Stat[ST_MAX_LIFE];
+    cr.StatBase[ST_CURRENT_HP] = GetActualMaxHp(cr);
     int damages = cr.Stat[ST_VAR8];
     if(damages & CRIPPLED_EYE != 0)
         cr.DamageBase[DAMAGE_EYE] = 1;
@@ -1599,7 +1600,7 @@ void OnTeleportToLobby(Critter& cr)   // export
 
 void OnTeleportToArena(Critter& cr)   // export
 {
-    cr.StatBase[ST_CURRENT_HP] = cr.Stat[ST_MAX_LIFE];
+    cr.StatBase[ST_CURRENT_HP] = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],1,30) * cr.StatBase[ST_ENDURANCE] / 2;
     //cr.StatBase[ST_VAR7] = cr.Stat[ST_CURRENT_HP];
     int damages = 0;
     if(cr.Damage[DAMAGE_EYE] != 0)

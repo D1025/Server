@@ -673,7 +673,7 @@
 // Radiation drugs timeouts
 #define TO_RADAWAY							 	 (255)
 #define TO_RAD_X							 	 (256)
-#define TO_SUPER_STIMPAK                       (257)
+#define TO_SUPER_STIMPAK                         (257)
 
 
 

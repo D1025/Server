@@ -943,7 +943,7 @@ void draw_critterinfo_screen(CritterCl& critter)
         critter_y += 6;
 
         critter_y = draw(critter.Name + " (" + critter.Id + ")", critter_x, critter_y, 10, color);
-        critter_y = draw("HP: " + critter.Param[ST_CURRENT_HP] + "/" + critter.Param[ST_MAX_LIFE], critter_x, critter_y, 10, color);
+        critter_y = draw("HP: " + critter.Param[ST_CURRENT_HP] + "/" + critter.StatBase[ST_MAX_LIFE], critter_x, critter_y, 10, color);
         // GetMsgStr(TEXTMSG_ITEM,STR_ITEM_INFO(item))
         for(int i = SLOT_HAND1; i <= SLOT_ARMOR; i++)
         {

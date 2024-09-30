@@ -167,14 +167,17 @@ void DrawCritterOnHead()	//export
 		{
 			if(valid(chosen) && __ConfigOnHeadAwareness == 1)
 			{
-				color_g = (255*crs[i].Param[ST_CURRENT_HP])/crs[i].Param[ST_MAX_LIFE];
-				hp_proc = crs[i].Param[ST_CURRENT_HP] * 100 / crs[i].Param[ST_MAX_LIFE];
+				int maxhp = crs[i].Param[ST_MAX_LIFE];
+				if (crs[i].IsNpc())
+				    maxhp += crs[i].Param[ST_ENDURANCE] * CLAMP(crs[i].Param[ST_LEVEL], 0, 30) / 2;
+				color_g = (255*crs[i].Param[ST_CURRENT_HP])/maxhp;
+				hp_proc = crs[i].Param[ST_CURRENT_HP] * 100 / maxhp;
 
 				if(color_g < 0)
 					color_g = 0;
 				color_r = 255 - color_g;
 				
-				hp = "|" + COLOR_RGB(color_r, color_g, color_b) + " " + crs[i].Param[ST_CURRENT_HP] + "/" + crs[i].Param[ST_MAX_LIFE];
+				hp = "|" + COLOR_RGB(color_r, color_g, color_b) + " " + crs[i].Param[ST_CURRENT_HP] + "/" + maxhp;
 			}
 			else
 			{

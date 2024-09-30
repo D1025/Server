@@ -14,6 +14,7 @@
 #include "backend_h.fos"
 
 import bool TryRepairItem(Critter& cr, Item& item) from "repair";
+import int  GetActualMaxHp(Critter@ cr) from "utils";
 Item@ SelectSkillItem(Critter& cr, Item@ item, uint16 skill)
 {
     Item@ handItem = _CritGetItemHand(cr);
@@ -103,9 +104,10 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 		
 	if(cr.IsPlayer() && cr.Timeout[TO_BATTLE] > 0 && heal > 150)
 		heal = 150 + healerBonus + toolBonus;
-		
+
+	heal = heal * (100 - targetCr.Stat[ST_POISONING_LEVEL]) / 100;
     int curHp = targetCr.Stat[ST_CURRENT_HP];
-    int maxHp = targetCr.Stat[ST_MAX_LIFE];
+    int maxHp = GetActualMaxHp(targetCr);
     if(curHp + heal > maxHp)
         heal = maxHp - curHp;
     targetCr.StatBase[ST_CURRENT_HP] += heal;

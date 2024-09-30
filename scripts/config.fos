@@ -129,7 +129,7 @@ void InitializeGame()                  // Export
     __SkillBegin = 200;
     __SkillEnd = 217;
     __TimeoutBegin = 230;
-    __TimeoutEnd = 256;
+    __TimeoutEnd = 257;
     __KillBegin = 260;
     __KillEnd = 285;
     __PerkBegin = 300;

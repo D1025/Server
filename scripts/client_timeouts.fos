@@ -152,7 +152,7 @@ array<MyTimeout> MyTimeouts;
 void TimeoutsConfig(string& customConfig)
 {
 
-    for(uint8 i=0; i < 22; ++i)
+    for(uint8 i=0; i < 23; ++i)
     {
         TimeoutsCustom.insertLast(CTimeoutCustom());
     }
@@ -212,7 +212,7 @@ void TimeoutsConfig(string& customConfig)
                 Timeouts.TimeFormat      = CLAMP(string2uint(var.GetValue()), 0, 7);
             else
             {
-                for(uint i=1; i < 22; ++i)
+                for(uint i=1; i < 23; ++i)
                 {
                     if(var.GetName() == ("CustomTimeout"+i))
                     {

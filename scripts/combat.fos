@@ -422,7 +422,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     if(target.GetMultihex() > 0)
         toHit += 15;
 
-    toHit = CLAMP(toHit, 5, 95);
+    toHit = CLAMP(toHit, 0, 100);
 
     // Override tohit chance by a defender perk?
     bool in_your_face_valid = false;
@@ -624,7 +624,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     bl++;
                 if(critsLine[i].GetMultihex() > 0)
                     toHit += 15;
-                toHit = CLAMP(toHit, 5, 95);
+                toHit = CLAMP(toHit, 0, 100);
                 toHit /= 3;               // after clamp
                 if(Random(1, 100) <= toHit)
                 {
@@ -671,7 +671,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             if(!realTarget.IsKnockout())
                 blockers--;
             toHit -= 10 * blockers;
-            toHit = CLAMP(toHit, 5, 95);
+            toHit = CLAMP(toHit, 0, 100);
         }
 
         // Critical hit bonus, toHit can be increased over 100
@@ -730,7 +730,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     bl++;
                 if(lineCentral[i].GetMultihex() > 0)
                     toHit += 15;
-                toHit = CLAMP(toHit, 5, 95);
+                toHit = CLAMP(toHit, 0, 100);
                 if(Random(1, 100) <= toHit)
                 {
                     int crIndex = FindCritterInArray(critsHit, lineCentral[i]);
@@ -793,7 +793,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     toHit += 40;
                 if(lineLeft[i].GetMultihex() > 0)
                     toHit += 15;
-                toHit = CLAMP(toHit, 5, 95);
+                toHit = CLAMP(toHit, 0, 100);
                 if(Random(1, 100) <= toHit)
                 {
                     int crIndex = FindCritterInArray(critsHit, lineLeft[i]);
@@ -851,7 +851,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     toHit += 40;
                 if(lineRight[i].GetMultihex() > 0)
                     toHit += 15;
-                toHit = CLAMP(toHit, 5, 95);
+                toHit = CLAMP(toHit, 0, 100);
                 if(Random(1, 100) <= toHit)
                 {
                     int crIndex = FindCritterInArray(critsHit, lineRight[i]);
@@ -908,7 +908,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             if(!realTarget.IsKnockout())
                 blockers--;
             toHit -= 10 * blockers;
-            toHit = CLAMP(toHit, 5, 95);
+            toHit = CLAMP(toHit, 0, 100);
         }
 
         // Critical hit bonus, toHit can be increased over 95
@@ -984,7 +984,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             //    acmod += ammo.Ammo_AcMod;
             //if(acmod > 0)
             //    toHit -= acmod;
-            toHit = CLAMP(toHit, 5, 95);
+            toHit = CLAMP(toHit, 0, 100);
             if(lineCentral[i].IsKnockout())
                 toHit += 40;
             else
@@ -1067,7 +1067,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     toHit += 40;
                 if(lineCentral[i].GetMultihex() > 0)
                     toHit += 15;
-                toHit = CLAMP(toHit, 5, 95);
+                toHit = CLAMP(toHit, 0, 100);
                 bl++;
 
                 curRounds = 0;
@@ -1146,7 +1146,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                         toHit += 40;
                     if(lineLeft[i].GetMultihex() > 0)
                         toHit += 15;
-                    toHit = CLAMP(toHit, 5, 95);
+                    toHit = CLAMP(toHit, 0, 100);
 
                     curRounds = 0;
                     for(int k = 0; k < volleyRounds; ++k)
@@ -1222,7 +1222,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                         toHit += 40;
                     if(lineRight[i].GetMultihex() > 0)
                         toHit += 15;
-                    toHit = CLAMP(toHit, 5, 95);
+                    toHit = CLAMP(toHit, 0, 100);
 
                     curRounds = 0;
                     for(int k = 0; k < volleyRounds; ++k)
@@ -1322,7 +1322,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     bl++;
                 if(critsLine[i].GetMultihex() > 0)
                     toHit += 15;
-                toHit = CLAMP(toHit, 5, 95);
+                toHit = CLAMP(toHit, 0, 100);
                 toHit /= 3;               // After clamp
                 if(Random(1, 100) <= toHit)
                 {
@@ -3390,7 +3390,7 @@ int RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, P
     int weaponPerk = valid(weapon) ? weapon.Weapon_Perk : 0;
     int blockers = 0;
     int dist = GetDistantion(cr.HexX, cr.HexY, target.HexX, target.HexY);
-    if(skillNum != SK_UNARMED && skillNum != SK_MELEE_WEAPONS)
+    if(skillNum != SK_UNARMED)
     {
         // Ranged attack modifiers
         int distmod1 = 2;       // Used for initial weapon bonus

@@ -154,6 +154,7 @@ import bool SaveBaseData() from "base_control";
 import void CallMobsToTakeBase(uint playerid, uint location, uint baseLocId, uint NPCFaction) from "base_control";
 import void SpawnBCReward(uint16 locPid) from "base_control";
 import bool IsNukaColaWorker(Critter& mob) from "mob_dynamic";
+import int  GetActualMaxHp(Critter@ cr) from "utils";
 
 dictionary    ItemPids;
 dictionary    VarIds;
@@ -934,13 +935,13 @@ void PostDamage(Critter& cr)
             }
         }
     }
-    if(cr.Stat[ST_CURRENT_HP] != cr.Stat[ST_MAX_LIFE])
+    if(cr.Stat[ST_CURRENT_HP] != GetActualMaxHp(cr))
     {
         if(cr.Timeout[TO_SK_FIRST_AID] <= 0 && cr.Timeout[TO_WEAKENED] <= 0)
         {
             if(cr.Stat[ST_INTELLECT] >= Random(1, 10))
             {
-                if(cr.Stat[ST_CURRENT_HP] <= cr.Stat[ST_MAX_LIFE] / 2 || (cr.Stat[ST_MAX_LIFE] - cr.Stat[ST_CURRENT_HP] > cr.Skill[SK_FIRST_AID]))
+                if(cr.Stat[ST_CURRENT_HP] <= GetActualMaxHp(cr) / 2 || (GetActualMaxHp(cr) - cr.Stat[ST_CURRENT_HP] > cr.Skill[SK_FIRST_AID]))
                 {
                     array<NpcPlane@> planes;
                     cr.GetPlanes(PLANE_HEAL_CRITTER, planes);
@@ -2090,7 +2091,7 @@ void critter_init(Critter& cr, bool firstTime)
             cr.TagSkillBase[TAG_SKILL3] = 0;
 
         CritterGenerate(cr);
-        cr.StatBase[ST_CURRENT_HP] = cr.Stat[ST_MAX_LIFE];
+        cr.StatBase[ST_CURRENT_HP] = GetActualMaxHp(cr);
         cr.StatBase[ST_CURRENT_AP] = cr.Stat[ST_ACTION_POINTS] * 100;
 
         for(uint i = REPUTATION_BEGIN; i <= REPUTATION_END; i++)
@@ -2444,17 +2445,17 @@ void critter_idle(Critter& cr)
     if(cr.Timeout[TO_HEALING] == 0)
     {
         //druto
-		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 && cr.Stat[ST_CURRENT_HP] < cr.Stat[ST_MAX_LIFE])
+		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 && cr.Stat[ST_CURRENT_HP] < GetActualMaxHp(cr))
         {
             if(cr.Stat[ST_HEALING_RATE] > 0)
 			{
 				cr.StatBase[ST_CURRENT_HP] += MAX(cr.Stat[ST_HEALING_RATE], 3);
-                //cr.StatBase[ST_CURRENT_HP] += MAX(cr.Stat[ST_HEALING_RATE] * cr.Stat[ST_MAX_LIFE] / 100, 3); 	//	old system
+                //cr.StatBase[ST_CURRENT_HP] += MAX(cr.Stat[ST_HEALING_RATE] * GetActualMaxHp(cr) / 100, 3); 	//	old system
 			}
             else
                 cr.StatBase[ST_CURRENT_HP] += cr.Stat[ST_HEALING_RATE];
-            if(cr.StatBase[ST_CURRENT_HP] > cr.Stat[ST_MAX_LIFE])
-                cr.StatBase[ST_CURRENT_HP] = cr.Stat[ST_MAX_LIFE];
+            if(cr.StatBase[ST_CURRENT_HP] > GetActualMaxHp(cr))
+                cr.StatBase[ST_CURRENT_HP] = GetActualMaxHp(cr);
         }
 
         _SetTimeout(cr, TO_HEALING, HEALING_TIMEOUT(cr));
@@ -4212,21 +4213,7 @@ void _TryUseSS(Critter& follower) // try use Super Stimpack or stimpack when att
 //druto
  void r_RaiseEnduranceHP(Critter& cr, Critter@ unused)
 {
-	if(!valid(cr))
-		return;
-	
-	int hpBonus = 0;
-	
-	if(cr.Stat[ST_ENDURANCE] < 10)
-	{
-		if(ODD(cr.Stat[ST_ENDURANCE]))		// total HP gain by Endurance
-			hpBonus += 16;
-		else
-			hpBonus += 16;
-		
-		hpBonus -= 2;			// because EN implant adds +2
-		cr.StatBase[ST_MAX_LIFE] += hpBonus;
-	}
+
 }
 
 uint e_KickMultilogs(array<uint>@ EmptyArray)

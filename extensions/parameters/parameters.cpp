@@ -270,7 +270,7 @@ EXPORT int getParam_Hp(CritterMutual& cr, uint)
 
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_MAX_LIFE] + cr.Params[ST_MAX_LIFE_EXT];
+	int val = cr.Params[ST_MAX_LIFE] + CLAMP(cr.Params[ST_LEVEL], 1, 30)* getParam_Endurance(cr, 0)/2 + cr.Params[ST_MAX_LIFE_EXT];
 	return CLAMP(val, 1, 9999);
 }
 
@@ -339,8 +339,7 @@ EXPORT int getParam_MeleeDmg(CritterMutual& cr, uint)
 
 EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 {
-	int e = getParam_Endurance(cr, 0);
-	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT];
+	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT] + 3 * getParam_Endurance(cr, 0);
 
 	if(cr.Params[TRAIT_FAST_METABOLISM]) val += 10;
 
@@ -352,8 +351,7 @@ EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 
 EXPORT int getParam_CriticalChance(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_CRITICAL_CHANCE] + cr.Params[ST_CRITICAL_CHANCE_EXT];
-	return CLAMP(val, 0, 100);
+	return 0;
 }
 
 EXPORT int getParam_MaxCritical(CritterMutual& cr, uint)
@@ -364,33 +362,31 @@ EXPORT int getParam_MaxCritical(CritterMutual& cr, uint)
 
 int GetRunningAc(CritterMutual& cr, bool head)
 {
-	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT] +
-		(cr.Params[PE_LIVEWIRE]?1:0)*getParam_Agility(cr, 0);
+	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT] + getParam_Agility(cr, 0);
 
-	while(cr.Params[PE_HTH_EVADE] || cr.Params[PE_HTH_EVADE_II])
+	while(cr.Params[PE_HTH_EVADE])
 	{
 		const Item* weapon=cr.ItemSlotMain;
 		if(!weapon->IsWeapon())
 			break;
-		if(weapon->Proto->Weapon_Skill[0]!=SK_MELEE_WEAPONS &&
+		if(weapon->Proto->Weapon_Skill[0]!=SK_THROWING &&
 			weapon->Proto->Weapon_Skill[0]!=SK_UNARMED)
 			break; // damn spears
 		weapon=cr.ItemSlotExt;
 		if(!weapon->IsWeapon())
 			break;
-		if(weapon->Proto->Weapon_Skill[0]!=SK_MELEE_WEAPONS &&
+		if(weapon->Proto->Weapon_Skill[0]!=SK_THROWING &&
 			weapon->Proto->Weapon_Skill[0]!=SK_UNARMED)
 			break; // damn spears
 
 		if(cr.Params[PE_HTH_EVADE]) val+=20;
-		if(cr.Params[PE_HTH_EVADE_II]) val+=40;
 		break;
 	}
 
 	const Item* armor = head ? GetHeadArmor(cr) : cr.ItemSlotArmor;
 	if(armor->GetId() && armor->IsArmor()) val += armor->Proto->Armor_AC;
 
-	return CLAMP(val, 0, 140);
+	return CLAMP(val, 0, 90);
 }
 
 EXPORT int getParam_Ac(CritterMutual& cr, uint)
@@ -401,7 +397,7 @@ EXPORT int getParam_Ac(CritterMutual& cr, uint)
 		return StandingAC; // todo: turn based
 	}
 	// if(!IsRunning(cr)) return 0; // todo: turn based
-	return GetRunningAc(cr,false);
+	return GetRunningAc(cr,false)+ cr.Params[PE_LIVEWIRE] ? getParam_Agility(cr, 0) : 0;
 }
 
 EXPORT int getParam_DamageResistance(CritterMutual& cr, uint index)
@@ -564,21 +560,21 @@ EXPORT bool Item_Weapon_IsHtHAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_UNARMED || skill == SK_MELEE_WEAPONS;
+	return skill == SK_UNARMED;
 }
 
 EXPORT bool Item_Weapon_IsGunAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_SMALL_GUNS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS;
+	return skill == SK_SMALL_GUNS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_MELEE_WEAPONS;
 }
 
 EXPORT bool Item_Weapon_IsRangedAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_SMALL_GUNS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_THROWING;
+	return skill == SK_SMALL_GUNS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_THROWING || skill == SK_MELEE_WEAPONS;
 }
 
 

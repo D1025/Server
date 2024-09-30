@@ -140,7 +140,7 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
     int weaponPerk = weapon.Weapon_Perk;
     int blockers = 0;
 
-    if(skillNum != SK_UNARMED && skillNum != SK_MELEE_WEAPONS)
+    if(skillNum != SK_UNARMED)
     {
         // cr.Say(SAY_NETMSG, "Applying range modifiers.");
         // ranged attack modifiers
@@ -219,10 +219,10 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
         toHit += 15;
 
     int hitMod = GetHitAim(hitLocation);
-    if(skillNum == SK_MELEE_WEAPONS || skillNum == SK_UNARMED)
+    if(skillNum == SK_UNARMED)
         hitMod /= 2;
     toHit -= hitMod;
-    toHit = CLAMP(toHit, 5, 95);
+    toHit = CLAMP(toHit, 0, 100);
 
     return toHit;
 }
@@ -722,7 +722,7 @@ void combat_result(array<uint>& data)
 			bool 	isBurst = rounds > 1;
 			int8 	dmgType = _WeaponDmgType(weapon.Proto, use);
 			int 	skillNum = _WeaponSkill(weapon.Proto, use);
-			uint8  	weaponSubtype = (skillNum == SK_SMALL_GUNS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS ) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : (skillNum == SK_MELEE_WEAPONS) ? WS_MELEE : WS_UNARMED);
+			uint8  	weaponSubtype = (skillNum == SK_SMALL_GUNS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_MELEE_WEAPONS) ? WS_GUN : (skillNum == SK_THROWING ? WS_THROWING : WS_UNARMED);
 			bool   	isRanged 	 = 	(weaponSubtype == WS_GUN);
 			bool	isPistol 	 =	(weapon.Proto.Weapon_Anim1 == ANIM1_PISTOL);
 			bool	isMinigun 	 = 	(weapon.Proto.Weapon_Anim1 == ANIM1_MINIGUN);

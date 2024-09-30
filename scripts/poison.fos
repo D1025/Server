@@ -9,6 +9,7 @@
 
 // import void AffectPoison(Critter& cr, int value) from "poison";
 // import void DropPoison(Critter& cr) from "poison";
+import int GetActualMaxHp(Critter@ cr) from "utils";
 
 #include "_macros.fos"
 
@@ -109,7 +110,7 @@ uint cte_Poison(Critter& cr, int identifier, uint& rate)
     int levelVal = cr.Stat[ST_POISONING_LEVEL];
     if(levelVal > 0)
     {
-		int maxhp = cr.StatBase[ST_MAX_LIFE];
+		int maxhp = GetActualMaxHp(cr);
         cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_POISON_PROCESS);
         cr.StatBase[ST_POISONING_LEVEL] = CLAMP(levelVal - 2, 0, 2000);
         cr.StatBase[ST_CURRENT_HP] -= Random( (maxhp*0.05) , (maxhp*0.07));		// previously --

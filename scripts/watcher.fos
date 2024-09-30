@@ -168,7 +168,7 @@ void watcher_init(Critter& npc, bool firstTime)
         _CritSetExtMode(npc, MODE_EXT_LOOK_INVISIBLE);
 
         npc.StatBase[ST_BONUS_LOOK] = 1000;
-        npc.StatBase[ST_ARMOR_CLASS] = 100;
+        npc.StatBase[ST_ARMOR_CLASS] = 50;
 
         npc.SkillBase[SK_SNEAK] = 300;
 

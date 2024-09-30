@@ -176,10 +176,11 @@
 #define _CritIsInjured               # (cr) (cr.Damage[DAMAGE_EYE] > 0 || cr.Damage[DAMAGE_RIGHT_ARM] > 0 || cr.Damage[DAMAGE_LEFT_ARM] > 0 || cr.Damage[DAMAGE_RIGHT_LEG] > 0 || cr.Damage[DAMAGE_LEFT_LEG] > 0)
 // Hp
 #define _CritChangeHp                                                                                     \
-    # (cr, hp) do { cr.StatBase[ST_CURRENT_HP] += (hp); if(cr.Stat[ST_CURRENT_HP] < 1)                    \
-                        cr.StatBase[ST_CURRENT_HP] = 1; if(cr.Stat[ST_CURRENT_HP] > cr.Stat[ST_MAX_LIFE]) \
-                        cr.StatBase[ST_CURRENT_HP] = cr.Stat[ST_MAX_LIFE]; } while(false)
-#define _CritNeedFirstAid            # (cr) (cr.Stat[ST_CURRENT_HP] < cr.Stat[ST_MAX_LIFE])
+    # (cr, hp) do { int maxHp = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL], 0, 30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2; \
+    cr.StatBase[ST_CURRENT_HP] += (hp); if(cr.Stat[ST_CURRENT_HP] < 1)                    \
+                        cr.StatBase[ST_CURRENT_HP] = 1; if(cr.Stat[ST_CURRENT_HP] > maxHp) \
+                        cr.StatBase[ST_CURRENT_HP] = maxHp; } while(false)
+#define _CritNeedFirstAid            # (cr) (cr.Stat[ST_CURRENT_HP] < cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL], 0, 30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2)
 #define _CritNeedDoctor              # (cr) (_CritHasInjureBody(cr, DAMAGE_EYE) || _CritHasInjureBody(cr, DAMAGE_RIGHT_ARM) || _CritHasInjureBody(cr, DAMAGE_LEFT_ARM) || _CritHasInjureBody(cr, DAMAGE_RIGHT_LEG) || _CritHasInjureBody(cr, DAMAGE_LEFT_LEG))
 // Key id
 #define _CritFingersDoorId           # (critterId) (0x80000000 | (critterId))
