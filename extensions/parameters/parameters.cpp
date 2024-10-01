@@ -270,7 +270,7 @@ EXPORT int getParam_Hp(CritterMutual& cr, uint)
 
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_MAX_LIFE] + CLAMP(cr.Params[ST_LEVEL], 1, 30)* getParam_Endurance(cr, 0)/2 + cr.Params[ST_MAX_LIFE_EXT];
+	int val = cr.Params[ST_MAX_LIFE] + CLAMP(cr.Params[ST_LEVEL], 0, 30)* getParam_Endurance(cr, 0)/2 + cr.Params[ST_MAX_LIFE_EXT];
 	return CLAMP(val, 1, 9999);
 }
 
@@ -362,7 +362,9 @@ EXPORT int getParam_MaxCritical(CritterMutual& cr, uint)
 
 int GetRunningAc(CritterMutual& cr, bool head)
 {
-	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT] + getParam_Agility(cr, 0);
+	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT];
+	if (cr.Params[TRAIT_BRUISER]==0)
+		val += getParam_Agility(cr, 0);
 
 	while(cr.Params[PE_HTH_EVADE])
 	{

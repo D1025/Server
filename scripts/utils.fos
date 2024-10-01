@@ -3712,5 +3712,5 @@ void SetDeterioration(Item& item)
 }
 
 int GetActualMaxHp(Critter@ cr) {
-    return cr.StatBase[ST_MAX_LIFE] + cr.StatBase[ST_MAX_LIFE_EXT] + CLAMP(cr.StatBase[ST_LEVEL], 1, 30) * (cr.StatBase[ST_ENDURANCE]+cr.StatBase[ST_ENDURANCE_EXT]) /2;
+    return cr.StatBase[ST_MAX_LIFE] + cr.StatBase[ST_MAX_LIFE_EXT] + CLAMP(cr.StatBase[ST_LEVEL], 0, 30) * (cr.StatBase[ST_ENDURANCE]+cr.StatBase[ST_ENDURANCE_EXT]) /2;
 }

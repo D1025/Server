@@ -116,7 +116,7 @@ void critter_init(Critter& cr, bool firstTime)
 
         cr.StatBase[ST_INTELLECT] = Random(7, 10);
         cr.StatBase[ST_PERCEPTION] = Random(7, 10);
-        cr.StatBase[ST_MAX_LIFE] += Random(50, 100);
+        cr.StatBase[ST_MAX_LIFE] = Random(300, 350);
         cr.StatBase[ST_CURRENT_HP] = cr.StatBase[ST_MAX_LIFE];
 
     }

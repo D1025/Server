@@ -1181,7 +1181,7 @@ bool _LeftSwitchUse(Item& item, Critter& player, int skill)
 					if((critters[i].HexX== 208 && critters[i].HexY== 215))
 					{
 						critters[i].ToLife();
-						critters[i].StatBase[ST_CURRENT_HP] = critters[i].Stat[ST_MAX_LIFE] + CLAMP(critters[i].Stat[ST_LEVEL], 1 , 30) * critters[i].Stat[ST_ENDURANCE] / 2;
+						critters[i].StatBase[ST_CURRENT_HP] = critters[i].Stat[ST_MAX_LIFE] + CLAMP(critters[i].Stat[ST_LEVEL], 0 , 30) * critters[i].Stat[ST_ENDURANCE] / 2;
 					}
 				}	
 			}			

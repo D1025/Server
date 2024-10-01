@@ -312,7 +312,7 @@ void Heal(Critter& cr)
     cr.DamageBase[DAMAGE_LEFT_ARM] = 0;
     cr.DamageBase[DAMAGE_RIGHT_LEG] = 0;
     cr.DamageBase[DAMAGE_LEFT_LEG] = 0;
-    cr.StatBase[ST_CURRENT_HP] = cr.Stat[ST_MAX_LIFE] + CLAMP(cr.Stat[ST_LEVEL], 0 , 30) * cr.Stat[ST_ENDURANCE] / 2;
+    cr.StatBase[ST_CURRENT_HP] = cr.Stat[ST_MAX_LIFE] + CLAMP(cr.Stat[ST_LEVEL], 0 , 30) * (cr.Stat[ST_ENDURANCE]+cr.Stat[ST_ENDURANCE_EXT])  / 2;
     DropPoison(cr);
     DropRadiation(cr);
 }

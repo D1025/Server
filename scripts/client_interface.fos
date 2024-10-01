@@ -864,10 +864,18 @@ void render_iface(uint layer)
                                 }
                             }
 
-                            if((!__ConfigShowNpcAwareness && cr.IsNpc()) || !__ConfigShowPlayerAwareness && cr.IsPlayer())
+                            if(!__ConfigShowNpcAwareness && cr.IsNpc())
                             {
                                 int curHp = cr.Stat[ST_CURRENT_HP];
-                                int maxHp = cr.Stat[ST_MAX_LIFE];
+                                int maxHp = cr.Stat[ST_MAX_LIFE] + cr.Stat[ST_MAX_LIFE_EXT] + CLAMP(cr.Stat[ST_LEVEL], 0, 30) * (cr.Stat[ST_ENDURANCE] + cr.Stat[ST_ENDURANCE_EXT]) /2;
+                                DrawText("HP: " + curHp, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0, 255, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+
+                                dy -= 10;
+                            }
+                            if(!__ConfigShowPlayerAwareness && cr.IsPlayer())
+                            {
+                                int curHp = cr.Stat[ST_CURRENT_HP];
+                                int maxHp = cr.Stat[ST_MAX_LIFE] + cr.Stat[ST_MAX_LIFE_EXT];
                                 DrawText(curHp + "/" + maxHp, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0xff - (0xff * curHp) / maxHp, (0xff * curHp) / maxHp, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
 
                                 dy -= 10;
@@ -1276,12 +1284,12 @@ string generic_description(int descType, int& offsX, int& offsY)
         result += "\n\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_HP) + " ";
         result += chosen.Stat[ST_CURRENT_HP] + "/" + chosen.Stat[ST_MAX_LIFE] + "\n";
+        result += chosen.GetAC(false) + "\n";
         if(_DescHead)
             result += "Headgear:\n";
         else
             result += "Body Armor:\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_AC) + " ";
-        result += chosen.GetAC(_DescHead) + "\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_NORMAL) + "\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_LASER) + "\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_FIRE) + "\n";

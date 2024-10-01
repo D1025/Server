@@ -1600,7 +1600,7 @@ void OnTeleportToLobby(Critter& cr)   // export
 
 void OnTeleportToArena(Critter& cr)   // export
 {
-    cr.StatBase[ST_CURRENT_HP] = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],1,30) * cr.StatBase[ST_ENDURANCE] / 2;
+    cr.StatBase[ST_CURRENT_HP] = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * cr.StatBase[ST_ENDURANCE] / 2;
     //cr.StatBase[ST_VAR7] = cr.Stat[ST_CURRENT_HP];
     int damages = 0;
     if(cr.Damage[DAMAGE_EYE] != 0)

@@ -232,7 +232,7 @@ void changedParam_Hide(CritterCl& cr, uint, int oldValue)   // client
 #ifndef __CLIENT
 int GetMaxLife(Critter& cr)
 {
-    int val = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],1,30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2;
+    int val = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2;
     return CLAMP(val, 1, 9999);
 }
 #endif
@@ -355,7 +355,8 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     #ifdef __SERVER
     if(IsHumanoid(cr))
     {
-        cr.StatBase[ST_MAX_LIFE] = 150;
+        cr.StatBase[ST_MAX_LIFE] += 150;
+        cr.StatBase[ST_CURRENT_HP] = cr.StatBase[ST_MAX_LIFE];
         cr.StatBase[ST_ACTION_POINTS] = 10;
     }
     #endif
@@ -431,7 +432,7 @@ void NpcSetLevel(Critter& npc, int level)   // export
     npc.StatBase[ST_LEVEL] = level;
     level -= oldlevel;
     //npc.StatBase[ST_MAX_LIFE] += (2 + (npc.StatBase[ST_ENDURANCE] >> 1)) * level;
-    npc.StatBase[ST_CURRENT_HP] = npc.Stat[ST_MAX_LIFE] + CLAMP(npc.Stat[ST_LEVEL], 1 , 30) * npc.Stat[ST_ENDURANCE] / 2;
+    npc.StatBase[ST_CURRENT_HP] = npc.Stat[ST_MAX_LIFE] + CLAMP(npc.Stat[ST_LEVEL], 0 , 30) * npc.Stat[ST_ENDURANCE] / 2;
     for(uint i = SKILL_BEGIN; i <= SKILL_END; i++)
         npc.SkillBase[i] += 5 * level;
 }
