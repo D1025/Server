@@ -654,7 +654,7 @@
 #define TO_REPLICATION                           (241)
 #define TO_KARMA_VOTING                          (242) // Used in engine
 #define TO_GATHERING                             (243)
-#define TO_SNEAK                                 (244)
+#define TO_SUPER_STIMPAK                         (244)
 #define TO_HEALING                               (245)
 #define TO_CIGARETTES							 (246)
 
@@ -673,7 +673,7 @@
 // Radiation drugs timeouts
 #define TO_RADAWAY							 	 (255)
 #define TO_RAD_X							 	 (256)
-#define TO_SUPER_STIMPAK                         (257)
+#define TO_SNEAK                                 (257)
 
 
 

@@ -169,7 +169,9 @@ void DrawCritterOnHead()	//export
 			{
 
 			    if (crs[i].IsNpc()) {
-			        hp = "|" + COLOR_RGB(0, 255, 0) + " HP: " + crs[i].Param[ST_CURRENT_HP];
+			        int maxHp = crs[i].Param[ST_MAX_LIFE] + crs[i].Param[ST_MAX_LIFE_EXT];
+			        int green = CLAMP(CLAMP(crs[i].Param[ST_CURRENT_HP], -999, maxHp) * 0xff / maxHp, 0, 0xff);
+			        hp = "|" + COLOR_RGB(255-green, green, 0) + " HP: " + crs[i].Param[ST_CURRENT_HP];
 			    } else {
 			    				int maxhp = crs[i].Param[ST_MAX_LIFE] + crs[i].Param[ST_MAX_LIFE_EXT];
                 				if (crs[i].IsNpc())

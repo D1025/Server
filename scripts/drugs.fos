@@ -41,16 +41,16 @@ import int  GetActualMaxHp(Critter@ cr) from "utils";
 #define TABLE_AMOUNT                      # (stat, stage)(7 + (stage) + (stat) * 6)
 
 // Dumbed Down Drugs (only two stages)
-#define SPECIAL_DRUG                      # (_pid) ((_pid) == PID_MENTATS || (_pid) == PID_BUFFOUT || (_pid) == PID_PSYCHO || (_pid) == PID_JET || (_pid) == PID_BEER || (_pid) == PID_NUKA_COLA || (_pid) == PID_CIGARETTES)
+#define SPECIAL_DRUG                      # (_pid) ((_pid) == PID_MENTATS || (_pid) == PID_BUFFOUT || (_pid) == PID_PSYCHO || (_pid) == PID_JET || (_pid) == PID_BEER || (_pid) == PID_NUKA_COLA || (_pid) == PID_CIGARETTES || (_pid) == PID_SUPER_STIMPAK)
 
 void UseDrug(Critter& cr, Item& drug)   // Export
 {
     uint pid = drug.GetProtoId();
-    SetDrug(cr, pid);
     if (pid == PID_SUPER_STIMPAK && cr.Timeout[TO_SUPER_STIMPAK] > 0) {
         cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_FAIL);
         return;
     } else {
+        SetDrug(cr, pid);
         _SubItem(drug, 1);
     }
     if(pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK || pid == PID_HYPO)
@@ -693,8 +693,8 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
 void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
     if(cr.IsDead() || cr.Timeout[TO_SUPER_STIMPAK] > 0)
         return;
-    _SetTimeout(cr, TO_SUPER_STIMPAK, REAL_SECOND(20));
-    cr.StatBase[ST_CURRENT_HP] += cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100;
+    _SetTimeout(cr, TO_SUPER_STIMPAK, REAL_SECOND(45));
+    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.StatBase[ST_CURRENT_HP] + cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100, -9999, GetActualMaxHp(cr));
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(2), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(4), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(6), CTE_SUPERSTIMHEALING);
@@ -705,6 +705,6 @@ void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
 uint cte_SuperStimHealing(Critter& cr, int identifier, uint& rate) {
     if(cr.IsDead())
         return 0;
-    cr.StatBase[ST_CURRENT_HP] += cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100;
+    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.StatBase[ST_CURRENT_HP] + cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100, -9999, GetActualMaxHp(cr));
     return 0;
 }
