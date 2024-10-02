@@ -169,21 +169,19 @@ void DrawCritterOnHead()	//export
 			{
 
 			    if (crs[i].IsNpc()) {
-			        int maxHp = crs[i].Param[ST_MAX_LIFE] + crs[i].Param[ST_MAX_LIFE_EXT];
-			        int green = CLAMP(CLAMP(crs[i].Param[ST_CURRENT_HP], -999, maxHp) * 0xff / maxHp, 0, 0xff);
+			        int maxHp = crs[i].Stat[ST_MAX_LIFE] + crs[i].Stat[ST_MAX_LIFE_EXT];
+			        int green = CLAMP(CLAMP(crs[i].Stat[ST_CURRENT_HP], -999, maxHp) * 0xff / maxHp, 0, 0xff);
 			        hp = "|" + COLOR_RGB(255-green, green, 0) + " HP: " + crs[i].Param[ST_CURRENT_HP];
 			    } else {
-			    				int maxhp = crs[i].Param[ST_MAX_LIFE] + crs[i].Param[ST_MAX_LIFE_EXT];
-                				if (crs[i].IsNpc())
-                				    maxhp += (crs[i].Param[ST_ENDURANCE] + crs[i].Param[ST_ENDURANCE_EXT]) * CLAMP(crs[i].Param[ST_LEVEL], 0, 30) / 2;
-                				color_g = (255*crs[i].Param[ST_CURRENT_HP])/maxhp;
-                				hp_proc = crs[i].Param[ST_CURRENT_HP] * 100 / maxhp;
+			    				int maxhp = 150 + crs[i].Stat[ST_MAX_LIFE_EXT] + (crs[i].Stat[ST_ENDURANCE] + crs[i].Stat[ST_ENDURANCE_EXT]) * CLAMP(crs[i].Stat[ST_LEVEL], 0, 30) / 2;
+                				color_g = (255*crs[i].Stat[ST_CURRENT_HP])/maxhp;
+                				hp_proc = crs[i].Stat[ST_CURRENT_HP] * 100 / maxhp;
 
                 				if(color_g < 0)
                 					color_g = 0;
                 				color_r = 255 - color_g;
 
-                				hp = "|" + COLOR_RGB(color_r, color_g, color_b) + " " + crs[i].Param[ST_CURRENT_HP] + "/" + maxhp;
+                				hp = "|" + COLOR_RGB(color_r, color_g, color_b) + " " + crs[i].Stat[ST_CURRENT_HP] + "/" + maxhp;
 			    }
 			}
 			else

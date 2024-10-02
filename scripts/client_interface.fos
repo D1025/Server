@@ -876,7 +876,7 @@ void render_iface(uint layer)
                             if(!__ConfigShowPlayerAwareness && cr.IsPlayer())
                             {
                                 int curHp = cr.Stat[ST_CURRENT_HP];
-                                int maxHp = cr.Stat[ST_MAX_LIFE] + cr.Stat[ST_MAX_LIFE_EXT];
+                                int maxHp = 150 + cr.Stat[ST_MAX_LIFE_EXT] + (cr.Stat[ST_ENDURANCE] + cr.Stat[ST_ENDURANCE_EXT]) * CLAMP(cr.Stat[ST_LEVEL], 0, 30) / 2;
                                 DrawText(curHp + "/" + maxHp, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0xff - (0xff * curHp) / maxHp, (0xff * curHp) / maxHp, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
 
                                 dy -= 10;
