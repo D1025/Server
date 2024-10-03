@@ -1670,7 +1670,7 @@
 {103192}{}{Each level of Educated adds +2 skill points when you gain a new experience level. This Perk works best when purchased early in your adventure.}
 # PE_HEALER
 {103201}{}{Healer}
-{103202}{}{The healing of bodies comes easier to you with this Perk. This Perk heals 15-30 additional hit points when using the First Aid.}
+{103202}{}{The healing of bodies comes easier to you with this Perk. This Perk heals 50 additional hit points when using the First Aid.}
 # PE_FORTUNE_FINDER
 {103211}{}{Fortune Finder}
 {103212}{}{You have the talent of finding money. You find additional money in random encounters in the desert.}
@@ -1709,7 +1709,7 @@
 {103322}{}{Mr Fixit is able to repair items to a higher standard than his peers. }
 # PE_MEDIC
 {103331}{}{Medic}
-{103332}{}{The Medic halves the timeouts for First Aid and Doctor skills. You also heal additional 15 to 30 Hit Points when using First Aid.}
+{103332}{}{The Medic halves the timeouts for First Aid and Doctor skills.}
 # PE_MASTER_THIEF
 {103341}{}{Master Thief}
 {103342}{}{A Master Thief is proficient at stealing and picking locks.  He is able to attempt his thievery twice as often.}
@@ -1856,7 +1856,7 @@
 {103972}{}{You are agile, lucky and always careful.  This perk halves your chances for setting off a trap.}
 # PE_LIVING_ANATOMY
 {103981}{}{Living Anatomy}
-{103982}{}{You have a better understanding of living creatures and their strengths and weaknesses.  You get more critical successes and fewer critical failures when you are healing, and you do +5 damage per attack to living creatures.}
+{103982}{}{You have a better understanding of living creatures and their strengths and weaknesses.  You can see players cooldown on first aid, and you do +5 damage per attack to living creatures.}
 # PE_MAGNETIC_PERSONALITY
 {103991}{}{Magnetic Personality}
 {103992}{}{People just love to be around you!  You gain additional 50 points to your follower limit.}
@@ -1952,7 +1952,7 @@
 {104382}{}{When you are even tougher, you take even less damage. You gain +10% to your Damage Resistance and +3 to your Damage Threshold.}
 # PE_HEALER_II                (439)
 {104391}{}{Healer+}
-{104392}{}{The healing of bodies comes easier to you with this Perk. This Perk heals 20-40 additional hit points when using the First Aid}
+{104392}{}{The healing of bodies comes easier to you with this Perk. This Perk heals 100 additional hit points when using the First Aid}
 # PE_BLESSED_ARE_THE_WEAK     (440)
 {104401}{}{Blessed are the Weak}
 {104402}{}{You are able to bring people back from the brink of death. You can heal people even when they are Weakened.}

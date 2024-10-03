@@ -1137,8 +1137,8 @@
 #define TIMER_MAX_VALUE                          (599)
 
 // Timeouts in real seconds, generic values
-#define FIRST_AID_TIMEOUT                        # (cr)     ( REAL_SECOND( (((cr.Skill[SK_FIRST_AID] > 50 ? cr.Skill[SK_FIRST_AID] : 50) * -6 / 10) + 210) / (cr.Perk[PE_MEDIC] > 0 ? 2 : 1)) )           // cd = (-6 * skill)/10 - 210 -> from 180s @sk<=50 to 90s @sk==200 (max)
-#define DOCTOR_TIMEOUT                           # (cr)     ( REAL_SECOND( (((cr.Skill[SK_DOCTOR] > 50 ? cr.Skill[SK_DOCTOR] : 50) * -6 / 10) + 210) / (cr.Perk[PE_MEDIC] > 0 ? 2 : 1)) )           // cd = (-6 * skill)/10 - 210 -> from 180s @sk<=50 to 90s @sk==200 (max)
+#define FIRST_AID_TIMEOUT                        # (cr)     ( REAL_SECOND( 90 / (cr.Perk[PE_MEDIC] > 0 ? 2 : 1)) )           // cd = (-6 * skill)/10 - 210 -> from 180s @sk<=50 to 90s @sk==200 (max)
+#define DOCTOR_TIMEOUT                           # (cr)     ( REAL_SECOND( 90 / (cr.Perk[PE_MEDIC] > 0 ? 2 : 1)) )           // cd = (-6 * skill)/10 - 210 -> from 180s @sk<=50 to 90s @sk==200 (max)
 
 #define REPAIR_TIMEOUT                           # (cr)        (REAL_MINUTE(1))                                                                                                                                    // Orig 4 time on day, 1 min
 #define SCIENCE_TIMEOUT                          # (cr)       (REAL_MINUTE(1))                                                                                                                                     // Orig 6 time on day, 1 min

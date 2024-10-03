@@ -60,34 +60,11 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self && cr.Param[MODE_HIDE] != 0 && cr.GetAccess() < ACCESS_TESTER)
         cr.ParamBase[MODE_HIDE] = 0;
 
-    // without living anatomy:
-    //   5% chance for critical success/failure
-    //   it's success if Random(0,11) vs luck succeed, failure otherwise
-    // with living anatomy:
-    //   10% chance for critical success/failure
-    //   it's success if Random(0,21) vs luck+10 succeed, failure otherwise
-    bool isLiving = cr.Perk[PE_LIVING_ANATOMY] > 0;
-    bool isCritFailure = Random(1, 100) <= int(isLiving ? 10 : 5);
-    bool isCritSuccess = false;
-    if(isCritFailure)
-    {
-        if(Random(0, isLiving ? 21 : 11) <= cr.Stat[ST_LUCK] + (isLiving ? 10 : 0))
-        {
-            isCritFailure = false;
-            isCritSuccess = true;
-            cr.Say(SAY_NETMSG, "That was a very skillful intervention.");
-        }
-        else
-            cr.Say(SAY_NETMSG, "It went horrible.");
-    }
-
-    int sk = cr.Skill[SK_FIRST_AID];
 	int toolBonus = 0;
 	
     @item = SelectSkillItem(cr, item, SK_FIRST_AID);
     if(valid(item))
     {
-        sk += item.Proto.Misc_ToolSkillBonus;
 		toolBonus = item.Proto.Misc_ToolSkillBonus;
         if(Random(0, 30) == 0)
 		{
@@ -96,14 +73,8 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 		}
     }
 
-
-    int healerBonus = (cr.Perk[PE_MEDIC] > 0 ? Random(15, 30) : 0) + (cr.Perk[PE_LIVING_ANATOMY] > 0 ? Random(20, 40) : 0);
-    int heal = isCritSuccess ? (sk + healerBonus) : (isCritFailure ? Random(1, sk / 10) : (Random((sk * 2) / 4, sk) + healerBonus));
-    if(heal < 1)
-        heal = 1;
-		
-	if(cr.IsPlayer() && cr.Timeout[TO_BATTLE] > 0 && heal > 150)
-		heal = 150 + healerBonus + toolBonus;
+    int healerBonus = (cr.Perk[PE_HEALER] > 0 ? 50 : 0) + (cr.Perk[PE_HEALER_II] > 0 ? 100 : 0);
+    int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
 
 	heal = heal * (100 - targetCr.Stat[ST_POISONING_LEVEL]) / 100;
     int curHp = targetCr.Stat[ST_CURRENT_HP];
@@ -120,10 +91,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self)
         targetCr.Say(SAY_NETMSG, "Hit Points +" + heal);
 
-    _SetTimeout(cr, TO_SK_FIRST_AID, FIRST_AID_TIMEOUT(cr)/2);
-	
-    //if(isCritFailure)
-    //    _SetTimeout(targetCr, TO_WEAKENED, WEAKENED_TIMEOUT(targetCr));
+    _SetTimeout(cr, TO_SK_FIRST_AID, REAL_SECOND(90/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
 
     if(cr.Stat[ST_LEVEL]<30) cr.StatBase[ST_EXPERIENCE] += heal * 3*(GetGvar(GVAR_experience_multipler));
     if(_IsTrueNpc(targetCr) && cr.Id != targetCr.Id && IsHumanoid(targetCr) && !IsCurrentEnemy(targetCr, cr.Id))

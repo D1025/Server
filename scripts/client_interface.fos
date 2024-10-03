@@ -782,6 +782,12 @@ void render_iface(uint layer)
                     if(valid(cr))
                     {
                         int dy = -10;
+                        if(cr.Perk[PE_LIVING_ANATOMY] != 0 && cr.Timeout[TO_SK_FIRST_AID] > 0)
+                        {
+                            DrawText("Cooldown: " + cr.Timeout[TO_SK_FIRST_AID] /20 + "s", __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, COLOR_CONTOUR_RED, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                            dy -= 10;
+                        }
+
 						
 						if(IsLexem(cr, "$faction") && cr.IsPlayer())
 						{

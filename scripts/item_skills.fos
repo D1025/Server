@@ -133,10 +133,10 @@ void ApplyToolTimeout(Critter& cr, int skill)
     switch(skill)
     {
     case SK_FIRST_AID:
-        _SetTimeout(cr, TO_SK_FIRST_AID, FIRST_AID_TIMEOUT(cr) / TOOL_TIMEOUT_DIV);
+        _SetTimeout(cr, TO_SK_FIRST_AID, FIRST_AID_TIMEOUT(cr) - TOOL_TIMEOUT_DIV);
         break;
     case SK_DOCTOR:
-        _SetTimeout(cr, TO_SK_DOCTOR, DOCTOR_TIMEOUT(cr) / TOOL_TIMEOUT_DIV);
+        _SetTimeout(cr, TO_SK_DOCTOR, DOCTOR_TIMEOUT(cr) - TOOL_TIMEOUT_DIV);
         break;
     case SK_REPAIR:
         _SetTimeout(cr, TO_SK_REPAIR, REPAIR_TIMEOUT(cr) / TOOL_TIMEOUT_DIV);
