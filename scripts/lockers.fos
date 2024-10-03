@@ -102,12 +102,9 @@ bool UseSkillOnLocker(Critter& cr, Item& locker, int skill)   // Export
         // Todo: PID_ELECTRONIC_LOCKPICKS, PID_ELEC_LOCKPICK_MKII
 		
 		//bool IsTypicalSpawner = false;
-		
-        base = CLAMP(base, 0, 95);
-		
         
 		//if(IsTypicalSpawner ? base >= Random(0, 100) : base >= Random(1, 100))
-		if(base >= Random(1, 100))
+		if(base + Random(1, 100) >= 0)
         {
             if(locker.Proto.Container_Changeble && !LockerOpen(locker))
                 Log("ERR: something wrong with this locker: " + locker.MapId + "," + locker.HexX + "," + locker.HexY + " pid " + locker.GetProtoId());

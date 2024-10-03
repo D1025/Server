@@ -1142,7 +1142,7 @@
 
 #define REPAIR_TIMEOUT                           # (cr)        (REAL_MINUTE(1))                                                                                                                                    // Orig 4 time on day, 1 min
 #define SCIENCE_TIMEOUT                          # (cr)       (REAL_MINUTE(1))                                                                                                                                     // Orig 6 time on day, 1 min
-#define LOCKPICK_TIMEOUT                         # (cr)      (REAL_SECOND((275 - cr.Skill[SK_LOCKPICK]) / 15))                                                                                                     // Orig 15 minutes, 2 min
+#define LOCKPICK_TIMEOUT                         # (cr)      (REAL_SECOND((10))                                                                                                     // Orig 15 minutes, 2 min
 #define STEAL_TIMEOUT                            # (cr)         (cr.Perk[PE_MASTER_THIEF] != 0 ? REAL_SECOND(15) : REAL_SECOND(30))                                                                                // 30 seconds
 #define TRANSFER_TIMEOUT                         # (cr)      (REAL_SECOND(30))                                                                                                                                     // 1/2 min
 #define WEAKENED_TIMEOUT                         # (cr)          (REAL_MINUTE((16 - Random(1, cr.Stat[ST_LUCK])) / 2))
