@@ -1073,7 +1073,7 @@ string generic_description(int descType, int& offsX, int& offsY)
                 int nfix = 2;
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
 				int wpnMinDmg = _WeaponDmgMin(weaponMain.Proto, use);
-                if(_WeaponIsHtHAttack(weaponMain.Proto, use))
+                if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
 				{
                     //if (wpnMinDmg==0) 
 					//	wpnMinDmg += MAX(1,chosen.Stat[ST_MELEE_DAMAGE]/2); 
@@ -1085,7 +1085,7 @@ string generic_description(int descType, int& offsX, int& offsY)
 				result += wpnMinDmg+"-";		
                 
                 int wpnMaxDmg = _WeaponDmgMax(weaponMain.Proto, use);
-                if(_WeaponIsHtHAttack(weaponMain.Proto, use))
+                if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
 				{
                     wpnMaxDmg += chosen.Stat[ST_MELEE_DAMAGE];
 				}
@@ -1178,7 +1178,7 @@ string generic_description(int descType, int& offsX, int& offsY)
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
                 //result += _WeaponDmgMin(weaponExt.Proto, use) + "-";
 				int wpnMinDmg=_WeaponDmgMin(weaponExt.Proto,use);
-				if(_WeaponIsHtHAttack(weaponExt.Proto,use))
+				if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use))
 				{		
 					//if (wpnMinDmg==0) 
 					//	wpnMinDmg += MAX(1, chosen.Stat[ST_MELEE_DAMAGE]/1); 
@@ -1190,7 +1190,7 @@ string generic_description(int descType, int& offsX, int& offsY)
 				result+=wpnMinDmg+"-";				
 				
                 int wpnMaxDmg = _WeaponDmgMax(weaponExt.Proto, use);
-                if(_WeaponIsHtHAttack(weaponExt.Proto, use))
+                if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use))
                     wpnMaxDmg += chosen.Stat[ST_MELEE_DAMAGE];
                 wpnMaxDmg += wpnMaxDmg * SelectWeaponBonus(weaponExt, BONUS_WEAPON_MAX_DMG) / 100;
                 result += wpnMaxDmg;

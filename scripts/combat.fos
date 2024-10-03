@@ -345,7 +345,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         attack.SilentDeathEffect = true;
 
 				
-    if(isHthAttack)
+    if(isHthAttack || (weaponSubtype == WS_THROWING && !isGrenade))
 	{
 		attack.DmgMin += cr.Stat[ST_MELEE_DAMAGE];
 		attack.DmgMax += cr.Stat[ST_MELEE_DAMAGE];

@@ -248,6 +248,7 @@
 // ************** Items ***************************//
 // Weapon
 #define _WeaponIsHtHAttack           # (proto, use)(_WeaponSkill(proto, use) == SK_UNARMED)
+#define _WeaponIsMeleeThrownAttack   # (proto, use)(_WeaponSkill(proto, use) == SK_THROWING && _WeaponDmgType(proto, use) != 6 && _WeaponDmgType(proto, use) != 5 && _WeaponDmgType(proto, use) != 4 && _WeaponDmgType(proto, use) !=3)
 #define _WeaponIsGunAttack           # (proto, use)(_WeaponSkill(proto, use) == SK_SMALL_GUNS || _WeaponSkill(proto, use) == SK_BIG_GUNS || _WeaponSkill(proto, use) == SK_ENERGY_WEAPONS || _WeaponSkill(proto, use) == SK_MELEE_WEAPONS)
 #define _WeaponIsRangedAttack        # (proto, use)(_WeaponIsGunAttack(weap, use) || _WeaponSkill(proto, use) == SK_THROWING)
 #define _WeaponIsPrimaryAviable      # (proto) ((proto.Weapon_ActiveUses & 1) != 0)
