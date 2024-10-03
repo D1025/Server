@@ -248,13 +248,13 @@
 // ************** Items ***************************//
 // Weapon
 #define _WeaponIsHtHAttack           # (proto, use)(_WeaponSkill(proto, use) == SK_UNARMED)
-#define _WeaponIsMeleeThrownAttack   # (proto, use)(_WeaponSkill(proto, use) == SK_THROWING && _WeaponDmgType(proto, use) != 6 && _WeaponDmgType(proto, use) != 5 && _WeaponDmgType(proto, use) != 4 && _WeaponDmgType(proto, use) !=3)
+#define _WeaponIsMeleeThrownAttack   # (proto, use)(_WeaponSkill(proto, use) == SK_THROWING && (_WeaponDmgType(proto, use) != 7 && _WeaponDmgType(proto, use) != 6 && _WeaponDmgType(proto, use) != 5 && _WeaponDmgType(proto, use) != 4 && _WeaponDmgType(proto, use) !=3))
 #define _WeaponIsGunAttack           # (proto, use)(_WeaponSkill(proto, use) == SK_SMALL_GUNS || _WeaponSkill(proto, use) == SK_BIG_GUNS || _WeaponSkill(proto, use) == SK_ENERGY_WEAPONS || _WeaponSkill(proto, use) == SK_MELEE_WEAPONS)
 #define _WeaponIsRangedAttack        # (proto, use)(_WeaponIsGunAttack(weap, use) || _WeaponSkill(proto, use) == SK_THROWING)
 #define _WeaponIsPrimaryAviable      # (proto) ((proto.Weapon_ActiveUses & 1) != 0)
 #define _WeaponIsSecondaryAviable    # (proto) ((proto.Weapon_ActiveUses & 2) != 0)
 #define _WeaponIsThirdAviable        # (proto) ((proto.Weapon_ActiveUses & 4) != 0)
-#define _WeaponSkill                 # (proto, use)((use) == 0 ? proto.Weapon_Skill_0  : ((use) == 1 ? proto.Weapon_Skill_1  : ((use) == 2 ? proto.Weapon_Skill_2  : 0)))
+#define _WeaponSkill                 # (proto, use)((use) == 0 ? proto.Weapon_Skill_0  : ((use) == 1 ? proto.Weapon_Skill_1  : ((use) == 2 ? proto.Weapon_Skill_2 : 0)))
 #define _WeaponDmgType               # (proto, use)((use) == 0 ? proto.Weapon_DmgType_0 : ((use) == 1 ? proto.Weapon_DmgType_1 : ((use) == 2 ? proto.Weapon_DmgType_2 : 0)))
 #define _WeaponAnim2                 # (proto, use)((use) == 0 ? proto.Weapon_Anim2_0  : ((use) == 1 ? proto.Weapon_Anim2_1  : ((use) == 2 ? proto.Weapon_Anim2_2  : 0)))
 #define _WeaponDmgMin                # (proto, use)((use) == 0 ? proto.Weapon_DmgMin_0 : ((use) == 1 ? proto.Weapon_DmgMin_1 : ((use) == 2 ? proto.Weapon_DmgMin_2 : 0)))

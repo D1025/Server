@@ -394,7 +394,7 @@ int GetRunningAc(CritterMutual& cr, bool head)
 	const Item* armor = head ? GetHeadArmor(cr) : cr.ItemSlotArmor;
 	if(armor->GetId() && armor->IsArmor()) val += armor->Proto->Armor_AC;
 
-	return CLAMP(val, 0, 90);
+	return CLAMP(val, 0, 95);
 }
 
 EXPORT int getParam_Ac(CritterMutual& cr, uint)
@@ -405,7 +405,7 @@ EXPORT int getParam_Ac(CritterMutual& cr, uint)
 		return StandingAC; // todo: turn based
 	}
 	// if(!IsRunning(cr)) return 0; // todo: turn based
-	return GetRunningAc(cr,false)+ cr.Params[PE_LIVEWIRE] ? getParam_Agility(cr, 0) : 0;
+	return GetRunningAc(cr,false) + ((cr.Params[PE_LIVEWIRE] && !cr.Params[TRAIT_BRUISER]) ? getParam_Agility(cr, 0) : 0);
 }
 
 EXPORT int getParam_DamageResistance(CritterMutual& cr, uint index)

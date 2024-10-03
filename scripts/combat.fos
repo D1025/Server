@@ -230,19 +230,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 	// Fast Shot random aim
 	if(cr.Trait[TRAIT_FAST_SHOT] != 0 && !isBurst && valid(weapon) && _WeaponAim(weapon, use) && !_WeaponIsHtHAttack(weapon, use))
 	{
-		uint roll = Random(1,100);
-		if ( roll > 95 )
-			aim = HIT_LOCATION_EYES;
-		else if ( roll > 85 ) 
-			aim = HIT_LOCATION_HEAD;
-		else if ( roll > 70 ) 
-			aim = (HAS_CHANCE(50) ? HIT_LOCATION_LEFT_ARM : HIT_LOCATION_RIGHT_ARM); 
-		else if ( roll > 55 ) 
-			aim = HIT_LOCATION_GROIN;
-		else if ( roll > 35 ) 
-			aim = (HAS_CHANCE(50) ? HIT_LOCATION_LEFT_LEG : HIT_LOCATION_RIGHT_LEG);         
-		else
-			aim = HIT_LOCATION_UNCALLED;
+	    aim = HIT_LOCATION_TORSO;
 	}
 	
     // Now we change aim, if applicable
@@ -3040,6 +3028,9 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         totalDmg *= dmgMul;
         totalDmg /= dmgDiv;
 
+        if(cr.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && ammoPid != PID_SHOTGUN_DRAGON_BREATH_SHELLS)
+        	totalDmg += 30 * cr.Perk[PE_PYROMANIAC] * totalDmg / 100;
+
         if(Random(1, 100) <= partialBypassChance)
         {
             totalDmg -= partialBypassDT;
@@ -3057,25 +3048,8 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         // The damage perks are used even in this case!
         if(cr.Perk[PE_LIVING_ANATOMY] != 0 &&  !(bt == BT_ALIEN || bt == BT_ROBOT))
             totalDmg += 5;
-        // kompressor fix
-		/*if(cr.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && ammoPid != PID_SHOTGUN_DRAGON_BREATH_SHELLS)
-            {
-			if(ammoPid == PID_FLAMETHROWER_FUEL || ammoPid == PID_FLAMETHROWER_FUEL_MK_II)
-			totalDmg += 20 * cr.Perk[PE_PYROMANIAC];
-			else
-			totalDmg += 4 * cr.Perk[PE_PYROMANIAC];
-			}*/
-		// old calc
-		if(cr.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && ammoPid != PID_SHOTGUN_DRAGON_BREATH_SHELLS)
-			totalDmg += 20 * cr.Perk[PE_PYROMANIAC];
 		else if(cr.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && weapPid == PID_FIRE_HEX)
 			totalDmg += 4 * cr.Perk[PE_PYROMANIAC];
-        if(cr.Trait[TRAIT_FAST_SHOT] != 0)
-            totalDmg += 5;
-        if(cr.Trait[TRAIT_HEAVY_HANDED] != 0 && weapon.Weapon_IsUnarmed)
-            totalDmg += 2;
-        //if(cr.Trait[TRAIT_ONE_HANDER] != 0 && (!valid(realWeapon) || FLAG(realWeapon.Flags, ITEM_TWO_HANDS)))
-        //    totalDmg += 5;
         tookDamage = true;
     }
 
