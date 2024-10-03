@@ -206,6 +206,7 @@ void InitializeGame()                  // Export
     SetParameterGetBehaviour(ST_LUCK, dllName + "getParam_Luck");
     SetParameterGetBehaviour(ST_CURRENT_HP, dllName + "getParam_Hp");
     SetParameterGetBehaviour(ST_MAX_LIFE, dllName + "getParam_MaxLife");
+    SetParameterGetBehaviour(ST_LEVEL, dllName + "getParam_Level");
     SetParameterGetBehaviour(ST_ACTION_POINTS, dllName + "getParam_MaxAp");
     SetParameterGetBehaviour(ST_CURRENT_AP, dllName + "getParam_Ap");
     SetParameterGetBehaviour(ST_MAX_MOVE_AP, dllName + "getParam_MaxMoveAp");

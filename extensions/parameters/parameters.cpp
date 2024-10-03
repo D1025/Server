@@ -52,6 +52,7 @@ EXPORT int getParam_Charisma(CritterMutual& cr, uint);
 EXPORT int getParam_Intellegence(CritterMutual& cr, uint);
 EXPORT int getParam_Agility(CritterMutual& cr, uint);
 EXPORT int getParam_Luck(CritterMutual& cr, uint);
+EXPORT int getParam_Level(CritterMutual& cr, uint);
 EXPORT int getParam_Hp(CritterMutual& cr, uint);
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint);
 EXPORT int getParam_MaxAp(CritterMutual& cr, uint);
@@ -285,6 +286,11 @@ EXPORT int getParam_MaxAp(CritterMutual& cr, uint)
 	if (checkBonus(weapon, BONUS_WEAPON_MAX_AP)!=0) val++;
 
 	return CLAMP(val, 1, 9999);
+}
+
+EXPORT int getParam_Level(CritterMutual& cr, uint)
+{
+    return cr.Params[ST_LEVEL];
 }
 
 EXPORT int getParam_Ap(CritterMutual& cr, uint)

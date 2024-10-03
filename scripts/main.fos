@@ -222,6 +222,7 @@ bool start()
     // Hit points, uses Strenght and Endurance
     SetSendParameter(ST_MAX_LIFE, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_MAX_LIFE_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_LEVEL, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_CURRENT_HP, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_HEALTH_LEVEL, true);
     SetSendParameter(ST_TURN_BASED_AC, true);
