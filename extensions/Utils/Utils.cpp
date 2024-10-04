@@ -86,6 +86,11 @@ EXPORT int _AllowParameterIfAwareness(uint parameter, Critter& fromCr, Critter& 
 	return (toCr.Params[PE_AWARENESS]>0)?fromCr.Params[parameter]:0;
 }
 
+EXPORT int _AllowParameterIfLivingAnatomy(uint parameter, Critter& fromCr, Critter& toCr)
+{
+	return (toCr.Params[PE_LIVING_ANATOMY]>0)?fromCr.Params[parameter]:0;
+}
+
 EXPORT int _AllowParameterIfEqualNZ(uint parameter, Critter& fromCr, Critter& toCr)
 {
 	if(fromCr.Params[parameter]>0 && (fromCr.Params[parameter]==toCr.Params[parameter])) return fromCr.Params[parameter];

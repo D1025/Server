@@ -230,8 +230,10 @@ bool start()
     SetSendParameter(ST_STRENGTH, true, "Utils.dll@_AllowParameterIfAwareness");
     // Battle timeout
     SetSendParameter(TO_BATTLE, true);
+    SetSendParameter(TO_SK_FIRST_AID, true, "Utils.dll@_AllowParameterIfLivingAnatomy");
     // Endurance
     SetSendParameter(ST_ENDURANCE, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_ENDURANCE_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
     // Injures
     SetSendParameter(DAMAGE_EYE, true);
     SetSendParameter(DAMAGE_RIGHT_ARM, true);
@@ -422,7 +424,7 @@ bool start()
     StartPersonalDataCleanup();
 
     SetGvar(GVAR_is_first_time, 0);
-	SetGvar(GVAR_experience_multipler, 1);
+	SetGvar(GVAR_experience_multipler, 10);
 	SetGvar(GVAR_experience_multipler_kill, 1);
 	SetGvar(GVAR_experience_multipler_caravans, 1);
 	CreateTimeEvent(AFTER(REAL_SECOND(30)), "e_KickMultilogs", false);
@@ -2409,7 +2411,8 @@ void critter_finish(Critter& cr, bool toDelete)
 		+ cr.Perk[PE_IMP_INTELLIGENCE] + cr.Perk[PE_IMP_AGILITY] + cr.Perk[PE_IMP_LUCK] + cr.Perk[PE_DERMAL_IMPACT] + cr.Perk[PE_DERMAL_IMPACT_ENH] + cr.Perk[PE_PHOENIX_IMPLANTS] + cr.Perk[PE_PHOENIX_IMPLANTS_ENH];
 		if(valid(cr.GetMap()) && (IsBase(cr.GetMap()) || IsTent(cr.GetMap())))
 		{
-		if(_CritCountItem(cr, PID_BOTTLE_CAPS)>=uint(cr.Stat[ST_LEVEL] * 1000 + implantcount * 100000) && cr.Stat[ST_LEVEL]>1)
+		//if(_CritCountItem(cr, PID_BOTTLE_CAPS)>=uint(cr.Stat[ST_LEVEL] * 1000 + implantcount * 100000) && cr.Stat[ST_LEVEL]>1)
+		if(&& cr.Stat[ST_LEVEL]>1)
 			{
 			Map@ map = cr.GetMap();
 			Item@ grave = map.AddItem(cr.HexX, cr.HexY, 344, 1);
@@ -4072,7 +4075,8 @@ add: EXPORT bool PlayerToDelete( Critter* cr ) return( cr && cr->IsPlayer() && c
 		+ cr.Perk[PE_IMP_INTELLIGENCE] + cr.Perk[PE_IMP_AGILITY] + cr.Perk[PE_IMP_LUCK] + cr.Perk[PE_DERMAL_IMPACT] + cr.Perk[PE_DERMAL_IMPACT_ENH] + cr.Perk[PE_PHOENIX_IMPLANTS] + cr.Perk[PE_PHOENIX_IMPLANTS_ENH];
             if(valid(cr.GetMap()) && (IsBase(cr.GetMap()) || IsTent(cr.GetMap())))
             {
-                if(_CritCountItem(cr, PID_BOTTLE_CAPS)>=uint(cr.Stat[ST_LEVEL] * 1000 + implantcount * 100000) && cr.Stat[ST_LEVEL]>1)
+                //if(_CritCountItem(cr, PID_BOTTLE_CAPS)>=uint(cr.Stat[ST_LEVEL] * 1000 + implantcount * 100000) && cr.Stat[ST_LEVEL]>1)
+                if(cr.Stat[ST_LEVEL]>1)
                     cr.Say(SAY_NETMSG, "|0xBBBBBB INFO: You will recive Achievement Book after your character dissapears from game.");
                 else
                     cr.Say(SAY_NETMSG, "|0xCC0000 WARNING: You are trying to delete character without |0xCCCCCC " + uint(cr.Stat[ST_LEVEL] * 1000) + "|0xCC0000  caps in inventory. You will not get Achievement Book to perform reroll! You can use ~deleteself command again to cancel.");

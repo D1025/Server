@@ -873,7 +873,7 @@ void render_iface(uint layer)
                             if(!__ConfigShowNpcAwareness && cr.IsNpc())
                             {
                                 int curHp = cr.Param[ST_CURRENT_HP];
-                                int maxHp = cr.Param[ST_MAX_LIFE] + cr.Param[ST_MAX_LIFE_EXT] + CLAMP(cr.Param[ST_LEVEL], 0, 30) * (cr.Param[ST_ENDURANCE] + cr.Param[ST_ENDURANCE_EXT]) /2;
+                                int maxHp = cr.Param[ST_MAX_LIFE];
                                 int green = CLAMP(CLAMP(curHp, -999, maxHp) * 0xff / maxHp, 0, 0xff);
                                 DrawText("HP: " + curHp, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(255 - green, green, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
 
@@ -882,7 +882,7 @@ void render_iface(uint layer)
                             if(!__ConfigShowPlayerAwareness && cr.IsPlayer())
                             {
                                 int curHp = cr.Stat[ST_CURRENT_HP];
-                                int maxHp = 150 + cr.Stat[ST_MAX_LIFE_EXT] + (cr.Stat[ST_ENDURANCE] + cr.Stat[ST_ENDURANCE_EXT]) * CLAMP(cr.Stat[ST_LEVEL], 0, 30) / 2;
+                                int maxHp = cr.Param[ST_MAX_LIFE];
                                 DrawText(curHp + "/" + maxHp, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0xff - (0xff * curHp) / maxHp, (0xff * curHp) / maxHp, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
 
                                 dy -= 10;

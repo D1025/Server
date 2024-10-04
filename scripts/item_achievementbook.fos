@@ -1,6 +1,6 @@
 //
-// FOnline: Reloaded
-// Kilgore
+// FOnline: New Dawn
+// Donald
 //
 // item_achievementbook.fos
 //
@@ -29,20 +29,23 @@ bool _TentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery
 		if((item.Val1==0) && cr.Stat[ST_LEVEL]>1)
 		{
 			cr.Say(SAY_NETMSG, "|0xFF4400 You must be level 1 to open this book.");
-			return(true);		
+			return(true);
 		}
 		else if(item.Val1==0) // No owner assigned yet, assigning the book to it's user + first time use
 		{
 			item.Val1=cr.Id;
 			cr.Say(SAY_NETMSG, "Book assigned to " + cr.Name + ".");
-			cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
-			if(item.Val0<2) 
-				DeleteItem(item);
-			else 
-			{ 
-				item.Val0--;
-				cr.Say(SAY_NETMSG, item.Val0 + " levels remaining.");
-			}
+			for (int i = 0; i < 2; i++)
+            {
+                cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
+                if(item.Val0<2)
+                    DeleteItem(item);
+                else
+                {
+                	item.Val0--;
+                	cr.Say(SAY_NETMSG, item.Val0 + " levels remaining.");
+                }
+            }
 			item.Update();
 			return(true);
 		}
@@ -54,38 +57,39 @@ bool _TentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery
 		else if(uint(item.Val1)==cr.Id) // Proper user, processing the book
 		{
 			int level = cr.Stat[ST_LEVEL];
-			uint skillPoints = 5 + cr.StatBase[ST_INTELLECT] * 2;
-            if(cr.Trait[TRAIT_SKILLED] != 0)
-                skillPoints += 5;
-            skillPoints += cr.Perk[PE_EDUCATED] * 2;
-			
-			if(item.Val0+level!=item.Val2) 
+
+			if(item.Val0+level!=item.Val2)
 			{
 				cr.Say(SAY_NETMSG, "|0xFF4400 You cannot use this book anymore.");
 				return(true);
 			}
-			
+			if (level >= 30)
+			{
+			    for (int i = 0; i < item.Val0; i++)
+                {
+                    cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
+                }
+                DeleteItem(item);
+                return(true);
+			}
+
 			int perkUp = (cr.Trait[TRAIT_SKILLED] != 0 ? 4 : 3);
-			if( (cr.Stat[ST_UNSPENT_SKILL_POINTS] + skillPoints) > 99)				// Preventing over 99 skill points 
-			{
-				cr.Say(SAY_NETMSG, "|0xFF4400 Spend your remaining skill points.");
-				return(true);
-			}
-			else if( ( ((level+1) % perkUp == 0 && level < 24) || level == 29 ) && cr.Stat[ST_UNSPENT_PERKS]!=0 )		// Preventing perk loss
-			{
-				cr.Say(SAY_NETMSG, "|0xFF4400 Choose your perk.");
-				return(true);
-			}
-			
-			cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
-			if(item.Val0<2) 
-				DeleteItem(item);
-			else 
-			{ 
-				item.Val0--;
-				cr.Say(SAY_NETMSG, item.Val0 + " levels remaining.");
-				item.Update();				
-			}
+		    int nextPerkLevel = (perkUp - (level % perkUp)) % perkUp;
+		    if (nextPerkLevel == 0) {
+                nextPerkLevel = 3;
+            }
+            for (int i = 0; i < nextPerkLevel; i++)
+            {
+                cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
+                if(item.Val0<2)
+                    DeleteItem(item);
+                else
+                {
+                	item.Val0--;
+                	cr.Say(SAY_NETMSG, item.Val0 + " levels remaining.");
+                }
+            }
+            item.Update();
 		}
     }
     return(true);
