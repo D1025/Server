@@ -2412,7 +2412,7 @@ void critter_finish(Critter& cr, bool toDelete)
 		if(valid(cr.GetMap()) && (IsBase(cr.GetMap()) || IsTent(cr.GetMap())))
 		{
 		//if(_CritCountItem(cr, PID_BOTTLE_CAPS)>=uint(cr.Stat[ST_LEVEL] * 1000 + implantcount * 100000) && cr.Stat[ST_LEVEL]>1)
-		if(&& cr.Stat[ST_LEVEL]>1)
+		if(cr.Stat[ST_LEVEL]>1)
 			{
 			Map@ map = cr.GetMap();
 			Item@ grave = map.AddItem(cr.HexX, cr.HexY, 344, 1);
