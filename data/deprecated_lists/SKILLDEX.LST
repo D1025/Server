@@ -28,6 +28,9 @@ RADIATED.FRM  ; Radiation level
 EXPER.FRM     ; Experience
 LEVEL.FRM     ; Level
 
+*148
+CRITCHNC.FRM  ; Critical Power
+
 *200
 GUNSML.FRM    ; Small Guns
 GUNBIG.FRM    ; Big Guns

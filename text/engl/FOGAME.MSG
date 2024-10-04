@@ -1416,6 +1416,10 @@
 
 {101121}{}{Body Type}
 
+# ST_CRITICAL_POWER
+{101481}{}{Critical Power}
+{101482}{}{The power of a critical hit in combat is increased by this amount.}
+{101483}{}{Critical Power}
 # 3d layers
 {101501}{}{Skin}
 {101511}{}{R. Handle}
@@ -1676,7 +1680,7 @@
 {103212}{}{You have the talent of finding money. You find additional money in random encounters in the desert.}
 # PE_BETTER_CRITICALS
 {103221}{}{Better Critical}
-{103222}{}{The critical hits you cause in ranged combat are more devastating. You gain a +20 bonus on the critical hit table, almost ensuring that more damage will be done. This does not affect the chance to cause a critical hit.}
+{103222}{}{The critical hits you cause in ranged combat are more devastating. You gain a +15 bonus on the critical hit table, almost ensuring that more damage will be done. This does not affect the chance to cause a critical hit.}
 # PE_EMPATHY
 {103231}{}{Empathy}
 {103232}{}{You have studied other human beings, giving you inside knowledge of their emotional reaction to you.  You will see the reaction level of the person you are talking to when involved in an in-depth conversation.}

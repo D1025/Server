@@ -216,6 +216,7 @@ bool start()
     SetSendParameter(PE_LIVEWIRE, true);
     SetSendParameter(PE_HTH_EVADE, true);
     SetSendParameter(PE_HTH_EVADE_II, true);
+    SetSendParameter(PE_BETTER_CRITICALS, true);
     // SetSendParameter(ST_TURN_BASED_AC,true);
     // Agility
     SetSendParameter(ST_AGILITY, true);
@@ -224,6 +225,7 @@ bool start()
     SetSendParameter(ST_MAX_LIFE_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_LEVEL, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_CURRENT_HP, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_CRITICAL_POWER, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_HEALTH_LEVEL, true);
     SetSendParameter(ST_TURN_BASED_AC, true);
     // Strenght, uses battle timeout

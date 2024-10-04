@@ -53,18 +53,18 @@ void InitializeGame()                  // Export
     __TbApCostUseItem = 3;
     __TbApCostUseSkill = 3;
     __TbAlwaysRun = true;
-    __ApCostAimEyes = 2;
-    __ApCostAimHead = 2;
-    __ApCostAimGroin = 2;
+    __ApCostAimEyes = 1;
+    __ApCostAimHead = 1;
+    __ApCostAimGroin = 1;
     __ApCostAimTorso = 1;
     __ApCostAimArms = 1;
     __ApCostAimLegs = 1;
-    __HitAimEyes = 60;
-    __HitAimHead = 40;
-    __HitAimGroin = 30;
+    __HitAimEyes = 30;
+    __HitAimHead = 20;
+    __HitAimGroin = 15;
     __HitAimTorso = 0;
-    __HitAimArms = 30;
-    __HitAimLegs = 20;
+    __HitAimArms = 15;
+    __HitAimLegs = 10;
 
     __RunOnCombat = true;
     __RunOnTransfer = true;
@@ -216,6 +216,7 @@ void InitializeGame()                  // Export
     SetParameterGetBehaviour(ST_SEQUENCE, dllName + "getParam_Sequence");
     SetParameterGetBehaviour(ST_HEALING_RATE, dllName + "getParam_HealingRate");
     SetParameterGetBehaviour(ST_CRITICAL_CHANCE, dllName + "getParam_CriticalChance");
+    SetParameterGetBehaviour(ST_CRITICAL_POWER, dllName + "getParam_CriticalPower");
     SetParameterGetBehaviour(ST_MAX_CRITICAL, dllName + "getParam_MaxCritical");
     SetParameterGetBehaviour(ST_ARMOR_CLASS, dllName + "getParam_Ac");
     SetParameterGetBehaviour(ST_RADIATION_RESISTANCE, dllName + "getParam_RadiationResist");
@@ -251,6 +252,7 @@ void InitializeGame()                  // Export
     SetParameterChangeBehaviour(ST_UNSPENT_PERKS, "parameters@changedParam_UnspentPerks");
 	SetParameterChangeBehaviour(ST_UNSPENT_TAG, "parameters@changedParam_UnspentTag");
     SetParameterChangeBehaviour(MODE_HIDE, "parameters@changedParam_Hide");
+
     # endif    // __CLIENT
 
     /// Registration parameters

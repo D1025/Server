@@ -64,6 +64,7 @@ EXPORT int getParam_Sequence(CritterMutual& cr, uint);
 EXPORT int getParam_MeleeDmg(CritterMutual& cr, uint);
 EXPORT int getParam_HealingRate(CritterMutual& cr, uint);
 EXPORT int getParam_CriticalChance(CritterMutual& cr, uint);
+EXPORT int getParam_CriticalPower(CritterMutual& cr, uint);
 EXPORT int getParam_MaxCritical(CritterMutual& cr, uint);
 EXPORT int getParam_Ac(CritterMutual& cr, uint);
 EXPORT int getParam_DamageResistance(CritterMutual& cr, uint index);
@@ -358,6 +359,11 @@ EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 EXPORT int getParam_CriticalChance(CritterMutual& cr, uint)
 {
 	return 0;
+}
+
+EXPORT int getParam_CriticalPower(CritterMutual& cr, uint)
+{
+	return getParam_Luck(cr, 0) * 3 + cr.Params[PE_BETTER_CRITICALS] * 15;
 }
 
 EXPORT int getParam_MaxCritical(CritterMutual& cr, uint)

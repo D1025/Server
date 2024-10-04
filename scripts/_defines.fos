@@ -585,6 +585,7 @@
 #define ST_CURRENT_HELMET_PERK                   (145) // we're running out of space here :)
 #define ST_FACTION_UPDATE_SEQ                    (146)
 #define ST_MINIGAME_DATA                         (147) // custom minigame data (first byte is reserved to store minigame team and id)
+#define ST_CRITICAL_POWER                        (148)
 
 // Initial values of animation 3d layers
 #ifdef PLAYERS_3D
