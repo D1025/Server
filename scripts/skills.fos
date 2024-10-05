@@ -93,7 +93,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 
     _SetTimeout(cr, TO_SK_FIRST_AID, REAL_SECOND(90/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
 
-    cr.StatBase[ST_EXPERIENCE] += 10 * heal * 3*(GetGvar(GVAR_experience_multipler));
+    cr.StatBase[ST_EXPERIENCE] += heal * 3*(GetGvar(GVAR_experience_multipler));
     if(_IsTrueNpc(targetCr) && cr.Id != targetCr.Id && IsHumanoid(targetCr) && !IsCurrentEnemy(targetCr, cr.Id))
     {
         if(_ValidReputationIndex(targetCr.Stat[ST_TEAM_ID]))
