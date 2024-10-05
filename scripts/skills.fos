@@ -73,7 +73,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 		}
     }
 
-    int healerBonus = (cr.Perk[PE_HEALER] > 0 ? 50 : 0) + (cr.Perk[PE_HEALER_II] > 0 ? 100 : 0);
+    int healerBonus = (cr.Perk[PE_HEALER] == 1 ? 50 : 0) + (cr.Perk[PE_HEALER] == 2 ? 100 : 0);
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
 
 	heal = heal * (100 - targetCr.Stat[ST_POISONING_LEVEL]) / 100;
