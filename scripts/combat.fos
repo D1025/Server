@@ -1717,10 +1717,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			if(weaponPerk == WEAPON_PERK_ENHANCED_KNOCKOUT)
 				SETFLAG(eff, HF_KNOCKDOWN);
 				
-			if(weaponPerk == WEAPON_PERK_KNOCKBACK || (aim == HIT_LOCATION_TORSO && critLevel > 1)) {
-			    knockbackFromCrit = true;
-                SETFLAG(eff, HF_KNOCKDOWN);
-			}
+			//if(weaponPerk == WEAPON_PERK_KNOCKBACK)
+            //    SETFLAG(eff, HF_KNOCKDOWN);
+
+            if((aim == HIT_LOCATION_TORSO && critLevel > 1))
+                knockbackFromCrit = true;
 
             if(FLAG(eff, HF_KNOCKOUT)) {
 			    if(isMelee) {
@@ -1729,7 +1730,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                         SETFLAG(eff, HF_KNOCKDOWN);
                     }
 			    } else {
-			        int enemyStat = target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + critLevel==1 ? 5 : critLevel==3 ? -5 : critLevel==4 ? -20 : 0;
+			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
 			        int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			        if (enemyStat > attackerStat) {
                         UNSETFLAG(eff, HF_KNOCKOUT);
@@ -1740,7 +1741,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 			if(FLAG(eff, HF_BLINDED))
 			{
-			    int enemyStat = (target.Stat[ST_PERCEPTION] + target.Stat[ST_PERCEPTION_EXT] + critLevel==1 ? 5 : critLevel==3 ? -5 : critLevel==4 ? -20 : 0);
+			    int enemyStat = (target.Stat[ST_PERCEPTION] + target.Stat[ST_PERCEPTION_EXT] + (critLevel-2) * -5);
 			    int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			    if (enemyStat > attackerStat) {
                     UNSETFLAG(eff, HF_BLINDED);
@@ -1756,7 +1757,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                         UNSETFLAG(eff, HF_KNOCKDOWN);
                     }
 			    } else {
-			        int enemyStat = target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + critLevel==1 ? 5 : critLevel==3 ? -5 : critLevel==4 ? -20 : 0;
+			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + (critLevel-2) * -5);
                     int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
                     if (enemyStat > attackerStat) {
                         UNSETFLAG(eff, HF_KNOCKDOWN);
@@ -1766,14 +1767,14 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 				
 
 			if(FLAG(eff, HF_CRIPPLED_LEFT_LEG)) {
-			    int enemyStat = target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + critLevel==1 ? 5 : critLevel==3 ? -5 : critLevel==4 ? -20 : 0;
+			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
 			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			    if (enemyStat > attackerStat) {
                     UNSETFLAG(eff, HF_CRIPPLED_LEFT_LEG);
                 }
 			}
             if(FLAG(eff, HF_CRIPPLED_RIGHT_LEG)) {
-			    int enemyStat = target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + critLevel==1 ? 5 : critLevel==3 ? -5 : critLevel==4 ? -20 : 0;
+			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
 			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			    if (enemyStat > attackerStat) {
                     UNSETFLAG(eff, HF_CRIPPLED_RIGHT_LEG);
@@ -1781,14 +1782,14 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			}
 				//msgEff = eff;
 			if(FLAG(eff, HF_CRIPPLED_LEFT_ARM)) {
-			    int enemyStat = target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + critLevel==1 ? 5 : critLevel==3 ? -5 : critLevel==4 ? -20 : 0;
+			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
 			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			    if (enemyStat > attackerStat) {
                     UNSETFLAG(eff, HF_CRIPPLED_LEFT_ARM);
                 }
 			}
             if(FLAG(eff, HF_CRIPPLED_RIGHT_ARM)) {
-			    int enemyStat = target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + critLevel==1 ? 5 : critLevel==3 ? -5 : critLevel==4 ? -20 : 0;
+			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + critLevel==1 ? 5 : (critLevel-2) * -5);
 			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			    if (enemyStat > attackerStat) {
                     UNSETFLAG(eff, HF_CRIPPLED_RIGHT_ARM);
@@ -1832,7 +1833,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 				}*/
 			}
 			if(target.Mode[MODE_NO_DROP] != 0 && FLAG(eff, HF_CRIPPLED_RIGHT_ARM)) {
-			    int enemyStat = critLevel==2 ? 5 : critLevel==3 ? 0 : 0 + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT];
+			    int enemyStat = ((critLevel-2) * -5) + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT];
 			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			    if (enemyStat > attackerStat) {
                     UNSETFLAG(eff, HF_DROPPED_WEAPON);
@@ -1861,7 +1862,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		}
 	}*/
 
-    if(validAttacker && ((weaponPerk == WEAPON_PERK_KNOCKBACK) || isShotgun))
+    /*if(validAttacker && ((weaponPerk == WEAPON_PERK_KNOCKBACK) || isShotgun))
 	{
 		//Log("Bron melee z perkiem Knockback");
 		if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
@@ -1871,7 +1872,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		}
 		if (isShotgun)
 		    SETFLAG(eff, HF_KNOCKDOWN);
-	}
+	}*/
 			
     // not messaged
 
@@ -1931,13 +1932,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     int targetDR = target.GetDR(dmgType, attack.AimHead);
     int targetDT = target.GetDT(dmgType, attack.AimHead);
 
-    int partialBypassChance = GetPartialBypassChance(target, attack.AimHead);
-    int partialBypassedRounds = 0;
-    int armorDR = target.GetArmorDR(dmgType, attack.AimHead);
-    int armorDT = target.GetArmorDT(dmgType, attack.AimHead);
+    int bypassPower = GetBypassPower(target, attack.AimHead);
 
-    int partialBypassDR = targetDR - armorDR + (armorDR / 4);
-    int partialBypassDT = targetDT - armorDT + (armorDT / 4);
+    int armorDR = target.GetArmorDR(dmgType, attack.AimHead) * bypassPower;
+    int armorDT = target.GetArmorDT(dmgType, attack.AimHead) * bypassPower;
+
 
 
     if(validAttacker && attacker.Trait[TRAIT_FINESSE] != 0)
@@ -1945,16 +1944,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         if(dmgType == DAMAGE_LASER || dmgType == DAMAGE_ELECTR || dmgType == DAMAGE_PLASMA)
 		{
 			targetDR += 15;
-			partialBypassDR += 15;
 		}
 		else
 		{
 			targetDR += 30;
-			partialBypassDR += 30;
 		}
     }
     targetDR += attack.DRMod;   // Always
-    partialBypassDR += attack.DRMod;
 
     if(FLAG(eff, HF_BYPASS_ARMOR) && dmgType != DAMAGE_EMP)
     {
@@ -1975,17 +1971,14 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         }
         targetDR -= (valid(attacker) ? (attacker.Trait[TRAIT_FINESSE] != 0 ? 30 : 0) : 0);
     }
-    else if(weaponPerk == WEAPON_PERK_PENETRATE)
+    if(weaponPerk == WEAPON_PERK_PENETRATE)
         targetDT /= 5;
-    else if(COMBAT_AMMO_AP(attack.Ammo))
+    if(COMBAT_AMMO_AP(attack.Ammo))
         targetDT /= attack.Ammo.Ammo_DTDiv;
-	else if(isThrust)
+	if(isThrust)
 		targetDT /= 2;
 
-    partialBypassDR = MIN(partialBypassDR, targetDR);
-    targetDR = CLAMP(targetDR, 0, 100);
-    partialBypassDR = CLAMP(partialBypassDR, 0, 100);
-    partialBypassDT = MIN(partialBypassDT, targetDT);
+    targetDR = CLAMP(targetDR, 0, 95);
 
 
     int dmgMin = attack.DmgMin + attack.BonusDmg + attack.DmgMin * attack.SelectWeaponBonus(BONUS_WEAPON_MIN_DMG)/100;	
@@ -2009,17 +2002,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		rawDmg *= _dmgMul[i];
 
         rawDmg /= dmgDiv;
-        if(!FLAG(eff, HF_BYPASS_ARMOR) && partialBypassChance > 0 && Random(1, 100) <= partialBypassChance)
-        {
-            rawDmg -= partialBypassDT;
-            rawDmg -= (rawDmg * partialBypassDR) / 100;
-            partialBypassedRounds++;
-        }
-        else
-        {
-            rawDmg -= targetDT;
-            rawDmg -= (rawDmg * targetDR) / 100;
-        }
+        rawDmg -= targetDT;
+        rawDmg -= (rawDmg * targetDR) / 100;
         if(rawDmg > 0)
             totalDmg += rawDmg;
     }
@@ -2032,18 +2016,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	
     if(validAttacker)
     {
-        if(attack.Attacker.Perk[PE_LIVING_ANATOMY] != 0 &&  !(bt == BT_ALIEN || bt == BT_ROBOT))
-            totalDmg += 5;                                                                                      // Yes, pulse grenade works
         //if(attack.Attacker.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && (weapPid == PID_FIRE_HEX || weapPid == PID_MOLOTOV_COCKTAIL || ammoPid == PID_FIRE_HEX || ammoPid == PID_MOLOTOV_COCKTAIL))
 		if(attack.Attacker.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && target.Stat[ST_BURN_STACK] >= 0 && !valid(attack.Ammo))
 			totalDmg += Random(1, 2) * attack.Attacker.Perk[PE_PYROMANIAC];
 		else if(attack.Attacker.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && ammoPid != PID_SHOTGUN_DRAGON_BREATH_SHELLS)
-            totalDmg += 20 * attack.Attacker.Perk[PE_PYROMANIAC];
-		
-        if(attack.Attacker.Trait[TRAIT_FAST_SHOT] != 0)
-            totalDmg += 5;
-        if(attack.Attacker.Trait[TRAIT_HEAVY_HANDED] != 0 && attack.IsUnarmed)
-            totalDmg += 2;
+            totalDmg += 30 * totalDmg * attack.Attacker.Perk[PE_PYROMANIAC] / 100;
         
 		//druto
 		if(attack.Attacker.Trait[TRAIT_ONE_HANDER] != 0 && (!valid(realWeapon) || FLAG(realWeapon.Flags, ITEM_TWO_HANDS)))
@@ -2548,12 +2525,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         }
 		
         if(knockOut)
-            targetAp = quick ? -Random(maxAp, 3 * maxAp) / 3 : -Random(maxAp, 3 * maxAp);
+            targetAp = quick ? -5 : -1;
         
 		if(knockDown && !(target.IsKnockout() && map.IsTurnBased()))
             targetAp -= quick ? 1 : 3;
         	
-		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun ) && !target.IsKnockout() && target.Mode[MODE_NO_KNOCK] == 0)
+		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || knockbackFromCrit) && !target.IsKnockout() && target.Mode[MODE_NO_KNOCK] == 0)
         {
             //Log("jest knockOut albo knockDown");
 			int knockDist = knockDmg;
@@ -2569,8 +2546,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                     knockDist /= 2;
                 knockDist--;
 //Log("knockDist = " + knockDist);				
-                if(knockDist > 10)
-                    knockDist = 10;
+                if(knockDist > 15)
+                    knockDist = 15;
                 uint16 knockHx = attack.Hx; 
                 uint16 knockHy = attack.Hy;
                 if(knockDist > 0)
@@ -3021,12 +2998,10 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 	
         
 
-        int  partialBypassChance = GetPartialBypassChance(cr, false);
-        int  armorDT = cr.GetArmorDT(dmgType, false);
-		int  armorDR = cr.GetArmorDR(dmgType, false);	
+        int  bypassPower = GetBypassPower(cr, false);
+        int  armorDT = cr.GetArmorDT(dmgType, false) * bypassPower;
+		int  armorDR = cr.GetArmorDR(dmgType, false) * bypassPower;	
 		
-        int  partialBypassDR = targetDR - armorDR + (armorDR / 5);
-        int  partialBypassDT = targetDT - armorDT + (armorDT / 5);
 
         if(weapon.Weapon_Perk == WEAPON_PERK_PENETRATE)
             targetDT /= 5;
@@ -3038,22 +3013,16 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
             if(dmgType == DAMAGE_LASER || dmgType == DAMAGE_ELECTR || dmgType == DAMAGE_PLASMA)
 			{
 				targetDR += 15;
-				partialBypassDR += 15;
 			}
 		else
 			{
 				targetDR += 30;
-				partialBypassDR += 30;
 			}
         }
         targetDR += validAmmo ? ammo.Ammo_DrMod : 0;
-        partialBypassDR += validAmmo ? ammo.Ammo_DrMod : 0;
-        targetDR = CLAMP(targetDR, 0, 100);
+        targetDR = CLAMP(targetDR, 0, 95);
 
-        partialBypassDR = MIN(partialBypassDR, targetDR);
         targetDR = CLAMP(targetDR, 0, 100);
-        partialBypassDR = CLAMP(partialBypassDR, 0, 100);
-        partialBypassDT = MIN(partialBypassDT, targetDT);
 
         int dmgMin = _WeaponDmgMin(weapon, weaponUse) + _WeaponDmgMin(weapon, weaponUse) * attack.SelectWeaponBonus(BONUS_WEAPON_MIN_DMG)/100;
         int dmgMax = _WeaponDmgMax(weapon, weaponUse) + _WeaponDmgMax(weapon, weaponUse) * attack.SelectWeaponBonus(BONUS_WEAPON_MAX_DMG)/100;
@@ -3066,16 +3035,9 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         if(cr.Perk[PE_PYROMANIAC] != 0 && dmgType == DAMAGE_FIRE && ammoPid != PID_SHOTGUN_DRAGON_BREATH_SHELLS)
         	totalDmg += 30 * cr.Perk[PE_PYROMANIAC] * totalDmg / 100;
 
-        if(Random(1, 100) <= partialBypassChance)
-        {
-            totalDmg -= partialBypassDT;
-            totalDmg -= (totalDmg * partialBypassDR) / 100;
-        }
-        else
-        {
-            totalDmg -= targetDT;
-            totalDmg -= (totalDmg * targetDR) / 100;
-        }
+    
+        totalDmg -= targetDT;
+        totalDmg -= (totalDmg * targetDR) / 100;
 
         if(totalDmg < 0)
             totalDmg = 0;
@@ -3557,15 +3519,17 @@ Critter@ ChooseRandomTarget(Map& map, Critter& cr, Critter& target, uint wpnMaxD
     return null;
 }
 
-int GetPartialBypassChance(Critter& target, bool aimHead)
+int GetBypassPower(Critter& target, bool aimHead)
 {
     Item@ armor = _GetCritterArmor(target, aimHead);
     if(!valid(armor))
-        return 0;
-    int deterPercent = (100 * armor.Deterioration) / MAX_DETERIORATION;
+        return 1;
+    int deterPercent = armor.Deterioration;
     if(!armor.IsDeteriorable() || _CritHasExtMode(target, MODE_EXT_NO_DETERIORATION) || deterPercent <= 50)
-        return 0;
-    return ((deterPercent - 50) * 100) / 50;
+        return 1;
+    if(deterPercent >= 50)
+        return 1;
+    return deterPercent*2 / 100;
 }
 
 int AddCritRollWeapon(Item@ realWeapon)

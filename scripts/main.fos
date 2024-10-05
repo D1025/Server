@@ -217,6 +217,8 @@ bool start()
     SetSendParameter(PE_HTH_EVADE, true);
     SetSendParameter(PE_HTH_EVADE_II, true);
     SetSendParameter(PE_BETTER_CRITICALS, true);
+    SetSendParameter(PE_STONEWALL, true);
+    SetSendParameter(PE_IRON_GRIP, true);
     // SetSendParameter(ST_TURN_BASED_AC,true);
     // Agility
     SetSendParameter(ST_AGILITY, true);
@@ -230,6 +232,9 @@ bool start()
     SetSendParameter(ST_TURN_BASED_AC, true);
     // Strenght, uses battle timeout
     SetSendParameter(ST_STRENGTH, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_STRENGTH_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_PERCEPTION, true, "Utils.dll@_AllowParameterIfAwareness")
+    SetSendParameter(ST_PERCEPTION_EXT, true, "Utils.dll@_AllowParameterIfAwareness")
     // Battle timeout
     SetSendParameter(TO_BATTLE, true);
     SetSendParameter(TO_SK_FIRST_AID, true, "Utils.dll@_AllowParameterIfLivingAnatomy");
