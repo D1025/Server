@@ -2511,7 +2511,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			target.ToDead(anim2Dead, attacker);
     }
     else 
-	if(isKo)
+	if(isKo || isShotgun || knockbackFromCrit)
     {
         //Log("isKo = True");
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
@@ -2525,7 +2525,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         }
 		
         if(knockOut)
-            targetAp = quick ? -5 : -1;
+            targetAp = quick ? -1 : -4;
         
 		if(knockDown && !(target.IsKnockout() && map.IsTurnBased()))
             targetAp -= quick ? 1 : 3;
