@@ -37,7 +37,7 @@ bool _TentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery
 			cr.Say(SAY_NETMSG, "Book assigned to " + cr.Name + ".");
 			for (int i = 0; i < 2; i++)
             {
-                cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
+                cr.StatBase[ST_EXPERIENCE]+=NextLevelNeedExp(cr);
                 if(item.Val0<2)
                     DeleteItem(item);
                 else
@@ -67,7 +67,7 @@ bool _TentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery
 			{
 			    for (int i = 0; i < item.Val0; i++)
                 {
-                    cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
+                    cr.StatBase[ST_EXPERIENCE]+=NextLevelNeedExp(cr);
                 }
                 DeleteItem(item);
                 return(true);
