@@ -1986,10 +1986,8 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 458, 2, 1 }, // Retention, Disabled, 1 ranks
+	{ 458, 0, 1 }, // Retention, Disabled, 1 ranks
 	{ // level 1 requirements
-		4, 1, 7, // Intelligence at least 7
-		212, 1, 75, // Science at least 75
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
