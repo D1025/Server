@@ -80,7 +80,7 @@ bool _TentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery
             }
             for (int i = 0; i < nextPerkLevel; i++)
             {
-                cr.StatBase[ST_EXPERIENCE]=NextLevelNeedExp(cr);
+                cr.StatBase[ST_EXPERIENCE]+=NextLevelNeedExp(cr);
                 if(item.Val0<2)
                     DeleteItem(item);
                 else
