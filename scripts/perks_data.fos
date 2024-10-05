@@ -268,7 +268,7 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 320, 0, 1 }, // Healer, Levelling, 1 ranks  //ENABLED, UNMERGED WITH MEDIC
+	{ 320, 0, 2 }, // Healer, Levelling, 1 ranks  //ENABLED, UNMERGED WITH MEDIC
 	{ // level 1 requirements
 		206, 1, 100, // First aid at least 90
 	},
