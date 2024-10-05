@@ -233,8 +233,8 @@ bool start()
     // Strenght, uses battle timeout
     SetSendParameter(ST_STRENGTH, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_STRENGTH_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
-    SetSendParameter(ST_PERCEPTION, true, "Utils.dll@_AllowParameterIfAwareness")
-    SetSendParameter(ST_PERCEPTION_EXT, true, "Utils.dll@_AllowParameterIfAwareness")
+    SetSendParameter(ST_PERCEPTION, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_PERCEPTION_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
     // Battle timeout
     SetSendParameter(TO_BATTLE, true);
     SetSendParameter(TO_SK_FIRST_AID, true, "Utils.dll@_AllowParameterIfLivingAnatomy");
