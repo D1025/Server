@@ -1552,6 +1552,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         return;
     }
 
+    int critLevel = 0;
+    int roll = 0;
+
     if(target.Mode[MODE_HIDE] != 0 && (!target.IsPlayer() || target.GetAccess() == ACCESS_CLIENT))
         target.ModeBase[MODE_HIDE] = 0;
 
@@ -1570,7 +1573,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         aim_--;
 
 		
-        int roll = attacker.Stat[ST_LUCK] * 3 + attack.SelectWeaponBonus(BONUS_WEAPON_CRITICAL_ROLL);
+        roll += attacker.Stat[ST_LUCK] * 3 + attack.SelectWeaponBonus(BONUS_WEAPON_CRITICAL_ROLL);
 		
 		//if(isWeaponBetterCriticals)  
 			//roll += 10;  // +30 dla testów
@@ -1595,7 +1598,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             if(attack.SilentDeathEffect)
                 roll += 10;
         }
-        int critLevel = 0;
+
         if(roll <= 29)
             critLevel = 0;
         else if(roll <= 44)
@@ -1936,20 +1939,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     int partialBypassDR = targetDR - armorDR + (armorDR / 4);
     int partialBypassDT = targetDT - armorDT + (armorDT / 4);
 
-    if(FLAG(eff, HF_BYPASS_ARMOR) && dmgType != DAMAGE_EMP)
-    {
-        targetDT /= 4; // bylo /5
-        targetDR /= 4; // bylo /5
-        targetDR -= (valid(attacker) ? (attacker.Trait[TRAIT_FINESSE] != 0 ? 30 : 0) : 0);
-    }
-    else if(weaponPerk == WEAPON_PERK_PENETRATE)
-        targetDT /= 5;
-    else if(COMBAT_AMMO_AP(attack.Ammo))
-        targetDT /= attack.Ammo.Ammo_DTDiv;
-	else if(isThrust)
-		targetDT /= 2;
-	
-	
 
     if(validAttacker && attacker.Trait[TRAIT_FINESSE] != 0)
     {
@@ -1966,9 +1955,32 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     }
     targetDR += attack.DRMod;   // Always
     partialBypassDR += attack.DRMod;
-	
-	
-	
+
+    if(FLAG(eff, HF_BYPASS_ARMOR) && dmgType != DAMAGE_EMP)
+    {
+        if(critLevel == 4)
+        {
+            targetDT = 0;
+            targetDR = 0;
+        }
+        else if(critLevel == 3)
+        {
+            targetDT /= 4;
+            targetDR -= roll;
+        }
+        else if(critLevel == 2)
+        {
+            targetDT /= 2;
+            targetDR -= roll/2;
+        }
+        targetDR -= (valid(attacker) ? (attacker.Trait[TRAIT_FINESSE] != 0 ? 30 : 0) : 0);
+    }
+    else if(weaponPerk == WEAPON_PERK_PENETRATE)
+        targetDT /= 5;
+    else if(COMBAT_AMMO_AP(attack.Ammo))
+        targetDT /= attack.Ammo.Ammo_DTDiv;
+	else if(isThrust)
+		targetDT /= 2;
 
     partialBypassDR = MIN(partialBypassDR, targetDR);
     targetDR = CLAMP(targetDR, 0, 100);
