@@ -2535,7 +2535,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             //Log("jest knockOut albo knockDown");
 			int knockDist = knockDmg;
 			//Log("knockDist = " + knockDist);
-            if(((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun || weaponPerk == WEAPON_PERK_KNOCKBACK) && target.IsCanWalk()) || knockbackFromCrit)
+            if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun || weaponPerk == WEAPON_PERK_KNOCKBACK || knockbackFromCrit) && target.IsCanWalk())
             {
 				//Log(" bron jest WS_MELEE");
 				if(weaponPerk == WEAPON_PERK_KNOCKBACK)
