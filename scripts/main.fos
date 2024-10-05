@@ -222,6 +222,7 @@ bool start()
     // SetSendParameter(ST_TURN_BASED_AC,true);
     // Agility
     SetSendParameter(ST_AGILITY, true);
+    SetSendParameter(ST_AGILITY_EXT, true);
     // Hit points, uses Strenght and Endurance
     SetSendParameter(ST_MAX_LIFE, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_MAX_LIFE_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
@@ -230,17 +231,21 @@ bool start()
     SetSendParameter(ST_CRITICAL_POWER, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_HEALTH_LEVEL, true);
     SetSendParameter(ST_TURN_BASED_AC, true);
-    // Strenght, uses battle timeout
-    SetSendParameter(ST_STRENGTH, true, "Utils.dll@_AllowParameterIfAwareness");
-    SetSendParameter(ST_STRENGTH_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
-    SetSendParameter(ST_PERCEPTION, true, "Utils.dll@_AllowParameterIfAwareness");
-    SetSendParameter(ST_PERCEPTION_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
+    // Strenght
+    SetSendParameter(ST_STRENGTH, true);
+    SetSendParameter(ST_STRENGTH_EXT, true);
+    // Perception
+    SetSendParameter(ST_PERCEPTION, true);
+    SetSendParameter(ST_PERCEPTION_EXT, true);
+    // Endurance
+    SetSendParameter(ST_ENDURANCE, true);
+    SetSendParameter(ST_ENDURANCE_EXT, true);
+    // Luck
+    SetSendParameter(ST_LUCK, true);
+    SetSendParameter(ST_LUCK_EXT, true);
     // Battle timeout
     SetSendParameter(TO_BATTLE, true);
     SetSendParameter(TO_SK_FIRST_AID, true, "Utils.dll@_AllowParameterIfLivingAnatomy");
-    // Endurance
-    SetSendParameter(ST_ENDURANCE, true, "Utils.dll@_AllowParameterIfAwareness");
-    SetSendParameter(ST_ENDURANCE_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
     // Injures
     SetSendParameter(DAMAGE_EYE, true);
     SetSendParameter(DAMAGE_RIGHT_ARM, true);

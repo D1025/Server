@@ -254,7 +254,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     {
         if(weaponSubtype == WS_GUN)
             AddScore(cr, SCORE_SHOOTER, 1);
-        //else if(skillNum == SK_MELEE_WEAPONS || skillNum == SK_THROWING)
 		else if(skillNum == SK_UNARMED || skillNum == SK_THROWING)
             AddScore(cr, SCORE_MELEE, 1);
         else if(skillNum == SK_UNARMED)
@@ -1455,13 +1454,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     uint     extraMessageSelf = 0;
     bool     isShotgun = (valid(attack.Ammo) && (attack.Ammo.Ammo_Caliber == 11));
     bool     isMelee = (attack.WeaponSubtype == WS_UNARMED);
-	//bool     isFireGeckoShell = (valid(attack.Ammo) && (attack.Ammo.ProtoId == PID_SHOTGUN_DRAGON_BREATH_SHELLS));
 	uint16   ammoPid = attack.ammoPid;
     if(valid(attack.Ammo)) ammoPid = attack.Ammo.ProtoId;
 
 	bool     isBanhammer = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_BAN_HAMMER : false);
 	bool     isHolySpear = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_HOLY_SPEAR : false);
-	//bool     isWeaponBetterCriticals = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_TURBO_PLASMA_RIFLE : false);
 	
     bool     targetIsPlayer = target.IsPlayer();
     bool     attackerIsPlayer = (valid(attacker) ? attacker.IsPlayer() : false);
@@ -1472,8 +1469,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     bool     isThrustThrowWeapon = (valid(realWeapon) ? (weapPid == 9916 || weapPid == 618 || weapPid == 320 || weapPid == 280 || weapPid == 7) : false);
 
 	bool     knockbackFromCrit = false;
-	//bool     isPrimitiveWeapon = (valid(realWeapon) ? (weapPid == PID_SPIKED_KNUCKLES || weapPid == PID_BRASS_KNUCKLES || weapPid == PID_LOUISVILLE_SLUGGER || weapPid == PID_SLEDGEHAMMER || weapPid == PID_WRENCH || weapPid == PID_WAKIZASHI_BLADE || weapPid == PID_SWITCHBLADE || weapPid == PID_SHIV || weapPid == PID_LIL_JESUS_WEAPON || weapPid == PID_COMBAT_KNIFE || weapPid == PID_ROCK || weapPid == PID_SPEAR || weapPid == PID_CLUB || weapPid == PID_KNIFE || weapPid == PID_CROWBAR) : false);
-	
 
 	array<int>	_dmgMul;
 	_dmgMul.resize(rounds);
@@ -1481,8 +1476,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	{
 		_dmgMul[i] = dmgMul;
 	}
-	
-
 
 	//#################################################
 	//### IMPLEMENTACJA melee attack swing i thrust ###
@@ -1490,12 +1483,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	uint8 use=_WeaponModeUse(attack.weaponMode);
 	bool isSwing=false;
 	bool isThrust=false;
-	//if(attackerIsPlayer)
-	//{
-		//Log(" Use mode = " + use);
-		//Log(" attack.WeaponSubtype [WS_UNARMED==1] = " + attack.WeaponSubtype);
-	//}
-	
     
 	if (isThrustThrowWeapon)  // bronie, ktore maja zamienione primary_attack mode swing na thrust 
 	{
@@ -1520,17 +1507,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			isThrust=true;			
 		}		
 	}
- 
-	/*  // 30-08-2011 Cubik: bron spear itp w trybie Throwing NIE jest traktowana jako attack.WeaponSubtype == WS_MELEE!!! wiec ponizsze instrukcje sa niepotrzebne
-		if((attack.weaponPid==7) || (attack.weaponPid==280) || (attack.weaponPid==320) || (attack.weaponPid==45))  // spear/sharpened spear/sharpened pole/throw knives maja na primary atak thrust a nie swing i stad ta konwersja
-		{
-			isThrust=false;
-			isSwing=false;
-			Log("Uzywasz broni typu spear w trybie swing zamienionym na tryb throw, ktory nie jest modyfikowany jako swing czy thrust, lecz jest to zwykle uderzenie (throw dla spear jest jako primary atak)");
-		}  
-	*/
-	
-	
 	
     if(target.IsDead() || !valid(map))
         return;
@@ -1565,18 +1541,15 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     if(target.Mode[MODE_INVULNERABLE] != 0)
         isCritical = false;
     else 
-	if(isCritical || rounds>1)  // CRITICAL EFFECT
+	if(isCritical)  // CRITICAL EFFECT
     {
 		int aim_ = aim;
         if(aim_ == HIT_LOCATION_NONE)
             aim_ = HIT_LOCATION_UNCALLED;
         aim_--;
 
-		
         roll += attacker.Stat[ST_LUCK] * 3 + attack.SelectWeaponBonus(BONUS_WEAPON_CRITICAL_ROLL);
-		
-		//if(isWeaponBetterCriticals)  
-			//roll += 10;  // +30 dla testów
+	
 		roll +=AddCritRollWeapon(realWeapon); //05-03-2014 Cubil: bonus bazowy do broni do crit rolla
 		
         if(target.Perk[PE_MAN_OF_STEEL] > 0)
@@ -1626,63 +1599,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
         uint offset = (bt > BT_BIG_BAD_BOSS ? 1 : bt) * 9 * 6 * 7 + aim_ * 6 * 7 + critLevel * 7;
 		
-		if(rounds>1)
-		{
-		// do nothing
-			/*if(!isCritical)
-			{
-				uint max_ilosc_krytyczne = 70*rounds/100;
-				if(max_ilosc_krytyczne<0) max_ilosc_krytyczne=0;				
-				
-				for(uint i = 0; i < max_ilosc_krytyczne; i++)
-				{
-					if(Random(1,100)<=CriticalChance)
-					{
-						_dmgMul[i] *= CriticalTable[offset];											
-						_dmgMul[i] >>= 1;
-					}
-					
-					
-					//if(attackerIsPlayer)
-					//Log("_dmgMul["+i+"] " + _dmgMul[i]);
-				}
-				
-				for(uint i = max_ilosc_krytyczne; i < rounds; i++)
-				{		
-					//if(attackerIsPlayer)
-					//Log("_dmgMul["+i+"] " + _dmgMul[i]);
-				}
-			}
-			else
-			if(isCritical)
-			{
-				uint min_ilosc_krytyczne = 80*rounds/100;
-				if(min_ilosc_krytyczne<=0) min_ilosc_krytyczne=1;
-				
-				for(uint i = 0; i < min_ilosc_krytyczne; i++)
-				{
-					_dmgMul[i] *= CriticalTable[offset];											
-					_dmgMul[i] >>= 1;
-				
-					//if(attackerIsPlayer)
-					//Log("_dmgMul["+i+"] " + _dmgMul[i]);
-				}
-				
-				for(uint i = min_ilosc_krytyczne; i < rounds; i++)
-				{
-					if(Random(1,100)<=CriticalChance)
-					{
-						_dmgMul[i] *= CriticalTable[offset];											
-						_dmgMul[i] >>= 1;
-					}
-					
-					
-					//if(attackerIsPlayer)
-					//Log("_dmgMul["+i+"] " + _dmgMul[i]);
-				}
-			} */
-		}
-		else // jezeli pojedynczy strzal to warunek ze krytyczny wczesniej spelniony i zawsze obliczaj tego krytyka
+		if(rounds<=1)
+        // jezeli pojedynczy strzal to warunek ze krytyczny wczesniej spelniony i zawsze obliczaj tego krytyka
 		{
 			_dmgMul[0] *= CriticalTable[offset];
 			_dmgMul[0] >>= 1;
@@ -1691,11 +1609,14 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		if(isCritical && !(target.Trait[TRAIT_BONEHEAD] != 0 && (aim == HIT_LOCATION_HEAD || aim == HIT_LOCATION_EYES)))
 		{
 			eff = CriticalTable[offset + 1];
-			int  stat = CriticalTable[offset + 2];
-			int  statMod = CriticalTable[offset + 3];
+			//int  stat = CriticalTable[offset + 2];
+			//int  statMod = CriticalTable[offset + 3];
 
 			uint cMessage = CriticalTable[offset + 5];
 			uint cFailureMessage = CriticalTable[offset + 6];
+
+            if((aim == HIT_LOCATION_TORSO && critLevel > 1))
+                knockbackFromCrit = true;
 
 			// OLD, but keep for reference (for now):
 			// Get data for player body type
@@ -1716,12 +1637,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 			if(weaponPerk == WEAPON_PERK_ENHANCED_KNOCKOUT)
 				SETFLAG(eff, HF_KNOCKDOWN);
-				
-			//if(weaponPerk == WEAPON_PERK_KNOCKBACK)
-            //    SETFLAG(eff, HF_KNOCKDOWN);
 
-            if((aim == HIT_LOCATION_TORSO && critLevel > 1))
-                knockbackFromCrit = true;
 
             if(FLAG(eff, HF_KNOCKOUT)) {
 			    if(isMelee) {
@@ -1780,7 +1696,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                     UNSETFLAG(eff, HF_CRIPPLED_RIGHT_LEG);
                 }
 			}
-				//msgEff = eff;
 			if(FLAG(eff, HF_CRIPPLED_LEFT_ARM)) {
 			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
 			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
@@ -1800,38 +1715,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			if(target.Mode[MODE_NO_LOOSE_LIMBS] != 0)
 			{
 				UNSETFLAG(eff, (HF_CRIPPLED_LEFT_LEG | HF_CRIPPLED_RIGHT_LEG | HF_CRIPPLED_LEFT_ARM | HF_CRIPPLED_RIGHT_ARM | HF_RANDOM));
-				msgEff = eff;
 			}
-			else
-			{
-				msgEff = eff;
-                // TODO: delete
-				/*if(FLAG(eff, HF_RANDOM))
-				{
-					UNSETFLAG(eff, HF_RANDOM);
-					switch(Random(1, 4))
-					{
-					case 1:
-						if(target.Perk[PE_IRON_GRIP] == 0 || Random(1, 10) > target.Stat[ST_ENDURANCE] - 5)
-							SETFLAG(eff, HF_CRIPPLED_LEFT_LEG);
-						break;
-					case 2:
-						if(target.Perk[PE_IRON_GRIP] == 0 || Random(1, 10) > target.Stat[ST_ENDURANCE] - 5)
-							SETFLAG(eff, HF_CRIPPLED_RIGHT_LEG);
-						break;
-					case 3:
-						if(target.Perk[PE_IRON_GRIP] == 0 || Random(1, 10) > target.Stat[ST_ENDURANCE])
-							SETFLAG(eff, HF_CRIPPLED_LEFT_ARM);
-						break;
-					case 4:
-						if(target.Perk[PE_IRON_GRIP] == 0 || Random(1, 10) > target.Stat[ST_ENDURANCE])
-							SETFLAG(eff, HF_CRIPPLED_LEFT_LEG);
-						break;
-					default:
-						break;
-					}
-				}*/
-			}
+			msgEff = eff;
 			if(target.Mode[MODE_NO_DROP] != 0 && FLAG(eff, HF_CRIPPLED_RIGHT_ARM)) {
 			    int enemyStat = ((critLevel-2) * -5) + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT];
 			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
@@ -1851,31 +1736,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	}     
 	// isCritical end
 	
-	
-    /*if(validAttacker && (weaponPerk == WEAPON_PERK_ENHANCED_KNOCKOUT))
-	{
-		//Log("Bron melee z perkiem Knockback");
-		if(Random(1, 100) <= (attacker.Stat[ST_STRENGTH]) - 8)
-		{
-            SETFLAG(eff, HF_KNOCKOUT);
-			//Log("Bron melee z perkiem Knockback >>> Ustawiona Flaga na Knockout ");
-		}
-	}*/
-
-    /*if(validAttacker && ((weaponPerk == WEAPON_PERK_KNOCKBACK) || isShotgun))
-	{
-		//Log("Bron melee z perkiem Knockback");
-		if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
-		{
-            SETFLAG(eff, HF_KNOCKDOWN);
-			//Log("Bron melee z perkiem Knockback >>> Ustawiona Flaga na Knockout ");
-		}
-		if (isShotgun)
-		    SETFLAG(eff, HF_KNOCKDOWN);
-	}*/
-			
-    // not messaged
-
     // Heavy Handed Trait
     if(validAttacker && attack.IsUnarmed && attacker.Trait[TRAIT_HEAVY_HANDED] > 0)
     {
@@ -1897,35 +1757,17 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	{		
 		if(ammoPid == PID_SHOTGUN_SHELLS_EMP) dmgType=DAMAGE_EMP; // jesli uzywane ammo typu EMP to zmien dmtype broni
 		if(ammoPid == PID_SHOTGUN_DRAGON_BREATH_SHELLS) dmgType=DAMAGE_FIRE; // jesli uzywane ammo typu FIRE to zmien dmtype broni
-		//Log("ammoPid= " + ammoPid);
 	}
 	
 	
 	// #############################################
 	// ## Obliczenia melee attack swing i thrust  ##
 	// #############################################
-	if(isSwing) // dziala podobnie jak ammo JHP wg oryginalnej formuly
-	{
-		//if((targetDT == 0) && (targetDR < 15))   // ustawianie wyzszej DR dla "golasow" dla zredukowania bardzo duzych wartosci damage 
-		//{
-		//	targetDR=15;
-		//}
-		
-		//dmgMul*=5;
-		//targetDR+=59;
-		//targetDR=CLAMP(targetDR,0,100);
-		//targetDT/=0.15;    	
-	}	
-	
 	if(isThrust)  // dziala podobnie jak ammo AP wg oryginalnej formuly
 	{		
 		attack.DMMod = 4;		
 		attack.DDMod = 5;
 		attack.DRMod = -40;
-		
-		//targetDR-=40;
-		//targetDR=CLAMP(targetDR,0,100);
-		//targetDT/=2;
 	} 
 	// swing:thrust END	
     
@@ -1993,10 +1835,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	
     for(uint i = 0; i < rounds; i++)
     {
-        //if(isPrimitiveWeapon)
 		rawDmg = Random(dmgMin, dmgMax) * CalculateDamageReduction(attack.RealWeapon);
-		//else
-		//rawDmg=0;
 		
         _dmgMul[i] *= attack.DMMod;
 		rawDmg *= _dmgMul[i];
@@ -2007,12 +1846,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         if(rawDmg > 0)
             totalDmg += rawDmg;
     }
-	
-	//if(attackerIsPlayer) 
-	//{
-	//	Log("dmg = " + totalDmg);
-	//	Log("-------------------");
-	//}
 	
     if(validAttacker)
     {
@@ -2028,9 +1861,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		if(attack.Attacker.Trait[TRAIT_KAMIKAZE] != 0)
 			totalDmg *= 1.1;
     }
-
-	//if(!isPrimitiveWeapon) totalDmg=0;
-	
 	
     // 0x00000001 - knockout
     // 0x00000002 - knockdown
@@ -2137,7 +1967,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		isKo = true;
         knockDown = true;
     }
-    //else if((dmgType == DAMAGE_EXPLODE) && (totalDmg > 9))
 	else	
 	if((dmgType == DAMAGE_EXPLODE) && (totalDmg > 9) && valid(realWeapon) && realWeapon.Proto.ProtoId!=PID_DYNACORD) //25-07-2013 Cubik: dynacord nie bedzie przewracal, miny, plastiki i dynamit beda wywracac		
 	{		
@@ -2239,7 +2068,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         totalDmg = totalDmg * (100 - ac) / 100;
     }
 
-
     if(totalDmg > 0)
     {
         if(target.Mode[MODE_INVULNERABLE] == 0)
@@ -2290,10 +2118,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         attackFront = false;
 
 
-
-		
-	
-		
     int   armorDr = target.GetDR(dmgType, attack.AimHead);
     Item@ armor_ = _GetCritterArmor(target, attack.AimHead);
 	

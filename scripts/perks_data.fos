@@ -1993,7 +1993,7 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 458, 0, 1 }, // Retention, Disabled, 1 ranks
+	{ 458, 2, 1 }, // Retention, Disabled, 1 ranks
 	{ // level 1 requirements
 	},
 #ifdef __SERVER
