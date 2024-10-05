@@ -272,12 +272,20 @@ int[][] PerksData = {
 	{ // level 1 requirements
 		206, 1, 100, // First aid at least 90
 	},
+	{
+	    206, 1, 150, // First aid at least 150
+	    },
 #ifdef __SERVER
 	{ // level 1 perk up effects
 	},
+		{ // level 1 perk up effects
+    	},
 	{ // level 1 perk down effects
 		-1 // Just revert
 	},
+		{ // level 1 perk down effects
+    		-1 // Just revert
+    	},
 #endif
 
 	{ 321, 2, 1 }, // Fortune Finder, Disabled, 1 ranks
@@ -452,8 +460,7 @@ int[][] PerksData = {
 	{ 333, 0, 1 }, // Medic, Levelling, 1 ranks
 	{ // level 1 requirements
 		206, 1, 180, // First aid at least 150
-		320, 1, 1, // Healer at least 1
-		439, 1, 1, // Healer II at least 1
+		320, 1, 2, // Healer at least 2
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1757,7 +1764,7 @@ int[][] PerksData = {
 		-1 // Just revert
 	},
 #endif
-	{ 439, 0, 1 }, // Healer+, Leveling, 1 ranks
+	{ 439, 2, 1 }, // Healer+, Leveling, 1 ranks
 	{ // level 1 requirements
 		206, 1, 140, // First aid at least 100
 		320, 1, 1, // Healer perk at least 1
