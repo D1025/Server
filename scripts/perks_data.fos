@@ -274,7 +274,7 @@ int[][] PerksData = {
 	},
 	{
 	    206, 1, 150, // First aid at least 150
-	    },
+	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
 	},

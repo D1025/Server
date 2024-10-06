@@ -2949,12 +2949,12 @@ void map_critter_in(Map& map, Critter& cr)
 			cr.TimeoutBase[TO_GOD_MODE] = __FullSecond + REAL_SECOND( 1 );
 			CreateTimeEvent( __FullSecond + REAL_SECOND( 1 ), "e_refresh_fov", cr.Id, true );
 
-			Item@ blocker = map.AddItem( cr.HexX, cr.HexY, PID_UNVISIBLE_BLOCK, 1 );		// Players cannot step/spawn on that hex. Removed at timeout end.
-			if( valid( blocker ) )
-			{
-				GameVar@ spawn_blocker = GetLocalVar( LVAR_spawn_blocker, cr.Id );
-				spawn_blocker = blocker.Id;
-			}
+			//Item@ blocker = map.AddItem( cr.HexX, cr.HexY, PID_UNVISIBLE_BLOCK, 1 );		// Players cannot step/spawn on that hex. Removed at timeout end.
+			//if( valid( blocker ) )
+			//{
+				//GameVar@ spawn_blocker = GetLocalVar( LVAR_spawn_blocker, cr.Id );
+				//spawn_blocker = blocker.Id;
+			//}
 		}
 	}	
 	
@@ -3095,15 +3095,15 @@ void map_critter_in(Map& map, Critter& cr)
 uint e_refresh_fov( uint[] @ values )
 {
     Critter@ cr = GetCritter( values[ 0 ] );
-    GameVar@ spawn_blocker = GetLocalVar( LVAR_spawn_blocker, values[ 0 ] );
-    if( valid( spawn_blocker ) )
-    {
-        Item@ block = ::GetItem( spawn_blocker.GetValue() );
-        if( valid( block ) )
-            DeleteItem( block );
+    //GameVar@ spawn_blocker = GetLocalVar( LVAR_spawn_blocker, values[ 0 ] );
+    //if( valid( spawn_blocker ) )
+    //{
+        //Item@ block = ::GetItem( spawn_blocker.GetValue() );
+        //if( valid( block ) )
+            //DeleteItem( block );
 
-        spawn_blocker = 0;
-    }
+        //spawn_blocker = 0;
+    //}
     if( valid( cr ) && cr.IsPlayer() )
     {
         if( cr.Timeout[ TO_GOD_MODE ] == 0 )
