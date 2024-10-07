@@ -270,6 +270,31 @@ EXPORT int getParam_Hp(CritterMutual& cr, uint)
 	return cr.Params[ST_CURRENT_HP];
 }
 
+EXPORT int getParam_HpHead(CritterMutual& cr, uint)
+{
+	return cr.Params[ST_HP_HEAD];
+}
+
+EXPORT int getParam_HpLa(CritterMutual& cr, uint)
+{
+	return cr.Params[ST_HP_LA];
+}
+
+EXPORT int getParam_HpRa(CritterMutual& cr, uint)
+{
+	return cr.Params[ST_HP_RA];
+}
+
+EXPORT int getParam_HpLl(CritterMutual& cr, uint)
+{
+	return cr.Params[ST_HP_LL];
+}
+
+EXPORT int getParam_HpRl(CritterMutual& cr, uint)
+{
+	return cr.Params[ST_HP_RL];
+}
+
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_MAX_LIFE] + CLAMP(cr.Params[ST_LEVEL], 0, 30)* getParam_Endurance(cr, 0)/2 + cr.Params[ST_MAX_LIFE_EXT];

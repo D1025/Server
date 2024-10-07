@@ -568,6 +568,11 @@
 #define ST_FACTION_RANK                          (121) // Rank ranging from 0-5.
 #define ST_FACTION_MODE                          (122) // Npc faction guard mode.
 // 121..150
+#define ST_HP_HEAD                               (123) // Used in engine
+#define ST_HP_LA                                 (124) // Used in engine
+#define ST_HP_RA                                 (125) // Used in engine
+#define ST_HP_LL                                 (126) // Used in engine
+#define ST_HP_RL                                 (127) // Used in engine
 #define ST_REP_DECAY                             (130) // for slow reputation decay in critter_idle
 #define ST_SCENARIO                              (131) // index of the scenario critter participates in actually (it was rather for some prototype, not used currently)
 #define ST_WEAPON_BLUEPRINTS                     (132)

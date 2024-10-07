@@ -136,6 +136,11 @@ void overseer(Critter& overseer, bool firstTime)
 		overseer.StatBase[ST_KILL_EXPERIENCE] = 2500;
 		overseer.StatBase[ST_MAX_LIFE] = 3000;
 		overseer.StatBase[ST_CURRENT_HP] = 3000;
+		overseer.StatBase[ST_HP_HEAD] = 1500;
+		overseer.StatBase[ST_HP_LA] = 750;
+		overseer.StatBase[ST_HP_RA] = 750;
+		overseer.StatBase[ST_HP_LL] = 750;
+		overseer.StatBase[ST_HP_RL] = 750;
 	}
 	
 	_CritSetMode(overseer, MODE_NO_STEAL);

@@ -23,6 +23,12 @@ Item@ SelectSkillItem(Critter& cr, Item@ item, uint16 skill)
     return item;
 }
 
+bool _CritAtLeastOneLimbNotOnFull(Critter& cr)
+{
+    int maxHp = cr.StatBase[ST_MAX_LIFE];
+    return cr.Stat[ST_HP_HEAD] < maxHp || cr.Stat[ST_HP_LA] < maxHp || cr.Stat[ST_HP_RA] < maxHp || cr.Stat[ST_HP_LL] < maxHp || cr.Stat[ST_HP_RL] < maxHp;
+}
+
 bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 {
 /*
@@ -41,7 +47,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         return true;
     }
 
-    if(!_CritNeedFirstAid(targetCr))
+    if(!_CritNeedFirstAid(targetCr) && !_CritAtLeastOneLimbNotOnFull(targetCr))
     {
         if(_CritNeedDoctor(targetCr))
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NOFIRSTAID_NEEDDOCTOR);
@@ -79,9 +85,15 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 	heal = heal * (100 - targetCr.Stat[ST_POISONING_LEVEL]) / 100;
     int curHp = targetCr.Stat[ST_CURRENT_HP];
     int maxHp = GetActualMaxHp(targetCr);
+    targetCr.StatBase[ST_HP_HEAD] += heal / 4;
+    targetCr.StatBase[ST_HP_LA] += heal / 4;
+    targetCr.StatBase[ST_HP_RA] += heal / 4;
+    targetCr.StatBase[ST_HP_LL] += heal / 4;
+    targetCr.StatBase[ST_HP_RL] += heal / 4;
     if(curHp + heal > maxHp)
         heal = maxHp - curHp;
     targetCr.StatBase[ST_CURRENT_HP] += heal;
+
 
     if(is_self)
         VerboseAction(cr, "patches wounds");
@@ -130,7 +142,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
     //if((!_CritNeedDoctor(targetCr)) && !targetCr.IsKnockout() )
-    if((!_CritNeedDoctor(targetCr)) && (cr.Perk[PE_MEDIC] == 0 || !targetCr.IsKnockout()) )   //version with Medic perk required to remove KO 
+    if((!_CritNeedDoctor(targetCr) && !_CritAtLeastOneLimbNotOnFull(targetCr)) && (cr.Perk[PE_MEDIC] == 0 || !targetCr.IsKnockout()))   //version with Medic perk required to remove KO
     {
         if(_CritNeedFirstAid(targetCr))
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NODOCTOR_NEEDFIRSTAID);
@@ -150,14 +162,17 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         cr.ParamBase[MODE_HIDE] = 0;
 
     int sk = cr.Skill[SK_DOCTOR];
+    int toolBonus = 0;
 
     @item = SelectSkillItem(cr, item, SK_DOCTOR);
     if(valid(item))
     {
-        sk += item.Proto.Misc_ToolSkillBonus;
+        toolBonus += item.Proto.Misc_ToolSkillBonus;
         if(Random(0, 30) == 0)
             cr.DeleteItem(item.GetProtoId(), 1);
     }
+    sk += toolBonus;
+    int heal = ((sk + (cr.Perk[PE_HEALER] == 1 ? 50 : 0) + (cr.Perk[PE_HEALER] == 2 ? 100 : 0)) / 2) * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100;
 
     int uninjured = 0;
     int injured = 0;
@@ -167,7 +182,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         if(!_CritHasInjureBody(targetCr, i))
             continue;
         injured++;
-        if(sk > Random(5, 95))
+        if(sk >= 100)
         {
             _CritUninjureBody(targetCr, i);
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_HEAL_DMG(i - DAMAGE_POISONED));
@@ -177,7 +192,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         {
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NOHEAL_DMG(i - DAMAGE_POISONED));
         }
-        sk -= 35;
+        sk -= 100;
     }
 
     //if(targetCr.IsKnockout())
@@ -187,7 +202,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
 	//druto
-	_SetTimeout(cr, TO_SK_DOCTOR, DOCTOR_TIMEOUT(cr)/2);
+	_SetTimeout(cr, TO_SK_DOCTOR, REAL_SECOND(90/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
 
     if(uninjured > 0)
     {
@@ -211,6 +226,12 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
            else
                 VerboseAction( cr, targetCr, "TODO uninjured=0 TARGET" );*/
     }
+
+    cr.StatBase[ST_HP_HEAD] += heal;
+    cr.StatBase[ST_HP_LA] += heal;
+    cr.StatBase[ST_HP_RA] += heal;
+    cr.StatBase[ST_HP_LL] += heal;
+    cr.StatBase[ST_HP_RL] += heal;
 
     if(cr.IsPlayer())
     {

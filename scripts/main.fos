@@ -226,6 +226,11 @@ bool start()
     // Hit points, uses Strenght and Endurance
     SetSendParameter(ST_MAX_LIFE, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_MAX_LIFE_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_HP_HEAD, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_HP_LA, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_HP_RA, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_HP_LL, true, "Utils.dll@_AllowParameterIfAwareness");
+    SetSendParameter(ST_HP_RL, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_LEVEL, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_CURRENT_HP, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_CRITICAL_POWER, true, "Utils.dll@_AllowParameterIfAwareness");
@@ -2106,7 +2111,13 @@ void critter_init(Critter& cr, bool firstTime)
             cr.TagSkillBase[TAG_SKILL3] = 0;
 
         CritterGenerate(cr);
-        cr.StatBase[ST_CURRENT_HP] = GetActualMaxHp(cr);
+        int maxHp = GetActualMaxHp(cr);
+        cr.StatBase[ST_CURRENT_HP] = maxHp;
+        cr.StatBase[ST_HP_HEAD] = maxHp/2;
+        cr.StatBase[ST_HP_LA] = maxHp/2;
+        cr.StatBase[ST_HP_RA] = maxHp/2;
+        cr.StatBase[ST_HP_LL] = maxHp/2;
+        cr.StatBase[ST_HP_RL] = maxHp/2;
         cr.StatBase[ST_CURRENT_AP] = cr.Stat[ST_ACTION_POINTS] * 100;
 
         for(uint i = REPUTATION_BEGIN; i <= REPUTATION_END; i++)
@@ -2465,7 +2476,19 @@ void critter_idle(Critter& cr)
         {
             if(cr.Stat[ST_HEALING_RATE] > 0)
 			{
-				cr.StatBase[ST_CURRENT_HP] += MAX(cr.Stat[ST_HEALING_RATE], 3);
+			    int maxhp = GetActualMaxHp(cr);
+			    int hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 3);
+				cr.StatBase[ST_CURRENT_HP] += hpFromHealingRate;
+				if (cr.DamageBase[DAMAGE_EYE] == 0)
+				    cr.StatBase[ST_HP_HEAD] = CLAMP(cr.StatBase[ST_HP_HEAD] + hpFromHealingRate, 0, maxhp / 2);
+                if (cr.DamageBase[DAMAGE_LEFT_ARM] == 0)
+                    cr.StatBase[ST_HP_LA] = CLAMP(cr.StatBase[ST_HP_LA] + hpFromHealingRate, 0, maxhp / 2);
+                if (cr.DamageBase[DAMAGE_RIGHT_ARM] == 0)
+                    cr.StatBase[ST_HP_RA] = CLAMP(cr.StatBase[ST_HP_RA] + hpFromHealingRate, 0, maxhp / 2);
+                if (cr.DamageBase[DAMAGE_LEFT_LEG] == 0)
+                    cr.StatBase[ST_HP_LL] = CLAMP(cr.StatBase[ST_HP_LL] + hpFromHealingRate, 0, maxhp / 2);
+                if (cr.DamageBase[DAMAGE_RIGHT_LEG] == 0)
+                    cr.StatBase[ST_HP_RL] = CLAMP(cr.StatBase[ST_HP_RL] + hpFromHealingRate, 0, maxhp / 2);
                 //cr.StatBase[ST_CURRENT_HP] += MAX(cr.Stat[ST_HEALING_RATE] * GetActualMaxHp(cr) / 100, 3); 	//	old system
 			}
             else

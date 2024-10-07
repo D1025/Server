@@ -694,7 +694,7 @@ void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
     if(cr.IsDead() || cr.Timeout[TO_SUPER_STIMPAK] > 0)
         return;
     _SetTimeout(cr, TO_SUPER_STIMPAK, REAL_SECOND(45));
-    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.StatBase[ST_CURRENT_HP] + cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100, -9999, GetActualMaxHp(cr));
+    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(0), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(2), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(4), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(6), CTE_SUPERSTIMHEALING);
@@ -705,6 +705,13 @@ void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
 uint cte_SuperStimHealing(Critter& cr, int identifier, uint& rate) {
     if(cr.IsDead())
         return 0;
-    cr.StatBase[ST_CURRENT_HP] = CLAMP(cr.StatBase[ST_CURRENT_HP] + cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100, -9999, GetActualMaxHp(cr));
+    int heal = cr.Stat[ST_HEALING_RATE] * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100;
+    int maxHp = GetActualMaxHp(cr);
+    cr.StatBase[ST_CURRENT_HP] += heal;
+    cr.StatBase[ST_HP_HEAD] += heal / 4;
+    cr.StatBase[ST_HP_LA] += heal / 4;
+    cr.StatBase[ST_HP_RA] += heal / 4;
+    cr.StatBase[ST_HP_LL] += heal / 4;
+    cr.StatBase[ST_HP_RL] += heal / 4;
     return 0;
 }

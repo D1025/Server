@@ -189,6 +189,11 @@ class CMerc : IMerc
 			SpawnedNpc.StatBase[ST_MAX_LIFE] -= 10;			
 
             SpawnedNpc.StatBase[ST_CURRENT_HP] = SpawnedNpc.Stat[ST_MAX_LIFE];
+            SpawnedNpc.StatBase[ST_HP_HEAD] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
+            SpawnedNpc.StatBase[ST_HP_LA] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
+            SpawnedNpc.StatBase[ST_HP_RA] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
+            SpawnedNpc.StatBase[ST_HP_LL] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
+            SpawnedNpc.StatBase[ST_HP_RL] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
 			SpawnedNpc.StatBase[ST_FREE_BARTER_PLAYER] = master.Id;
 
             if(!AddToFollowerlist(master, SpawnedNpc))

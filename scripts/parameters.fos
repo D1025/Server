@@ -66,7 +66,91 @@ void changedParam_Hp(Critter& cr, uint, int oldValue)   // server
         cr.StatBase[ST_HEALTH_LEVEL] = 4;
     else
         cr.StatBase[ST_HEALTH_LEVEL] = (3 * curHp) / maxHp + 1;
+}
 
+void changedParam_HeadHp(Critter& cr, uint, int oldValue)   // server
+{
+    if (cr.DamageBase[DAMAGE_EYE] > 0) {
+        cr.StatBase[ST_HP_HEAD] = 0;
+        return;
+    }
+    int curHp = cr.StatBase[ST_HP_HEAD];
+    int maxHp = GetActualMaxHp(cr) / 2;
+    if(curHp > maxHp)
+    {
+        cr.StatBase[ST_HP_HEAD] = maxHp;
+        curHp = maxHp;
+    }
+    if(curHp < 0 && cr.IsLife())
+        cr.StatBase[ST_HP_HEAD] = 0;
+}
+
+void changedParam_LArmHp(Critter& cr, uint, int oldValue)   // server
+{
+    if (cr.DamageBase[DAMAGE_LEFT_ARM] > 0) {
+        cr.StatBase[ST_HP_LA] = 0;
+        return;
+    }
+    int curHp = cr.StatBase[ST_HP_LA];
+    int maxHp = GetActualMaxHp(cr) / 2;
+    if(curHp > maxHp)
+    {
+        cr.StatBase[ST_HP_LA] = maxHp;
+        curHp = maxHp;
+    }
+    if(curHp < 0 && cr.IsLife())
+        cr.StatBase[ST_HP_LA] = 0;
+}
+
+void changedParam_RArmHp(Critter& cr, uint, int oldValue)   // server
+{
+    if (cr.DamageBase[DAMAGE_RIGHT_ARM] > 0) {
+        cr.StatBase[ST_HP_RA] = 0;
+        return;
+    }
+    int curHp = cr.StatBase[ST_HP_RA];
+    int maxHp = GetActualMaxHp(cr) / 2;
+    if(curHp > maxHp)
+    {
+        cr.StatBase[ST_HP_RA] = maxHp;
+        curHp = maxHp;
+    }
+    if(curHp < 0 && cr.IsLife())
+        cr.StatBase[ST_HP_RA] = 0;
+}
+
+void changedParam_LLegHp(Critter& cr, uint, int oldValue)   // server
+{
+    if (cr.DamageBase[DAMAGE_LEFT_LEG] > 0) {
+        cr.StatBase[ST_HP_LL] = 0;
+        return;
+    }
+    int curHp = cr.StatBase[ST_HP_LL];
+    int maxHp = GetActualMaxHp(cr) / 2;
+    if(curHp > maxHp)
+    {
+        cr.StatBase[ST_HP_LL] = maxHp;
+        curHp = maxHp;
+    }
+    if(curHp < 0 && cr.IsLife())
+        cr.StatBase[ST_HP_LL] = 0;
+}
+
+void changedParam_RLegHp(Critter& cr, uint, int oldValue)   // server
+{
+    if (cr.DamageBase[DAMAGE_RIGHT_LEG] > 0) {
+        cr.StatBase[ST_HP_RL] = 0;
+        return;
+    }
+    int curHp = cr.StatBase[ST_HP_RL];
+    int maxHp = GetActualMaxHp(cr) / 2;
+    if(curHp > maxHp)
+    {
+        cr.StatBase[ST_HP_RL] = maxHp;
+        curHp = maxHp;
+    }
+    if(curHp < 0 && cr.IsLife())
+        cr.StatBase[ST_HP_RL] = 0;
 }
 
 void changedParam_Experience(Critter& cr, uint, int oldValue)   // server

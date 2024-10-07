@@ -1456,6 +1456,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     bool     isMelee = (attack.WeaponSubtype == WS_UNARMED);
 	uint16   ammoPid = attack.ammoPid;
     if(valid(attack.Ammo)) ammoPid = attack.Ammo.ProtoId;
+    int    limbDamageMultiplayer = 4;
 
 	bool     isBanhammer = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_BAN_HAMMER : false);
 	bool     isHolySpear = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_HOLY_SPEAR : false);
@@ -1656,13 +1657,20 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			}
 
 			if(FLAG(eff, HF_BLINDED))
-			{
-			    int enemyStat = (target.Stat[ST_PERCEPTION] + target.Stat[ST_PERCEPTION_EXT] + (critLevel-2) * -5);
-			    int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
-			    if (enemyStat > attackerStat) {
-                    UNSETFLAG(eff, HF_BLINDED);
-                }
-			}
+			    UNSETFLAG(eff, HF_BLINDED);
+
+			if(FLAG(eff, HF_CRIPPLED_LEFT_LEG))
+			    UNSETFLAG(eff, HF_CRIPPLED_LEFT_LEG);
+
+            if(FLAG(eff, HF_CRIPPLED_RIGHT_LEG))
+                UNSETFLAG(eff, HF_CRIPPLED_RIGHT_LEG);
+
+			if(FLAG(eff, HF_CRIPPLED_LEFT_ARM))
+			    UNSETFLAG(eff, HF_CRIPPLED_LEFT_ARM);
+
+            if(FLAG(eff, HF_CRIPPLED_RIGHT_ARM))
+                UNSETFLAG(eff, HF_CRIPPLED_RIGHT_ARM);
+
 
 			if(target.Mode[MODE_NO_KNOCK] != 0)
 				UNSETFLAG(eff, HF_KNOCKDOWN);
@@ -1680,37 +1688,21 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                     }
 			    }
 			}
-				
 
-			if(FLAG(eff, HF_CRIPPLED_LEFT_LEG)) {
-			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
-			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
-			    if (enemyStat > attackerStat) {
-                    UNSETFLAG(eff, HF_CRIPPLED_LEFT_LEG);
-                }
-			}
-            if(FLAG(eff, HF_CRIPPLED_RIGHT_LEG)) {
-			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
-			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
-			    if (enemyStat > attackerStat) {
-                    UNSETFLAG(eff, HF_CRIPPLED_RIGHT_LEG);
-                }
-			}
-			if(FLAG(eff, HF_CRIPPLED_LEFT_ARM)) {
-			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
-			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
-			    if (enemyStat > attackerStat) {
-                    UNSETFLAG(eff, HF_CRIPPLED_LEFT_ARM);
-                }
-			}
-            if(FLAG(eff, HF_CRIPPLED_RIGHT_ARM)) {
-			    int enemyStat = (target.Perk[PE_IRON_GRIP] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + critLevel==1 ? 5 : (critLevel-2) * -5);
-			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
-			    if (enemyStat > attackerStat) {
-                    UNSETFLAG(eff, HF_CRIPPLED_RIGHT_ARM);
-                }
-			}
-
+			switch(critLevel)
+            {
+                case 2:
+                    limbDamageMultiplayer = 6;
+                    break;
+                case 3:
+                    limbDamageMultiplayer = 7;
+                    break;
+                case 4:
+                    limbDamageMultiplayer = 8;
+                    break;
+                default:
+                    break;
+            }
 
 			if(target.Mode[MODE_NO_LOOSE_LIMBS] != 0)
 			{
@@ -1877,72 +1869,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
     // Code for dropping weapon, adapted from critical failures
 
-    if(FLAG(eff, HF_DROPPED_WEAPON))
-    {
-        Item@ realWeaponTarget = _CritGetItemHand(target);
-        if(valid(realWeaponTarget))
-        {
-            if(realWeaponTarget.IsStackable())
-            {
-                Item@ dropped = map.AddItem(target.HexX, target.HexY, realWeaponTarget.GetProtoId(), 1);
-                if(realWeaponTarget.GetCount() > 1)
-                    realWeaponTarget.SetCount(realWeaponTarget.GetCount() - 1);
-                else
-                    DeleteItem(realWeaponTarget);
-
-                if(!target.IsPlayer())
-                {
-                    NpcPlane@ plane = CreatePlane();
-                    array<NpcPlane@> crPlanes(0);
-
-                    if(target.GetPlanes(crPlanes) > 0)
-                        plane.Priority = crPlanes[0].Priority + 1;
-                    else
-                        plane.Priority = 70;
-
-                    plane.Type = AI_PLANE_PICK;
-                    plane.Pick_HexX = dropped.HexX;
-                    plane.Pick_HexY = dropped.HexY;
-                    plane.Pick_Pid = dropped.GetProtoId();
-                    plane.Pick_UseItemId = 0;
-                    plane.Pick_ToOpen = false;
-                    plane.Identifier = PLANE_PICK_DROPPED_WPN;
-                    plane.IdentifierExt = dropped.Id;
-                    plane.Run = true;
-                    target.AddPlane(plane);
-                    SetLvar(dropped.Id, LIVAR_npc_wpn_owner, target.Id);
-                }
-            }
-            else
-            {
-                MoveItem(realWeaponTarget, 0, map, target.HexX, target.HexY);
-                if(!target.IsPlayer())
-                {
-                    NpcPlane@ plane = CreatePlane();
-                    array<NpcPlane@> crPlanes(0);
-
-                    if(target.GetPlanes(crPlanes) > 0)
-                        plane.Priority = crPlanes[0].Priority + 1;
-                    else
-                        plane.Priority = 70;
-
-                    plane.Type = AI_PLANE_PICK;
-                    plane.Pick_HexX = realWeaponTarget.HexX;
-                    plane.Pick_HexY = realWeaponTarget.HexY;
-                    plane.Pick_Pid = realWeaponTarget.GetProtoId();
-                    plane.Pick_UseItemId = 0;
-                    plane.Pick_ToOpen = false;
-                    plane.Identifier = PLANE_PICK_DROPPED_WPN;
-                    plane.IdentifierExt = realWeaponTarget.Id;
-                    plane.Run = true;
-                    target.AddPlane(plane);
-                    SetLvar(realWeaponTarget.Id, LIVAR_npc_wpn_owner, target.Id);
-                }
-            }
-        }
-    }
-
-	
 	
 	bool isOffGame = false;
     bool isKo = false;
@@ -2025,22 +1951,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         isKo = true;		
 	}
 
-    // Clipped LLeg
-    if(FLAG(eff, HF_CRIPPLED_LEFT_LEG))
-        target.DamageBase[DAMAGE_LEFT_LEG] = 1;
-    // Clipped RLeg
-    if(FLAG(eff, HF_CRIPPLED_RIGHT_LEG))
-        target.DamageBase[DAMAGE_RIGHT_LEG] = 1;
-    // Clipped LArm
-    if(FLAG(eff, HF_CRIPPLED_LEFT_ARM))
-        target.DamageBase[DAMAGE_LEFT_ARM] = 1;
-    // Clipped RArm
-    if(FLAG(eff, HF_CRIPPLED_RIGHT_ARM))
-        target.DamageBase[DAMAGE_RIGHT_ARM] = 1;
-    // Blinded
-    if(FLAG(eff, HF_BLINDED))
-        target.DamageBase[DAMAGE_EYE] = 1;
-
     // Lose turn
     if(FLAG(eff, HF_LOST_NEXT_TURN))
     {
@@ -2095,6 +2005,77 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             }
             //END
             target.StatBase[ST_CURRENT_HP] -= totalDmg;
+            if(dmgType == DAMAGE_EXPLODE)
+            {
+                target.StatBase[ST_HP_LA] -= totalDmg/4;
+                target.StatBase[ST_HP_RA] -= totalDmg/4;
+                target.StatBase[ST_HP_LL] -= totalDmg/4;
+                target.StatBase[ST_HP_RL] -= totalDmg/4;
+            }
+            int totalDamageToLimb = totalDmg * limbDamageMultiplayer / 4;
+            switch(aim)
+            {
+            case HIT_LOCATION_EYES:
+                target.StatBase[ST_HP_HEAD] -= totalDamageToLimb;
+
+                break;
+            case HIT_LOCATION_LEFT_ARM:
+                target.StatBase[ST_HP_LA] -= totalDamageToLimb;
+                if (totalDamageToLimb >= target.StatBase[ST_MAX_LIFE] / 4) {
+                    SETFLAG(eff, HF_DROPPED_WEAPON);
+                }
+                break;
+            case HIT_LOCATION_RIGHT_ARM:
+                target.StatBase[ST_HP_RA] -= totalDamageToLimb;
+                if (totalDamageToLimb >= target.StatBase[ST_MAX_LIFE] / 4) {
+                    SETFLAG(eff, HF_DROPPED_WEAPON);
+                }
+                break;
+            case HIT_LOCATION_LEFT_LEG:
+                target.StatBase[ST_HP_LL] -= totalDamageToLimb;
+                break;
+            case HIT_LOCATION_RIGHT_LEG:
+                target.StatBase[ST_HP_RL] -= totalDamageToLimb;
+                break;
+            default:
+                break;
+            }
+                if (target.StatBase[ST_HP_HEAD] < 0) {
+                    target.StatBase[ST_HP_HEAD] = 0;
+                    SETFLAG(eff, HF_BLINDED);
+                }
+                if (target.StatBase[ST_HP_LA] < 0) {
+                    target.StatBase[ST_HP_LA] = 0;
+                    SETFLAG(eff, HF_CRIPPLED_LEFT_ARM);
+                }
+                if (target.StatBase[ST_HP_RA] < 0) {
+                    target.StatBase[ST_HP_RA] = 0;
+                    SETFLAG(eff, HF_CRIPPLED_RIGHT_ARM);
+                }
+                if (target.StatBase[ST_HP_LL] < 0) {
+                    target.StatBase[ST_HP_LL] = 0;
+                    SETFLAG(eff, HF_CRIPPLED_LEFT_LEG);
+                }
+                if (target.StatBase[ST_HP_RL] < 0) {
+                    target.StatBase[ST_HP_RL] = 0;
+                    SETFLAG(eff, HF_CRIPPLED_RIGHT_LEG);
+                }
+
+            // Clipped LLeg
+            if(FLAG(eff, HF_CRIPPLED_LEFT_LEG))
+                target.DamageBase[DAMAGE_LEFT_LEG] = 1;
+            // Clipped RLeg
+            if(FLAG(eff, HF_CRIPPLED_RIGHT_LEG))
+                target.DamageBase[DAMAGE_RIGHT_LEG] = 1;
+            // Clipped LArm
+            if(FLAG(eff, HF_CRIPPLED_LEFT_ARM))
+                target.DamageBase[DAMAGE_LEFT_ARM] = 1;
+            // Clipped RArm
+            if(FLAG(eff, HF_CRIPPLED_RIGHT_ARM))
+                target.DamageBase[DAMAGE_RIGHT_ARM] = 1;
+            // Blinded
+            if(FLAG(eff, HF_BLINDED))
+                target.DamageBase[DAMAGE_EYE] = 1;
             if(target.Stat[ST_CURRENT_HP] < 1)
             {
                 int deadHitPoints = target.Perk[PE_DEAD_MAN_WALKING] > 0 ? __DeadHitPoints : __DeadHitPoints / 2;
@@ -2110,6 +2091,71 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         // Add leaderboard score
         if(attack.IsUnarmed && validAttacker && attackerIsPlayer)
             AddScore(attacker, SCORE_UNARMED_DAMAGE, totalDmg);
+    }
+
+    if(FLAG(eff, HF_DROPPED_WEAPON))
+    {
+        Item@ realWeaponTarget = _CritGetItemHand(target);
+        if(valid(realWeaponTarget))
+        {
+            if(realWeaponTarget.IsStackable())
+            {
+                Item@ dropped = map.AddItem(target.HexX, target.HexY, realWeaponTarget.GetProtoId(), 1);
+                if(realWeaponTarget.GetCount() > 1)
+                    realWeaponTarget.SetCount(realWeaponTarget.GetCount() - 1);
+                else
+                    DeleteItem(realWeaponTarget);
+
+                if(!target.IsPlayer())
+                {
+                    NpcPlane@ plane = CreatePlane();
+                    array<NpcPlane@> crPlanes(0);
+
+                    if(target.GetPlanes(crPlanes) > 0)
+                        plane.Priority = crPlanes[0].Priority + 1;
+                    else
+                        plane.Priority = 70;
+
+                    plane.Type = AI_PLANE_PICK;
+                    plane.Pick_HexX = dropped.HexX;
+                    plane.Pick_HexY = dropped.HexY;
+                    plane.Pick_Pid = dropped.GetProtoId();
+                    plane.Pick_UseItemId = 0;
+                    plane.Pick_ToOpen = false;
+                    plane.Identifier = PLANE_PICK_DROPPED_WPN;
+                    plane.IdentifierExt = dropped.Id;
+                    plane.Run = true;
+                    target.AddPlane(plane);
+                    SetLvar(dropped.Id, LIVAR_npc_wpn_owner, target.Id);
+                }
+            }
+            else
+            {
+                MoveItem(realWeaponTarget, 0, map, target.HexX, target.HexY);
+                if(!target.IsPlayer())
+                {
+                    NpcPlane@ plane = CreatePlane();
+                    array<NpcPlane@> crPlanes(0);
+
+                    if(target.GetPlanes(crPlanes) > 0)
+                        plane.Priority = crPlanes[0].Priority + 1;
+                    else
+                        plane.Priority = 70;
+
+                    plane.Type = AI_PLANE_PICK;
+                    plane.Pick_HexX = realWeaponTarget.HexX;
+                    plane.Pick_HexY = realWeaponTarget.HexY;
+                    plane.Pick_Pid = realWeaponTarget.GetProtoId();
+                    plane.Pick_UseItemId = 0;
+                    plane.Pick_ToOpen = false;
+                    plane.Identifier = PLANE_PICK_DROPPED_WPN;
+                    plane.IdentifierExt = realWeaponTarget.Id;
+                    plane.Run = true;
+                    target.AddPlane(plane);
+                    SetLvar(realWeaponTarget.Id, LIVAR_npc_wpn_owner, target.Id);
+                }
+            }
+        }
     }
 
     bool attackFront = true;

@@ -782,10 +782,19 @@ void render_iface(uint layer)
                     if(valid(cr))
                     {
                         int dy = -10;
-                        if(cr.Perk[PE_LIVING_ANATOMY] != 0 && cr.Timeout[TO_SK_FIRST_AID] > 0)
+                        if(chosen.Perk[PE_LIVING_ANATOMY] != 0)
                         {
-                            DrawText("Cooldown: " + cr.Timeout[TO_SK_FIRST_AID] /20 + "s", __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, COLOR_CONTOUR_RED, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                            int maxHp = cr.Param[ST_MAX_LIFE] /2;
+                            DrawText(((cr.Param[ST_HP_LL] * 100 / maxHp) + "% Legs ") +((cr.Param[ST_HP_RL] * 100 / maxHp) + "% "), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, AW_COLOR_FACTION_NAME, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
                             dy -= 10;
+                            DrawText(((cr.Param[ST_HP_LA] * 100 / maxHp) + "% Arms ") +((cr.Param[ST_HP_RA] * 100 / maxHp) + "% "), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, AW_COLOR_FACTION_NAME, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                            dy -= 10;
+                            DrawText(("        "+(cr.Param[ST_HP_HEAD] * 100 / maxHp) + "%"), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, AW_COLOR_FACTION_NAME, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                            dy -= 10;
+                            if (cr.Timeout[TO_SK_FIRST_AID] > 0) {
+                                DrawText("Cooldown: " + cr.Timeout[TO_SK_FIRST_AID] /20 + "s", __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, COLOR_CONTOUR_RED, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                                dy -= 10;
+                            }
                         }
 
 						
@@ -881,9 +890,9 @@ void render_iface(uint layer)
                             }
                             if(!__ConfigShowPlayerAwareness && cr.IsPlayer())
                             {
-                                int curHp = cr.Stat[ST_CURRENT_HP];
+                                int curHp = cr.Param[ST_CURRENT_HP];
                                 int maxHp = cr.Param[ST_MAX_LIFE];
-                                DrawText(curHp + "/" + maxHp, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0xff - (0xff * curHp) / maxHp, (0xff * curHp) / maxHp, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                                DrawText((curHp + "/" + maxHp), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0xff - (0xff * curHp) / maxHp, (0xff * curHp) / maxHp, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
 
                                 dy -= 10;
                             }
@@ -2503,6 +2512,43 @@ void DrawIndicators()
     if(!valid(chosen))
         return;
     ItemCl@ item = chosen.GetItem(0, SLOT_HAND1);
+
+    int     maxHp = chosen.Param[ST_MAX_LIFE] / 2;
+    int     curHeadHp = chosen.Param[ST_HP_HEAD];
+    int     curLeftArmHp = chosen.Param[ST_HP_LA];
+    int     curRightArmHp = chosen.Param[ST_HP_RA];
+    int     curLeftLegHp = chosen.Param[ST_HP_LL];
+    int     curRightLegHp = chosen.Param[ST_HP_RL];
+
+    int     isEyesCrippled = chosen.Param[DAMAGE_EYE];
+    int     isLACrippled = chosen.Param[DAMAGE_LEFT_ARM];
+    int     isRACrippled = chosen.Param[DAMAGE_RIGHT_ARM];
+    int     isLLCrippled = chosen.Param[DAMAGE_LEFT_LEG];
+    int     isRLCrippled = chosen.Param[DAMAGE_RIGHT_LEG];
+
+    int greenHead = CLAMP(CLAMP(curHeadHp, -999, maxHp) * 0xff / maxHp, 0, 0xff);
+    int greenLeftArm = CLAMP(CLAMP(curLeftArmHp, -999, maxHp) * 0xff / maxHp, 0, 0xff);
+    int greenRightArm = CLAMP(CLAMP(curRightArmHp, -999, maxHp) * 0xff / maxHp, 0, 0xff);
+    int greenLeftLeg = CLAMP(CLAMP(curLeftLegHp, -999, maxHp) * 0xff / maxHp, 0, 0xff);
+    int greenRightLeg = CLAMP(CLAMP(curRightLegHp, -999, maxHp) * 0xff / maxHp, 0, 0xff);
+
+    string HeadText = isEyesCrippled == 1 ? "CRIPPLE" : curHeadHp+"/"+maxHp;
+    string LeftArmText = isLACrippled == 1 ? "CRIPPLE" : curLeftArmHp+"/"+maxHp;
+    string RightArmText = isRACrippled == 1 ? "CRIPPLE" : curRightArmHp+"/"+maxHp;
+    string LeftLegText = isLLCrippled == 1 ? "CRIPPLE" : curLeftLegHp+"/"+maxHp;
+    string RightLegText = isRLCrippled == 1 ? "CRIPPLE" : curRightLegHp+"/"+maxHp;
+
+    DrawText(HeadText, 20, __ScreenHeight-95, 200, 20, COLOR_RGB(255 - greenHead, greenHead, 0), FONT_FAT, FT_CENTERXY | FT_BORDERED);
+    DrawText(" Arms ", 20, __ScreenHeight-70, 200, 20, COLOR_GREEN, FONT_FAT, FT_CENTERXY | FT_BORDERED);
+    DrawText(" Legs ", 20, __ScreenHeight-40, 200, 20, COLOR_GREEN, FONT_FAT, FT_CENTERXY | FT_BORDERED);
+
+    // draw left arm and right arm at both sides of " Arms " text
+    DrawText(LeftArmText, 10, __ScreenHeight-70, 90, 20, COLOR_RGB(255 - greenLeftArm, greenLeftArm, 0), FONT_FAT, FT_CENTERXY | FT_BORDERED);
+    DrawText(RightArmText, 140, __ScreenHeight-70, 90, 20, COLOR_RGB(255 - greenRightArm, greenRightArm, 0), FONT_FAT, FT_CENTERXY | FT_BORDERED);
+
+    // draw left leg and right leg at both sides of " Legs " text
+    DrawText(LeftLegText, 10, __ScreenHeight-40, 90, 20, COLOR_RGB(255 - greenLeftLeg, greenLeftLeg, 0), FONT_FAT, FT_CENTERXY | FT_BORDERED);
+    DrawText(RightLegText, 140, __ScreenHeight-40, 90, 20, COLOR_RGB(255 - greenRightLeg, greenRightLeg, 0), FONT_FAT, FT_CENTERXY | FT_BORDERED);
 
     int     wear_proc = (valid(item) && item.IsDeteriorable()) ? 100 - (item.Deterioration * 100) / MAX_DETERIORATION : 0;
     int     max_ammo = (valid(item) && item.GetType() == ITEM_TYPE_WEAPON) ? item.Proto.Weapon_MaxAmmoCount : 0;

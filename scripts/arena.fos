@@ -1566,7 +1566,13 @@ void OnTeleportToLobby(Critter& cr)   // export
 {
     if(cr.IsDead())
         cr.ToLife();
-    cr.StatBase[ST_CURRENT_HP] = GetActualMaxHp(cr);
+    int maxHp = GetActualMaxHp(cr);
+    cr.StatBase[ST_CURRENT_HP] = maxHp;
+    cr.StatBase[ST_HP_HEAD] = maxHp/2;
+    cr.StatBase[ST_HP_LA] = maxHp/2;
+    cr.StatBase[ST_HP_RA] = maxHp/2;
+    cr.StatBase[ST_HP_LL] = maxHp/2;
+    cr.StatBase[ST_HP_RL] = maxHp/2;
     int damages = cr.Stat[ST_VAR8];
     if(damages & CRIPPLED_EYE != 0)
         cr.DamageBase[DAMAGE_EYE] = 1;

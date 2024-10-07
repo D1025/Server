@@ -1559,7 +1559,7 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 423, 0, 1 }, // Man of Steel, Levelling, 1 ranks
+	{ 423, 0, 2 }, // Man of Steel, Levelling, 1 ranks
 	{ // level 1 requirements
 		2, 1, 6, // Endurance at least 8
 	},
@@ -1569,9 +1569,14 @@ int[][] PerksData = {
 #ifdef __SERVER
 	{ // level 1 perk up effects
 	},
+		{ // level 1 perk up effects
+    	},
 	{ // level 1 perk down effects
 		-1 // Just revert
 	},
+		{ // level 1 perk down effects
+    		-1 // Just revert
+    	},
 #endif
 
 	{ 424, 2, 1 }, // Even More Criticals, Levelling, 1 ranks

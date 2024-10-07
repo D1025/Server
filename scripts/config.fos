@@ -205,6 +205,11 @@ void InitializeGame()                  // Export
     SetParameterGetBehaviour(ST_AGILITY, dllName + "getParam_Agility");
     SetParameterGetBehaviour(ST_LUCK, dllName + "getParam_Luck");
     SetParameterGetBehaviour(ST_CURRENT_HP, dllName + "getParam_Hp");
+    SetParameterGetBehaviour(ST_HP_HEAD, dllName + "getParam_HpHead");
+    SetParameterGetBehaviour(ST_HP_LA, dllName + "getParam_HpLa");
+    SetParameterGetBehaviour(ST_HP_RA, dllName + "getParam_HpRa");
+    SetParameterGetBehaviour(ST_HP_LL, dllName + "getParam_HpLl");
+    SetParameterGetBehaviour(ST_HP_RL, dllName + "getParam_HpRl");
     SetParameterGetBehaviour(ST_MAX_LIFE, dllName + "getParam_MaxLife");
     SetParameterGetBehaviour(ST_LEVEL, dllName + "getParam_Level");
     SetParameterGetBehaviour(ST_ACTION_POINTS, dllName + "getParam_MaxAp");
@@ -235,6 +240,11 @@ void InitializeGame()                  // Export
 
     # ifndef __CLIENT
     SetParameterChangeBehaviour(ST_CURRENT_HP, "parameters@changedParam_Hp");           // updating health level
+    SetParameterChangeBehaviour(ST_HP_HEAD, "parameters@changedParam_HeadHp");         // updating health level
+    SetParameterChangeBehaviour(ST_HP_LA, "parameters@changedParam_LArmHp");             // updating health level
+    SetParameterChangeBehaviour(ST_HP_RA, "parameters@changedParam_RArmHp");             // updating health level
+    SetParameterChangeBehaviour(ST_HP_LL, "parameters@changedParam_LLegHp");             // updating health level
+    SetParameterChangeBehaviour(ST_HP_RL, "parameters@changedParam_RLegHp");             // updating health level
     SetParameterChangeBehaviour(ST_EXPERIENCE, "parameters@changedParam_Experience");   // logging exp
     SetParameterChangeBehaviour(ST_LEVEL, "parameters@changedParam_Level");             // followers level up message
     for(uint i = PERK_BEGIN; i <= PERK_END; i++)
