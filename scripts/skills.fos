@@ -187,12 +187,12 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
             _CritUninjureBody(targetCr, i);
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_HEAL_DMG(i - DAMAGE_POISONED));
             uninjured++;
+            sk -= 100;
         }
         else
         {
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NOHEAL_DMG(i - DAMAGE_POISONED));
         }
-        sk -= 100;
     }
 
     //if(targetCr.IsKnockout())
