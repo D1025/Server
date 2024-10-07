@@ -1692,13 +1692,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			switch(critLevel)
             {
                 case 2:
-                    limbDamageMultiplayer = 6;
+                    limbDamageMultiplayer = 8;
                     break;
                 case 3:
-                    limbDamageMultiplayer = 7;
+                    limbDamageMultiplayer = 10;
                     break;
                 case 4:
-                    limbDamageMultiplayer = 8;
+                    limbDamageMultiplayer = 12;
                     break;
                 default:
                     break;
