@@ -1556,7 +1556,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         if(target.Perk[PE_MAN_OF_STEEL] > 0)
             roll -= target.Perk[PE_MAN_OF_STEEL] * 10;
 
-        if(valid(usedArmor) && target.Perk[PE_HIT_THE_GAPS] > 0)
+        if(valid(usedArmor) && attacker.Perk[PE_HIT_THE_GAPS] == 0)
 		{
             roll += usedArmor.Proto.Armor_CMCritPower;
 			roll += SelectArmorBonus(usedArmor, BONUS_ARMOR_CRIT_POWER); 
