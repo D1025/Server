@@ -235,6 +235,7 @@ bool start()
     SetSendParameter(ST_CURRENT_HP, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_CRITICAL_POWER, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_HEALTH_LEVEL, true);
+    SetSendParameter(PE_BONUS_RATE_OF_FIRE, true);
     SetSendParameter(ST_TURN_BASED_AC, true);
     // Strenght
     SetSendParameter(ST_STRENGTH, true);
