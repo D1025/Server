@@ -36,6 +36,7 @@ import void PlaySound(Critter& cr, string& soundName) from "media";
 import void PostDamage(Critter& cr) from "main";
 import void QuakeScreen(Map& map) from "effects";
 import void WearItem(Critter& cr, Item& item, int wearCount) from "repair";
+import int  GetActualMaxHp(Critter@ cr) from "utils";
 
 
 import void MolotovBlast( Map& map, uint16 hexX, uint16 hexY, uint16 firePid, uint ownerId ) from "fire_hexes";
@@ -424,9 +425,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                              (valid(targetWeapon) && targetWeapon.GetType() == ITEM_TYPE_WEAPON &&
                               targetWeapon.Proto.Weapon_Skill_0 == SK_UNARMED &&
                               _WeaponMaxDist(targetWeapon.Proto, 0) >= uint(dist));
-
-        if(in_your_face_valid)
-            toHit = MIN(toHit, 50);
     }
 
     // Main hit roll
@@ -1714,16 +1712,16 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			}
 			msgEff = eff;
 			if(target.Mode[MODE_NO_DROP] != 0 && FLAG(eff, HF_CRIPPLED_RIGHT_ARM)) {
-			    int enemyStat = ((critLevel-2) * -5) + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT];
-			    int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
-			    if (enemyStat > attackerStat) {
-                    UNSETFLAG(eff, HF_DROPPED_WEAPON);
-                    UNSETFLAG(msgEff, HF_DROPPED_WEAPON);
-                }
-                if (critLevel==4) {
-                    SETFLAG(eff, HF_DROPPED_WEAPON);
-                    SETFLAG(msgEff, HF_DROPPED_WEAPON);
-                }
+			    //int enemyStat = ((critLevel-2) * -5) + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT];
+			    //int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
+			    //if (enemyStat > attackerStat) {
+                //    UNSETFLAG(eff, HF_DROPPED_WEAPON);
+                //    UNSETFLAG(msgEff, HF_DROPPED_WEAPON);
+                //}
+                //if (critLevel==4) {
+                //    SETFLAG(eff, HF_DROPPED_WEAPON);
+                //    SETFLAG(msgEff, HF_DROPPED_WEAPON);
+                //}
 			}
 
 			if(validAttacker && attackerIsPlayer)
@@ -1858,7 +1856,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			totalDmg *= 1.1;
 
 		if(attack.Attacker.Perk[PE_SPRAY_AND_PRAY] == 0 && attack.IsBurst && !isShotgun && !attack.IsLSW && !attack.IsBozar)
-		    totalDmg *= 0.60;
+		    totalDmg *= 0.80;
+
+		if(attack.InYourFaceEffect)
+		    totalDmg /= 2;
     }
 	
     // 0x00000001 - knockout
@@ -2020,6 +2021,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 target.StatBase[ST_HP_RL] -= totalDmg/2;
             }
             int totalDamageToLimb = totalDmg * limbDamageMultiplayer / 4;
+            int maxLimbHp = GetActualMaxHp(target) / (target.Perk[PE_IRON_GRIP] == 0 ? 2 : 1);
             switch(aim)
             {
             case HIT_LOCATION_EYES:
@@ -2028,13 +2030,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 break;
             case HIT_LOCATION_LEFT_ARM:
                 target.StatBase[ST_HP_LA] -= totalDamageToLimb;
-                if (totalDamageToLimb >= target.StatBase[ST_MAX_LIFE] / 4) {
+                if (totalDamageToLimb >= maxLimbHp) {
                     SETFLAG(eff, HF_DROPPED_WEAPON);
                 }
                 break;
             case HIT_LOCATION_RIGHT_ARM:
                 target.StatBase[ST_HP_RA] -= totalDamageToLimb;
-                if (totalDamageToLimb >= target.StatBase[ST_MAX_LIFE] / 4) {
+                if (totalDamageToLimb >= maxLimbHp) {
                     SETFLAG(eff, HF_DROPPED_WEAPON);
                 }
                 break;
