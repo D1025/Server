@@ -23,7 +23,7 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 302, 0, 1 }, // Bonus HtH Attacks, Levelling, 1 ranks
+	{ 302, 2, 1 }, // Bonus HtH Attacks, Levelling, 1 ranks
 	{ // level 1 requirements
 		203, 1, 180 // Unarmed at least 180
 	},
@@ -63,10 +63,8 @@ int[][] PerksData = {
 
 	{ 305, 0, 2 }, // Bonus Ranged Damage, Levelling, 2 ranks
 	{ // level 1 requirements
-		77, 1, 9, // Level at least 9
 	},
 	{ // level 2 requirements
-		77, 1, 12, // Level at least 12
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -83,7 +81,6 @@ int[][] PerksData = {
 
 	{ 306, 0, 1 }, // Bonus Rate of Fire, Levelling, 1 ranks
 	{ // level 1 requirements
-		77, 1, 18, // Level at least 18
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -430,10 +427,8 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 331, 1, 1 }, // Snakeater, Support, 1 ranks
+	{ 331, 0, 1 }, // Snakeater, Leveling, 1 ranks
 	{ // level 1 requirements
-		2, 1, 6, // Endurance at least 6
-		217, 1, 75, // Outdoorsman at least 75
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1617,7 +1612,6 @@ int[][] PerksData = {
 
 	{ 427, 0, 1 }, // Spray and Pray, Levelling, 1 ranks
 	{ // level 1 requirements
-
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects

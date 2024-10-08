@@ -237,6 +237,7 @@ bool start()
     SetSendParameter(ST_HEALTH_LEVEL, true);
     SetSendParameter(PE_BONUS_RATE_OF_FIRE, true);
     SetSendParameter(ST_TURN_BASED_AC, true);
+    SetSendParameter(TRAIT_FAST_METABOLISM, true);
     // Strenght
     SetSendParameter(ST_STRENGTH, true);
     SetSendParameter(ST_STRENGTH_EXT, true);
@@ -2478,18 +2479,19 @@ void critter_idle(Critter& cr)
             if(cr.Stat[ST_HEALING_RATE] > 0)
 			{
 			    int maxhp = GetActualMaxHp(cr);
+			    int maxLimbHp = maxhp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
 			    int hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 3);
 				cr.StatBase[ST_CURRENT_HP] += hpFromHealingRate;
 				if (cr.DamageBase[DAMAGE_EYE] == 0)
-				    cr.StatBase[ST_HP_HEAD] = CLAMP(cr.StatBase[ST_HP_HEAD] + hpFromHealingRate, 0, maxhp / 2);
+				    cr.StatBase[ST_HP_HEAD] = CLAMP(cr.StatBase[ST_HP_HEAD] + hpFromHealingRate, 0, maxLimbHp);
                 if (cr.DamageBase[DAMAGE_LEFT_ARM] == 0)
-                    cr.StatBase[ST_HP_LA] = CLAMP(cr.StatBase[ST_HP_LA] + hpFromHealingRate, 0, maxhp / 2);
+                    cr.StatBase[ST_HP_LA] = CLAMP(cr.StatBase[ST_HP_LA] + hpFromHealingRate, 0, maxLimbHp);
                 if (cr.DamageBase[DAMAGE_RIGHT_ARM] == 0)
-                    cr.StatBase[ST_HP_RA] = CLAMP(cr.StatBase[ST_HP_RA] + hpFromHealingRate, 0, maxhp / 2);
+                    cr.StatBase[ST_HP_RA] = CLAMP(cr.StatBase[ST_HP_RA] + hpFromHealingRate, 0, maxLimbHp);
                 if (cr.DamageBase[DAMAGE_LEFT_LEG] == 0)
-                    cr.StatBase[ST_HP_LL] = CLAMP(cr.StatBase[ST_HP_LL] + hpFromHealingRate, 0, maxhp / 2);
+                    cr.StatBase[ST_HP_LL] = CLAMP(cr.StatBase[ST_HP_LL] + hpFromHealingRate, 0, maxLimbHp);
                 if (cr.DamageBase[DAMAGE_RIGHT_LEG] == 0)
-                    cr.StatBase[ST_HP_RL] = CLAMP(cr.StatBase[ST_HP_RL] + hpFromHealingRate, 0, maxhp / 2);
+                    cr.StatBase[ST_HP_RL] = CLAMP(cr.StatBase[ST_HP_RL] + hpFromHealingRate, 0, maxLimbHp);
                 //cr.StatBase[ST_CURRENT_HP] += MAX(cr.Stat[ST_HEALING_RATE] * GetActualMaxHp(cr) / 100, 3); 	//	old system
 			}
             else

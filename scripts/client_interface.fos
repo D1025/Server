@@ -784,7 +784,7 @@ void render_iface(uint layer)
                         int dy = -10;
                         if(chosen.Perk[PE_LIVING_ANATOMY] != 0)
                         {
-                            int maxHp = cr.Param[ST_MAX_LIFE] /2;
+                            int maxHp = cr.Param[ST_MAX_LIFE] / (cr.Param[PE_IRON_GRIP] == 1 ? 1 : 2);
                             DrawText(((cr.Param[ST_HP_LL] * 100 / maxHp) + "% Legs ") +((cr.Param[ST_HP_RL] * 100 / maxHp) + "% "), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, AW_COLOR_FACTION_NAME, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
                             dy -= 10;
                             DrawText(((cr.Param[ST_HP_LA] * 100 / maxHp) + "% Arms ") +((cr.Param[ST_HP_RA] * 100 / maxHp) + "% "), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, AW_COLOR_FACTION_NAME, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
@@ -2513,7 +2513,7 @@ void DrawIndicators()
         return;
     ItemCl@ item = chosen.GetItem(0, SLOT_HAND1);
 
-    int     maxHp = chosen.Param[ST_MAX_LIFE] / 2;
+    int     maxHp = chosen.Param[ST_MAX_LIFE] / (chosen.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     int     curHeadHp = chosen.Param[ST_HP_HEAD];
     int     curLeftArmHp = chosen.Param[ST_HP_LA];
     int     curRightArmHp = chosen.Param[ST_HP_RA];

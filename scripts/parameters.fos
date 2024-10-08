@@ -75,7 +75,7 @@ void changedParam_HeadHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_HEAD];
-    int maxHp = GetActualMaxHp(cr) / 2;
+    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_HEAD] = maxHp;
@@ -92,7 +92,7 @@ void changedParam_LArmHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_LA];
-    int maxHp = GetActualMaxHp(cr) / 2;
+    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_LA] = maxHp;
@@ -109,7 +109,7 @@ void changedParam_RArmHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_RA];
-    int maxHp = GetActualMaxHp(cr) / 2;
+    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_RA] = maxHp;
@@ -126,7 +126,7 @@ void changedParam_LLegHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_LL];
-    int maxHp = GetActualMaxHp(cr) / 2;
+    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_LL] = maxHp;
@@ -143,7 +143,7 @@ void changedParam_RLegHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_RL];
-    int maxHp = GetActualMaxHp(cr) / 2;
+    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_RL] = maxHp;
@@ -169,8 +169,10 @@ void changedParam_Experience(Critter& cr, uint, int oldValue)   // server
         //   return;
 
         cr.StatBase[ST_EXPERIENCE] = oldValue + exp;
+        uint additionaLevelCap = __LevelCap;
+        additionaLevelCap += (cr.Trait[TRAIT_SKILLED]==1 ? 3 : 0) + (cr.Trait[TRAIT_GIFTED]==1 ? -3 : 0);
 
-        if(level >= __LevelCap)
+        if(level >= additionaLevelCap)
         {
             if(_IsFollower(cr))
 			{
@@ -179,7 +181,7 @@ void changedParam_Experience(Critter& cr, uint, int oldValue)   // server
 			}
         }
 
-        int perkUp = (cr.Trait[TRAIT_SKILLED] != 0 ? 4 : 3);
+        int perkUp = 3;
         while(true)
         {
             if(cr.StatBase[ST_EXPERIENCE] >= NextLevelNeedExp(cr))
@@ -191,22 +193,20 @@ void changedParam_Experience(Critter& cr, uint, int oldValue)   // server
                  // Czwarty tag skill
 				 //    if(cr.Stat[ST_LEVEL]==12) cr.StatBase[ST_UNSPENT_TAG]=1;
 
-                cr.StatBase[ST_UNSPENT_SKILL_POINTS] += 0 ; // Skill points
-                if(cr.Trait[TRAIT_SKILLED] != 0)
-                    cr.StatBase[ST_UNSPENT_SKILL_POINTS] += 0;                             // Skilled trait
+                //cr.StatBase[ST_UNSPENT_SKILL_POINTS] += 0 ; // Skill points
                 // if(cr.Trait[TRAIT_GIFTED]!=0) cr.StatBase[ST_UNSPENT_SKILL_POINTS]-=5; // Gifted trait
-                cr.StatBase[ST_UNSPENT_SKILL_POINTS] += cr.Perk[PE_EDUCATED] * 0;          // Educated perk
+                //cr.StatBase[ST_UNSPENT_SKILL_POINTS] += cr.Perk[PE_EDUCATED] * 0;          // Educated perk
                 /*if(cr.StatBase[ST_UNSPENT_SKILL_POINTS] > 99)
                     cr.StatBase[ST_UNSPENT_SKILL_POINTS] = 99;*/                             // Clamp skill points
 
 				//druto
 				
-				if(level <= 30)			//	<= __LevelCap
+				if(level <= additionaLevelCap)			//	<= __LevelCap
 				{
 					// cr.StatBase[ST_MAX_LIFE] += cr.StatBase[ST_ENDURANCE] / 2;                 // Add max hp
 					// if((cr.StatBase[ST_ENDURANCE]%2==1) && cr.StatBase[ST_LEVEL]%2==0) cr.StatBase[ST_MAX_LIFE]+=1;  // Add additional 1 HP when odd EN numbers
 
-					if((level % perkUp) == 0 && (level <= __LevelCap))
+					if((level % perkUp) == 0 && (level <= additionaLevelCap))
 						cr.StatBase[ST_UNSPENT_PERKS] += 1;
 				
 				}
@@ -343,6 +343,27 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
         _param_[ST_AGILITY] += 1;
     if(_param_[TRAIT_BRUISER] != 0)
         _param_[ST_STRENGTH] += 4;
+
+	if(_param_[TRAIT_GIFTED] != 0) {
+	    _param_[ST_STRENGTH] += 1;
+	    _param_[ST_PERCEPTION] += 1;
+	    _param_[ST_ENDURANCE] += 1;
+	    _param_[ST_CHARISMA] += 1;
+	    _param_[ST_INTELLECT] += 1;
+	    _param_[ST_AGILITY] += 1;
+	    _param_[ST_LUCK] += 1;
+	}
+
+	if(_param_[TRAIT_SKILLED] != 0) {
+	   _param_[ST_STRENGTH] -= 1;
+	   _param_[ST_PERCEPTION] -= 1;
+	   _param_[ST_ENDURANCE] -= 1;
+	   _param_[ST_CHARISMA] -= 1;
+	   _param_[ST_INTELLECT] -= 1;
+	   _param_[ST_AGILITY] -= 1;
+	   _param_[ST_LUCK] -= 1;
+	}
+
     /*if(_param_[TRAIT_GOOD_NATURED]!=0)
        {
             _param_[SK_FIRST_AID]+=15;
@@ -427,13 +448,15 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     _param_[ST_RADIATION_RESISTANCE] += 20 + _param_[ST_ENDURANCE] * 3;
     _param_[ST_SEQUENCE] += _param_[ST_PERCEPTION] * 2;
 
-	_param_[ST_HEALING_RATE] += 3 * _param_[ST_ENDURANCE];
+	_param_[ST_HEALING_RATE] += 4 * _param_[ST_CHARISMA];
     if(_param_[TRAIT_FAST_METABOLISM] != 0)
 	{
         _param_[ST_HEALING_RATE] += 10;
-		_param_[ST_POISON_RESISTANCE] = 0;
-		_param_[ST_RADIATION_RESISTANCE] = 0;
+		_param_[ST_POISON_RESISTANCE] -= 30;
+		_param_[ST_RADIATION_RESISTANCE] -= 30;
 	}
+
+
 
     _param_[ST_CRITICAL_CHANCE] += 0;
     #endif
@@ -474,6 +497,17 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
 			Message("Incorrect SPECIAL data.");
 			return false;
 		}
+	if((data[ST_STRENGTH]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_PERCEPTION]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_ENDURANCE]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_CHARISMA]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_INTELLECT]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_AGILITY]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_LUCK]>9 && data[TRAIT_GIFTED]!=0))
+	    {
+	                Message("Incorrect SPECIAL data.");
+	                return false;
+        }
+
+    if((data[ST_STRENGTH]<2 && data[TRAIT_SKILLED]!=0) || (data[ST_PERCEPTION]<2 && data[TRAIT_SKILLED]!=0) || (data[ST_ENDURANCE]<2 && data[TRAIT_SKILLED]!=0) || (data[ST_CHARISMA]<2 && data[TRAIT_SKILLED]!=0) || (data[ST_INTELLECT]<2 && data[TRAIT_SKILLED]!=0) || (data[ST_AGILITY]<2 && data[TRAIT_SKILLED]!=0) || (data[ST_LUCK]<2 && data[TRAIT_SKILLED]!=0))
+        {
+                    Message("Incorrect SPECIAL data.");
+                    return false;
+        }
 	
     if(special != __StartSpecialPoints)
     {

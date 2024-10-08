@@ -371,7 +371,7 @@ EXPORT int getParam_MeleeDmg(CritterMutual& cr, uint)
 
 EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT] + 3 * getParam_Endurance(cr, 0);
+	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT] + 4 * getParam_Charisma(cr, 0);
 
 	if(cr.Params[TRAIT_FAST_METABOLISM]) val += 10;
 
@@ -453,22 +453,25 @@ EXPORT int getParam_DamageThreshold(CritterMutual& cr, uint index)
 
 EXPORT int getParam_RadiationResist(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_RADIATION_RESISTANCE] + cr.Params[ST_RADIATION_RESISTANCE_EXT] + getParam_Endurance(cr, 0) * 2;
+	int val = cr.Params[ST_RADIATION_RESISTANCE] + cr.Params[ST_RADIATION_RESISTANCE_EXT] + 20 + getParam_Endurance(cr, 0) * 3;
+	if (cr.Params[TRAIT_FAST_METABOLISM]) val -= 30;
 
 	const Item* armor=cr.ItemSlotArmor;
 	val+=checkBonus(armor, BONUS_ARMOR_RAD_RES);
 
-	return CLAMP(val, 0, 95);
+	return CLAMP(val, -95, 95);
 }
 
 EXPORT int getParam_PoisonResist(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_POISON_RESISTANCE] + cr.Params[ST_POISON_RESISTANCE_EXT] + getParam_Endurance(cr, 0) * 5;
+	int endurance = getParam_Endurance(cr, 0);
+	int val = cr.Params[ST_POISON_RESISTANCE] + cr.Params[ST_POISON_RESISTANCE_EXT] + 8 + endurance * 2 + (endurance > 10 ? 6 : 0) + (endurance > 15 ? 6 : 0);
+	if (cr.Params[TRAIT_FAST_METABOLISM]) val -= 30;
 
 	const Item* armor=cr.ItemSlotArmor;
 	val+=checkBonus(armor, BONUS_ARMOR_POISON_RES);
 
-	return CLAMP(val, 0, 95);
+	return CLAMP(val, -95, 95);
 }
 
 EXPORT int getParam_Reputation(CritterMutual& cr, uint index)
@@ -669,13 +672,7 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 
 		apCost = item.Proto->Weapon_ApCost[use];
 		if(aim) apCost += GetAimApCost(aim);
-		if(cr.Params[PE_BONUS_RATE_OF_FIRE] !=0) return apCost-1;
-		if(cr.Params[TRAIT_FAST_SHOT] && !hthAttack && item.WeapIsCanAim(use))
-		{
-			apCost--;
-			if(FLAG(item.Proto->Flags,ITEM_TWO_HANDS)) apCost--;
-		}
-		// Handling -AP cost bonus for weapons
+		if(cr.Params[PE_BONUS_RATE_OF_FIRE] !=0) apCost--;
 		//if(checkBonus(item, BONUS_WEAPON_AP_COST)!=0) apCost--;
 	}
 

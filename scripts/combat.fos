@@ -53,6 +53,8 @@ class AttackStruct
     uint8      Aim = HIT_LOCATION_UNCALLED;
     bool       AimHead = false;
     bool       IsBurst = false;
+    bool       IsLSW = false;
+    bool       IsBozar = false;
     bool       IsFlamethrower = false;
     bool       BloodyMess = false;
     bool       CombatMessage = false;
@@ -278,6 +280,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     attack.Hy = hy;
     attack.set_Aim(aim);
     attack.IsBurst = isBurst;
+    attack.IsLSW = isLSW;
+    attack.IsBozar = isBozar;
     attack.BloodyMess = cr.Trait[TRAIT_BLOODY_MESS] != 0;
     attack.CombatMessage = true;
     attack.IsUnarmed = (weaponSubtype == WS_UNARMED);
@@ -1004,8 +1008,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         }
 
         // Now we are shooting the rest of the bullets (=rounds-MAX(1,rounds/6))
-        bool threeLines = (GetDistantion(hx, hy, lineCentral[0].HexX, lineCentral[0].HexY) > 1) && (!isShotgun) && (!isBozar) && (!isLSW);   // target not adjacent and weapon not shotgun-like
-
+        //bool threeLines = (GetDistantion(hx, hy, lineCentral[0].HexX, lineCentral[0].HexY) > 1) && (!isShotgun) && (!isBozar) && (!isLSW);   // target not adjacent and weapon not shotgun-like
+        bool threeLines = false;
         // Already shot: MAX(rounds/6,1);
         for(int lineCount = 0, lineMax = (threeLines ? 1 : 3); lineCount < lineMax; lineCount++)
         {
@@ -1456,7 +1460,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     bool     isMelee = (attack.WeaponSubtype == WS_UNARMED);
 	uint16   ammoPid = attack.ammoPid;
     if(valid(attack.Ammo)) ammoPid = attack.Ammo.ProtoId;
-    int    limbDamageMultiplayer = 4;
+    int      limbDamageMultiplayer = 4;
 
 	bool     isBanhammer = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_BAN_HAMMER : false);
 	bool     isHolySpear = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_HOLY_SPEAR : false);
@@ -1852,6 +1856,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             totalDmg += 5;
 		if(attack.Attacker.Trait[TRAIT_KAMIKAZE] != 0)
 			totalDmg *= 1.1;
+
+		if(attack.Attacker.Perk[PE_SPRAY_AND_PRAY] == 0 && attack.IsBurst && !isShotgun && !attack.IsLSW && !attack.IsBozar)
+		    totalDmg *= 0.60;
     }
 	
     // 0x00000001 - knockout
@@ -2007,10 +2014,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             target.StatBase[ST_CURRENT_HP] -= totalDmg;
             if(dmgType == DAMAGE_EXPLODE)
             {
-                target.StatBase[ST_HP_LA] -= totalDmg/4;
-                target.StatBase[ST_HP_RA] -= totalDmg/4;
-                target.StatBase[ST_HP_LL] -= totalDmg/4;
-                target.StatBase[ST_HP_RL] -= totalDmg/4;
+                target.StatBase[ST_HP_LA] -= totalDmg/2;
+                target.StatBase[ST_HP_RA] -= totalDmg/2;
+                target.StatBase[ST_HP_LL] -= totalDmg/2;
+                target.StatBase[ST_HP_RL] -= totalDmg/2;
             }
             int totalDamageToLimb = totalDmg * limbDamageMultiplayer / 4;
             switch(aim)
@@ -2408,19 +2415,22 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun || weaponPerk == WEAPON_PERK_KNOCKBACK || knockbackFromCrit) && target.IsCanWalk())
             {
 				//Log(" bron jest WS_MELEE");
-				if(weaponPerk == WEAPON_PERK_KNOCKBACK)
+				if(weaponPerk == WEAPON_PERK_KNOCKBACK || (isShotgun && rounds > 1))
                     knockDist /= 5;
                 else
                     knockDist /= 10;
-                if(target.Perk[PE_STONEWALL] != 0)
-                    knockDist /= 2;
+                if(target.Perk[PE_STONEWALL] != 0) {
+                    knockDist *= 2;
+                    knockDist /= 3;
+                }
+
                 knockDist--;
 //Log("knockDist = " + knockDist);				
                 if(knockDist > 15)
                     knockDist = 15;
                 uint16 knockHx = attack.Hx; 
                 uint16 knockHy = attack.Hy;
-                if(knockDist > 0)
+                if(knockDist > 2)
                 {
                     map.GetHexCoordWall(target.HexX, target.HexY, knockHx, knockHy, 180.0f, knockDist);
                     target.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(attackFront), 0, knockHx, knockHy);

@@ -1674,7 +1674,7 @@
 {103192}{}{Each level of Educated adds +2 skill points when you gain a new experience level. This Perk works best when purchased early in your adventure.}
 # PE_HEALER
 {103201}{}{Healer}
-{103202}{}{The healing of bodies comes easier to you with this Perk. This Perk heals 50 additional hit points when using the First Aid.}
+{103202}{}{The healing of bodies comes easier to you with this Perk. At first level you heal 50 hp more from First Aid and Doctor, and at second level you heal additional 100 hp more.}
 # PE_FORTUNE_FINDER
 {103211}{}{Fortune Finder}
 {103212}{}{You have the talent of finding money. You find additional money in random encounters in the desert.}
@@ -1974,7 +1974,7 @@
 {104442}{}{You cut an intimidating figure and people cower when you are near. Opponents have a 50% chance of missing you when in an adjacent square.}
 # PE_HIT_THE_GAPS             (445)
 {104451}{}{Hit the Gaps}
-{104452}{}{You are an expert at punching through the weak spots in armor. The Critical Modifier value of any armor is reduced by 50% }
+{104452}{}{You are an expert at punching through the weak spots in armor. The Critical Power Modifier value of any armor is reduced by 100% }
 # PE_HTH_CRITICALS            (446)
 {104461}{}{Better HtH Criticals}
 {104462}{}{The critical hits you cause in hand to hand combat are more devastating. You gain a +25 bonus on the critical hit table. This does not affect the chance to cause a critical hit.}
@@ -2180,9 +2180,9 @@
 # TRAIT_HEAVY_HANDED
 {105561}{}{Heavy Handed}
 {105562}{}{You swing harder, not better.  Your attacks are very brutal, but lack finesse.  You rarely cause a good critical, but you always do more unarmed damage. Additionally, all your close combat attacks knock down the opponent if a successful Strength roll was made.}
-# TRAIT_FAST_SHOT
-{105571}{}{Fast Shot}
-{105572}{}{You don't have time to aim for a targeted attack, because you attack faster than normal people.  It costs you one less action point for guns and thrown weapons, and then one less with two handed weapons.}
+# TRAIT_GIFTED
+{105571}{}{Gifted}
+{105572}{}{You have more innate abilities than most, so you have not spent as much time honing your skills.  Your primary statistics are each +1, but you lose one perk.}
 # TRAIT_BLOODY_MESS
 {105581}{}{Bloody Mess}
 {105582}{}{By some strange twist of fate, people around you die violently.  You always see the worst way a person can die.}
@@ -2203,13 +2203,13 @@
 {105632}{}{A thicker than average cranium means you can shrug off hits to the head that would floor others.  Unfortunatly that doesn't leave much room up there.}
 # TRAIT_SKILLED
 {105641}{}{Skilled}
-{105642}{}{Since you spent more time improving your skills than a normal person, you gain 5 additional skill points per experience level. The tradeoff is that you do not gain as many extra abilities. You gain a perk every four levels.}
+{105642}{}{Since you spent more time improving your skills than a normal person, you gain one  additional perk. The tradeoff is that you do not gain as many statistics. Your Primary Statistics are each -1.}
 # TRAIT_LONER
 {105651}{}{Loner}
 {105652}{}{You appreciate the nature more than company of others. You gain 10% more experience, but you can't have any followers.}
-# TRAIT_GIFTED
-{105661}{}{Gifted}
-{105662}{}{You have more innate abilities than most, so you have not spent as much time honing your skills.  Your primary statistics are each +1, but you lose -10% on all skills to start, and receive 5 less skill points per level.}
+# TRAIT_FAST_SHOT
+{105661}{}{Fast Shot}
+{105662}{}{You don't have time to aim for a targeted attack, because you attack faster than normal people.  It costs you one less action point for guns and thrown weapons, and then one less with two handed weapons.}
 
 ######################
 #

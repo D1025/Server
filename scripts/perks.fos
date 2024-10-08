@@ -253,12 +253,12 @@ void InitPerks() // export
     SATISFIES(PE_MORE_CRITICALS,         @_OrRangedSkill, 0, 0, 100);
     SATISFIES(PE_EVEN_MORE_CRITICALS,    @_OrRangedSkill, 0, 0, 125);
     SATISFIES(PE_SHARPSHOOTER,           @_OrRangedSkill, 0, 0, 150);
-    SATISFIES(PE_BETTER_CRITICALS,       @_OrRangedSkill, 0, 0, 175);
+    SATISFIES(PE_BETTER_CRITICALS,       @_OrRangedHtHSkill, 0, 0, 175);
     SATISFIES(PE_RIGHT_BETWEEN_THE_EYES, @_OrRangedHtHSkill, 0, 0, 200);
     SATISFIES(PE_BONUS_RATE_OF_FIRE,     @_OrRangedHtHSkill, 0, 0, 180);
-    SATISFIES(PE_WEAPON_HANDLING,        @_OrRangedSkill, 0, 0, 100);
+    SATISFIES(PE_WEAPON_HANDLING,        @_OrRangedHtHSkill, 0, 0, 100);
     SATISFIES(PE_FAST_RELOAD,            @_OrRangedGunSkill, 0, 0, 125);
-    SATISFIES(PE_SPRAY_AND_PRAY,         @_OrRangedSkill, 0, 0, 125);
+    SATISFIES(PE_SPRAY_AND_PRAY,         @_OrRangedSkill, 0, 0, 150);
     SATISFIES(PE_MORE_RANGED_DAMAGE,     @_OrRangedSkill, 0, 0, 200);
 
     SATISFIES(PE_PROFESSION_ARMORER,           @_ProfessionCheck, SK_REPAIR,  50, 100);

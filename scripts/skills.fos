@@ -25,7 +25,7 @@ Item@ SelectSkillItem(Critter& cr, Item@ item, uint16 skill)
 
 bool _CritAtLeastOneLimbNotOnFull(Critter& cr)
 {
-    int maxHp = cr.StatBase[ST_MAX_LIFE];
+    int maxHp = cr.StatBase[ST_MAX_LIFE] / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     return cr.Stat[ST_HP_HEAD] < maxHp || cr.Stat[ST_HP_LA] < maxHp || cr.Stat[ST_HP_RA] < maxHp || cr.Stat[ST_HP_LL] < maxHp || cr.Stat[ST_HP_RL] < maxHp;
 }
 

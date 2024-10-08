@@ -73,7 +73,7 @@ bool _TentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery
                 return(true);
 			}
 
-			int perkUp = (cr.Trait[TRAIT_SKILLED] != 0 ? 4 : 3);
+			int perkUp = 3;
 		    int nextPerkLevel = (perkUp - (level % perkUp)) % perkUp;
 		    if (nextPerkLevel == 0) {
                 nextPerkLevel = 3;
