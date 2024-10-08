@@ -669,8 +669,7 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 
 		apCost = item.Proto->Weapon_ApCost[use];
 		if(aim) apCost += GetAimApCost(aim);
-		if(hthAttack && cr.Params[PE_BONUS_HTH_ATTACKS]) apCost--;
-		if(rangedAttack && cr.Params[PE_BONUS_RATE_OF_FIRE]) apCost--;
+		if(cr.Params[PE_BONUS_RATE_OF_FIRE]) apCost--;
 		if(cr.Params[TRAIT_FAST_SHOT] && !hthAttack && item.WeapIsCanAim(use))
 		{
 			apCost--;

@@ -1631,8 +1631,8 @@
 {103051}{}{Bonus Ranged Damage}
 {103052}{}{Your training in firearms and other ranged weapons has made you more deadly in ranged combat.  For each level of this Perk, you do +2 points of damage with ranged weapons.}
 # PE_BONUS_RATE_OF_FIRE
-{103061}{}{Bonus Rate of Fire}
-{103062}{}{This Perk allows you to pull the trigger a little faster and still remain as accurate as before.  Each ranged weapon attack costs 1 AP less to perform.}
+{103061}{}{Bonus Rate of Attacks}
+{103062}{}{This Perk allows you to pull the trigger a little faster and still remain as accurate as before.  Each weapon attack costs 1 AP less to perform.}
 # PE_EARLIER_SEQUENCE
 {103071}{}{Earlier Sequence}
 {103072}{}{You are more likely to move before your opponents in combat, since your Sequence is increased by +2 points.}
