@@ -1,0 +1,76 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 #
+200 2010 D _param p ST_LEVEL > 29 #
+0 2020 @
+200 3000 None 0 #
+201 3010 #
+0 3020 @
+204 4000 None 0 #
+204 4010 D _param p ST_LEVEL > 29 D _param p ST_IMPLANTS_COUNT < 6 R _param p ST_IMPLANTS_COUNT + 1 R _param p PE_IMP_STRENGTH + 1 #
+204 4020 D _param p ST_LEVEL > 29 D _param p ST_IMPLANTS_COUNT < 6 R _param p ST_IMPLANTS_COUNT + 1 R _param p PE_IMP_PERCEPTION + 1 #
+204 4030 D _param p ST_LEVEL > 29 D _param p ST_IMPLANTS_COUNT < 6 R _param p ST_IMPLANTS_COUNT + 1 R _param p PE_IMP_ENDURANCE + 1 #
+204 4040 D _param p ST_LEVEL > 29 D _param p ST_IMPLANTS_COUNT < 6 R _param p ST_IMPLANTS_COUNT + 1 R _param p PE_IMP_CHARISMA + 1 #
+204 4050 D _param p ST_LEVEL > 29 D _param p ST_IMPLANTS_COUNT < 6 R _param p ST_IMPLANTS_COUNT + 1 R _param p PE_IMP_INTELLIGENCE + 1 #
+204 4060 D _param p ST_LEVEL > 29 D _param p ST_IMPLANTS_COUNT < 6 R _param p ST_IMPLANTS_COUNT + 1 R _param p PE_IMP_AGILITY + 1 #
+204 4070 D _param p ST_LEVEL > 29 D _param p ST_IMPLANTS_COUNT < 6 R _param p ST_IMPLANTS_COUNT + 1 R _param p PE_IMP_LUCK + 1 #
+201 4080 @
+205 5000 None 0 #
+205 5010 D _param p PE_DERMAL_IMPACT < 1 D _param p ST_COMBAT_IMPLANTS_COUNT < 3 R _param p ST_COMBAT_IMPLANTS_COUNT + 1 R _param p PE_DERMAL_IMPACT + 1 #
+205 5020 D _param p ST_LEVEL > 29 D _param p ST_COMBAT_IMPLANTS_COUNT < 3 D _param p PE_DERMAL_IMPACT = 1 D _param p PE_DERMAL_IMPACT_ENH < 1 R _param p ST_COMBAT_IMPLANTS_COUNT + 1 R _param p PE_DERMAL_IMPACT_ENH + 1 #
+205 5030 D _param p ST_LEVEL > 29 D _param p ST_COMBAT_IMPLANTS_COUNT < 3 D _param p PE_PHOENIX_IMPLANTS < 1 R _param p ST_COMBAT_IMPLANTS_COUNT + 1 R _param p PE_PHOENIX_IMPLANTS + 1 #
+205 5040 D _param p ST_LEVEL > 29 D _param p ST_COMBAT_IMPLANTS_COUNT < 3 D _param p PE_PHOENIX_IMPLANTS = 1 D _param p PE_PHOENIX_IMPLANTS_ENH < 1 R _param p ST_COMBAT_IMPLANTS_COUNT + 1 R _param p PE_PHOENIX_IMPLANTS_ENH + 1 #
+205 5050 D _param p ST_LEVEL > 29 D _param p ST_COMBAT_IMPLANTS_COUNT < 3 D _param p PE_NEMEAN_ARMOR < 1 R _param p PE_NEMEAN_ARMOR + 1 R _param p ST_COMBAT_IMPLANTS_COUNT + 1 #
+205 5060 D _param p ST_LEVEL > 29 D _param p ST_COMBAT_IMPLANTS_COUNT < 3 D _param p PE_NEMEAN_ARMOR < 2 D _param p PE_NEMEAN_ARMOR > 0 R _param p PE_NEMEAN_ARMOR + 1 R _param p ST_COMBAT_IMPLANTS_COUNT + 1 #
+201 5070 @
+201 6000 None 0 #
+204 6010 #
+204 6020 #
+0 6030 &
+
+[engl]
+{100}{}{DepreSor}
+{200}{}{You see a shrunken bad programmer in a robe.}
+{210}{}{This is DepreSor.}
+{210}{}{You see a wizened old man wearing a white smock.}
+{1000}{}{Predialogue installations}
+{1010}{}{default}
+{2000}{}{But I've been balancing it...}
+{2010}{}{What can you tell me about implants?
+}
+{2020}{}{Bye.}
+{3000}{}{I helped write the article on armor implants. All it takes is my expertise and your materials. What sort of implants do you desire?
+}
+{3010}{}{What sort are there?
+}
+{3020}{}{Fuck you!}
+{4000}{}{So you decided to choose a SPECIAL implant, hope you choke on it. Remember, you dickhead, you can only choose 6.}
+{4010}{}{Strength}
+{4020}{}{Perception}
+{4030}{}{Endurance}
+{4040}{}{Charisma}
+{4050}{}{Intelligence}
+{4060}{}{Agility}
+{4070}{}{Luck}
+{4080}{}{Maybe I want another type of implants.}
+{5000}{}{Ahh Combat implant. You're driving rough, every one of them is a dick in your ass, how many can you fit in yours? You look pretty experienced in combat, so I'm betting 3.}
+{5010}{}{Dermal}
+{5020}{}{Upgrade Dermal}
+{5030}{}{Phoenix}
+{5040}{}{Upgrade Phoenix}
+{5050}{}{Nemean}
+{5060}{}{Upgrade Nemean}
+{5070}{}{Maybe I want another type of implants.}
+{6000}{}{Let me see, there is two variants}
+{6010}{}{SPECIAL Implant}
+{6020}{}{Combat Implant}
+{6030}{}{Whatever}
+

@@ -608,6 +608,8 @@
 #define ST_NPC_BOSS                 (187) // Additional variable, used in mob_dynamics for boss flag
 #define ST_BURN_LAST_ENEMY_ID       (188) // ID of a thing that has ignited the hex / thrown molotov etc.
 #define ST_LAST_LOOT                (189) // ID of last looted body or container - antiexploit
+#define ST_IMPLANTS_COUNT           (190) // Counter for implants
+#define ST_COMBAT_IMPLANTS_COUNT    (191) // Counter for combat implants
 
 /// Skills
 #define SKILL_BEGIN                              (__SkillBegin)

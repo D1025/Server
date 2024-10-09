@@ -250,6 +250,9 @@ bool start()
     // Luck
     SetSendParameter(ST_LUCK, true);
     SetSendParameter(ST_LUCK_EXT, true);
+    // Implants Count
+    SetSendParameter(ST_IMPLANTS_COUNT, true);
+    SetSendParameter(ST_COMBAT_IMPLANTS_COUNT, true);
     // Battle timeout
     SetSendParameter(TO_BATTLE, true);
     SetSendParameter(TO_SK_FIRST_AID, true, "Utils.dll@_AllowParameterIfLivingAnatomy");

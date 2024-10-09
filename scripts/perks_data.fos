@@ -2059,88 +2059,378 @@ int[][] PerksData = {
     },
     #endif
 	
-    { 463, 1, 1 }, // Strength Implant, Levelling, 1 ranks
+    { 463, 1, 6 }, // Strength Implant, Levelling, 1 ranks
     {              // level 1 requirements
     },
+        {              // level 1 requirements
+        },
+            {              // level 1 requirements
+            },
+                {              // level 1 requirements
+                },
+                    {              // level 1 requirements
+                    },
+                        {              // level 1 requirements
+                        },
+                            {              // level 1 requirements
+                            },
     #ifdef __SERVER
     {              // level 1 perk up effects
         0, 1, 1,   // Strength increased by 1
     },
+        {              // level 1 perk up effects
+            0, 1, 1,   // Strength increased by 1
+        },
+            {              // level 1 perk up effects
+                0, 1, 1,   // Strength increased by 1
+            },
+                {              // level 1 perk up effects
+                    0, 1, 1,   // Strength increased by 1
+                },
+                    {              // level 1 perk up effects
+                        0, 1, 1,   // Strength increased by 1
+                    },
+                        {              // level 1 perk up effects
+                            0, 1, 1,   // Strength increased by 1
+                        },
     {              // level 1 perk down effects
         -1         // Just revert
     },
+        {              // level 1 perk down effects
+            -1         // Just revert
+        },
+            {              // level 1 perk down effects
+                -1         // Just revert
+            },
+                {              // level 1 perk down effects
+                    -1         // Just revert
+                },
+                    {              // level 1 perk down effects
+                        -1         // Just revert
+                    },
+                        {              // level 1 perk down effects
+                            -1         // Just revert
+                        },
+                            {              // level 1 perk down effects
+                                -1         // Just revert
+                            },
     #endif	
 	
-    { 464, 1, 1 }, // Perception Implant, Levelling, 1 ranks
+    { 464, 1, 6 }, // Perception Implant, Levelling, 1 ranks
     {              // level 1 requirements
     },
+        {              // level 1 requirements
+        },
+            {              // level 1 requirements
+            },
+                {              // level 1 requirements
+                },
+                    {              // level 1 requirements
+                    },
+                        {              // level 1 requirements
+                        },
     #ifdef __SERVER
     {              // level 1 perk up effects
         1, 1, 1,   // Perception increased by 1
     },
+        {              // level 1 perk up effects
+            1, 1, 1,   // Perception increased by 1
+        },
+            {              // level 1 perk up effects
+                1, 1, 1,   // Perception increased by 1
+            },
+                {              // level 1 perk up effects
+                    1, 1, 1,   // Perception increased by 1
+                },
+                    {              // level 1 perk up effects
+                        1, 1, 1,   // Perception increased by 1
+                    },
+                        {              // level 1 perk up effects
+                            1, 1, 1,   // Perception increased by 1
+                        },
     {              // level 1 perk down effects
         -1         // Just revert
     },
+        {              // level 1 perk down effects
+            -1         // Just revert
+        },
+            {              // level 1 perk down effects
+                -1         // Just revert
+            },
+                {              // level 1 perk down effects
+                    -1         // Just revert
+                },
+                    {              // level 1 perk down effects
+                        -1         // Just revert
+                    },
+                        {              // level 1 perk down effects
+                            -1         // Just revert
+                        },
     #endif
 	
-	{ 465, 1, 1 }, // Endurance Implant, Levelling, 1 ranks
+	{ 465, 1, 6 }, // Endurance Implant, Levelling, 1 ranks
     {              // level 1 requirements
     },
+        {              // level 1 requirements
+        },
+            {              // level 1 requirements
+            },
+                {              // level 1 requirements
+                },
+                    {              // level 1 requirements
+                    },
+                        {              // level 1 requirements
+                        },
     #ifdef __SERVER
     {              // level 1 perk up effects
         2, 1, 1,   // Endurance increased by 1
     },
+        #ifdef __SERVER
+        {              // level 1 perk up effects
+            2, 1, 1,   // Endurance increased by 1
+        },
+            #ifdef __SERVER
+            {              // level 1 perk up effects
+                2, 1, 1,   // Endurance increased by 1
+            },
+                #ifdef __SERVER
+                {              // level 1 perk up effects
+                    2, 1, 1,   // Endurance increased by 1
+                },
+                    #ifdef __SERVER
+                    {              // level 1 perk up effects
+                        2, 1, 1,   // Endurance increased by 1
+                    },
+                        #ifdef __SERVER
+                        {              // level 1 perk up effects
+                            2, 1, 1,   // Endurance increased by 1
+                        },
     {              // level 1 perk down effects
         -1         // Just revert
     },
+        {              // level 1 perk down effects
+            -1         // Just revert
+        },
+            {              // level 1 perk down effects
+                -1         // Just revert
+            },
+                {              // level 1 perk down effects
+                    -1         // Just revert
+                },
+                    {              // level 1 perk down effects
+                        -1         // Just revert
+                    },
+                        {              // level 1 perk down effects
+                            -1         // Just revert
+                        },
     #endif
 	
-	{ 466, 1, 1 }, // Charisma Implant, Levelling, 1 ranks
+	{ 466, 1, 6 }, // Charisma Implant, Levelling, 1 ranks
     {              // level 1 requirements
     },
+        {              // level 1 requirements
+        },
+            {              // level 1 requirements
+            },
+                {              // level 1 requirements
+                },
+                    {              // level 1 requirements
+                    },
+                        {              // level 1 requirements
+                        },
     #ifdef __SERVER
     {              // level 1 perk up effects
         3, 1, 1,   // Charisma increased by 1
     },
+        {              // level 1 perk up effects
+            3, 1, 1,   // Charisma increased by 1
+        },
+            {              // level 1 perk up effects
+                3, 1, 1,   // Charisma increased by 1
+            },
+                {              // level 1 perk up effects
+                    3, 1, 1,   // Charisma increased by 1
+                },
+                    {              // level 1 perk up effects
+                        3, 1, 1,   // Charisma increased by 1
+                    },
+                        {              // level 1 perk up effects
+                            3, 1, 1,   // Charisma increased by 1
+                        },
     {              // level 1 perk down effects
         -1         // Just revert
     },
+        {              // level 1 perk down effects
+            -1         // Just revert
+        },
+            {              // level 1 perk down effects
+                -1         // Just revert
+            },
+                {              // level 1 perk down effects
+                    -1         // Just revert
+                },
+                    {              // level 1 perk down effects
+                        -1         // Just revert
+                    },
+                        {              // level 1 perk down effects
+                            -1         // Just revert
+                        },
     #endif
 	
-	{ 467, 1, 1 }, // Intelligence Implant, Levelling, 1 ranks
+	{ 467, 1, 6 }, // Intelligence Implant, Levelling, 1 ranks
     {              // level 1 requirements
     },
+        {              // level 1 requirements
+        },
+            {              // level 1 requirements
+            },
+                {              // level 1 requirements
+                },
+                    {              // level 1 requirements
+                    },
+                        {              // level 1 requirements
+                        },
     #ifdef __SERVER
     {              // level 1 perk up effects
         4, 1, 1,   // Intelligence increased by 1
     },
+        {              // level 1 perk up effects
+            4, 1, 1,   // Intelligence increased by 1
+        },
+            {              // level 1 perk up effects
+                4, 1, 1,   // Intelligence increased by 1
+            },
+                {              // level 1 perk up effects
+                    4, 1, 1,   // Intelligence increased by 1
+                },
+                    {              // level 1 perk up effects
+                        4, 1, 1,   // Intelligence increased by 1
+                    },
+                        {              // level 1 perk up effects
+                            4, 1, 1,   // Intelligence increased by 1
+                        },
     {              // level 1 perk down effects
         -1         // Just revert
     },
+        {              // level 1 perk down effects
+            -1         // Just revert
+        },
+            {              // level 1 perk down effects
+                -1         // Just revert
+            },
+                {              // level 1 perk down effects
+                    -1         // Just revert
+                },
+                    {              // level 1 perk down effects
+                        -1         // Just revert
+                    },
+                        {              // level 1 perk down effects
+                            -1         // Just revert
+                        },
     #endif
 	
-	{ 468, 1, 1 }, // Agility Implant, Levelling, 1 ranks
+	{ 468, 1, 6 }, // Agility Implant, Levelling, 1 ranks
     {              // level 1 requirements
     },
+        {              // level 1 requirements
+        },
+            {              // level 1 requirements
+            },
+                {              // level 1 requirements
+                },
+                    {              // level 1 requirements
+                    },
+                        {              // level 1 requirements
+                        },
     #ifdef __SERVER
     {              // level 1 perk up effects
         5, 1, 1,   // Agility increased by 1
     },
+        {              // level 1 perk up effects
+            5, 1, 1,   // Agility increased by 1
+        },
+            {              // level 1 perk up effects
+                5, 1, 1,   // Agility increased by 1
+            },
+                {              // level 1 perk up effects
+                    5, 1, 1,   // Agility increased by 1
+                },
+                    {              // level 1 perk up effects
+                        5, 1, 1,   // Agility increased by 1
+                    },
+                        {              // level 1 perk up effects
+                            5, 1, 1,   // Agility increased by 1
+                        },
     {              // level 1 perk down effects
         -1         // Just revert
     },
+        {              // level 1 perk down effects
+            -1         // Just revert
+        },
+            {              // level 1 perk down effects
+                -1         // Just revert
+            },
+                {              // level 1 perk down effects
+                    -1         // Just revert
+                },
+                    {              // level 1 perk down effects
+                        -1         // Just revert
+                    },
+                        {              // level 1 perk down effects
+                            -1         // Just revert
+                        },
     #endif
 	
-	{ 469, 1, 1 }, // Luck Implant, Levelling, 1 ranks
+	{ 469, 1, 6 }, // Luck Implant, Levelling, 1 ranks
     {              // level 1 requirements
     },
+        {              // level 1 requirements
+        },
+            {              // level 1 requirements
+            },
+                {              // level 1 requirements
+                },
+                    {              // level 1 requirements
+                    },
+                        {              // level 1 requirements
+                        },
     #ifdef __SERVER
     {              // level 1 perk up effects
         6, 1, 1,   // Luck increased by 1
     },
+        {              // level 1 perk up effects
+            6, 1, 1,   // Luck increased by 1
+        },
+            {              // level 1 perk up effects
+                6, 1, 1,   // Luck increased by 1
+            },
+                {              // level 1 perk up effects
+                    6, 1, 1,   // Luck increased by 1
+                },
+                    {              // level 1 perk up effects
+                        6, 1, 1,   // Luck increased by 1
+                    },
+                        {              // level 1 perk up effects
+                            6, 1, 1,   // Luck increased by 1
+                        },
     {              // level 1 perk down effects
         -1         // Just revert
     },
+        {              // level 1 perk down effects
+            -1         // Just revert
+        },
+            {              // level 1 perk down effects
+                -1         // Just revert
+            },
+                {              // level 1 perk down effects
+                    -1         // Just revert
+                },
+                    {              // level 1 perk down effects
+                        -1         // Just revert
+                    },
+                        {              // level 1 perk down effects
+                            -1         // Just revert
+                        },
     #endif
 	
     { -1, -1, -1 }
