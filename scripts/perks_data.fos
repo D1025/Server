@@ -2180,23 +2180,18 @@ int[][] PerksData = {
     {              // level 1 perk up effects
         2, 1, 1,   // Endurance increased by 1
     },
-        #ifdef __SERVER
         {              // level 1 perk up effects
             2, 1, 1,   // Endurance increased by 1
         },
-            #ifdef __SERVER
             {              // level 1 perk up effects
                 2, 1, 1,   // Endurance increased by 1
             },
-                #ifdef __SERVER
                 {              // level 1 perk up effects
                     2, 1, 1,   // Endurance increased by 1
                 },
-                    #ifdef __SERVER
                     {              // level 1 perk up effects
                         2, 1, 1,   // Endurance increased by 1
                     },
-                        #ifdef __SERVER
                         {              // level 1 perk up effects
                             2, 1, 1,   // Endurance increased by 1
                         },
