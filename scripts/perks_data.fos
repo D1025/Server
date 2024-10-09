@@ -2072,8 +2072,6 @@ int[][] PerksData = {
                     },
                         {              // level 1 requirements
                         },
-                            {              // level 1 requirements
-                            },
     #ifdef __SERVER
     {              // level 1 perk up effects
         0, 1, 1,   // Strength increased by 1
@@ -2111,9 +2109,6 @@ int[][] PerksData = {
                         {              // level 1 perk down effects
                             -1         // Just revert
                         },
-                            {              // level 1 perk down effects
-                                -1         // Just revert
-                            },
     #endif	
 	
     { 464, 1, 6 }, // Perception Implant, Levelling, 1 ranks
