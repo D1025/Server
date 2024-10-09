@@ -837,7 +837,7 @@
 #define DIALOG_dialogimage                      (10808)
 #define DIALOG_event_outfitter2                 (10809)
 #define DIALOG_event_teleporter                 (10810)
-#define DIALOG_implant_giver                    (10811)
+#define DIALOG_implant_giver                    (10812)
 #define DIALOG_billboard_hub                    (10900)
 #define DIALOG_billboard_adytum                 (10901)
 #define DIALOG_billboard_shadysands             (10902)

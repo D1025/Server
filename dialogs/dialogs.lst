@@ -969,6 +969,7 @@ $	10808	dialogimage
 $	10809 event_outfitter2
 $	10810	event_teleporter
 $   10811   event_outfitter_special
+$   10812   implant_giver
  	
 $	10900	billboard_hub
 $	10901	billboard_adytum
