@@ -200,7 +200,7 @@ EXPORT int getParam_Strength(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_STRENGTH)!=0) val++;
 
-	return CLAMP(val, 1, 20);
+	return CLAMP(val, 1, 30);
 }
 
 EXPORT int getParam_Perception(CritterMutual& cr, uint)
@@ -211,7 +211,7 @@ EXPORT int getParam_Perception(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_PERCEPTION)!=0) val++;
 
-	return CLAMP(val, 1, 20);
+	return CLAMP(val, 1, 30);
 }
 
 EXPORT int getParam_Endurance(CritterMutual& cr, uint)
@@ -221,7 +221,7 @@ EXPORT int getParam_Endurance(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_ENDURANCE)!=0) val++;
 
-	return CLAMP(val, 1, 20);
+	return CLAMP(val, 1, 30);
 }
 
 EXPORT int getParam_Charisma(CritterMutual& cr, uint)
@@ -231,7 +231,7 @@ EXPORT int getParam_Charisma(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_CHARISMA)!=0) val++;
 
-	return CLAMP(val, 1, 20);
+	return CLAMP(val, 1, 30);
 }
 
 EXPORT int getParam_Intellegence(CritterMutual& cr, uint)
@@ -242,7 +242,7 @@ EXPORT int getParam_Intellegence(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_INTELLIGENCE)!=0) val++;
 
-	return CLAMP(val, 1, 20);
+	return CLAMP(val, 1, 30);
 }
 
 EXPORT int getParam_Agility(CritterMutual& cr, uint)
@@ -252,7 +252,7 @@ EXPORT int getParam_Agility(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_AGILITY)!=0) val++;
 
-	return CLAMP(val,1,20);
+	return CLAMP(val,1,30);
 }
 
 EXPORT int getParam_Luck(CritterMutual& cr, uint)
@@ -262,7 +262,7 @@ EXPORT int getParam_Luck(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_LUCK)!=0) val++;
 
-	return CLAMP(val, 1, 20);
+	return CLAMP(val, 1, 30);
 }
 
 EXPORT int getParam_Hp(CritterMutual& cr, uint)
