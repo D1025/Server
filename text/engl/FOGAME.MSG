@@ -1639,9 +1639,9 @@
 # PE_FASTER_HEALING
 {103081}{}{Faster Healing}
 {103082}{}{With this Perk, you get a +5 bonus to your Healing Rate. This is in addition to your normal healing rate, thus you heal faster.}
-# PE_MORE_CRITICALS
-{103091}{}{More Critical}
-{103092}{}{You are more likely to cause critical hits in combat if you have this Perk. You get an additional +5% chance to cause a critical hit.}
+# PE_SIZE_MATTERS
+{103091}{}{Size Matters}
+{103092}{}{You are big.  You are bad.  You are not to be messed with.  You shoot 25% more bullets with all weapons.}
 # PE_NIGHT_VISION
 {103101}{}{Night Vision}
 {103102}{}{With the Night Vision Perk, you can see in the dark better.  This will reduce the overall darkness level by 20%.}
@@ -2179,10 +2179,10 @@
 {105552}{}{By not paying attention to any threats, you can act a lot faster.  This lowers your damage resistance, but increases your damage output by 10%.}
 # TRAIT_HEAVY_HANDED
 {105561}{}{Heavy Handed}
-{105562}{}{You swing harder, not better.  Your attacks are very brutal, but lack finesse.  You rarely cause a good critical, but you always do more unarmed damage. Additionally, all your close combat attacks knock down the opponent if a successful Strength roll was made.}
+{105562}{}{You swing harder, not better.  Your attacks are very brutal, but lack finesse.  Your HtH attacks cost one more action point, but knock down the opponent if a successful Strength roll was made.}
 # TRAIT_GIFTED
 {105571}{}{Gifted}
-{105572}{}{You have more innate abilities than most, so you have not spent as much time honing your skills.  Your primary statistics are each +1, but you lose one perk.}
+{105572}{}{You have more innate abilities than most, so you have not spent as much time honing your skills.  You gain 7 primary attributes points, but you lose one perk.}
 # TRAIT_BLOODY_MESS
 {105581}{}{Bloody Mess}
 {105582}{}{By some strange twist of fate, people around you die violently.  You always see the worst way a person can die.}
@@ -2203,7 +2203,7 @@
 {105632}{}{A thicker than average cranium means you can shrug off hits to the head that would floor others.  Unfortunatly that doesn't leave much room up there.}
 # TRAIT_SKILLED
 {105641}{}{Skilled}
-{105642}{}{Since you spent more time improving your skills than a normal person, you gain one  additional perk. The tradeoff is that you do not gain as many statistics. Your Primary Statistics are each -1.}
+{105642}{}{Since you spent more time improving your skills than a normal person, you gain one  additional perk. The tradeoff is that you do not gain as many statistics. You lose 7 primary attributes points.}
 # TRAIT_LONER
 {105651}{}{Loner}
 {105652}{}{You appreciate the nature more than company of others. You gain 10% more experience, but you can't have any followers.}

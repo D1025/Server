@@ -118,13 +118,13 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 309, 2, 1 }, // More Critical, Levelling, 1 ranks
+	{ 309, 0, 1 }, // Size Matters , Levelling, 1 ranks
 	{ // level 1 requirements
-		77, 1, 3, // Level at least 3
+		6, 1, 4, // Luck at least 4
+		305, 1, 2, // Bonus Ranged Damage at least 2
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
-		14, 1, 6, // Critical Chance increased by 6
 	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -1474,7 +1474,7 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 407, 0, 1 }, // Weapon Handling, Levelling, 1 ranks
+	{ 407, 2, 1 }, // Weapon Handling, Levelling, 1 ranks
 	{ // level 1 requirements
 		77, 1, 3, // Level at least 3
 	},

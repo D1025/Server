@@ -507,7 +507,7 @@ Ammo_Caliber=11
 Ammo_AcMod=-50
 Ammo_DrMod=0
 Ammo_DmgMult=3
-Ammo_DmgDiv=4
+Ammo_DmgDiv=2
 CraftLevel=1
 Ammo_DTDiv=3
 

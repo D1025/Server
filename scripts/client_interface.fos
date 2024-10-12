@@ -1095,6 +1095,8 @@ string generic_description(int descType, int& offsX, int& offsY)
 					//else 
 					//	wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE]/2;
 					wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE];
+				} else {
+				    wpnMinDmg += wpnMinDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
 				}
                 wpnMinDmg += wpnMinDmg * SelectWeaponBonus(weaponMain, BONUS_WEAPON_MIN_DMG) / 100;
 				result += wpnMinDmg+"-";		
@@ -1103,7 +1105,9 @@ string generic_description(int descType, int& offsX, int& offsY)
                 if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
 				{
                     wpnMaxDmg += chosen.Stat[ST_MELEE_DAMAGE];
-				}
+				}  else {
+                    wpnMaxDmg += wpnMaxDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
+                }
                 wpnMaxDmg += wpnMaxDmg * SelectWeaponBonus(weaponMain, BONUS_WEAPON_MAX_DMG) / 100;
                 result += wpnMaxDmg;
 
@@ -1200,13 +1204,18 @@ string generic_description(int descType, int& offsX, int& offsY)
 					//else 
 					//	wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE]/1;
 					wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE];
-				}
+				}  else {
+                  	wpnMinDmg += wpnMinDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
+                }
                 wpnMinDmg += wpnMinDmg * SelectWeaponBonus(weaponExt, BONUS_WEAPON_MIN_DMG) / 100;			
 				result+=wpnMinDmg+"-";				
 				
                 int wpnMaxDmg = _WeaponDmgMax(weaponExt.Proto, use);
-                if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use))
+                if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use)) {
                     wpnMaxDmg += chosen.Stat[ST_MELEE_DAMAGE];
+				}  else {
+                  	wpnMaxDmg += wpnMaxDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
+                }
                 wpnMaxDmg += wpnMaxDmg * SelectWeaponBonus(weaponExt, BONUS_WEAPON_MAX_DMG) / 100;
                 result += wpnMaxDmg;
                 if(_WeaponMaxDist(weaponExt.Proto, use) > 1)

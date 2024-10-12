@@ -795,7 +795,7 @@
 {40301}{}{This rifle has been more widely used by armed forces than any other rifle in history. It's a reliable assault weapon for any terrain or tactical situation. This weapon has been equipped with a night sight for greater night accuracy.}
 {40400}{}{Desert Eagle (Exp. Mag.)}
 {40401}{}{An ancient Desert Eagle pistol, in .44 Magnum. Interest in late 20th century films made this one of the most popular handguns of all times. This one has been equipped with an expanded magazine for longer fun and games!}
-{40500}{}{Assault Rifle (Exp. Mag.)}
+{40500}{}{Assault Rifle}
 {40501}{}{This Assault Rifle has an extended, military sized, ammunition clip. The expanded magazine capacity makes it more fun than ever to Spray-and-Pray.}
 {40600}{}{Plasma Pistol (Ext. Cap.)}
 {40601}{}{This Glock 86 Plasma Pistol has had its magnetic housing chamber realigned to reduce the drain on its energy cell. Its efficiency has doubled, allowing it to fire more shots before the battery is expended.}

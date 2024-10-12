@@ -1067,6 +1067,7 @@ bool d_IsNotContractSetRule(Critter& player, Critter@ npc, int option, int value
 
 bool d_HasTooMuchStuff(Critter& player, Critter@ npc)
 {
+    return false;
     GameVar@ timeout = GetLocalVar(LVAR_arena_gear_timeout, player.Id);
     if(timeout.GetValue() == 0)
         return false;
@@ -1607,7 +1608,13 @@ void OnTeleportToLobby(Critter& cr)   // export
 
 void OnTeleportToArena(Critter& cr)   // export
 {
-    cr.StatBase[ST_CURRENT_HP] = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * cr.StatBase[ST_ENDURANCE] / 2;
+    int fullHP = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE]+cr.StatBase[ST_ENDURANCE_EXT]) / 2;
+    cr.StatBase[ST_CURRENT_HP] = fullHP
+    cr.StatBase[ST_HP_HEAD] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    cr.StatBase[ST_HP_LA] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    cr.StatBase[ST_HP_RA] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    cr.StatBase[ST_HP_LL] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    cr.StatBase[ST_HP_RL] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     //cr.StatBase[ST_VAR7] = cr.Stat[ST_CURRENT_HP];
     int damages = 0;
     if(cr.Damage[DAMAGE_EYE] != 0)
@@ -1623,8 +1630,8 @@ void OnTeleportToArena(Critter& cr)   // export
     cr.StatBase[ST_VAR8] = damages;
     BackupItems(cr);
     MakeItemsUseful(cr);
-    AddSuperStims(cr, Random(1,8));
-	AddFAKit(cr, Random(0,1));
+    AddSuperStims(cr, 5);
+	AddFAKit(cr, 1);
 }
 
 void _ArenaItemInit(Item& item, bool firstTime)

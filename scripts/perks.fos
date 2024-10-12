@@ -272,7 +272,7 @@ void InitPerks() // export
 	SATISFIES(PE_PROFESSION_IRONWORKER,        @_ProfessionCheck, SK_REPAIR,  50, 100);
 
 
-    SATISFIES(PE_BONUS_RANGED_DAMAGE, @_BRD, 0, 0, 0);
+    SATISFIES(PE_BONUS_RANGED_DAMAGE, @_OrRangedHtHSkill, 0, 0, 180);
     SATISFIES(PE_HIT_THE_GAPS, @_OrRangedHtHSkill, 0, 0, 150);
     SATISFIES(PE_AWARENESS, @_Awareness, 0, 0, 0);
     #ifdef __SERVER

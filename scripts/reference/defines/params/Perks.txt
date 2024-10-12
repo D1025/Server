@@ -1,5 +1,5 @@
 /**
- * \~russian @defgroup Perks Перки
+ * \~russian @defgroup Perks пїЅпїЅпїЅпїЅпїЅ
  * \~english @defgroup Perks Perks
  * \~ @ingroup Params
  */
@@ -14,7 +14,7 @@
 #define PE_BONUS_RATE_OF_FIRE       (306) // Used in engine
 #define PE_EARLIER_SEQUENCE         (307)
 #define PE_FASTER_HEALING           (308)
-#define PE_MORE_CRITICALS           (309)
+#define PE_SIZE_MATTERS             (309)
 #define PE_NIGHT_VISION             (310) // Todo
 #define PE_PRESENCE                 (311) // Todo
 #define PE_RAD_RESISTANCE           (312)

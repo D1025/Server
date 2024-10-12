@@ -718,7 +718,7 @@
 #define PE_BONUS_RATE_OF_FIRE                    (306) // Used in dll
 #define PE_EARLIER_SEQUENCE                      (307)
 #define PE_FASTER_HEALING                        (308) // Nolevel
-#define PE_MORE_CRITICALS                        (309)
+#define PE_SIZE_MATTERS                          (309)
 #define PE_NIGHT_VISION                          (310) // Not implemented
 #define PE_PRESENCE                              (311) // Not implemented
 #define PE_RAD_RESISTANCE                        (312) // Nolevel
@@ -825,7 +825,7 @@
 #define PE_AUTODOC_LOWERED_HP                    (415) // Not implemented
 #define PE_AUTODOC_LOWERED_HP_II                 (416) // Not implemented
 #define PE_EXPERT_EXCREMENT                      (417) // Nolevel
-// 418
+#define PE_MORE_CRITICALS                        (418)
 #define PE_JINXED_II                             (419) // Disabled, Nolevel
 #define PE_TERMINATOR                            (420) // Disabled
 #define PE_TREE_TRUNK_THIGHS                     (421)

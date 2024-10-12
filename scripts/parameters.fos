@@ -344,7 +344,16 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     if(_param_[TRAIT_BRUISER] != 0)
         _param_[ST_STRENGTH] += 4;
 
-	if(_param_[TRAIT_GIFTED] != 0) {
+    if (_param_[TRAIT_GIFTED] == 1 && _param_[TRAIT_SKILLED] == 1)
+        __StartSpecialPoints = 40;
+    else if (_param_[TRAIT_GIFTED] == 1)
+        __StartSpecialPoints = 47;
+    else if (_param_[TRAIT_SKILLED] == 1)
+        __StartSpecialPoints = 33;
+    else
+        __StartSpecialPoints = 40;
+
+	/*if(_param_[TRAIT_GIFTED] != 0) {
 	    _param_[ST_STRENGTH] += 1;
 	    _param_[ST_PERCEPTION] += 1;
 	    _param_[ST_ENDURANCE] += 1;
@@ -362,7 +371,7 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
 	   _param_[ST_INTELLECT] -= 1;
 	   _param_[ST_AGILITY] -= 1;
 	   _param_[ST_LUCK] -= 1;
-	}
+	}*/
 
     /*if(_param_[TRAIT_GOOD_NATURED]!=0)
        {
@@ -405,8 +414,8 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
 
     _param_[ST_CRITICAL_POWER] += 3*_param_[ST_LUCK];
 
-    if (_param_[TRAIT_HEAVY_HANDED] != 0)
-        _param_[ST_CRITICAL_POWER] -= 20;
+    /*if (_param_[TRAIT_HEAVY_HANDED] != 0)
+        _param_[ST_CRITICAL_POWER] -= 20;*/
 
     if(_param_[TRAIT_BONEHEAD] != 0) {
         _param_[TAG_SKILL1] = 0;
@@ -497,7 +506,7 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
 			Message("Incorrect SPECIAL data.");
 			return false;
 		}
-	if((data[ST_STRENGTH]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_PERCEPTION]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_ENDURANCE]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_CHARISMA]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_INTELLECT]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_AGILITY]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_LUCK]>9 && data[TRAIT_GIFTED]!=0))
+	/*if((data[ST_STRENGTH]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_PERCEPTION]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_ENDURANCE]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_CHARISMA]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_INTELLECT]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_AGILITY]>9 && data[TRAIT_GIFTED]!=0) || (data[ST_LUCK]>9 && data[TRAIT_GIFTED]!=0))
 	    {
 	                Message("Incorrect SPECIAL data.");
 	                return false;
@@ -507,7 +516,7 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
         {
                     Message("Incorrect SPECIAL data.");
                     return false;
-        }
+        }*/
 	
     if(special != __StartSpecialPoints)
     {
