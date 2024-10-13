@@ -2161,13 +2161,13 @@
 # 105500
 # TRAIT_FAST_METABOLISM
 {105501}{}{Fast Metabolism}
-{105502}{}{Your metabolic rate is twice normal.  This means you heal every 15 seconds but your natural resistance to radiation and poison is lowered to 0.}
+{105502}{}{Your metabolic rate is twice normal.  This means you heal every 15 seconds but your natural resistance to radiation and poison is lowered by 30.}
 # TRAIT_BRUISER
 {105511}{}{Bruiser}
-{105512}{}{A little slower, but a little bigger.  You may not hit as often, but they will feel it when you do!  Your total action points are lowered, but your Strength is increased and you deal even more damage in melee.}
+{105512}{}{A little slower, but a little bigger.  You may not run as fast as others, but when you hit them they will feel it!  Your movement speed is lowered, but your Strength is increased and you deal even more damage in melee.}
 # TRAIT_SMALL_FRAME
 {105521}{}{Small Frame}
-{105522}{}{You are not quite as big as the other ordinary man, but that never slowed you down.  You can't carry as much, but you are more agile.}
+{105522}{}{You are not quite as big as the other ordinary man, but that never slowed you down.  You can't carry as much and your limbs are a little weaker, but you are more agile.}
 # TRAIT_ONE_HANDER
 {105531}{}{One Hander}
 {105532}{}{One of your hands is very dominant.  You excel with single-handed weapons, but two-handed weapons cause a problem.}

@@ -1068,7 +1068,7 @@ bool d_IsNotContractSetRule(Critter& player, Critter@ npc, int option, int value
 bool d_HasTooMuchStuff(Critter& player, Critter@ npc)
 {
     return false;
-    GameVar@ timeout = GetLocalVar(LVAR_arena_gear_timeout, player.Id);
+    /*GameVar@ timeout = GetLocalVar(LVAR_arena_gear_timeout, player.Id);
     if(timeout.GetValue() == 0)
         return false;
     int      decrement = (ELAPSED_TIME - timeout.GetValue()) / REAL_MINUTE(4);
@@ -1082,7 +1082,7 @@ bool d_HasTooMuchStuff(Critter& player, Critter@ npc)
     }
     if(count < 0)
         count = 0;
-    return count > 19;
+    return count > 19;*/
 }
 
 bool d_TryingToEnter(Critter& player, Critter@ npc)
@@ -1569,6 +1569,8 @@ void OnTeleportToLobby(Critter& cr)   // export
         cr.ToLife();
     int maxHp = GetActualMaxHp(cr);
     int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
+        maxLimbHp*=9/10;
     cr.StatBase[ST_CURRENT_HP] = maxHp;
     cr.StatBase[ST_HP_HEAD] = maxLimbHp;
     cr.StatBase[ST_HP_LA] = maxLimbHp;
@@ -1608,13 +1610,16 @@ void OnTeleportToLobby(Critter& cr)   // export
 
 void OnTeleportToArena(Critter& cr)   // export
 {
-    int fullHP = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE]+cr.StatBase[ST_ENDURANCE_EXT]) / 2;
-    cr.StatBase[ST_CURRENT_HP] = fullHP
-    cr.StatBase[ST_HP_HEAD] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    cr.StatBase[ST_HP_LA] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    cr.StatBase[ST_HP_RA] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    cr.StatBase[ST_HP_LL] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    cr.StatBase[ST_HP_RL] = fullHP / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    int maxHp = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE]+cr.StatBase[ST_ENDURANCE_EXT]) / 2;
+    int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
+        maxLimbHp*=9/10;
+    cr.StatBase[ST_CURRENT_HP] = maxHp;
+    cr.StatBase[ST_HP_HEAD] = maxLimbHp;
+    cr.StatBase[ST_HP_LA] = maxLimbHp;
+    cr.StatBase[ST_HP_RA] = maxLimbHp;
+    cr.StatBase[ST_HP_LL] = maxLimbHp;
+    cr.StatBase[ST_HP_RL] = maxLimbHp;
     //cr.StatBase[ST_VAR7] = cr.Stat[ST_CURRENT_HP];
     int damages = 0;
     if(cr.Damage[DAMAGE_EYE] != 0)

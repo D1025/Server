@@ -238,6 +238,7 @@ bool start()
     SetSendParameter(PE_BONUS_RATE_OF_FIRE, true);
     SetSendParameter(ST_TURN_BASED_AC, true);
     SetSendParameter(TRAIT_FAST_METABOLISM, true);
+    SetSendParameter(TRAIT_SMALL_FRAME, true);
     // Strenght
     SetSendParameter(ST_STRENGTH, true);
     SetSendParameter(ST_STRENGTH_EXT, true);
@@ -2117,12 +2118,15 @@ void critter_init(Critter& cr, bool firstTime)
 
         CritterGenerate(cr);
         int maxHp = GetActualMaxHp(cr);
+        int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP]==1 ? 1 : 2);
+        if (cr.Trait[TRAIT_SMALL_FRAME] !=0)
+            maxLimbHp*=9/10;
         cr.StatBase[ST_CURRENT_HP] = maxHp;
-        cr.StatBase[ST_HP_HEAD] = maxHp/2;
-        cr.StatBase[ST_HP_LA] = maxHp/2;
-        cr.StatBase[ST_HP_RA] = maxHp/2;
-        cr.StatBase[ST_HP_LL] = maxHp/2;
-        cr.StatBase[ST_HP_RL] = maxHp/2;
+        cr.StatBase[ST_HP_HEAD] = maxLimbHp;
+        cr.StatBase[ST_HP_LA] = maxLimbHp;
+        cr.StatBase[ST_HP_RA] = maxLimbHp;
+        cr.StatBase[ST_HP_LL] = maxLimbHp;
+        cr.StatBase[ST_HP_RL] = maxLimbHp;
         cr.StatBase[ST_CURRENT_AP] = cr.Stat[ST_ACTION_POINTS] * 100;
 
         for(uint i = REPUTATION_BEGIN; i <= REPUTATION_END; i++)
@@ -2482,8 +2486,7 @@ void critter_idle(Critter& cr)
             if(cr.Stat[ST_HEALING_RATE] > 0)
 			{
 			    int maxhp = GetActualMaxHp(cr);
-			    int maxLimbHp = maxhp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-			    int hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 4);
+			    int hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 4) * (100 - CLAMP(cr.StatBase[ST_POISONING_LEVEL], 0, 100))/100;
 				cr.StatBase[ST_CURRENT_HP] += hpFromHealingRate;
 				if (cr.DamageBase[DAMAGE_EYE] == 0)
 				    cr.StatBase[ST_HP_HEAD] += hpFromHealingRate;

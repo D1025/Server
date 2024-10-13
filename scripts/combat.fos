@@ -1809,7 +1809,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		    totalDmg /= 2;
 
 		if(rounds > 1 && attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] != 0 && attack.Dist >= 15)
-            totalDmg += totalDmg * attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] * 115/ 100;
+            totalDmg += totalDmg * attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] * 15/ 100;
     }
 	
     // 0x00000001 - knockout
@@ -1972,6 +1972,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             }
             int totalDamageToLimb = totalDmg * limbDamageMultiplayer / 4;
             int maxLimbHp = GetActualMaxHp(target) / (target.Perk[PE_IRON_GRIP] == 0 ? 2 : 1);
+            if (target.Trait[TRAIT_SMALL_FRAME] !=0)
+                maxLimbHp*=9/10;
             Item@ realWeaponTarget = _CritGetItemHand(target);
             int strengthReq = 0;
             if(valid(realWeaponTarget))
@@ -1984,13 +1986,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             case HIT_LOCATION_LEFT_ARM:
                 target.StatBase[ST_HP_LA] -= totalDamageToLimb;
 
-                if (strengthReq < 0 || totalDamageToLimb >= maxLimbHp/2+strengthReq*30) {
+                if (strengthReq < 0 || totalDamageToLimb >= maxLimbHp/2+strengthReq*10) {
                     SETFLAG(eff, HF_DROPPED_WEAPON);
                 }
                 break;
             case HIT_LOCATION_RIGHT_ARM:
                 target.StatBase[ST_HP_RA] -= totalDamageToLimb;
-                if (strengthReq < 0 || totalDamageToLimb >= maxLimbHp/2+strengthReq*30) {
+                if (strengthReq < 0 || totalDamageToLimb >= maxLimbHp/2+strengthReq*10) {
                     SETFLAG(eff, HF_DROPPED_WEAPON);
                 }
                 break;

@@ -400,8 +400,7 @@ EXPORT int getParam_MaxCritical(CritterMutual& cr, uint)
 int GetRunningAc(CritterMutual& cr, bool head)
 {
 	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT];
-	if (cr.Params[TRAIT_BRUISER]==0)
-		val += getParam_Agility(cr, 0);
+	val += getParam_Agility(cr, 0);
 
 	while(cr.Params[PE_HTH_EVADE])
 	{
@@ -436,7 +435,7 @@ EXPORT int getParam_Ac(CritterMutual& cr, uint)
 		return StandingAC; // todo: turn based
 	}
 	// if(!IsRunning(cr)) return 0; // todo: turn based
-	return GetRunningAc(cr,false) + ((cr.Params[PE_LIVEWIRE] && !cr.Params[TRAIT_BRUISER]) ? getParam_Agility(cr, 0) : 0);
+	return GetRunningAc(cr,false) + (cr.Params[PE_LIVEWIRE] ? getParam_Agility(cr, 0) : 0);
 }
 
 EXPORT int getParam_DamageResistance(CritterMutual& cr, uint index)

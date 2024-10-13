@@ -418,18 +418,24 @@ void speedboost(Critter& cr)
 	int skillNum1 = _WeaponSkill(weapon1, use);
 	int skillNum2 = _WeaponSkill(weapon2, use);
 	
-	if ( (cr.Perk[PE_BONUS_HTH_ATTACKS] !=0) && ( (cr.Perk[PE_BONUS_HTH_DAMAGE] !=0) || (cr.Perk[PE_SILENT_DEATH] !=0) ) )	bonus+=14;		//Bonus from Bonus HtH Attacks perk 14 pts (7%)
-	if ( (cr.Perk[PE_BONUS_MOVE] !=0)) bonus+=10;				//Bonus from Bonus Move perk 10 pts (5%)
-	if ( valid(weapon1) )										//No bonus if player have BG weapon or Gatling in 1st slot
+	if (cr.Perk[PE_BONUS_HTH_DAMAGE] !=0)	bonus+=14;		//Bonus from Bonus HtH Attacks perk 14 pts (7%)
+	if (cr.Trait[TRAIT_SMALL_FRAME] != 0) bonus+=20;
+    if ( valid(weapon1) )										//No bonus if player have BG weapon or Gatling in 1st slot
 	{
 		if ( (skillNum1 == SK_BIG_GUNS) || (weapon1.ProtoId == PID_GATLING_LASER) ) bonus=0;
-		if ( (skillNum1 == SK_SMALL_GUNS) || (skillNum1 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
+		if ( (skillNum1 == SK_MELEE_WEAPONS) || (skillNum1 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
+        if ( skillNum1 == SK_SMALL_GUNS) bonus = CLAMP(bonus, 0, 50);
 	}
 	if ( valid(weapon2) )										//No bonus if player have BG weapon or Gatling in 2nd slot
 	{
 		if ( (skillNum2 == SK_BIG_GUNS) || (weapon2.ProtoId == PID_GATLING_LASER) ) bonus=0;
-		if ( (skillNum2 == SK_SMALL_GUNS) || (skillNum2 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
+		if ( (skillNum1 == SK_MELEE_WEAPONS) || (skillNum1 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
+        if ( skillNum1 == SK_SMALL_GUNS) bonus = CLAMP(bonus, 0, 50);
 	}
+
+    if( cr.Trait[TRAIT_BRUISER]!=0) {
+        penalty-=20;
+    }
 	
 	if (valid(CritterArmor))
 	{
@@ -457,7 +463,7 @@ void speedboost(Critter& cr)
 		}
 	}
 		
-	cr.StatBase[ST_RUN_TIME]=CLAMP(200-bonus+penalty,120,214);					//Formula
+	cr.StatBase[ST_RUN_TIME]=CLAMP(200-bonus+penalty,120,224);					//Formula
 	}
 }
 #endif
