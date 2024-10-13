@@ -1638,13 +1638,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			switch(critLevel)
             {
                 case 2:
-                    limbDamageMultiplayer = 8;
+                    limbDamageMultiplayer = 6;
                     break;
                 case 3:
-                    limbDamageMultiplayer = 10;
+                    limbDamageMultiplayer = 7;
                     break;
                 case 4:
-                    limbDamageMultiplayer = 12;
+                    limbDamageMultiplayer = 8;
                     break;
                 default:
                     break;
@@ -1973,7 +1973,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             int totalDamageToLimb = totalDmg * limbDamageMultiplayer / 4;
             int maxLimbHp = GetActualMaxHp(target) / (target.Perk[PE_IRON_GRIP] == 0 ? 2 : 1);
             if (target.Trait[TRAIT_SMALL_FRAME] !=0)
-                maxLimbHp*=9/10;
+                maxLimbHp=(maxLimbHp*9)/10;
             Item@ realWeaponTarget = _CritGetItemHand(target);
             int strengthReq = 0;
             if(valid(realWeaponTarget))
@@ -2346,7 +2346,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			target.ToDead(anim2Dead, attacker);
     }
     else 
-	if(isKo || isShotgun || knockbackFromCrit)
+	if(isKo || (isShotgun && rounds >1) || knockbackFromCrit)
     {
         //Log("isKo = True");
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
@@ -2515,6 +2515,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		{
 			AffectPoison(target, 20);
 		}
+		else
+		if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_LIL_JESUS_WEAPON))
+        {
+            AffectPoison(target, 20);
+        }
 		else
         if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_PASHTSHUUR_SPIKE))
 		{

@@ -77,7 +77,7 @@ void changedParam_HeadHp(Critter& cr, uint, int oldValue)   // server
     int curHp = cr.StatBase[ST_HP_HEAD];
     int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp*=9/10;
+        maxHp=(maxHp*9)/10;
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_HEAD] = maxHp;
@@ -96,7 +96,7 @@ void changedParam_LArmHp(Critter& cr, uint, int oldValue)   // server
     int curHp = cr.StatBase[ST_HP_LA];
     int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp*=9/10;
+        maxHp=(maxHp*9)/10;
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_LA] = maxHp;
@@ -115,7 +115,7 @@ void changedParam_RArmHp(Critter& cr, uint, int oldValue)   // server
     int curHp = cr.StatBase[ST_HP_RA];
     int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp*=9/10;
+        maxHp=(maxHp*9)/10;
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_RA] = maxHp;
@@ -134,7 +134,7 @@ void changedParam_LLegHp(Critter& cr, uint, int oldValue)   // server
     int curHp = cr.StatBase[ST_HP_LL];
     int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp*=9/10;
+        maxHp=(maxHp*9)/10;
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_LL] = maxHp;
@@ -153,7 +153,7 @@ void changedParam_RLegHp(Critter& cr, uint, int oldValue)   // server
     int curHp = cr.StatBase[ST_HP_RL];
     int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp*=9/10;
+        maxHp=(maxHp*9)/10;
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_RL] = maxHp;

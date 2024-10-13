@@ -28,11 +28,12 @@ lang=engl
 3 5050 R _item n PID_HK_P90C + 1 R _script arena@r_TransferItems 0  #
 3 5060 R _item n PID_PANCOR_JACKHAMMER + 1 R _script arena@r_TransferItems 0  #
 3 5070 R _item n PID_HK_CAWS + 1 R _script arena@r_TransferItems 0  #
-3 5080 R _item n PID_SNIPER_RIFLE + 1 R _script arena@r_TransferItems 0  #
-3 5090 R _item n PID_INDEPENDENT + 1 R _script arena@r_TransferItems 0  #
-3 5100 R _item n PID_NEEDLER_PISTOL + 1 R _script arena@r_TransferItems 0  #
-3 5110 R _item n PID_GRENADE_PISTOL + 1 R _script arena@r_TransferItems 0  #
-3 5120 R _item n PID_GRENADE_LAUNCHER + 1 R _script arena@r_TransferItems 0  @
+3 5080 R _item n PID_COMBAT_SHOTGUN + 1 R _script arena@r_TransferItems 0  #
+3 5090 R _item n PID_SNIPER_RIFLE + 1 R _script arena@r_TransferItems 0  #
+3 5100 R _item n PID_INDEPENDENT + 1 R _script arena@r_TransferItems 0  #
+3 5110 R _item n PID_NEEDLER_PISTOL + 1 R _script arena@r_TransferItems 0  #
+3 5120 R _item n PID_GRENADE_PISTOL + 1 R _script arena@r_TransferItems 0  #
+3 5130 R _item n PID_GRENADE_LAUNCHER + 1 R _script arena@r_TransferItems 0  @
 6 6000 None 0 #
 3 6010 R _item n PID_AVENGER_MINIGUN + 1 R _script arena@r_TransferItems 0  #
 3 6020 R _item n PID_FLAMER + 1 R _script arena@r_TransferItems 0  #
@@ -55,7 +56,8 @@ lang=engl
 3 8020 R _item n PID_MEGA_POWER_FIST + 1 R _script arena@r_TransferItems 0  #
 3 8030 R _item n PID_RIPPER + 1 R _script arena@r_TransferItems 0  #
 3 8040 R _item n PID_SUPER_SLEDGE + 1 R _script arena@r_TransferItems 0  #
-3 8050 R _item n PID_WAKIZASHI_BLADE + 1 R _script arena@r_TransferItems 0  @
+3 8050 R _item n PID_WAKIZASHI_BLADE + 1 R _script arena@r_TransferItems 0  #
+3 8060 R _item n PID_LIL_JESUS_WEAPON + 1 R _script arena@r_TransferItems 0  @
 9 9000 None 0 #
 3 9010 R _item n PID_FAKE_FRAG_GRENADE + 8 R _script arena@r_TransferItems 0  #
 3 9020 R _item n PID_FAKE_PLASMA_GRENADE + 8 R _script arena@r_TransferItems 0  #
@@ -99,11 +101,12 @@ lang=engl
 {5050}{}{A P90 submachinegun.}
 {5060}{}{A Pancor Jackhammer combat shotgun.}
 {5070}{}{A CAWS Shotgun.}
-{5080}{}{A Sniper Rifle.}
-{5090}{}{A XL70E}
-{5100}{}{A Needler Pistol}
-{5110}{}{FN 69A1 Grenade Pistol}
-{5120}{}{M79 Grenade Launcher.}
+{5080}{}{A Combat Shotgun}
+{5090}{}{A Sniper Rifle.}
+{5100}{}{A XL70E}
+{5110}{}{A Needler Pistol}
+{5120}{}{FN 69A1 Grenade Pistol}
+{5130}{}{M79 Grenade Launcher.}
 {6000}{}{Which one?}
 {6010}{}{An Avenger Minigun. Tear them into pieces.}
 {6020}{}{A Flamer. It's a good day for some burnt meat!}
@@ -127,6 +130,7 @@ lang=engl
 {8030}{}{Give me a Ripper, now.}
 {8040}{}{A Super Sledgehammer.}
 {8050}{}{A Wakizashi Blade.}
+{8060}{}{A Poisoned Knife.}
 {9000}{}{And what exactly?}
 {9010}{}{Eight frags, please.}
 {9020}{}{I'll take eight plasma ones.}

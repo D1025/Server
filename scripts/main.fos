@@ -2120,7 +2120,7 @@ void critter_init(Critter& cr, bool firstTime)
         int maxHp = GetActualMaxHp(cr);
         int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP]==1 ? 1 : 2);
         if (cr.Trait[TRAIT_SMALL_FRAME] !=0)
-            maxLimbHp*=9/10;
+            maxLimbHp=(maxLimbHp*9)/10;
         cr.StatBase[ST_CURRENT_HP] = maxHp;
         cr.StatBase[ST_HP_HEAD] = maxLimbHp;
         cr.StatBase[ST_HP_LA] = maxLimbHp;

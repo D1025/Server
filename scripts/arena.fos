@@ -1570,13 +1570,14 @@ void OnTeleportToLobby(Critter& cr)   // export
     int maxHp = GetActualMaxHp(cr);
     int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxLimbHp*=9/10;
+        maxLimbHp=(maxLimbHp*9)/10;
     cr.StatBase[ST_CURRENT_HP] = maxHp;
     cr.StatBase[ST_HP_HEAD] = maxLimbHp;
     cr.StatBase[ST_HP_LA] = maxLimbHp;
     cr.StatBase[ST_HP_RA] = maxLimbHp;
     cr.StatBase[ST_HP_LL] = maxLimbHp;
     cr.StatBase[ST_HP_RL] = maxLimbHp;
+    cr.StatBase[ST_POISONING_LEVEL] = 0;
     int damages = cr.Stat[ST_VAR8];
     if(damages & CRIPPLED_EYE != 0)
         cr.DamageBase[DAMAGE_EYE] = 1;
@@ -1603,6 +1604,7 @@ void OnTeleportToLobby(Critter& cr)   // export
         _SetTimeout(cr, TO_REPLICATION, 0);
     MakeItemsUseless(cr);
     RemoveSuperStims(cr);
+    RemoveAntidote(cr);
 	RemoveFAKit(cr);
     RestoreItems(cr);
     UnsetMinigame(cr);
@@ -1613,13 +1615,14 @@ void OnTeleportToArena(Critter& cr)   // export
     int maxHp = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE]+cr.StatBase[ST_ENDURANCE_EXT]) / 2;
     int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
     if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxLimbHp*=9/10;
+        maxLimbHp=(maxLimbHp*9)/10;
     cr.StatBase[ST_CURRENT_HP] = maxHp;
     cr.StatBase[ST_HP_HEAD] = maxLimbHp;
     cr.StatBase[ST_HP_LA] = maxLimbHp;
     cr.StatBase[ST_HP_RA] = maxLimbHp;
     cr.StatBase[ST_HP_LL] = maxLimbHp;
     cr.StatBase[ST_HP_RL] = maxLimbHp;
+    cr.StatBase[ST_POISONING_LEVEL] = 0;
     //cr.StatBase[ST_VAR7] = cr.Stat[ST_CURRENT_HP];
     int damages = 0;
     if(cr.Damage[DAMAGE_EYE] != 0)
@@ -1636,6 +1639,7 @@ void OnTeleportToArena(Critter& cr)   // export
     BackupItems(cr);
     MakeItemsUseful(cr);
     AddSuperStims(cr, 5);
+    AddAntidote(cr, 3);
 	AddFAKit(cr, 1);
 }
 
@@ -1651,6 +1655,14 @@ void AddSuperStims(Critter& cr, int cnt)
     it.Val9 = SPECIAL_ITEM_ARENA;
     it.Update();
 }
+
+void AddAntidote(Critter& cr, int cnt)
+{
+    Item@ it = cr.AddItem(PID_ANTIDOTE, cnt);
+    it.Val9 = SPECIAL_ITEM_ARENA;
+    it.Update();
+}
+
 
 void AddFAKit(Critter& cr, int cnt)
 {
@@ -1676,5 +1688,15 @@ void RemoveSuperStims(Critter& cr)
         DeleteItem(ss);
     }
 }
+
+void RemoveAntidote(Critter& cr)
+{
+    Item@ ss = cr.GetItem(PID_ANTIDOTE, -1);
+    if(valid(ss))
+    {
+        DeleteItem(ss);
+    }
+}
+
 
 /*@}*/

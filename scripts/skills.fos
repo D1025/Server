@@ -82,7 +82,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     int healerBonus = (cr.Perk[PE_HEALER] >= 1 ? 50 : 0) + (cr.Perk[PE_HEALER] == 2 ? 100 : 0);
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
 
-	heal *= (100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL],0,100)) / 100;
+	heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL],0,100)))) / 100;
     int curHp = targetCr.Stat[ST_CURRENT_HP];
     int maxHp = GetActualMaxHp(targetCr);
     targetCr.StatBase[ST_HP_HEAD] += heal / 4;
@@ -172,7 +172,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
             cr.DeleteItem(item.GetProtoId(), 1);
     }
     sk += toolBonus;
-    int heal = ((sk + (cr.Perk[PE_HEALER] >= 1 ? 50 : 0) + (cr.Perk[PE_HEALER] == 2 ? 100 : 0)) / 2) * (100 - cr.Stat[ST_POISONING_LEVEL]) / 100;
+    int heal = ((sk + (cr.Perk[PE_HEALER] >= 1 ? 50 : 0) + (cr.Perk[PE_HEALER] == 2 ? 100 : 0)) * CLAMP(100 - cr.Stat[ST_POISONING_LEVEL], 0, 100)) / 100;
 
     int uninjured = 0;
     int injured = 0;
@@ -227,11 +227,12 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
                 VerboseAction( cr, targetCr, "TODO uninjured=0 TARGET" );*/
     }
 
-    cr.StatBase[ST_HP_HEAD] += heal;
-    cr.StatBase[ST_HP_LA] += heal;
-    cr.StatBase[ST_HP_RA] += heal;
-    cr.StatBase[ST_HP_LL] += heal;
-    cr.StatBase[ST_HP_RL] += heal;
+    targetCr.StatBase[ST_HP_HEAD] += heal;
+    targetCr.StatBase[ST_HP_LA] += heal;
+    targetCr.StatBase[ST_HP_RA] += heal;
+    targetCr.StatBase[ST_HP_LL] += heal;
+    targetCr.StatBase[ST_HP_RL] += heal;
+    targetCr.StatBase[ST_POISONING_LEVEL] = CLAMP(targetCr.Stat[ST_POISONING_LEVEL]-((heal*15)/100), 0, 100);
 
     if(cr.IsPlayer())
     {
