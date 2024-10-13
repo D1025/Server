@@ -13,15 +13,16 @@ lang=engl
 3 2010 #
 0 2020 @
 3 3000 None 0 #
-4 3010 R _item n PID_BEER + 1 R _item n PID_CIGARETTES + 1 R _item n PID_JET + 1 R _item n PID_NUKA_COLA + 1 R _item n PID_PSYCHO + 1 R _item n PID_BUFFOUT + 1 R _item n PID_LIGHTER + 1 R _script arena@r_TransferItems 0  #
+4 3010 R _item n PID_BEER + 1 R _item n PID_CIGARETTES + 1 R _item n PID_JET + 1 R _item n PID_NUKA_COLA + 1 R _item n PID_PSYCHO + 1 R _item n PID_BUFFOUT + 1 R _item n PID_LIGHTER + 1 R _item n PID_MENTATS + 1 R _script arena@r_TransferItems 0  #
 4 3020 R _item n PID_JET + 1 R _script arena@r_TransferItems 0  #
 4 3030 R _item n PID_NUKA_COLA + 1 R _script arena@r_TransferItems 0  #
 4 3040 R _item n PID_CIGARETTES + 1 R _item n PID_LIGHTER + 1 R _script arena@r_TransferItems 0  #
 4 3050 R _item n PID_PSYCHO + 1 R _script arena@r_TransferItems 0  #
 4 3060 R _item n PID_BUFFOUT + 1 R _script arena@r_TransferItems 0  #
 4 3070 R _item n PID_BEER + 1 R _script arena@r_TransferItems 0  #
-4 3080 R _item n PID_JET_ANTIDOTE + 1 R _script arena@r_TransferItems 0  #
-0 3090 @
+4 3080 R _item n PID_MENTATS + 1 R _script arena@r_TransferItems 0  #
+4 3090 R _item n PID_JET_ANTIDOTE + 1 R _script arena@r_TransferItems 0  #
+0 3100 @
 4 4000 None 0 @
 5 5000 None 0 &
 
@@ -43,8 +44,9 @@ lang=engl
 {3050}{}{Psycho.}
 {3060}{}{Buffout.}
 {3070}{}{Beer.}
-{3080}{}{Drug Antidote.}
-{3090}{}{Nothing.}
+{3080}{}{Mentants}
+{3090}{}{Drug Antidote.}
+{3100}{}{Nothing.}
 {4000}{}{Here you go.}
 {5000}{}{Slow down a bit, you've taken enough for now.}
 
