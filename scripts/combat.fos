@@ -1510,9 +1510,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         {
             if(attacker.Perk[PE_BETTER_CRITICALS] > 0)        // +20 with ranged
                 roll += 15 * attacker.Perk[PE_BETTER_CRITICALS];
-            if(attacker.Trait[TRAIT_HEAVY_HANDED] > 0)        // -20 with hth
-                if(/* attack.WeaponSubtype==WS_MELEE || */ attack.WeaponSubtype == WS_UNARMED)
-                    roll -= 20;
             if(attack.SilentDeathEffect)
                 roll += 10;
         }
@@ -1521,9 +1518,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             critLevel = 0;
         else if(roll <= 44)
             critLevel = 1;
-        else if(roll <= 59)
+        else if(roll <= 68)
             critLevel = 2;
-        else if(roll <= 79)
+        else if(roll <= 80)
             critLevel = 3;
         else
             critLevel = 4;
@@ -1563,6 +1560,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             if((aim == HIT_LOCATION_TORSO && critLevel > 1))
                 knockbackFromCrit = true;
 
+            int legKDKOMinus = 0;
+            if((aim == HIT_LOCATION_LEFT_LEG || aim == HIT_LOCATION_RIGHT_LEG) && critLevel > 1)
+                legKDKOMinus = 5;
+            if(target.DamageBase[DAMAGE_RIGHT_LEG] > 0 && target.DamageBase[DAMAGE_LEFT_LEG] > 0)
+                legKDKOMinus = -5;
+
 			// OLD, but keep for reference (for now):
 			// Get data for player body type
 			// delete offset=MAX_BODY_TYPES*9*6*7+aim_*6*7+roll*7;
@@ -1580,24 +1583,19 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 					extraMessage = cFailureMessage;
 				} */
 
-			if(weaponPerk == WEAPON_PERK_ENHANCED_KNOCKOUT)
-				SETFLAG(eff, HF_KNOCKDOWN);
-
-
+			if(weaponPerk == WEAPON_PERK_ENHANCED_KNOCKOUT && FLAG(eff, HF_KNOCKDOWN)) {
+			    UNSETFLAG(eff, HF_KNOCKDOWN);
+                SETFLAG(eff, HF_KNOCKOUT);
+			}
+            int knockdownBonus = 0;
             if(FLAG(eff, HF_KNOCKOUT)) {
-			    if(isMelee) {
-			        if (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] >= attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT] + attacker.Trait[TRAIT_HEAVY_HANDED] * 5) {
-                        UNSETFLAG(eff, HF_KNOCKOUT);
-                        SETFLAG(eff, HF_KNOCKDOWN);
-                    }
-			    } else {
-			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5);
+			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5) + legKDKOMinus;
 			        int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			        if (enemyStat > attackerStat) {
                         UNSETFLAG(eff, HF_KNOCKOUT);
                         SETFLAG(eff, HF_KNOCKDOWN);
+                        knockdownBonus = 5;
                     }
-			    }
 			}
 
 			if(FLAG(eff, HF_BLINDED))
@@ -1622,17 +1620,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 				UNSETFLAG(eff, HF_KNOCKDOWN);
 			else
 			if(FLAG(eff, HF_KNOCKDOWN)) {
-			    if(isMelee) {
-			        if ((target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + target.Stat[TRAIT_HEAVY_HANDED]) >= attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT] + attacker.Trait[TRAIT_HEAVY_HANDED] * 5) {
-                        UNSETFLAG(eff, HF_KNOCKDOWN);
-                    }
-			    } else {
-			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + (critLevel-2) * -5);
-                    int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
+			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + (critLevel-2) * -5) + legKDKOMinus;
+                    int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT] + knockdownBonus;
                     if (enemyStat > attackerStat) {
                         UNSETFLAG(eff, HF_KNOCKDOWN);
                     }
-			    }
 			}
 
 			switch(critLevel)
@@ -1741,13 +1733,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         }
         else if(critLevel == 3)
         {
-            targetDT /= 4;
-            targetDR -= roll;
+            targetDT = 0;
+            targetDR /= 2;
         }
         else if(critLevel == 2)
         {
             targetDT /= 2;
-            targetDR -= roll/2;
+            targetDR -= 10;
         }
         targetDR -= (valid(attacker) ? (attacker.Trait[TRAIT_FINESSE] != 0 ? 30 : 0) : 0);
     }
@@ -1874,34 +1866,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			isKo = true;
 		}			
 	}
-    else 
-	if(isShotgun && rounds > 1)
-    {
-		//if(Random(1,100)<70) // 70% szansy na KD od bursta z shotguna
-		{
-			if(target.Perk[PE_STONEWALL] != 0)
-			{
-                /*
-                    ST-5 *20 > random(1, 105) vs explosion/shotgun KD roll changed to ST-2 *10 > random(1, 100) roll
-                    meaning chance to avoid such KD changed for chars with 10 -> 6 ST from 95%, 76%, 57%, 38%, 19% into 80%, 70%, 60%, 50%, 40%
-                */
-				if((target.Stat[ST_STRENGTH]-2)*10>Random(1,100)) // szansa na unikniecie KD od shotguna, dla ST=10 szansa =80% na unik
-				{
-                    isKo = false;
-                }
-				else
-				{
-					if(GetDistantion(attack.Attacker.HexX, attack.Attacker.HexY, target.HexX, target.HexY) <= 10 && Random(1, 10) <= int(rounds))
-					isKo = true;
-				}
-			}
-			else
-			{
-				if(GetDistantion(attack.Attacker.HexX, attack.Attacker.HexY, target.HexX, target.HexY) <= 10 && Random(1, 10) <= int(rounds))
-				isKo = true;
-			}
-		}
-    }
 	else 
 	if(isBanhammer || isHolySpear)
 	{
@@ -1983,6 +1947,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             case HIT_LOCATION_EYES:
                 target.StatBase[ST_HP_HEAD] -= totalDamageToLimb;
                 break;
+            case HIT_LOCATION_HEAD:
+                 target.StatBase[ST_HP_HEAD] -= totalDmg;
             case HIT_LOCATION_LEFT_ARM:
                 target.StatBase[ST_HP_LA] -= totalDamageToLimb;
 
@@ -2346,7 +2312,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			target.ToDead(anim2Dead, attacker);
     }
     else 
-	if(isKo || (isShotgun && rounds >1) || knockbackFromCrit)
+	if(isKo || (isShotgun && rounds >1 && attacker.Perk[PE_AND_STAY_BACK] !=0) || knockbackFromCrit)
     {
         //Log("isKo = True");
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
@@ -2373,13 +2339,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun || weaponPerk == WEAPON_PERK_KNOCKBACK || knockbackFromCrit) && target.IsCanWalk())
             {
 				//Log(" bron jest WS_MELEE");
-				if(weaponPerk == WEAPON_PERK_KNOCKBACK || (isShotgun && rounds > 1))
+				if(weaponPerk == WEAPON_PERK_KNOCKBACK || (isShotgun && rounds > 1 && attacker.Perk[PE_AND_STAY_BACK]!=0))
                     knockDist /= 5;
                 else
-                    knockDist /= 10;
+                    knockDist /= 15;
                 if(target.Perk[PE_STONEWALL] != 0) {
-                    knockDist *= 2;
-                    knockDist /= 3;
+                    knockDist -= (target.Stat[ST_STRENGTH]+target.Stat[ST_STRENGTH_EXT]+target.Stat[ST_ENDURANCE]+target.Stat[ST_ENDURANCE_EXT])/5;
                 }
 
                 knockDist--;

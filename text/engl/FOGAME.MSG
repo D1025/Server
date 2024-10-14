@@ -1723,9 +1723,9 @@
 # PE_HEAVE_HO
 {103361}{}{Heave Ho!}
 {103362}{}{This perk gives you an additional +1 to Strength (up to 10), for purposes of determining range with thrown weapons only. This Perk will exceed a weapon's maximum range.}
-# PE_FRIENDLY_FOE
-{103371}{}{Friendly Foe}
-{103372}{}{Friendly Foe}
+# PE_AND_STAY_BACK
+{103371}{}{And Stay Back}
+{103372}{}{Taking this perk grants a 100% chance to inflict a "knockback" effect on an enemy when using shotguns.}
 # PE_PICKPOCKET
 {103381}{}{Pickpocket}
 {103382}{}{You are much more adept at stealing than a normal crook.  You can steal with the best of them, because with this Perk, you halve the size and facing modifiers when stealing from a person.}

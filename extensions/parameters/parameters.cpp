@@ -371,7 +371,7 @@ EXPORT int getParam_MeleeDmg(CritterMutual& cr, uint)
 
 EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT] + 4 * getParam_Charisma(cr, 0);
+	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT] + 3 * getParam_Charisma(cr, 0);
 
 	if(cr.Params[TRAIT_FAST_METABOLISM]) val += 10;
 

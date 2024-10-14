@@ -385,23 +385,29 @@ int[][] PerksData = {
 
 	{ 329, 0, 3 }, // Lifegiver, Levelling, 3 ranks
 	{ // level 1 requirements
-		2, 1, 5, // Endurance at least 5
+		2, 1, 6, // Endurance at least 6
+		3, 1, 6, // Charisma at least 6
 	},
 	{ // level 2 requirements
-		2, 1, 6, // Endurance at least 6
+		2, 1, 7, // Endurance at least 7
+        3, 1, 7, // Charisma at least 7
 	},
 	{ // level 3 requirements
-		2, 1, 7, // Endurance at least 7
+		2, 1, 8, // Endurance at least 8
+		3, 1, 8, // Charisma at least 8
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
 		7, 1, 40, // Maximum Hit Points increased by 40
+		13, 1, 5, // Healing Rate increased by 5
 	},
 	{ // level 2 perk up effects
 		7, 1, 45, // Maximum Hit Points increased by 40
+		13, 1, 5, // Healing Rate increased by 5
 	},
 	{ // level 3 perk up effects
 		7, 1, 50, // Maximum Hit Points increased by 30
+		13, 1, 5, // Healing Rate increased by 5
 	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -501,8 +507,9 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 337, 2, 1 }, // Friendly Foe, Disabled, 1 ranks
+	{ 337, 0, 1 }, // And Stay Back, Disabled, 1 ranks
 	{ // level 1 requirements
+	    0, 1, 8, // Strength at least 8
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1838,6 +1845,7 @@ int[][] PerksData = {
 
 	{ 445, 0, 1 }, // Hit the Gaps, Levelling, 1 ranks
 	{ // level 1 requirements
+	    0, 1, 4, // Strength at least 4
         5, 1, 6, // Agility at least 6
 	},
 #ifdef __SERVER

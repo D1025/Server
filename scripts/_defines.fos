@@ -746,7 +746,7 @@
 #define PE_MASTER_THIEF                          (334) // Nolevel
 #define PE_SPEAKER                               (335) // Nolevel
 #define PE_HEAVE_HO                              (336) // In dll
-#define PE_FRIENDLY_FOE                          (337) // Not implemented
+#define PE_AND_STAY_BACK                          (337) // Not implemented
 #define PE_PICKPOCKET                            (338) // Nolevel
 #define PE_GHOST                                 (339) // In dll
 #define PE_CULT_OF_PERSONALITY                   (340) // Not implemented
