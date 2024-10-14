@@ -1406,6 +1406,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 	bool     isSwingThrustWeapon = (valid(realWeapon) ? (weapPid == 517 || weapPid == 160 || weapPid == 236 || weapPid == 530 || weapPid == 9676 || weapPid == 4 || weapPid == 116 || weapPid == 383 || weapPid == 6 || weapPid == 399 || weapPid == 115 || weapPid == 319 || weapPid == 622 || weapPid == 522 || weapPid == 600 || weapPid == 610 || weapPid == 289) : false);
     bool     isThrustThrowWeapon = (valid(realWeapon) ? (weapPid == 9916 || weapPid == 618 || weapPid == 320 || weapPid == 280 || weapPid == 7) : false);
+	bool     isSlugger = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_LOUISVILLE_SLUGGER : false);
 
 	bool     knockbackFromCrit = false;
 
@@ -2312,7 +2313,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			target.ToDead(anim2Dead, attacker);
     }
     else 
-	if(isKo || (isShotgun && rounds >1 && attacker.Perk[PE_AND_STAY_BACK] !=0) || knockbackFromCrit)
+	if(isKo || (isShotgun && rounds >1 && attacker.Perk[PE_AND_STAY_BACK] !=0) || knockbackFromCrit || isSlugger)
     {
         //Log("isKo = True");
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
@@ -2331,18 +2332,20 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		if(knockDown && !(target.IsKnockout() && map.IsTurnBased()))
             targetAp -= quick ? 1 : 3;
         	
-		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || knockbackFromCrit) && !target.IsKnockout() && target.Mode[MODE_NO_KNOCK] == 0)
+		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || isSlugger || knockbackFromCrit) && !target.IsKnockout() && target.Mode[MODE_NO_KNOCK] == 0)
         {
             //Log("jest knockOut albo knockDown");
-			int knockDist = knockDmg;
+            int knockDist = knockDmg;
 			//Log("knockDist = " + knockDist);
-            if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun || weaponPerk == WEAPON_PERK_KNOCKBACK || knockbackFromCrit) && target.IsCanWalk())
+            if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun  || isSlugger || weaponPerk == WEAPON_PERK_KNOCKBACK || knockbackFromCrit) && target.IsCanWalk())
             {
 				//Log(" bron jest WS_MELEE");
 				if(weaponPerk == WEAPON_PERK_KNOCKBACK || (isShotgun && rounds > 1 && attacker.Perk[PE_AND_STAY_BACK]!=0))
                     knockDist /= 5;
                 else
                     knockDist /= 15;
+                if (isSlugger)
+                    knockDist = 15;
                 if(target.Perk[PE_STONEWALL] != 0) {
                     knockDist -= (target.Stat[ST_STRENGTH]+target.Stat[ST_STRENGTH_EXT]+target.Stat[ST_ENDURANCE]+target.Stat[ST_ENDURANCE_EXT])/5;
                 }
