@@ -2861,6 +2861,7 @@ DisableEgg=1
 Weight=1814
 Volume=2
 SoundId=48
+Deteriorable=1
 Cost=5000
 Material=3
 Weapon_Anim1=5
