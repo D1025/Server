@@ -434,7 +434,7 @@ void speedboost(Critter& cr)
 	}
 
     if( cr.Trait[TRAIT_BRUISER]!=0) {
-        penalty-=20;
+        penalty=20;
     }
 	
 	if (valid(CritterArmor))
