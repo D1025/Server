@@ -19,7 +19,7 @@
 #define MODE_EXT_LOOK_INVISIBLE   (0x00010000)
 #define MODE_EXT_GOD              (0x00020000)
 
-#define COND_LIFE                   (1) // Криттер жив
+#define COND_LIFE                   (1) // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ
 
 #define _CritHasMode(cr,mode) (cr.Params[mode]>0)
 #define _CritHasExtMode(cr, mode) ((cr.Params[MODE_EXT]&(mode))!=0)
@@ -28,13 +28,13 @@
 #define MAP_DATA_ACTIVE_COUNTDOWN   (8)
 
 #define BONUS_OCCLUDER				(60)
-#define BONUS_WALL					(30)
-#define BONUS_STEALTH_BOY			(60)
+#define BONUS_WALL					(50)
+#define BONUS_STEALTH_BOY			(30)
 
 #define BONUS_ARMOR_METAL			(-72)
 #define BONUS_ARMOR_COMBAT			(-36)
 
-#define BONUS_WEAPON_RIFLE			(-100)
+#define BONUS_WEAPON_RIFLE			(-50)
 #define BONUS_WEAPON_HEAVY			(-150)
 
 #define BONUS_ACTIVE_EXPLOSIVES		(-72)

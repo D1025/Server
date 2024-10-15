@@ -137,7 +137,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 	// dead/unconcious/neg hp - only minimum range
 	if(cr.Cond != COND_LIFE) return (dist <= (int)(FOnline->LookMinimum));
 
-    int front_range=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]),1,10));
+    int front_range=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]),1,30));
 	if(cr.Params[PE_SHARPSHOOTER]) front_range+=2*cr.Params[PE_SHARPSHOOTER];
     front_range*=3;
     front_range+= cr.Params[ST_BONUS_LOOK];
@@ -210,7 +210,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 		// 4. night TODO?
 
 		// clamp
-		sk=CLAMP(sk,-300,300);
+		sk=CLAMP(sk,-300,600);
 
 		switch(dir)
         {
@@ -271,7 +271,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 				sk+=BONUS_WEAPON_HEAVY;
 				break;
 			default:
-				if(proto->Weapon_Skill[0]<=SK_ENERGY_WEAPONS) sk+=BONUS_WEAPON_RIFLE;
+				if(proto->Weapon_Skill[0]<=SK_ENERGY_WEAPONS || proto->Weapon_Skill[0]==SK_MELEE_WEAPONS) sk+=BONUS_WEAPON_RIFLE;
 				break;
 			}
 		}
@@ -288,7 +288,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 				sk+=BONUS_WEAPON_HEAVY;
 				break;
 			default:
-				if(proto2->Weapon_Skill[0]<=SK_ENERGY_WEAPONS) sk+=BONUS_WEAPON_RIFLE;
+				if(proto->Weapon_Skill[0]<=SK_ENERGY_WEAPONS || proto->Weapon_Skill[0]==SK_MELEE_WEAPONS) sk+=BONUS_WEAPON_RIFLE;
 				break;
 			}
 		}
@@ -317,7 +317,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 
 int GetEngineLook(Critter& cr)
 {
-	int look=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]),1,10));
+	int look=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]),1,30));
     look*=3;
     look+= cr.Params[ST_BONUS_LOOK];
 	look+=(int)(FOnline->LookNormal);
@@ -329,7 +329,7 @@ int GetEngineLook(Critter& cr)
 EXPORT bool check_trap_look(Map& map, Critter& cr, Item& trap)
 {
 	int dist=GetDistantion(cr.HexX,cr.HexY,trap.AccHex.HexX,trap.AccHex.HexY);
-	int perception=CLAMP(cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT],1,10);
+	int perception=CLAMP(cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT],1,30);
 	int skilldiff=cr.Params[SK_TRAPS]-trap.TrapGetValue();
 	return dist<=perception/2 + skilldiff/50;
 }
