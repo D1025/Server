@@ -1950,6 +1950,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 break;
             case HIT_LOCATION_HEAD:
                  target.StatBase[ST_HP_HEAD] -= totalDmg;
+                 break;
             case HIT_LOCATION_LEFT_ARM:
                 target.StatBase[ST_HP_LA] -= totalDamageToLimb;
 
