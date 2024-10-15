@@ -1621,7 +1621,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 				UNSETFLAG(eff, HF_KNOCKDOWN);
 			else
 			if(FLAG(eff, HF_KNOCKDOWN)) {
-			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + (critLevel-2) * -5) + legKDKOMinus;
+			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5) + legKDKOMinus;
                     int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT] + knockdownBonus;
                     if (enemyStat > attackerStat) {
                         UNSETFLAG(eff, HF_KNOCKDOWN);

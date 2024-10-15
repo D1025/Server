@@ -49,14 +49,14 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         return true;
     }
 
-    if(!_CritNeedFirstAid(targetCr) && !_CritAtLeastOneLimbNotOnFull(targetCr))
+    /*if(!_CritNeedFirstAid(targetCr) && !_CritAtLeastOneLimbNotOnFull(targetCr))
     {
         if(_CritNeedDoctor(targetCr))
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NOFIRSTAID_NEEDDOCTOR);
         else if(is_self)
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NONEED_FIRSTAID);
         return true;
-    }
+    }*/
 
     if(cr.Timeout[TO_SK_FIRST_AID] > 0)
     {
@@ -144,14 +144,14 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
     //if((!_CritNeedDoctor(targetCr)) && !targetCr.IsKnockout() )
-    if((!_CritNeedDoctor(targetCr) && !_CritAtLeastOneLimbNotOnFull(targetCr)) && (cr.Perk[PE_MEDIC] == 0 || !targetCr.IsKnockout()) && targetCr.StatBase[ST_POISONING_LEVEL] ==  0)   //version with Medic perk required to remove KO
+    /*if((!_CritNeedDoctor(targetCr) && !_CritAtLeastOneLimbNotOnFull(targetCr)) && (cr.Perk[PE_MEDIC] == 0 || !targetCr.IsKnockout()) && targetCr.StatBase[ST_POISONING_LEVEL] ==  0)   //version with Medic perk required to remove KO
     {
         if(_CritNeedFirstAid(targetCr))
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NODOCTOR_NEEDFIRSTAID);
         else if(is_self)
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_NONEED_DOCTOR);
         return true;
-    }
+    }*/
 
     if(cr.Timeout[TO_SK_DOCTOR] > 0)
     {
