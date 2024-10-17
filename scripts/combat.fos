@@ -1293,6 +1293,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     isSlugger = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_LOUISVILLE_SLUGGER : false);
 
 	bool     knockbackFromCrit = false;
+	bool     quick = target.Perk[PE_QUICK_RECOVERY] > 0;
 
     int realrounds = rounds;
 	if(rounds > 1 && attack.Attacker.Perk[PE_SIZE_MATTERS] > 0)
@@ -2204,7 +2205,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
         int  currentAp = target.Stat[ST_CURRENT_AP];
         int  targetAp = currentAp;
-        bool quick = target.Perk[PE_QUICK_RECOVERY] > 0;
         if(loseTurn)
         {
             targetAp = quick ? -maxAp / 3 : -maxAp;
