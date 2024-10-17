@@ -2001,6 +2001,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	{
 		if(target.IsPlayer()) target.Disconnect();	
 	}
+
+    int  currentAp = target.Stat[ST_CURRENT_AP];
+    int  targetAp = currentAp;
 	
     // Dead
     if(isDead)
@@ -2203,8 +2206,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     {
         //Log("isKo = True");
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
-        int  currentAp = target.Stat[ST_CURRENT_AP];
-        int  targetAp = currentAp;
         if(loseTurn)
         {
             targetAp = quick ? -maxAp / 3 : -maxAp;
