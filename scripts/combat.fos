@@ -426,10 +426,9 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
     // Main hit roll
     int margin = toHit - Random(1, 100);
-
+    attack.InYourFaceEffect = in_your_face_valid;
     if(margin < 0)     // If missed
     {
-        attack.InYourFaceEffect = in_your_face_valid;
         // Not setting isHit, we try a critical failure
         if(cr.Mode[MODE_INVULNERABLE] == 0)
         {
@@ -861,170 +860,188 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             toHit = CLAMP(toHit, 0, 100);
         }
 
-        // Critical hit bonus, toHit can be increased over 95
-        if(criticalHit)
-            toHit += 20;
-
         // Proceed with the burst attack
-        uint rounds = ammoRound;
-        if(valid(realWeapon) && realWeapon.AmmoCount < rounds)
-            rounds = realWeapon.AmmoCount;
+        uint totalRounds = ammoRound;
+        if (valid(realWeapon) && realWeapon.AmmoCount < totalRounds)
+            totalRounds = realWeapon.AmmoCount;
+
+        // Sprawdzenie, czy broń ma perk CASCADE
+        bool hasCascade = (weaponPerk == WEAPON_PERK_CASCADE);
+
+        // Obliczenie liczby linii
+         uint numberOfLines = hasCascade ? 5 : 1;
+
+        // Obliczenie rund na każdą linię (20% każda, jeśli CASCADE)
+        array<uint> roundsPerEachLine;
+        if (hasCascade)
+        {
+            uint roundsPerLine = totalRounds / 5;
+            uint remainingRounds = totalRounds % 5;
+
+            // Inicjalizacja tablicy z rundami dla każdej z 5 linii
+            for (int i = 0; i < 5; i++)
+            {
+                roundsPerEachLine.insertLast(roundsPerLine);
+            }
+
+            // Dodanie pozostałych rund do centralnej linii (lub innej, według preferencji)
+            roundsPerEachLine[0] += remainingRounds; // Dodaj pozostałe rundy do centralnej linii
+        }
+        else
+        {
+            // Wszystkie rundy przypisane do jednej linii
+            roundsPerEachLine.insertLast(totalRounds);
+        }
+
+        // Tablice przechowujące trafione krytery i liczby trafień
         array<Critter@> critsHit(0);
-        array<uint>     critsHitBullets(0);
+        array<uint> critsHitBullets(0);
 
         int len_ = 0;
-        int volleyRounds = MAX((rounds / 6), 1);
 
-        int curRounds = 0;
-        for(int i = 0; i < volleyRounds; i++)
+        // Przygotowanie wszystkich linii ognia
+        array<array<Critter@> > allLines(numberOfLines, array<Critter@>());
+
+        if (hasCascade)
         {
-            if(Random(1, 100) <= toHit)
-                curRounds++;
+            // 1. Centralna linia
+            allLines[0].insertLast(realTarget); // Zakładamy, że centralna linia trafia główny cel
+
+            // 2. Lewa linia
+            array<Critter@> lineLeft;
+            map.GetCrittersPath(hx, hy, tx, ty, 89.0f, wpnMaxDist, FIND_LIFE_AND_KO, lineLeft);
+            FilterOutAttacker(lineLeft, cr);
+            allLines[1] = lineLeft;
+
+            // 3. Prawa linia
+            array<Critter@> lineRight;
+            map.GetCrittersPath(hx, hy, tx, ty, -89.0f, wpnMaxDist, FIND_LIFE_AND_KO, lineRight);
+            FilterOutAttacker(lineRight, cr);
+            allLines[2] = lineRight;
+
+            // 4. Daleko-lewa linia
+            uint8 farLeftDir = GetOffsetDir(hx, hy, tx, ty, 135.0f); // Kąt dla daleko-lewej linii
+            uint16 sx = hx;
+            uint16 sy = hy;
+            uint16 ex = tx;
+            uint16 ey = ty;
+
+            map.MoveHexByDir(sx, sy, farLeftDir, 1);
+            map.MoveHexByDir(ex, ey, farLeftDir, 1);
+
+            array<Critter@> lineFarLeft;
+            map.GetCrittersPath(sx, sy, ex, ey, 0.0f, wpnMaxDist - 1, FIND_LIFE_AND_KO, lineFarLeft);
+            FilterOutAttacker(lineFarLeft, cr);
+            allLines[3] = lineFarLeft;
+
+            // 5. Daleko-prawa linia
+            uint8 farRightDir = GetOffsetDir(hx, hy, tx, ty, -135.0f); // Kąt dla daleko-prawej linii
+            sx = hx;
+            sy = hy;
+            ex = tx;
+            ey = ty;
+
+            map.MoveHexByDir(sx, sy, farRightDir, 1);
+            map.MoveHexByDir(ex, ey, farRightDir, 1);
+
+            array<Critter@> lineFarRight;
+            map.GetCrittersPath(sx, sy, ex, ey, 0.0f, wpnMaxDist - 1, FIND_LIFE_AND_KO, lineFarRight);
+            FilterOutAttacker(lineFarRight, cr);
+            allLines[4] = lineFarRight;
+        }
+        else
+        {
+            // Tylko jedna linia (centralna)
+            array<Critter@> lineCentral;
+            map.GetCrittersPath(hx, hy, tx, ty, 0.0f, wpnMaxDist, FIND_LIFE_AND_KO, lineCentral);
+            FilterOutAttacker(lineCentral, cr);
+            allLines[0] = lineCentral;
         }
 
-        if(curRounds != 0)
+        // Przetwarzanie każdej linii
+        for (uint lineCount = 0; lineCount < numberOfLines; lineCount++)
         {
-            critsHit.resize(1);
-            critsHitBullets.resize(1);
-            @critsHit[0] = realTarget;
-            critsHitBullets[0] = curRounds;
-            len_++;
-        }
-        volleyRounds -= curRounds;
+            uint volleyRounds = roundsPerEachLine[lineCount];
+            if (volleyRounds == 0)
+                continue; // Brak rund do wystrzelenia na tej linii
 
-        array<Critter@> lineCentral;
-        map.GetCrittersPath(hx, hy, tx, ty, 0.0f, wpnMaxDist, FIND_LIFE_AND_KO, lineCentral);
+            array<Critter@> currentLine = allLines[lineCount];
+            if (currentLine.length() == 0)
+                continue; // Brak celów na tej linii
 
-        // This never happens
-        if(lineCentral.length() == 0)
-        {
-            Log("ERR: lineCentral.length()==0");
-            Log("  " + hx + "," + hy + "," + tx + "," + ty + "," + wpnMaxDist + (changedTarget ? "changed" : "original"));
-            Log("  attacker " + cr.HexX + "," + cr.HexY);
-            Log("  target: " + target.HexX + "," + target.HexY + "," + GetDistantion(cr.HexX, cr.HexY, target.HexX, target.HexY) + "," + target.Cond);
-            Log("  realTarget: " + realTarget.HexX + "," + realTarget.HexY + "," + GetDistantion(cr.HexX, cr.HexY, realTarget.HexX, realTarget.HexY) + "," + realTarget.Cond);
-        }
+            // Przetwarzanie trafień dla bieżącej linii
+            uint bl = 0; // Liczba blokujących przeszkód
 
-        int bl = 0;
-        curRounds = 0;
-        for(int i = 0, j = lineCentral.length(); (i < j) && (volleyRounds > 0); i++)
-        {
-            if(lineCentral[i].Id == realTarget.Id)
+            for (uint i = 0; i < currentLine.length() && volleyRounds > 0; i++)
             {
-                bl++;
-                continue;
-            }                                                                      // skip the primary target, but add blocker
-            // Adjust tohit
-            toHit = baseToHit - 10 * bl;
-            dist = GetDistantion(hx, hy, lineCentral[i].HexX, lineCentral[i].HexY);
-            acc = dist;
-            if(dist < distmod2)
-                acc += distmod2;
-            else
-                acc -= accloss;
-            if(-2 * perception > acc)
-                acc = -2 * perception;
-            acc -= sharpshooter;
-            if(acc > 0 && eyeDamage)
-                acc *= 3;
-            acc *= -4;
-            toHit += acc;
-            toHit = CLAMP(toHit, 0, 100);
-            if(lineCentral[i].IsKnockout())
-                toHit += 40;
-            else
-                bl++;
-            if(lineCentral[i].GetMultihex() > 0)
-                toHit += 15;
+                Critter@ currentTarget = currentLine[i];
 
-            curRounds = 0;
-            for(int k = 0; k < volleyRounds; ++k)
-            {
-                if(Random(1, 100) <= toHit)
-                    curRounds++;
-            }
-            volleyRounds -= curRounds;
+                // Obliczenie toHit dla bieżącego celu
+                float toHitLocal = baseToHit - 10 * bl;
+                float dist = GetDistantion(hx, hy, currentTarget.HexX, currentTarget.HexY);
+                float acc = dist;
 
-            if(curRounds > 0)
-            {
-                int crIndex = FindCritterInArray(critsHit, lineCentral[i]);
-                if(crIndex == -1)
-                {
-                    critsHit.resize(len_ + 1);
-                    @critsHit[len_] = lineCentral[i];
-                    critsHitBullets.resize(len_ + 1);
-                    critsHitBullets[len_] = 0;
-                    crIndex = len_;
-                    len_++;
-                }
-                critsHitBullets[crIndex] += curRounds;
-            }
-        }
-
-        // Now we are shooting the rest of the bullets (=rounds-MAX(1,rounds/6))
-        //bool threeLines = (GetDistantion(hx, hy, lineCentral[0].HexX, lineCentral[0].HexY) > 1) && (!isShotgun) && (!isBozar) && (!isLSW);   // target not adjacent and weapon not shotgun-like
-        bool threeLines = false;
-        // Already shot: MAX(rounds/6,1);
-        for(int lineCount = 0, lineMax = (threeLines ? 1 : 3); lineCount < lineMax; lineCount++)
-        {
-            // Rounds for central stack
-            if(lineCount == 0)
-            {
-                volleyRounds = rounds - (((rounds + 1) / 3) + (rounds / 3));         // Second voller along the central line, always
-                volleyRounds -= MAX(rounds / 6, 1);
-            }
-            else
-            {
-                if(lineCount == 1)
-                    volleyRounds = (rounds + 1) / 3;           // Left line
-                else
-                    volleyRounds = rounds / 3;                 // Right line
-            }
-
-            if(volleyRounds == 0)
-                continue;     // No rounds left
-
-            // Central line
-            bl = 0;           // No blockers
-            for(int i = 0, j = lineCentral.length(); (i < j) && (volleyRounds > 0); i++)
-            {
-                // Adjust tohit
-                toHit = baseToHit - 10 * bl;
-                dist = GetDistantion(hx, hy, lineCentral[i].HexX, lineCentral[i].HexY);
-                acc = dist;
-                if(dist < distmod2)
+                if (dist < distmod2)
                     acc += distmod2;
                 else
                     acc -= accloss;
-                if(-2 * perception > acc)
-                    acc = -2 * perception;
-                acc -= sharpshooter;
-                if(acc > 0 && eyeDamage)
-                    acc *= 3;
-                acc *= -4;
-                toHit += acc;
-                if(lineCentral[i].IsKnockout())
-                    toHit += 40;
-                if(lineCentral[i].GetMultihex() > 0)
-                    toHit += 15;
-                toHit = CLAMP(toHit, 0, 100);
-                bl++;
 
-                curRounds = 0;
-                for(int k = 0; k < volleyRounds; ++k)
+                if (-2 * perception > acc)
+                    acc = -2 * perception;
+
+                acc -= sharpshooter;
+
+                if (acc > 0 && eyeDamage)
+                    acc *= 3;
+
+                acc *= -4;
+                toHitLocal += acc;
+
+                if (currentTarget.IsKnockout())
+                    toHitLocal += 40;
+
+                if (currentTarget.GetMultihex() > 0)
+                    toHitLocal += 15;
+
+                toHitLocal = CLAMP(toHitLocal, 0, 100);
+
+                // Aktualizacja liczby blokujących przeszkód
+                if (!currentTarget.IsKnockout())
+                    bl++;
+
+                // Symulacja trafień
+                uint curRounds = 0;
+                for (uint k = 0; k < volleyRounds; ++k)
                 {
-                    if(Random(1, 100) <= toHit)
+                    if (Random(1, 100) <= toHitLocal)
                         curRounds++;
                 }
-                volleyRounds -= curRounds;
 
-                if(curRounds > 0)
+                // Maksymalna liczba rund na cel (20% całkowitych rund)
+                uint maxPerTarget = uint(totalRounds * 0.2);
+                int crIndex = FindCritterInArray(critsHit, currentTarget);
+                uint alreadyAssigned = 0;
+                if (crIndex != -1)
+                    alreadyAssigned = critsHitBullets[crIndex];
+
+                // Obliczenie dozwolonych rund dla tego celu
+                uint allowedRounds = hasCascade ? ((maxPerTarget > alreadyAssigned) ? (maxPerTarget - alreadyAssigned) : 0) : curRounds;
+
+                // Jeśli liczba rund przekracza dozwolone, ograniczamy i przekazujemy nadmiar
+                if (hasCascade && curRounds > allowedRounds)
                 {
-                    int crIndex = FindCritterInArray(critsHit, lineCentral[i]);
-                    if(crIndex == -1)
+                    uint excessRounds = curRounds - allowedRounds;
+                    curRounds = allowedRounds;
+                    volleyRounds += excessRounds; // Przekazanie nadmiaru do następnego celu
+                }
+
+                // Przypisanie rund do trafionego celu
+                if (curRounds > 0)
+                {
+                    if (crIndex == -1)
                     {
                         critsHit.resize(len_ + 1);
-                        @critsHit[len_] = lineCentral[i];
+                        @critsHit[len_] = currentTarget;
                         critsHitBullets.resize(len_ + 1);
                         critsHitBullets[len_] = 0;
                         crIndex = len_;
@@ -1032,162 +1049,29 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     }
                     critsHitBullets[crIndex] += curRounds;
                 }
+
+                // Redukcja rund do wystrzelenia
+                volleyRounds -= curRounds;
             }
-            // Central line end
         }
 
-        if(threeLines)
+        // Aplikacja obrażeń do trafionych celów
+        for (int i = 0; i < len_; i++)
         {
-            // Rounds for the left stack
-            volleyRounds = (rounds + 1) / 3;
-
-            if(volleyRounds > 0)             // Real left
-            {
-                uint8  leftDir = GetOffsetDir(hx, hy, tx, ty, 89.0f);
-                uint16 sx = hx;
-                uint16 sy = hy;
-                uint16 ex = tx;
-                uint16 ey = ty;
-
-                map.MoveHexByDir(sx, sy, leftDir, 1);
-                map.MoveHexByDir(ex, ey, leftDir, 1);
-
-                array<Critter@> lineLeft;
-                map.GetCrittersPath(sx, sy, ex, ey, 0.0f, wpnMaxDist - 1, FIND_LIFE_AND_KO, lineLeft);
-                int             leftStart = 0;
-                int             leftLen = lineLeft.length();
-                while((leftStart < leftLen) && (GetDistantion(hx, hy, lineLeft[leftStart].HexX, lineLeft[leftStart].HexY)) < 3)
-                    leftStart++;
-
-                for(int i = leftStart, j = leftLen; (i < j) && (volleyRounds > 0); i++)
-                {
-                    // Adjust tohit
-                    dist = GetDistantion(hx, hy, lineLeft[i].HexX, lineLeft[i].HexY);
-                    bl = map.GetCrittersPath(hx, hy, lineLeft[i].HexX, lineLeft[i].HexY, 0.0f, dist, FIND_LIFE, null) - 1;
-                    toHit = baseToHit - 10 * bl;
-                    acc = dist;
-                    if(dist < distmod2)
-                        acc += distmod2;
-                    else
-                        acc -= accloss;
-                    if(-2 * perception > acc)
-                        acc = -2 * perception;
-                    acc -= sharpshooter;
-                    if(acc > 0 && eyeDamage)
-                        acc *= 3;
-                    acc *= -4;
-                    toHit += acc;
-                    if(lineLeft[i].IsKnockout())
-                        toHit += 40;
-                    if(lineLeft[i].GetMultihex() > 0)
-                        toHit += 15;
-                    toHit = CLAMP(toHit, 0, 100);
-
-                    curRounds = 0;
-                    for(int k = 0; k < volleyRounds; ++k)
-                    {
-                        if(Random(1, 100) <= toHit)
-                            curRounds++;
-                    }
-                    volleyRounds -= curRounds;
-
-                    if(curRounds > 0)
-                    {
-                        int crIndex = FindCritterInArray(critsHit, lineLeft[i]);
-                        if(crIndex == -1)
-                        {
-                            critsHit.resize(len_ + 1);
-                            @critsHit[len_] = lineLeft[i];
-                            critsHitBullets.resize(len_ + 1);
-                            critsHitBullets[len_] = 0;
-                            crIndex = len_;
-                            len_++;
-                        }
-                        critsHitBullets[crIndex] += curRounds;
-                    }
-                }
-            }             // Left line end
-
-
-            // Rounds for the right stack
-            volleyRounds = (rounds) / 3;
-
-            if(volleyRounds > 0)
-            {
-                uint8  rightDir = GetOffsetDir(hx, hy, tx, ty, -89.0f);
-
-                uint16 sx = hx;
-                uint16 sy = hy;
-                uint16 ex = tx;
-                uint16 ey = ty;
-
-                map.MoveHexByDir(sx, sy, rightDir, 1);
-                map.MoveHexByDir(ex, ey, rightDir, 1);
-
-                array<Critter@> lineRight;
-                map.GetCrittersPath(sx, sy, ex, ey, 0.0f, wpnMaxDist - 1, FIND_LIFE_AND_KO, lineRight);
-                int             rightStart = 0;
-                int             rightLen = lineRight.length();
-                while((rightStart < rightLen) && (GetDistantion(hx, hy, lineRight[rightStart].HexX, lineRight[rightStart].HexY)) < 3)
-                    rightStart++;
-                for(int i = rightStart, j = rightLen; (i < j) && (volleyRounds > 0); i++)
-                {
-                    // Adjust tohit
-                    dist = GetDistantion(hx, hy, lineRight[i].HexX, lineRight[i].HexY);
-                    bl = map.GetCrittersPath(hx, hy, lineRight[i].HexX, lineRight[i].HexY, 0.0f, dist, FIND_LIFE, null) - 1;
-                    toHit = baseToHit - 10 * bl;
-                    acc = dist;
-                    if(dist < distmod2)
-                        acc += distmod2;
-                    else
-                        acc -= accloss;
-                    if(-2 * perception > acc)
-                        acc = -2 * perception;
-                    acc -= sharpshooter;
-                    if(acc > 0 && eyeDamage)
-                        acc *= 3;
-                    acc *= -4;
-                    toHit += acc;
-                    if(lineRight[i].IsKnockout())
-                        toHit += 40;
-                    if(lineRight[i].GetMultihex() > 0)
-                        toHit += 15;
-                    toHit = CLAMP(toHit, 0, 100);
-
-                    curRounds = 0;
-                    for(int k = 0; k < volleyRounds; ++k)
-                    {
-                        if(Random(1, 100) <= toHit)
-                            curRounds++;
-                    }
-                    volleyRounds -= curRounds;
-                    
-                    if(curRounds > 0)
-                    {
-                        int crIndex = FindCritterInArray(critsHit, lineRight[i]);
-                        if(crIndex == -1)
-                        {
-                            critsHit.resize(len_ + 1);
-                            @critsHit[len_] = lineRight[i];
-                            critsHitBullets.resize(len_ + 1);
-                            critsHitBullets[len_] = 0;
-                            crIndex = len_;
-                            len_++;
-                        }
-                        critsHitBullets[crIndex] += curRounds;
-                    }
-                }
-            }             // Right line end
-        }
-		
-        for(int i = 0, j = len_; i < j; i++)
-        {
-			ApplyDamage(attack, critsHit[i], critsHitBullets[i], (realTarget.Id == critsHit[i].Id) && criticalHit, (!_IsTrueNpc(cr) && !changedTarget) || (_IsTrueNpc(cr) && critsHit[i].Id == target.Id), results, CriticalChance);
+            ApplyDamage(
+                attack,
+                critsHit[i],
+                critsHitBullets[i],
+                (realTarget.Id == critsHit[i].Id) && criticalHit,
+                (!_IsTrueNpc(cr) && !changedTarget) || (_IsTrueNpc(cr) && critsHit[i].Id == target.Id),
+                results,
+                CriticalChance
+            );
         }
 
-        if(!changedTarget && !attack.TargetHit)
+        if (!changedTarget && !attack.TargetHit)
             NotifyMiss(cr, results);
-    }                                                     	
+    }
 	// Burst attack end
 	
     else if(isRocket || (weaponSubtype == WS_THROWING))   // ROCKETS, THROWING
@@ -1801,7 +1685,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		if(attack.InYourFaceEffect)
 		    totalDmg /= 2;
 
-		if(rounds > 1 && attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] != 0 && attack.Dist >= 15)
+		if(rounds > 1 && attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] != 0 && attack.Dist > 15)
             totalDmg += totalDmg * attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] * 15/ 100;
     }
 	
@@ -2326,12 +2210,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             targetAp = quick ? -maxAp / 3 : -maxAp;
             target.StatBase[ST_MOVE_AP] = 0;
         }
-		
-        if(knockOut)
-            targetAp = quick ? -1 : -4;
-        
-		if(knockDown && !(target.IsKnockout() && map.IsTurnBased()))
-            targetAp -= quick ? 1 : 3;
         	
 		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || isSlugger || knockbackFromCrit) && !target.IsKnockout() && target.Mode[MODE_NO_KNOCK] == 0)
         {
@@ -2371,6 +2249,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         if(targetAp < currentAp)
             target.StatBase[ST_CURRENT_AP] = 100 * targetAp;
     }
+
+    if(knockOut)
+        targetAp = quick ? -1 : -4;
+
+    if(knockDown && !(target.IsKnockout() && map.IsTurnBased()))
+        targetAp -= quick ? 1 : 3;
 
     // Damage
     else if(!(target.IsKnockout() || FLAG(target.Mode[MODE_EXT], MODE_EXT_NO_HIT_ANIM)))
@@ -3372,4 +3256,15 @@ uint GetBurnDuration(Critter& cr)
     duration=count*MAX_BURN_DURATION;
     if(duration<=0) cr.EraseTimeEvents(CTE_BURN);;
     return duration;
+}
+
+void FilterOutAttacker(array<Critter@> &inout targets, Critter@ attacker)
+{
+    for(int i = targets.length() - 1; i >= 0; i--)
+    {
+        if(targets[i].Id == attacker.Id)
+        {
+            targets.removeAt(i);
+        }
+    }
 }

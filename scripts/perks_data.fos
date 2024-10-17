@@ -61,20 +61,13 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 305, 0, 2 }, // Bonus Ranged Damage, Levelling, 2 ranks
+	{ 305, 0, 1 }, // Bonus Ranged Damage, Levelling, 2 ranks
 	{ // level 1 requirements
-	},
-	{ // level 2 requirements
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
 	},
-	{ // level 2 perk up effects
-	},
 	{ // level 1 perk down effects
-		-1 // Just revert
-	},
-	{ // level 2 perk down effects
 		-1 // Just revert
 	},
 #endif
@@ -121,7 +114,8 @@ int[][] PerksData = {
 	{ 309, 0, 1 }, // Size Matters , Levelling, 1 ranks
 	{ // level 1 requirements
 		6, 1, 4, // Luck at least 4
-		305, 1, 2, // Bonus Ranged Damage at least 2
+		305, 1, 1, // Bonus Ranged Damage at least 1
+		428, 1, 1, // More Ranged Damage at least 1
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
