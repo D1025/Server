@@ -73,7 +73,8 @@ lang=engl
 3 10040 R _item n PID_TESLA_ARMOR + 1 R _item n PID_TESLA_HELMET + 1 R _script arena@r_TransferItems 0  #
 3 10050 R _item n PID_COMBAT_ARMOR + 1 R _item n PID_COMBAT_HELMET + 1 R _script arena@r_TransferItems 0  #
 3 10060 R _item n PID_COMBAT_ARMOR_MK_II + 1 R _item n PID_COMBAT_HELMET_MK_II + 1 R _script arena@r_TransferItems 0  #
-3 10070 R _item n PID_DESERT_COMBAT_ARMOR + 1 R _item n PID_DESERT_COMBAT_HELMET + 1 R _script arena@r_TransferItems 0  @
+3 10070 R _item n PID_DESERT_COMBAT_ARMOR + 1 R _item n PID_DESERT_COMBAT_HELMET + 1 R _script arena@r_TransferItems 0  #
+3 10080 R _item n PID_SAND_ROBE + 1 R _item n PID_COMBAT_HELMET_MK_II + 1 R _script arena@r_TransferItems 0  @
 11 11000 None 0 #
 0 11010 @
 12 12000 None 0 #
@@ -150,6 +151,7 @@ lang=engl
 {10050}{}{A Combat Armor.}
 {10060}{}{One suit of Combat Armor mark II.}
 {10070}{}{One suit of Desert Combat Armor.}
+{10080}{}{A bath ro(p)e please.}
 {11000}{}{Sorry, no. Even if those are fake weapons, I don't believe they can be safely given to someone with your... condition. You can still watch the fights, while you are here.}
 {11010}{}{Uh?}
 {12000}{}{If I were you I would try my luck at the bar right over there... [points at the other end of the room]}
