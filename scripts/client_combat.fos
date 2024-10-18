@@ -795,7 +795,7 @@ void combat_result(array<uint>& data)
 							muzzleData[7]=100; 
 							muzzleData[8]=5;					
 						}
-						else if(isHeavyRifle)
+						else if(isHeavyRifle && !isShotgun)
 						{
 							muzzleData[0]= crAttacker.HexX;
 							muzzleData[1]= crAttacker.HexY;
