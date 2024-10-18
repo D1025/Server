@@ -2247,8 +2247,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             else
                 target.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(attackFront), 0, target.HexX, target.HexY);
         }
-        if(targetAp < currentAp)
-            target.StatBase[ST_CURRENT_AP] = 100 * targetAp;
     }
 
     if(knockOut)
@@ -2256,6 +2254,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
     if(knockDown && !(target.IsKnockout() && map.IsTurnBased()))
         targetAp -= quick ? 1 : 3;
+
+    if(targetAp < currentAp)
+        target.StatBase[ST_CURRENT_AP] = 100 * targetAp;
 
     // Damage
     else if(!(target.IsKnockout() || FLAG(target.Mode[MODE_EXT], MODE_EXT_NO_HIT_ANIM)))
