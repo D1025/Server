@@ -655,13 +655,15 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 	}
 	else if(use == USE_RELOAD)
 	{
-		if(cr.Params[PE_QUICK_POCKETS]) return 1;
+		if (!item.Proto->Weapon_ReloadAp)
+			apCost = 3;
 		if(TB_BATTLE_TIMEOUT_CHECK(getParam_Timeout(cr, TO_BATTLE)))
 			apCost = FOnline->TbApCostReloadWeapon;
 		else
-			apCost = FOnline->RtApCostReloadWeapon;
-
-		if(item.IsWeapon() && item.Proto->Weapon_Perk == WEAPON_PERK_FAST_RELOAD) apCost--;
+			//apCost = FOnline->RtApCostReloadWeapon;
+			apCost = item.Proto->Weapon_ReloadAp;
+		if(cr.Params[PE_QUICK_POCKETS]) return apCost/2;
+		//if(item.IsWeapon() && item.Proto->Weapon_Perk == WEAPON_PERK_FAST_RELOAD) apCost/2;
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{

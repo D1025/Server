@@ -920,7 +920,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             allLines[2] = lineRight;
 
             // 4. Daleko-lewa linia
-            uint8 farLeftDir = GetOffsetDir(hx, hy, tx, ty, 135.0f); // Kąt dla daleko-lewej linii
+            uint8 farLeftDir = GetOffsetDir(hx, hy, tx, ty, 85.0f); // Kąt dla daleko-lewej linii
             uint16 sx = hx;
             uint16 sy = hy;
             uint16 ex = tx;
@@ -935,7 +935,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             allLines[3] = lineFarLeft;
 
             // 5. Daleko-prawa linia
-            uint8 farRightDir = GetOffsetDir(hx, hy, tx, ty, -135.0f); // Kąt dla daleko-prawej linii
+            uint8 farRightDir = GetOffsetDir(hx, hy, tx, ty, -85.0f); // Kąt dla daleko-prawej linii
             sx = hx;
             sy = hy;
             ex = tx;
