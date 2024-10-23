@@ -405,7 +405,7 @@ void speedboost(Critter& cr)
 	if(cr.IsPlayer())
 	{
 	uint current_weight; 										//Get current weight count
-	uint skill=cr.Skill[SK_UNARMED];							//Get Unarmed skill count
+	uint skill=cr.Skill[SK_RUNNING];							//Get Unarmed skill count
 	uint bonus=skill/6; 										//50 max(25%)
 	current_weight = cr.ItemsWeight(); 							//Get count to var
 	uint penalty=(current_weight / 5000);						//Weight penalty 1 for every 5kg(0,5% every 5kg)

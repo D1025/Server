@@ -58,7 +58,12 @@ void RebuildFog(CritterCl& cr)
     uint8  cDir = cr.Dir;
     uint16 cX = cr.HexX;
     uint16 cY = cr.HexY;
-    uint   cSight = cr.IsLife() ? __LookNormal + cr.Stat[ST_PERCEPTION] * 3 + cr.Param[PE_SHARPSHOOTER] * 6 : __LookMinimum;
+    bool isWeaponScoped = false;
+    uint8 mode = 0;
+    ProtoItem@ weapon1 = cr.GetSlotProto(SLOT_HAND1, mode);
+    if ( valid(weapon1) && weapon1.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE)
+        isWeaponScoped=true;
+    uint   cSight = cr.IsLife() ? __LookNormal + cr.Stat[ST_PERCEPTION] * 3 + cr.Param[PE_SHARPSHOOTER] * 6 + (isWeaponScoped ? 5 : 0) : __LookMinimum;
 
     // Do not rebuild if there's no need for it
     if(!MapChanged && LastDir == cDir && LastHexX == cX && LastHexY == cY && LastSight == cSight)
@@ -72,7 +77,7 @@ void RebuildFog(CritterCl& cr)
 
     array<uint16> hexes;
     array<uint16> triangles;
-    GetFovHexes(cX, cY, cDir, cSight, cSight, false, hexes);
+    GetFovHexes(cX, cY, cDir, cSight, cSight, false, hexes, isWeaponScoped);
     RemoveDuplicates(hexes);
 
     // find the smallest and largest x
@@ -199,7 +204,7 @@ void EnumHexes(array<uint16>& hexes)
 }
 
 
-uint GetFovHexes(uint16 cX, uint16 cY, uint8 cDir, uint cSight, uint maxRange, bool ccw, array<uint16>& hexes)
+uint GetFovHexes(uint16 cX, uint16 cY, uint8 cDir, uint cSight, uint maxRange, bool ccw, array<uint16>& hexes, bool isWeaponScoped)
 {
     hexes.resize(720);
     uint16 preBlockHx = 0, preBlockHy = 0, blockHx = 0, blockHy = 0;
@@ -213,7 +218,7 @@ uint GetFovHexes(uint16 cX, uint16 cY, uint8 cDir, uint cSight, uint maxRange, b
 
         uint  sight = cSight;
         if(FLAG(__LookChecks, LOOK_CHECK_DIR))
-            sight -= sight * GetRelativeDirModifier(ABS(int(dir) - int(cDir))) / 100;
+            sight -= (sight * GetRelativeDirModifier(ABS(int(dir) - int(cDir))) / 100) + GetScopedWeaponBonusBack(ABS(int(dir) - int(cDir)), isWeaponScoped);
         sight = MAX(sight, __LookMinimum);
         GetCrittersPath(cX, cY, preBlockHx, preBlockHy, 0, sight, 0, null, preBlockHx, preBlockHy, blockHx, blockHy);
 
@@ -276,6 +281,41 @@ uint8 GetRelativeDirModifier(uint8 dir)
     }
     return __LookDir0;
 }
+
+uint8 GetScopedWeaponBonusFront(uint8 dir, bool isWeaponScoped)
+{
+    if( isWeaponScoped == false)
+        return 0;
+    switch(dir)
+        {
+        case 0:
+            return 5;
+        case 1:
+        case 5:
+            return 5;
+        default:
+            ;
+        }
+        return 0;
+}
+
+uint8 GetScopedWeaponBonusBack(uint8 dir, bool isWeaponScoped)
+{
+    if( isWeaponScoped == false)
+        return 0;
+    switch(dir)
+        {
+        case 2:
+        case 4:
+            return 10;
+        case 3:
+            return 10;
+        default:
+            ;
+        }
+        return 0;
+}
+
 
 void CalculateFovSextantHexes(uint16 x, uint16 y, uint8 dir, uint sight, uint maxRange, bool ccw, array<uint16>& hexes)
 {

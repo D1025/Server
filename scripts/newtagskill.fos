@@ -170,7 +170,7 @@ int getBaseSkillValue(Critter &player, int skill)
 			baseSkill = 0 + 4 * player.StatBase[ST_CHARISMA];
 			break;
 		}
-		case SK_GAMBLING: {
+		case SK_RUNNING: {
 			baseSkill = 0 + 5 * player.StatBase[ST_LUCK];
 			break;
 		}

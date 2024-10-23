@@ -400,7 +400,9 @@ void RenderHexShoting() // export
     if(!GetHexPos(hx, hy, x, y))
         return;                           // should not happen
 
-    int radius = (item.AmmoPid == PID_ROCKET_AP)?3:4; 
+    int radius = (item.AmmoPid == PID_ROCKET_AP)?3:4;
+    if (chosen.Perk[PE_DEMOLITION_EXPERT] > 0)
+        radius += 1;
 
     uint tohit = ::HexShotingToHit(chosen, hx, hy, item.Proto, item);
     int  ap = ::HexShotActionPointsCost(item, chosen);

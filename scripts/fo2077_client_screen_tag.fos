@@ -185,9 +185,9 @@ void ShowChooseTagScreen()
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_BARTER_DESCRIPTION)
 		));
 
-		if(!_CritIsTagSkill(player, SK_GAMBLING))
+		if(!_CritIsTagSkill(player, SK_RUNNING))
 		skillWindow.Add(Skill(
-			SK_GAMBLING,
+			SK_RUNNING,
 			GUI_AddImage(CLIENT_SCREEN_TAG, "gambling.frm", PT_ART_SKILLDEX, 413, 64),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_GAMBLING_TITLE),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_GAMBLING_DESCRIPTION)

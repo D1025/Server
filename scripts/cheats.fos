@@ -293,7 +293,7 @@ int[] testerparamlist =
     ST_STRENGTH, ST_PERCEPTION, ST_ENDURANCE, ST_CHARISMA, ST_INTELLECT, ST_AGILITY, ST_LUCK,
 
     // skills
-    SK_SMALL_GUNS, SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_UNARMED, SK_MELEE_WEAPONS, SK_THROWING, SK_FIRST_AID, SK_DOCTOR, SK_SNEAK, SK_LOCKPICK, SK_STEAL, SK_TRAPS, SK_SCIENCE, SK_REPAIR, SK_SPEECH, SK_BARTER, SK_GAMBLING, SK_OUTDOORSMAN,
+    SK_SMALL_GUNS, SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_UNARMED, SK_MELEE_WEAPONS, SK_THROWING, SK_FIRST_AID, SK_DOCTOR, SK_SNEAK, SK_LOCKPICK, SK_STEAL, SK_TRAPS, SK_SCIENCE, SK_REPAIR, SK_SPEECH, SK_BARTER, SK_RUNNING, SK_OUTDOORSMAN,
 
     // tag skills
     TAG_SKILL1, TAG_SKILL2, TAG_SKILL3, TAG_SKILL4,
@@ -3609,7 +3609,7 @@ void ExecGodCommand(array<string@>@ command, Critter@ player)
                                                                           player.SkillBase[SK_UNARMED] = player.SkillBase[SK_MELEE_WEAPONS] = player.SkillBase[SK_THROWING] =
                                                                                                                                                   player.SkillBase[SK_FIRST_AID] = player.SkillBase[SK_DOCTOR] = player.SkillBase[SK_SNEAK] = player.SkillBase[SK_LOCKPICK] = player.SkillBase[SK_STEAL] =
                                                                                                                                                                                                                                                                                   player.SkillBase[SK_TRAPS] = player.SkillBase[SK_SCIENCE] = player.SkillBase[SK_REPAIR] = player.SkillBase[SK_SPEECH] = player.SkillBase[SK_BARTER] =
-                                                                                                                                                                                                                                                                                                                                                                                                              player.SkillBase[SK_GAMBLING] = player.SkillBase[SK_OUTDOORSMAN] = 300;
+                                                                                                                                                                                                                                                                                                                                                                                                              player.SkillBase[SK_RUNNING] = player.SkillBase[SK_OUTDOORSMAN] = 300;
 
     player.StatBase[ST_ACTION_POINTS] = 80;
 

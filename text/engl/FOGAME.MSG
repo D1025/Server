@@ -1502,9 +1502,9 @@
 # SK_BARTER
 {102151}{}{Barter}
 {102152}{}{Trading and trade-related tasks. The ability to get better prices for items you sell, and lower prices for items you buy.}
-# SK_GAMBLING
-{102161}{}{Gambling}
-{102162}{}{The knowledge and practical skills related to wagering. The skill at cards, dice and other games.}
+# SK_RUNNING
+{102161}{}{Running}
+{102162}{}{Enhances your ability to move swiftly and efficiently. Improves your movement speed and stamina both in and out of combat, allowing you to cover distances faster and evade threats more effectively.}
 # SK_OUTDOORSMAN
 {102171}{}{Outdoorsman}
 {102172}{}{Practical knowledge of the outdoors, and the ability to live off the land. The knowledge of plants and animals.}

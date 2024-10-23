@@ -481,7 +481,7 @@ string SkillName(uint8 skill)
     case SK_BARTER:
         result = "Barter";
         break;
-    case SK_GAMBLING:
+    case SK_RUNNING:
         result = "Gambling";
         break;
     case SK_OUTDOORSMAN:

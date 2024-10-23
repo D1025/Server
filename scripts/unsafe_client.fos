@@ -1081,7 +1081,7 @@ void unsafe_play_rr(Critter& player, int, int, int, string@, array<int>@)
         int baseChance=items[0].AmmoCount*100;
         int extChance=0;
         //if(player1.Stat[ST_LUCK]>5) extChance=(player1.Stat[ST_LUCK]-5)*10;
-        if(player.Skill[SK_GAMBLING]>50) extChance+=(player.Skill[SK_GAMBLING]-50)/2;
+        if(player.Skill[SK_RUNNING]>50) extChance+=(player.Skill[SK_RUNNING]-50)/2;
         if(baseChance>extChance) baseChance=baseChance-extChance;
         else baseChance=50;
         baseChance=CLAMP(baseChance,50,600);

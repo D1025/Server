@@ -3522,8 +3522,15 @@ bool FovCheck(Critter& cr, Critter& opponent)
     uint16 ox = opponent.HexX;
     uint16 oy = opponent.HexY;
 
+    Item@ realWeapon = _CritGetItemHand(cr);
+    bool isWeaponScoped = false;
+    if (valid(realWeapon) && realWeapon.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE)
+        isWeaponScoped = true;
+
     uint16 dist = GetDistantion(cx, cy, ox, oy);
     uint16 range =  __LookNormal + cr.Stat[ST_PERCEPTION] * 3 + _CritGetPerk(cr, PE_SHARPSHOOTER) * 6;
+    if (isWeaponScoped == true)
+        range+=5;
     if(dist > range)
         return false;
 
@@ -3538,9 +3545,12 @@ bool FovCheck(Critter& cr, Critter& opponent)
     else if(dir == 5 || dir == 1)   // frontsides
         nrange -= nrange * __LookDir1 / 100;
     else if(dir == 4 || dir == 2)   // backsides
-        nrange -= nrange * __LookDir2 / 100;
+        nrange -= nrange * __LookDir2 / 100 ;
     else                            // back
         nrange -= nrange * __LookDir3 / 100;
+
+    if(isWepaonScoped == true && (dir == 4 || dir == 2 || dir == 3))
+        nrange -=10;
 
     if(dist > nrange)
         return false;
@@ -3562,7 +3572,7 @@ void player_levelup(Critter& player, uint skillIndex, uint skillUp, uint perkInd
 			
 			bool skillCap=((skillIndex==SK_LOCKPICK || skillIndex==SK_FIRST_AID || skillIndex==SK_DOCTOR || skillIndex==SK_SCIENCE || skillIndex==SK_REPAIR) && skillVal>=200) ||
 						  (skillIndex==SK_OUTDOORSMAN && skillVal>=175) ||
-						  ((skillIndex==SK_TRAPS || skillIndex==SK_STEAL || skillIndex==SK_BARTER || skillIndex==SK_GAMBLING)&& skillVal>=150) ||
+						  ((skillIndex==SK_TRAPS || skillIndex==SK_STEAL || skillIndex==SK_BARTER || skillIndex==SK_RUNNING)&& skillVal>=150) ||
 						  skillIndex==SK_MELEE_WEAPONS;
 						  
 			if(skillCap)
@@ -3581,7 +3591,7 @@ void player_levelup(Critter& player, uint skillIndex, uint skillUp, uint perkInd
 					case SK_TRAPS :			skillname = "Traps";		val = 150; break;
 					case SK_STEAL :			skillname = "Steal";		val = 150; break;
 					case SK_BARTER :		skillname = "Barter";		val = 150; break;
-					case SK_GAMBLING :		skillname = "Gambling";		val = 150; break;
+					case SK_RUNNING :		skillname = "Gambling";		val = 150; break;
 				}
 
 				//player.ShowScreen(SCREEN_CHARACTER, 0, "");	<--- this won't work, the dialogbox hides it.
@@ -3610,7 +3620,7 @@ void player_levelup(Critter& player, uint skillIndex, uint skillUp, uint perkInd
 			
 			skillCap=((skillIndex==SK_LOCKPICK || skillIndex==SK_FIRST_AID || skillIndex==SK_DOCTOR || skillIndex==SK_SCIENCE || skillIndex==SK_REPAIR) && skillVal>=200) ||
 						  (skillIndex==SK_OUTDOORSMAN && skillVal>=175) ||
-						  ((skillIndex==SK_TRAPS || skillIndex==SK_STEAL || skillIndex==SK_BARTER || skillIndex==SK_GAMBLING)&& skillVal>=150);
+						  ((skillIndex==SK_TRAPS || skillIndex==SK_STEAL || skillIndex==SK_BARTER || skillIndex==SK_RUNNING)&& skillVal>=150);
 						  
             if(_CritIsTagSkill(player, skillIndex) && skillVal < MAX_SKILL_VAL && !skillCap)
                 skillVal++;

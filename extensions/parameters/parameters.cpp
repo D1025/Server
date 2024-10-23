@@ -662,8 +662,8 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		else
 			//apCost = FOnline->RtApCostReloadWeapon;
 			apCost = item.Proto->Weapon_ReloadAp;
-		if(cr.Params[PE_QUICK_POCKETS]) return apCost/2;
-		//if(item.IsWeapon() && item.Proto->Weapon_Perk == WEAPON_PERK_FAST_RELOAD) apCost/2;
+		if(cr.Params[PE_QUICK_POCKETS]) return CLAMP(apCost-3, 0, 10);
+		//if(item.IsWeapon() && item.Proto->Weapon_Perk == WEAPON_PERK_FAST_RELOAD) apCost/2; // That one is deleted
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{

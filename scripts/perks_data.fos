@@ -162,21 +162,32 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 313, 0, 2 }, // Toughness, Levelling, 2 ranks
+	{ 313, 0, 3 }, // Toughness, Levelling, 2 ranks
 	{ // level 1 requirements
 		2, 1, 4, // Endurance at least 4
 	},
 	{ // level 2 requirements
 		2, 1, 6, // Endurance at least 6
 	},
+	{
+	    6, 1, 6, // Luck at least 6
+	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
 		16, 1, 2, // Damage Threshold increased by 2
-		23, 1, 8, // Damage Resistance increased by 8
+		23, 1, 7, // Damage Resistance increased by 8
 	},
 	{ // level 2 perk up effects
 		16, 1, 3, // Damage Threshold increased by 3
-		23, 1, 8, // Damage Resistance increased by 8
+		23, 1, 7, // Damage Resistance increased by 8
+	},
+	{
+		    23, 1, 4,
+    	    24, 1, 4,
+    	    25, 1, 4,
+    	    26, 1, 4,
+    	    27, 1, 4,
+    	    29, 1 ,4,
 	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -184,6 +195,9 @@ int[][] PerksData = {
 	{ // level 2 perk down effects
 		-1 // Just revert
 	},
+	{
+	    -1
+    },
 #endif
 
 	{ 314, 1, 1 },    // Strong Back, Support, 1 ranks
@@ -642,7 +656,7 @@ int[][] PerksData = {
 
 	{ 349, 0, 1 }, // Quick Pockets, Levelling, 1 ranks
 	{ // level 1 requirements
-		5, 1, 5, // Agility at least 5
+		4, 1, 5, // Inteligance at least 5
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -983,9 +997,10 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 383, 1, 1 }, // Demolition Expert, Support, 1 ranks
+	{ 383, 0, 1 }, // Demolition Expert, Support, 1 ranks
 	{ // level 1 requirements
-		211, 1, 125, // Traps at least 125
+		1, 1, 6, // Perception at least 6
+		6, 1, 6, // Luck at least 6
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1020,14 +1035,17 @@ int[][] PerksData = {
 	{ // level 1 perk up effects
 		0, 1, 2, // Strength increased by 2
 		203, 1, 30,
+		216, 1, 30,
 	},
 		{ // level 1 perk up effects
     		0, 1, 2, // Strength increased by 2
     		203, 1, 30,
+    		216, 1, 30,
     	},
     		{ // level 1 perk up effects
         		0, 1, 2, // Strength increased by 2
         		203, 1, 30,
+        		216, 1, 30,
         	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -1123,21 +1141,18 @@ int[][] PerksData = {
 		3, 1, 2, // Charisma increased by 2
 		214, 1, 30,
 		215, 1, 30,
-		216, 1, 30,
         217, 1, 15,
 	},
 		{ // level 1 perk up effects
     		3, 1, 2, // Charisma increased by 2
     		214, 1, 30,
     		215, 1, 30,
-    		216, 1, 30,
             217, 1, 15,
     	},
     		{ // level 1 perk up effects
         		3, 1, 2, // Charisma increased by 2
         		214, 1, 30,
         		215, 1, 30,
-        		216, 1, 30,
                 217, 1, 15,
         	},
 	{ // level 1 perk down effects
@@ -1224,6 +1239,7 @@ int[][] PerksData = {
 		208, 1, 30,
 		210, 1, 15,
         211, 1, 30,
+        216, 1, 30,
 	},
 		{ // level 1 perk up effects
     		5, 1, 2, // Agility increased by 2
@@ -1232,6 +1248,7 @@ int[][] PerksData = {
     		208, 1, 30,
     		210, 1, 15,
             211, 1, 30,
+            216, 1, 30,
     	},
     		{ // level 1 perk up effects
         		5, 1, 2, // Agility increased by 2
@@ -1240,6 +1257,7 @@ int[][] PerksData = {
         		208, 1, 30,
         		210, 1, 15,
                 211, 1, 30,
+                216, 1, 30,
         	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -1408,10 +1426,10 @@ int[][] PerksData = {
 
 	{ 402, 0, 2 }, // Pyromaniac, Levelling, 2 ranks
 	{ // level 1 requirements
-		201, 1, 100, // Big Guns at least 100
+		6, 1, 4, // Luck at least 4
 	},
 	{ // level 2 requirements
-		201, 1, 150, // Big Guns at least 150
+		6, 1, 5, // Luck at least 5
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects

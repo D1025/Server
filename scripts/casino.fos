@@ -43,7 +43,7 @@ bool s_Onehanded(Critter& cr, Scenery& onehanded, int skill, Item@ item)
        if(valid(map)) map.SetTextMsg(onehanded.HexX,onehanded.HexY,COLOR_GRAY,TEXTMSG_TEXT,STR_ONEHANDED_RING);
 
        // Calculate
-       int gambling=cr.Skill[SK_GAMBLING];
+       int gambling=cr.Skill[SK_RUNNING];
        gambling+=OnehandedMoney;
        gambling=CLAMP(gambling,6,95);
 

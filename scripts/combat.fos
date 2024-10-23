@@ -2431,6 +2431,9 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
 	
     if(weapPid == PID_DYNACORD)
         radius = 4;
+
+    if(attack.Attacker.Perk[PE_DEMOLITION_EXPERT] != 0)
+        radius += 1;
 	//nowy wybuch molotova z fire_hexes - worldremaker 26.03.2017
 	if(weapPid==PID_MOLOTOV_COCKTAIL) 
 	{

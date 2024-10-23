@@ -1,62 +1,62 @@
 /**
- * \~russian @defgroup Skills Навыки
+ * \~russian @defgroup Skills пїЅпїЅпїЅпїЅпїЅпїЅ
  * \~english @defgroup Skills Skills
  * \~ @ingroup Params
  */
 /*@{*/
 
-/** \~russian Легкое оружие. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_SMALL_GUNS               (200)
 
-/** \~russian Тяжелое оружие. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_BIG_GUNS                 (201)
 
-/** \~russian Энергетическое оружие. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_ENERGY_WEAPONS           (202)
 
-/** \~russian Навык рукопашного боя. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ. */
 #define SK_UNARMED                  (203)
 
-/** \~russian Рукопашное оружие. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_MELEE_WEAPONS            (204)
 
-/** \~russian Метательное оружие. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_THROWING                 (205)
 
-/** \~russian Первая помощь. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_FIRST_AID                (206)
 
-/** \~russian Доктор. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_DOCTOR                   (207)
 
-/** \~russian Скрытность. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_SNEAK                    (208)
 
-/** \~russian Взлом. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅ. */
 #define SK_LOCKPICK                 (209)
 
-/** \~russian Воровство. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_STEAL                    (210)
 
-/** \~russian Ловушки. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_TRAPS                    (211)
 
-/** \~russian Наука. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅ. */
 #define SK_SCIENCE                  (212)
 
-/** \~russian Ремонт. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_REPAIR                   (213)
 
-/** \~russian Речь. */
+/** \~russian пїЅпїЅпїЅпїЅ. */
 #define SK_SPEECH                   (214)
 
-/** \~russian Торговля. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_BARTER                   (215)
 
-/** \~russian Азартные игры. */
-#define SK_GAMBLING                 (216)
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ. */
+#define SK_RUNNING                 (216)
 
-/** \~russian Скиталец. */
+/** \~russian пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ. */
 #define SK_OUTDOORSMAN              (217)
 
 /*@}*/

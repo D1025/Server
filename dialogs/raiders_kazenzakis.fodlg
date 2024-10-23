@@ -17,9 +17,9 @@ lang=engl
 4 4000 None 0 #
 5 4010 @
 5 5000 None 0 #
-7 5010 D _param p SK_GAMBLING < 50 D _var p q_raiders_kazen_notgambler = 0 #
-6 5020 D _param p SK_GAMBLING < 50 D _var p q_raiders_kazen_notgambler = 0 #
-13 5030 D _param p SK_GAMBLING > 49 D _var p q_raiders_kazen_gambler = 0 @
+7 5010 D _param p SK_RUNNING < 50 D _var p q_raiders_kazen_notgambler = 0 #
+6 5020 D _param p SK_RUNNING < 50 D _var p q_raiders_kazen_notgambler = 0 #
+13 5030 D _param p SK_RUNNING > 49 D _var p q_raiders_kazen_gambler = 0 @
 6 6000 None 0 #
 7 6010 #
 65507 6020 @
@@ -29,7 +29,7 @@ lang=engl
 9 8010 #
 0 8020 @
 9 9000 None 0 #
-0 9010 R _var p q_raiders_kazen_notgambler = 1 R _param p SK_GAMBLING + 13 R _param p ST_EXPERIENCE + 195 @
+0 9010 R _var p q_raiders_kazen_notgambler = 1 R _param p SK_RUNNING + 13 R _param p ST_EXPERIENCE + 195 @
 10 10000 None 0 #
 11 10010 #
 11 10020 #
