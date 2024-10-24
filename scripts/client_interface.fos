@@ -1090,13 +1090,16 @@ string generic_description(int descType, int& offsX, int& offsY)
                 int nfix = 2;
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
 				int wpnMinDmg = _WeaponDmgMin(weaponMain.Proto, use);
+				int meleeDamage=chosen.Stat[ST_MELEE_DAMAGE];
+				if(weaponMain.Proto.Weapon_Perk==WEAPON_PERK_BLUDGEONING)
+				    meleeDamage*=2;
                 if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
 				{
                     //if (wpnMinDmg==0) 
 					//	wpnMinDmg += MAX(1,chosen.Stat[ST_MELEE_DAMAGE]/2); 
 					//else 
 					//	wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE]/2;
-					wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE];
+					wpnMinDmg += meleeDamage;
 				} else {
 				    wpnMinDmg += wpnMinDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
 				}
@@ -1106,7 +1109,7 @@ string generic_description(int descType, int& offsX, int& offsY)
                 int wpnMaxDmg = _WeaponDmgMax(weaponMain.Proto, use);
                 if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
 				{
-                    wpnMaxDmg += chosen.Stat[ST_MELEE_DAMAGE];
+                    wpnMaxDmg += meleeDamage;
 				}  else {
                     wpnMaxDmg += wpnMaxDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
                 }
@@ -1199,13 +1202,16 @@ string generic_description(int descType, int& offsX, int& offsY)
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
                 //result += _WeaponDmgMin(weaponExt.Proto, use) + "-";
 				int wpnMinDmg=_WeaponDmgMin(weaponExt.Proto,use);
+				int meleeDamage=chosen.Stat[ST_MELEE_DAMAGE];
+				if(weaponExt.Proto.Weapon_Perk==WEAPON_PERK_BLUDGEONING)
+				    meleeDamage*=2;
 				if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use))
 				{		
 					//if (wpnMinDmg==0) 
 					//	wpnMinDmg += MAX(1, chosen.Stat[ST_MELEE_DAMAGE]/1); 
 					//else 
 					//	wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE]/1;
-					wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE];
+					wpnMinDmg += meleeDamage;
 				}  else {
                   	wpnMinDmg += wpnMinDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
                 }
@@ -1214,7 +1220,7 @@ string generic_description(int descType, int& offsX, int& offsY)
 				
                 int wpnMaxDmg = _WeaponDmgMax(weaponExt.Proto, use);
                 if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use)) {
-                    wpnMaxDmg += chosen.Stat[ST_MELEE_DAMAGE];
+                    wpnMaxDmg += meleeDamage;
 				}  else {
                   	wpnMaxDmg += wpnMaxDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
                 }
@@ -1282,7 +1288,7 @@ string generic_description(int descType, int& offsX, int& offsY)
 			//else 
 			//	result += _WeaponDmgMin(unarmed,_WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE]/1 + "-";	
 			
-            result += _WeaponDmgMin(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE] + "-";			
+            result += _WeaponDmgMin(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE] + "-";
 			
             result += (_WeaponDmgMax(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE]);
             result += "\n\n";

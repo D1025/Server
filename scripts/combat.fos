@@ -159,6 +159,10 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         //wpnMaxDist += 3 * (cr.Perk[PE_HEAVE_HO] + cr.Perk[PE_HEAVE_HO_II]);
 		wpnMaxDist += 6 * (cr.Perk[PE_HEAVE_HO]);
     }
+    if(valid(realWeapon) && cr.Perk[PE_SHARPSHOOTER] == 1 && realWeapon.Proto.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE )
+    {
+        wpnMaxDist+=5;
+    }
     int    skillVal = cr.Skill[skillNum]; // skillVal wykorzystane pozniej jako: baseToHit = skillVal; oraz WearItem(cr, realWeapon, (MAX_SKILL_VAL - MIN(skillVal,200)) / 6);
 	
 	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) skillVal = MAX(cr.Skill[SK_SMALL_GUNS], cr.Skill[SK_DOCTOR]);  //25-07-2013 Cubik: podczas uzywania Needler pistola pod uwage bedzie brany max ze skilli SG i Doc do celnosci i psucia sie pistola
@@ -295,6 +299,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     {
         wpnMaxDist += attack.SelectWeaponBonus(BONUS_WEAPON_MAX_RANGE);
     }
+
 
 	attack.weaponMode=weaponMode;
 	attack.weaponPid=weapon.ProtoId; 
@@ -1295,6 +1300,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     knockbackFromCrit = false;
 	bool     quick = target.Perk[PE_QUICK_RECOVERY] > 0;
 
+	bool     isWeaponBluedgeoning = (weaponPerk == WEAPON_PERK_BLUDGEONING);
+
     int realrounds = rounds;
 	if(rounds > 1 && attack.Attacker.Perk[PE_SIZE_MATTERS] > 0)
     {
@@ -1528,6 +1535,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                     break;
             }
 
+            if (isWeaponBluedgeoning == true)
+                limbDamageMultiplayer=4;
+
 			if(target.Mode[MODE_NO_LOOSE_LIMBS] != 0)
 			{
 				UNSETFLAG(eff, (HF_CRIPPLED_LEFT_LEG | HF_CRIPPLED_RIGHT_LEG | HF_CRIPPLED_LEFT_ARM | HF_CRIPPLED_RIGHT_ARM | HF_RANDOM));
@@ -1689,6 +1699,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		if(rounds > 1 && attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] != 0 && attack.Dist > 15)
             totalDmg += totalDmg * attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] * 15/ 100;
     }
+
+    if (isWeaponBluedgeoning == true)
+        totalDmg = 2 * attack.Attacker.Param[ST_MELEE_DAMAGE];
 	
     // 0x00000001 - knockout
     // 0x00000002 - knockdown
@@ -1779,7 +1792,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     if(FLAG(eff, HF_DEATH))
             totalDmg = totalDmg + 125;
 
-    if (attack.IsFlamethrower == false) {
+    if (attack.IsFlamethrower == false || isWeaponBluedgeoning == true) {
         int ac = target.GetAC(false);
         ac = ac + attack.ACMod;
         ac = CLAMP(ac, 0, 95);

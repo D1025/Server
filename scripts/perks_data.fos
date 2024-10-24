@@ -113,7 +113,7 @@ int[][] PerksData = {
 
 	{ 309, 0, 1 }, // Size Matters , Levelling, 1 ranks
 	{ // level 1 requirements
-		6, 1, 4, // Luck at least 4
+		5, 1, 4, // Luck at least 4
 		305, 1, 1, // Bonus Ranged Damage at least 1
 		428, 1, 1, // More Ranged Damage at least 1
 	},
@@ -170,7 +170,7 @@ int[][] PerksData = {
 		2, 1, 6, // Endurance at least 6
 	},
 	{
-	    6, 1, 6, // Luck at least 6
+	    0, 1, 10, // Strength at least 10
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -215,7 +215,7 @@ int[][] PerksData = {
 
 	{ 315, 0, 1 }, // Sharpshooter, Levelling, 1 ranks
 	{ // level 1 requirements
-		77, 1, 9, // Level at least 9
+	    1, 1, 7, // Perception at least 7
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -275,10 +275,10 @@ int[][] PerksData = {
 
 	{ 320, 0, 2 }, // Healer, Levelling, 1 ranks  //ENABLED, UNMERGED WITH MEDIC
 	{ // level 1 requirements
-		206, 1, 100, // First aid at least 90
+		4, 1, 4, // Intelligence at least 4
 	},
 	{
-	    206, 1, 150, // First aid at least 150
+	    4, 1, 6, // Intelligence at least 4
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -306,8 +306,10 @@ int[][] PerksData = {
 
 	{ 322, 0, 2 }, // Better Critical, Levelling, 1 ranks
 	{ // level 1 requirements
+	    6, 1, 6,
 	},
 		{ // level 1 requirements
+		 6, 1, 8,
     	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -468,7 +470,7 @@ int[][] PerksData = {
 
 	{ 333, 0, 1 }, // Medic, Levelling, 1 ranks
 	{ // level 1 requirements
-		206, 1, 180, // First aid at least 150
+		4, 1, 8,
 		320, 1, 2, // Healer at least 2
 	},
 #ifdef __SERVER
@@ -999,8 +1001,7 @@ int[][] PerksData = {
 
 	{ 383, 0, 1 }, // Demolition Expert, Support, 1 ranks
 	{ // level 1 requirements
-		1, 1, 6, // Perception at least 6
-		6, 1, 6, // Luck at least 6
+		4, 1, 6, // Inteligence at least 6
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1378,7 +1379,8 @@ int[][] PerksData = {
 
 	{ 398, 0, 1 }, // Living Anatomy, Levelling, 1 ranks
 	{ // level 1 requirements
-		206, 1, 100, // First aid at least 100
+	    1, 1, 4, // Perception at least 4
+		4, 1, 4, // Intelligence at least 4
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1426,10 +1428,8 @@ int[][] PerksData = {
 
 	{ 402, 0, 2 }, // Pyromaniac, Levelling, 2 ranks
 	{ // level 1 requirements
-		6, 1, 4, // Luck at least 4
 	},
 	{ // level 2 requirements
-		6, 1, 5, // Luck at least 5
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects

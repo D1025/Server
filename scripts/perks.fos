@@ -252,8 +252,6 @@ void InitPerks() // export
 
     SATISFIES(PE_MORE_CRITICALS,         @_OrRangedSkill, 0, 0, 100);
     SATISFIES(PE_EVEN_MORE_CRITICALS,    @_OrRangedSkill, 0, 0, 125);
-    SATISFIES(PE_SHARPSHOOTER,           @_OrRangedSkill, 0, 0, 150);
-    SATISFIES(PE_BETTER_CRITICALS,       @_OrRangedHtHSkill, 0, 0, 175);
     SATISFIES(PE_RIGHT_BETWEEN_THE_EYES, @_OrRangedHtHSkill, 0, 0, 200);
     SATISFIES(PE_BONUS_RATE_OF_FIRE,     @_OrRangedHtHSkill, 0, 0, 180);
     SATISFIES(PE_WEAPON_HANDLING,        @_OrRangedHtHSkill, 0, 0, 100);
@@ -273,7 +271,6 @@ void InitPerks() // export
 
 
     SATISFIES(PE_BONUS_RANGED_DAMAGE, @_OrRangedHtHSkill, 0, 0, 180);
-    SATISFIES(PE_HIT_THE_GAPS, @_OrRangedHtHSkill, 0, 0, 150);
     SATISFIES(PE_AWARENESS, @_Awareness, 0, 0, 0);
     #ifdef __SERVER
     @Perks[PE_SPEAKER].ProcessUpF = _SpeakerUp;

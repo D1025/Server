@@ -118,6 +118,8 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
     if(valid(realWeapon))
     {
         wpnMaxDist += checkBonus(realWeapon, BONUS_WEAPON_MAX_RANGE);
+        if (realWeapon.Proto.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE && chosen.Perk[PE_SHARPSHOOTER] == 1)
+            wpnMaxDist+=5;
     }
     if(skillNum == SK_THROWING)
     {

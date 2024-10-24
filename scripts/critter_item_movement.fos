@@ -433,6 +433,10 @@ void speedboost(Critter& cr)
         if ( skillNum1 == SK_SMALL_GUNS) bonus = CLAMP(bonus, 0, 50);
 	}
 
+	if ( cr.Perk[PE_BONUS_MOVE]!=0) {
+	    bonus+=20;
+	}
+
     if( cr.Trait[TRAIT_BRUISER]!=0) {
         penalty=20;
     }
@@ -451,7 +455,7 @@ void speedboost(Critter& cr)
 			(CritterArmor.GetProtoId()== PID_METAL_ARMOR_MK_II) ||
 			(CritterArmor.GetProtoId()== PID_TESLA_ARMOR))
 		{	
-			penalty+=6;												//Additional penalty for Metal Armors 6 pts (3%)
+			penalty+=30;												//Additional penalty for Metal Armors 30 pts (15%)
 		}
 	
 		if( ( CritterArmor.GetProtoId() == PID_POWERED_ARMOR ) ||
@@ -459,7 +463,7 @@ void speedboost(Critter& cr)
 			( CritterArmor.GetProtoId() == PID_ADVANCED_POWER_ARMOR ) ||
 			( CritterArmor.GetProtoId() == PID_ADVANCED_POWER_ARMOR_MK2 ))
 		{	
-			penalty+=14;											//Additional penalty for Power Armors 14 pts (7%)
+			penalty+=40;											//Additional penalty for Power Armors 40 pts (20%)
 		}
 	}
 		

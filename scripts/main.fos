@@ -3524,7 +3524,7 @@ bool FovCheck(Critter& cr, Critter& opponent)
 
     Item@ realWeapon = _CritGetItemHand(cr);
     bool isWeaponScoped = false;
-    if (valid(realWeapon) && realWeapon.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE)
+    if (valid(realWeapon) && realWeapon.Proto.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE)
         isWeaponScoped = true;
 
     uint16 dist = GetDistantion(cx, cy, ox, oy);
@@ -3549,7 +3549,7 @@ bool FovCheck(Critter& cr, Critter& opponent)
     else                            // back
         nrange -= nrange * __LookDir3 / 100;
 
-    if(isWepaonScoped == true && (dir == 4 || dir == 2 || dir == 3))
+    if(isWeaponScoped == true && (dir == 4 || dir == 2 || dir == 3))
         nrange -=10;
 
     if(dist > nrange)

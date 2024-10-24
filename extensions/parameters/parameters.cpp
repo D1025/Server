@@ -697,6 +697,8 @@ uint GetAttackDistantion(CritterMutual& cr, Item& item, uint8 mode)
 	if(Item_Weapon_IsHtHAttack(item, mode) && cr.Params[MODE_RANGE_HTH]) dist++;
 	dist += GetMultihex(cr);
 	dist += checkBonus(item, BONUS_WEAPON_MAX_RANGE);
+	if(item.Proto->Weapon_Perk == WEAPON_PERK_SCOPE_RANGE && cr.Params[PE_SHARPSHOOTER])
+		dist+=5;
 	if(dist < 0) dist = 0;
 	return dist;
 }
