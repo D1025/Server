@@ -408,8 +408,8 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     _param_[SK_UNARMED] += 50 + 10 * _param_[ST_STRENGTH];
     _param_[SK_MELEE_WEAPONS] += 50 + 10 * _param_[ST_PERCEPTION]; //gonna be changed to rifles
     _param_[SK_THROWING] += 50 + 10 * _param_[ST_AGILITY];
-    _param_[SK_FIRST_AID] += 50 + 10 * _param_[ST_INTELLECT];
-    _param_[SK_DOCTOR] += 50 + 10 * _param_[ST_INTELLECT];
+    _param_[SK_FIRST_AID] += 50 + 5 * _param_[ST_INTELLECT];
+    _param_[SK_DOCTOR] += 50 + 5 * _param_[ST_INTELLECT];
     _param_[SK_SNEAK] += 50 + 10 * _param_[ST_AGILITY];
     _param_[SK_LOCKPICK] += 50 + 10 * _param_[ST_INTELLECT];
     _param_[SK_STEAL] += 50 + 5 * (_param_[ST_AGILITY] + _param_[ST_LUCK]);
@@ -418,7 +418,7 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     _param_[SK_REPAIR] += 50 + 10 * _param_[ST_INTELLECT];
     _param_[SK_SPEECH] += 50 + 10 * _param_[ST_CHARISMA];
     _param_[SK_BARTER] += 50 + 10 * _param_[ST_CHARISMA];
-    _param_[SK_RUNNING] += 50 + 10 * _param_[ST_AGILITY] + 10 * _param_[ST_STRENGTH];
+    _param_[SK_RUNNING] += 50 + 5 * _param_[ST_AGILITY] + 5 * _param_[ST_STRENGTH];
     _param_[SK_OUTDOORSMAN] += 50 + 5 * (_param_[ST_CHARISMA] + _param_[ST_INTELLECT] + _param_[ST_LUCK]);
 
 

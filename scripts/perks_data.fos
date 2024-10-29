@@ -273,24 +273,16 @@ int[][] PerksData = {
 	},
 #endif
 
-	{ 320, 0, 2 }, // Healer, Levelling, 1 ranks  //ENABLED, UNMERGED WITH MEDIC
-	{ // level 1 requirements
-		4, 1, 4, // Intelligence at least 4
-	},
+	{ 320, 0, 1 }, // Healer, Levelling, 1 ranks  //ENABLED, UNMERGED WITH MEDIC
 	{
 	    4, 1, 6, // Intelligence at least 4
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
 	},
-		{ // level 1 perk up effects
-    	},
 	{ // level 1 perk down effects
 		-1 // Just revert
 	},
-		{ // level 1 perk down effects
-    		-1 // Just revert
-    	},
 #endif
 
 	{ 321, 2, 1 }, // Fortune Finder, Disabled, 1 ranks
@@ -471,7 +463,8 @@ int[][] PerksData = {
 	{ 333, 0, 1 }, // Medic, Levelling, 1 ranks
 	{ // level 1 requirements
 		4, 1, 8,
-		320, 1, 2, // Healer at least 2
+		320, 1, 1, // Healer at least 1
+		398, 1, 1, // Living Anathomy at least 1
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects

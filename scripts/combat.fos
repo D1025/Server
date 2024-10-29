@@ -1276,6 +1276,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     bool     isBloodyMess = attack.BloodyMess;
     bool     isCombatText = attack.CombatMessage;
     Item@    realWeapon = attack.RealWeapon;
+	Item@    realWeaponTarget = _CritGetItemHand(target);
     uint     aim = attack.Aim;
     uint     extraMessage = 0;
     uint     extraMessageSelf = 0;
@@ -1301,6 +1302,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     quick = target.Perk[PE_QUICK_RECOVERY] > 0;
 
 	bool     isWeaponBluedgeoning = (weaponPerk == WEAPON_PERK_BLUDGEONING);
+
 
     int realrounds = rounds;
 	if(rounds > 1 && attack.Attacker.Perk[PE_SIZE_MATTERS] > 0)
@@ -1565,7 +1567,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     // Heavy Handed Trait
     if(validAttacker && attack.IsUnarmed && attacker.Trait[TRAIT_HEAVY_HANDED] > 0)
     {
-        if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
+        int bonus = (valid(realWeaponTarget) && realWeaponTarget.Proto.Weapon_Perk == WEAPON_PERK_HAND_TO_HAND ? 1 : 0) - (valid(realWeapon) && realWeapon.Proto.Weapon_Perk == WEAPON_PERK_HAND_TO_HAND ? 1 : 0);
+        if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + bonus < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
         {
             SETFLAG(eff, HF_KNOCKDOWN);
         }
@@ -1837,7 +1840,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             int maxLimbHp = GetActualMaxHp(target) / (target.Perk[PE_IRON_GRIP] == 0 ? 2 : 1);
             if (target.Trait[TRAIT_SMALL_FRAME] !=0)
                 maxLimbHp=(maxLimbHp*9)/10;
-            Item@ realWeaponTarget = _CritGetItemHand(target);
+
             int strengthReq = 0;
             if(valid(realWeaponTarget))
                 strengthReq = target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH] - realWeaponTarget.Proto.Weapon_MinStrength;

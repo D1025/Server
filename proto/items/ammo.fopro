@@ -529,8 +529,8 @@ Ammo_AcMod=0
 Ammo_DrMod=-35
 Ammo_DmgMult=1
 Ammo_DmgDiv=1
+Ammo_DTDiv=3
 CraftLevel=1
-Ammo_DTDiv=2
 
 [Proto]
 ProtoId=576

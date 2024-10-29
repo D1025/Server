@@ -80,8 +80,8 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 			cr.Say(SAY_NETMSG, "You ran out of medical supplies after healing yourself.");		// First Aid Kit broke
 		}
     }
-
-    int healerBonus = (cr.Perk[PE_HEALER] >= 1 ? 50 : 0) + (cr.Perk[PE_HEALER] == 2 ? 100 : 0);
+    int intelligence = cr.Stat[ST_INTELLECT]+cr.Stat[ST_INTELLECT_EXT];
+    int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
 
 	heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL],0,100)))) / 100;
@@ -105,7 +105,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self)
         targetCr.Say(SAY_NETMSG, "Hit Points +" + heal);
 
-    _SetTimeout(cr, TO_SK_FIRST_AID, REAL_SECOND(90/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
+    _SetTimeout(cr, TO_SK_FIRST_AID, REAL_SECOND((100-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
 
     cr.StatBase[ST_EXPERIENCE] += heal * 3*(GetGvar(GVAR_experience_multipler));
     if(_IsTrueNpc(targetCr) && cr.Id != targetCr.Id && IsHumanoid(targetCr) && !IsCurrentEnemy(targetCr, cr.Id))
@@ -174,7 +174,10 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
             cr.DeleteItem(item.GetProtoId(), 1);
     }
     sk += toolBonus;
-    int heal = ((sk + (cr.Perk[PE_HEALER] >= 1 ? 50 : 0) + (cr.Perk[PE_HEALER] == 2 ? 100 : 0)) * CLAMP(100 - cr.Stat[ST_POISONING_LEVEL], 0, 100)) / 100;
+    int intelligence = cr.Stat[ST_INTELLECT]+cr.Stat[ST_INTELLECT_EXT];
+    int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
+    int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
+    heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL],0,100)))) / 100;
 
     int uninjured = 0;
     int injured = 0;
@@ -204,7 +207,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
 	//druto
-	_SetTimeout(cr, TO_SK_DOCTOR, REAL_SECOND(80/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
+	_SetTimeout(cr, TO_SK_DOCTOR, REAL_SECOND((90-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
 
     if(uninjured > 0)
     {

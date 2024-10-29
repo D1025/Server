@@ -881,8 +881,8 @@
 {10854}{}{Knockback}
 {10855}{}{Scope Range}
 {10856}{}{Fast Reload}
-{10857}{}{Night Sight}
-{10858}{}{Flameboy}
+{10857}{}{Hand to Hand}
+{10858}{}{Bludgeoning}
 {10859}{}{Enhanced Knockout}
 {10860}{}{Cascade}
 
@@ -1675,7 +1675,7 @@
 {103192}{}{Each level of Educated adds +2 skill points when you gain a new experience level. This Perk works best when purchased early in your adventure.}
 # PE_HEALER
 {103201}{}{Healer}
-{103202}{}{The healing of bodies comes easier to you with this Perk. At first level you heal 50 hp more from First Aid and Doctor, and at second level you heal additional 100 hp more.}
+{103202}{}{The healing of bodies comes easier to you with this Perk. You will now heal 8*Intelligence more using Docktor and First aid skill.}
 # PE_FORTUNE_FINDER
 {103211}{}{Fortune Finder}
 {103212}{}{You have the talent of finding money. You find additional money in random encounters in the desert.}
@@ -2195,10 +2195,10 @@
 {105602}{}{There is a positive aura about you. People are more likely to follow you, but you can't own any slaves.}
 # TRAIT_CHEM_RELIANT
 {105611}{}{Chem Reliant}
-{105612}{}{You are more easily addicted to chems.  All drug addictions are permanent, but the drug effects last twice as long.}
+{105612}{}{You don't care how much drugs use. You want even more of them!  If you also have Chem Resistant your drug limit is only 4.}
 # TRAIT_CHEM_RESISTANT
 {105621}{}{Chem Resistant}
-{105622}{}{You are immune to drug addiction effects, but regain only half the normal hit points while using medicines.}
+{105622}{}{You are immune for a negative effects of drugs, but your drug limit is now 3.  If you also have Chem Reliant your drug limit is now 4.}
 # TRAIT_BONEHEAD
 {105631}{}{Bonehead}
 {105632}{}{A thicker than average cranium means you can shrug off hits to the head that would floor others.  Unfortunatly that doesn't leave much room up there.}
