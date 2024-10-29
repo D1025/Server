@@ -1029,17 +1029,17 @@ int[][] PerksData = {
 	{ // level 1 perk up effects
 		0, 1, 2, // Strength increased by 2
 		203, 1, 30,
-		216, 1, 30,
+		216, 1, 15,
 	},
 		{ // level 1 perk up effects
     		0, 1, 2, // Strength increased by 2
     		203, 1, 30,
-    		216, 1, 30,
+    		216, 1, 15,
     	},
     		{ // level 1 perk up effects
         		0, 1, 2, // Strength increased by 2
         		203, 1, 30,
-        		216, 1, 30,
+        		216, 1, 15,
         	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -1177,8 +1177,8 @@ int[][] PerksData = {
 	{ // level 1 perk up effects
 		4, 1, 2, // Intelligence increased by 2
 				202, 1, 30,
-        		206, 1, 30,
-        		207, 1, 30,
+        		206, 1, 15,
+        		207, 1, 15,
         		209, 1, 30,
         		212, 1, 30,
         		213, 1, 30,
@@ -1187,8 +1187,8 @@ int[][] PerksData = {
 		{ // level 1 perk up effects
     		4, 1, 2, // Intelligence increased by 2
     				202, 1, 30,
-            		206, 1, 30,
-            		207, 1, 30,
+            		206, 1, 15,
+            		207, 1, 15,
             		209, 1, 30,
             		212, 1, 30,
             		213, 1, 30,
@@ -1197,8 +1197,8 @@ int[][] PerksData = {
     		{ // level 1 perk up effects
         		4, 1, 2, // Intelligence increased by 2
         				202, 1, 30,
-                		206, 1, 30,
-                		207, 1, 30,
+                		206, 1, 15,
+                		207, 1, 15,
                 		209, 1, 30,
                 		212, 1, 30,
                 		213, 1, 30,
@@ -1233,7 +1233,7 @@ int[][] PerksData = {
 		208, 1, 30,
 		210, 1, 15,
         211, 1, 30,
-        216, 1, 30,
+        216, 1, 15,
 	},
 		{ // level 1 perk up effects
     		5, 1, 2, // Agility increased by 2
@@ -1242,7 +1242,7 @@ int[][] PerksData = {
     		208, 1, 30,
     		210, 1, 15,
             211, 1, 30,
-            216, 1, 30,
+            216, 1, 15,
     	},
     		{ // level 1 perk up effects
         		5, 1, 2, // Agility increased by 2
@@ -1251,7 +1251,7 @@ int[][] PerksData = {
         		208, 1, 30,
         		210, 1, 15,
                 211, 1, 30,
-                216, 1, 30,
+                216, 1, 15,
         	},
 	{ // level 1 perk down effects
 		-1 // Just revert

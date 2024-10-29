@@ -634,7 +634,7 @@
 #define SK_REPAIR                                (213) // Used in engine
 #define SK_SPEECH                                (214) // Used in engine
 #define SK_BARTER                                (215) // Used in engine
-#define SK_RUNNING                              (216)
+#define SK_RUNNING                               (216)
 #define SK_OUTDOORSMAN                           (217) // Used in engine
 // 218..225
 
