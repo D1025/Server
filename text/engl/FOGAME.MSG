@@ -1675,7 +1675,7 @@
 {103192}{}{Each level of Educated adds +2 skill points when you gain a new experience level. This Perk works best when purchased early in your adventure.}
 # PE_HEALER
 {103201}{}{Healer}
-{103202}{}{The healing of bodies comes easier to you with this Perk. You will now heal 8*Intelligence more using Docktor and First aid skill.}
+{103202}{}{The healing of bodies comes easier to you with this Perk. You will now heal 8*Intelligence more using Doctor and First aid skill.}
 # PE_FORTUNE_FINDER
 {103211}{}{Fortune Finder}
 {103212}{}{You have the talent of finding money. You find additional money in random encounters in the desert.}
