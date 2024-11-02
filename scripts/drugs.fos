@@ -69,11 +69,11 @@ void UseDrug(Critter& cr, Item& drug)   // Export
         uint count = cr.GetTimeEvents(DrugsIdentifiers, identifiers, null, null, null);
         int activeDrugs = 0;
         for (uint i = 0; i < count; i++) {
-            int activePid = identifiers[i];
+            uint activePid = identifiers[i];
             bool activeIsGoodDrug = (activePid == PID_STIMPAK || activePid == PID_SUPER_STIMPAK ||
                                      activePid == PID_RADAWAY || activePid == PID_WATERBAG || activePid == PID_BOTTLE_FULL ||
                                      activePid == PID_HEALING_POWDER || activePid == PID_ANTIDOTE || activePid == PID_RAD_X);
-            if (!activeIsGoodDrug) {
+            if (activePid != pid && !activeIsGoodDrug) {
                 activeDrugs++;
             }
         }
@@ -267,11 +267,11 @@ void UseDrugOn(Critter& cr, Critter& onCr, Item& drug)   // Export
         uint count = onCr.GetTimeEvents(DrugsIdentifiers, identifiers, null, null, null);
         int activeDrugs = 0;
         for (uint i = 0; i < count; i++) {
-            int activePid = identifiers[i];
+            uint activePid = identifiers[i];
             bool activeIsGoodDrug = (activePid == PID_STIMPAK || activePid == PID_SUPER_STIMPAK ||
                                      activePid == PID_RADAWAY || activePid == PID_WATERBAG || activePid == PID_BOTTLE_FULL ||
                                      activePid == PID_HEALING_POWDER || activePid == PID_ANTIDOTE || activePid == PID_RAD_X);
-            if (!activeIsGoodDrug) {
+            if (activePid == pid && !activeIsGoodDrug) {
                 activeDrugs++;
             }
         }
@@ -391,8 +391,15 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
     int  index = GetDrugTableIndex(drugPid);
     uint duration = 0;
 
-    if(stage == 0 ||  // Instant effect
-       stage == 1)    // Withdrawal
+    bool drugRefreshed = RefreshDrug(cr, drugPid, rate);
+
+    if (drugRefreshed) {
+        UpdateDrugs(cr);
+    }
+
+    if((stage == 0 ||  // Instant effect
+       stage == 1) 
+       && !drugRefreshed)    // Withdrawal
     {
         for(uint i = 0; i < 5; i++)
         {
