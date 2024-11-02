@@ -1393,7 +1393,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		roll +=AddCritRollWeapon(realWeapon); //05-03-2014 Cubil: bonus bazowy do broni do crit rolla
 		
         if(target.Perk[PE_MAN_OF_STEEL] > 0)
-            roll -= target.Perk[PE_MAN_OF_STEEL] * 10;
+            roll -= target.Perk[PE_MAN_OF_STEEL] * 15;
 
         if(valid(usedArmor) && attacker.Perk[PE_HIT_THE_GAPS] == 0)
 		{
@@ -1406,7 +1406,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             if(attacker.Perk[PE_BETTER_CRITICALS] > 0)        // +20 with ranged
                 roll += 15 * attacker.Perk[PE_BETTER_CRITICALS];
             if(attack.SilentDeathEffect)
-                roll += 10;
+                roll += 20;
         }
 
         if(roll <= 29)

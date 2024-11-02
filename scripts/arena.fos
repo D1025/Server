@@ -849,10 +849,10 @@ void MakeItemsUseful(Critter& cr)
 			CompleteRepair(item);
 			SetMinWear(item, Random(1,45));
 			}
-		if(item.CritSlot == SLOT_HAND1 || item.CritSlot == SLOT_HAND2)
+		/*if(item.CritSlot == SLOT_HAND1 || item.CritSlot == SLOT_HAND2)
 		{
-		AddBonusHinkley(item);
-		}
+		AddBonusHinkley(item); // for now disabled
+		}*/
         uint rounds = MAX(item.Proto.Weapon_Round_0, item.Proto.Weapon_Round_1);
         item.AmmoCount = item.Proto.Weapon_MaxAmmoCount;
         switch(item.Proto.Weapon_DefaultAmmoPid)
@@ -939,10 +939,10 @@ void MakeItemsUseful(Critter& cr)
         }
         CompleteRepair(item);
 		SetMinWear(item, Random(1,45));
-		if(item.CritSlot == SLOT_ARMOR || item.CritSlot == SLOT_HEAD )
+		/*if(item.CritSlot == SLOT_ARMOR || item.CritSlot == SLOT_HEAD )
 		{
 		AddBonusHinkley(item);
-		}
+		}*/
     }
 }
 

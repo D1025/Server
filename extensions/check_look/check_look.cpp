@@ -240,9 +240,6 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 		// armor penalty, TODO: move values to protos?
 		switch(opponent.ItemSlotArmor->GetProtoId())
 		{
-			case 1100: // for bluesuit, default armor prototype
-				sk-=50;
-				break;
 			case PID_METAL_ARMOR:
 			case PID_METAL_ARMOR_MK_II:
 			case PID_TESLA_ARMOR:
