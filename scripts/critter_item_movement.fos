@@ -447,7 +447,7 @@ void speedboost(Critter& cr)
         penalty=20;
     }
 
-    if (cr.Params[TRAIT_BERSERKER] && ((cr.Stat[ST_CURRENT_HP]*100)/GetMaxLife(cr)) <= 50)
+    if (cr.Trait[TRAIT_BERSERKER] && ((cr.Stat[ST_CURRENT_HP]*100)/GetMaxLife(cr)) <= 50)
     	bonus+=20;
 	
 	if (valid(CritterArmor))
