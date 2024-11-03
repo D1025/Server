@@ -399,6 +399,12 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
 	speedboost(cr);
 }
 
+int GetMaxLife(Critter& cr)
+{
+    int val = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2;
+    return CLAMP(val, 1, 9999);
+}
+
 //Speed boost bonus for runing. 1 is 0,5%
 void speedboost(Critter& cr)
 {
@@ -440,6 +446,9 @@ void speedboost(Critter& cr)
     if( cr.Trait[TRAIT_BRUISER]!=0) {
         penalty=20;
     }
+
+    if (cr.Params[TRAIT_BERSERKER] && ((cr.Stat[ST_CURRENT_HP]*100)/GetMaxLife(cr)) <= 50)
+    	bonus+=20;
 	
 	if (valid(CritterArmor))
 	{

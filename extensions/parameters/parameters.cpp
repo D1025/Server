@@ -197,9 +197,6 @@ EXPORT int getParam_Strength(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_STRENGTH] + cr.Params[ST_STRENGTH_EXT];
 
-	if (cr.Params[TRAIT_BERSERKER] && ((getParam_Hp(cr, 0)*100)/getParam_MaxLife(cr,0)) <= 50)
-		val+=2;
-
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_STRENGTH)!=0) val++;
 
@@ -210,9 +207,6 @@ EXPORT int getParam_Perception(CritterMutual& cr, uint)
 {
 	int val =  cr.Params[ST_PERCEPTION] + cr.Params[ST_PERCEPTION_EXT];
 	//if(cr.Params[TRAIT_NIGHT_PERSON]) val += GetNightPersonBonus();
-
-	if (cr.Params[TRAIT_BERSERKER] && ((getParam_Hp(cr, 0)*100)/getParam_MaxLife(cr,0)) <= 50)
-		val+=2;
 
 	if (cr.Params[DAMAGE_EYE])
 		val=1;
@@ -260,9 +254,6 @@ EXPORT int getParam_Intellegence(CritterMutual& cr, uint)
 EXPORT int getParam_Agility(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_AGILITY] + cr.Params[ST_AGILITY_EXT];
-
-	if (cr.Params[TRAIT_BERSERKER] && ((getParam_Hp(cr, 0)*100)/getParam_MaxLife(cr,0)) <= 50)
-		val+=2;
 
 	const Item* armor=cr.ItemSlotArmor;
 	if(checkBonus(armor, BONUS_ARMOR_AGILITY)!=0) val++;
@@ -325,6 +316,9 @@ EXPORT int getParam_MaxAp(CritterMutual& cr, uint)
 
 	const Item* weapon = cr.ItemSlotMain;
 	if (checkBonus(weapon, BONUS_WEAPON_MAX_AP)!=0) val++;
+
+	if (cr.Params[TRAIT_BERSERKER] && ((getParam_Hp(cr, 0)*100)/getParam_MaxLife(cr,0)) <= 50)
+		val+=2;
 
 	return CLAMP(val, 1, 9999);
 }

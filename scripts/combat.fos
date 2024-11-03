@@ -338,9 +338,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     uint8 tDir  = target.Dir;
 
     if(isSneak && cr.Perk[PE_SILENT_DEATH] != 0 && (crDir == tDir || ((crDir + 1) % 6) == tDir || ((crDir + 5) % 6) == tDir) &&
-       !isGrenade &&
-       (weaponSubtype != WS_GUN || realWeapon.Proto.Weapon_Anim1 == ANIM1_PISTOL || COMBAT_WEAPON_ALLOWS_SD(realWeapon))
-       )
+       !isGrenade)
         attack.SilentDeathEffect = true;
 
 				
