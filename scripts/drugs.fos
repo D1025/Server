@@ -407,8 +407,8 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
     }
 
     if((stage == 0 ||  // Instant effect
-       stage == 1) 
-       && !drugRefreshed)    // Withdrawal
+       stage == 1) // Withdrawal
+       && !drugRefreshed)
     {
         for(uint i = 0; i < 5; i++)
         {
@@ -420,7 +420,9 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
                 continue;
 
             int statVal = cr.Stat[stat];
-            if (cr.Trait[TRAIT_CHEM_RESISTANT] == 1 && amount < 0 && stat != ST_POISONING_LEVEL)
+            if (stage == 0 && cr.Trait[TRAIT_CHEM_RESISTANT] == 1 && amount < 0 && stat != ST_POISONING_LEVEL)
+                amount = 0;
+            if (stage == 1 && cr.Trait[TRAIT_CHEM_RESISTANT] == 1 && amount > 0 && stat != ST_POISONING_LEVEL)
                 amount = 0;
             if(stat < STAT_EXT_BEGIN)
                 cr.StatBase[STAT_EXT_BEGIN + stat] += amount;
@@ -450,15 +452,9 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
         if(FLAG(flags, DRUG_EFFECT_DIV2_DURATION))
             duration /= 2;
 
+        if (stage == 1)
+            duration = 0;
         SetDrugTimer(cr, drugPid, GAME_MINUTE(duration));
-    }
-    else if(stage == 1)         // To normalize
-    {
-        duration = DrugEffects[index + TABLE_DURATION(stage)];
-        if(FLAG(flags, DRUG_EFFECT_MUL2_DURATION))
-            duration *= 2;
-        if(FLAG(flags, DRUG_EFFECT_DIV2_DURATION))
-            duration /= 2;
     }
 
     stage++;

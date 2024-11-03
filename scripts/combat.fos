@@ -255,7 +255,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
     if(cr.Trait[TRAIT_FINESSE] == 1) {
         cr.ModeBase[MODE_NO_RUN]+=1;
-        cr.AddTimeEvent("cte_removeNoMove",REAL_SECOND(3), CTE_NO_RUN);
+        cr.AddTimeEvent("cte_removeNoMove",REAL_SECOND(4), CTE_NO_RUN);
     }
 
     // Update leaderboard stats
