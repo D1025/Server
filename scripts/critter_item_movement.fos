@@ -407,8 +407,8 @@ void speedboost(Critter& cr)
 	uint current_weight; 										//Get current weight count
 	uint skill=cr.Skill[SK_RUNNING];							//Get Unarmed skill count
 	uint bonus=skill/6; 										//50 max(25%)
-	current_weight = cr.ItemsWeight(); 							//Get count to var
-	uint penalty=(CLAMP(current_weight-30000,0,999999999999) / 5000);						//Weight penalty 1 for every 5kg(0,5% every 5kg)
+	current_weight = cr.ItemsWeight() < 30000 ? 0 : cr.ItemsWeight();	//Get count to var
+	uint penalty=(current_weight / 5000);						//Weight penalty 1 for every 5kg(0,5% every 5kg)
 	Item@ CritterArmor = cr.GetItem(0,SLOT_ARMOR);				//Get critter armor indentifier
 	Item@ CritterHelmet = cr.GetItem(0,SLOT_HEAD);				//Get critter helm identifier
 	uint8 mode = 0;

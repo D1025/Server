@@ -184,9 +184,6 @@ uint GetPartyPointsUsed(Critter& player)
  */
 bool CanHaveMoreFollowers(Critter& player, uint FollowerType)
 {
-    if(player.Trait[TRAIT_LONER] == 1)
-        return false;
-
     if(FollowerType == FOLLOWER_TYPE_SLAVE)
     {
         if(player.Trait[TRAIT_GOOD_NATURED] == 1)

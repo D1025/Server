@@ -435,6 +435,7 @@
 // Drugs time events                40 (PID_STIMPAK) .. 1000
 #define CTE_CHEAT_AURA                           (1337)
 #define CTE_SUPERSTIMHEALING                     (1338)
+#define CTE_NO_RUN                               (1339)
 
 // Parameters
 /// Stats
@@ -1011,13 +1012,13 @@
 #define TRAIT_HEAVY_HANDED                       (556)
 #define TRAIT_GIFTED                             (557) // Used in engine
 #define TRAIT_BLOODY_MESS                        (558)
-#define TRAIT_JINXED                             (559)
+#define TRAIT_BERSERKER                             (559)
 #define TRAIT_GOOD_NATURED                       (560)
 #define TRAIT_CHEM_RELIANT                       (561)
 #define TRAIT_CHEM_RESISTANT                     (562)
 #define TRAIT_BONEHEAD                           (563)
 #define TRAIT_SKILLED                            (564)
-#define TRAIT_LONER                              (565) // Used in engine
+#define TRAIT_DEAD_MAN_WALKING                              (565) // Used in engine
 #define TRAIT_FAST_SHOT                          (566)
 
 // 567...579

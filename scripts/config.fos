@@ -73,7 +73,7 @@ void InitializeGame()                  // Export
     __GlobalMapZoneLength = 50; // max 500
     __GlobalMapMaxGroupCount = 10;
 
-    __DeadHitPoints = -40;      // -40 only with perk, -20 otherwise
+    __DeadHitPoints = -120;
     __BagRefreshTime = 20000;
     __WisperDist = 2;
     __ShoutDist = 600;

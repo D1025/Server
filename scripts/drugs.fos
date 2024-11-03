@@ -93,6 +93,7 @@ void UseDrug(Critter& cr, Item& drug)   // Export
     if(pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK || pid == PID_HYPO)
     {
         if(pid==PID_STIMPAK) VerboseAction(cr, "injects stimpak");
+        else if(pid==PID_SUPER_STIMPAK && cr.Trait[TRAIT_BERSERKER] == 1 && cr.Param[ST_CURRENT_HP]*100/cr.Param[ST_MAX_LIFE] <= 50) VerboseAction(cr, "You broke syringe trying to inject it in your head");
         else if(pid==PID_SUPER_STIMPAK) VerboseAction(cr, "injects super stimpak");
         else VerboseAction(cr, "injects hypo");
         if(cr.GetMapProtoId() != MAP_Arena)
@@ -354,8 +355,16 @@ void DropDrugEffects(Critter& cr, bool dropAddictions)
 void SetDrug(Critter& cr, uint16 drugPid)
 {
     if (drugPid == PID_SUPER_STIMPAK) {
-        ApplySuperStimHealing(cr, drugPid);
-        return;
+        if (cr.Trait[TRAIT_BERSERKER] == 0) {
+            ApplySuperStimHealing(cr, drugPid);
+            return;
+        } else {
+            if (cr.Param[ST_CURRENT_HP]*100/cr.Param[ST_MAX_LIFE] <= 50) {
+                return;
+            }
+            ApplySuperStimHealing(cr, drugPid);
+            return;
+        }
     }
 
     // Special drugs

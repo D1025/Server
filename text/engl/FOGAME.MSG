@@ -2174,7 +2174,7 @@
 {105532}{}{One of your hands is very dominant.  You excel with single-handed weapons, but two-handed weapons cause a problem.}
 # TRAIT_FINESSE
 {105541}{}{Finesse}
-{105542}{}{Your attacks show a lot of finesse.  You don't do as much damage, but you cause more critical hits.}
+{105542}{}{Your strikes are surgically precise, bypassing 10% of enemy Damage Resistance and adding a 0.25x critical limb damage multiplier. After each attack, you can't run for 3 seconds as you steady yourself for the next precise blow.}
 # TRAIT_KAMIKAZE
 {105551}{}{Kamikaze}
 {105552}{}{By not paying attention to any threats, you can act a lot faster.  This lowers your damage resistance, but increases your damage output by 10%.}
@@ -2187,9 +2187,9 @@
 # TRAIT_BLOODY_MESS
 {105581}{}{Bloody Mess}
 {105582}{}{By some strange twist of fate, people around you die violently.  You always see the worst way a person can die.}
-# TRAIT_JINXED
-{105591}{}{Jinxed}
-{105592}{}{The good thing is that everyone around you has more critical failures in combat, the bad thing is so do you!}
+# TRAIT_BERSERKER
+{105591}{}{Berserker}
+{105592}{}{Below 50% HP, unleash a savage boost: +2 Strength, Perception, and Agility, but no Super Stimpaks. Above 50% HP, the rage fades, lowering Intelligence to 1. These shifts don’t impact perk selection. Embrace the fury, pay the price.}
 # TRAIT_GOOD_NATURED
 {105601}{}{Good Natured}
 {105602}{}{There is a positive aura about you. People are more likely to follow you, but you can't own any slaves.}
@@ -2205,9 +2205,9 @@
 # TRAIT_SKILLED
 {105641}{}{Skilled}
 {105642}{}{Since you spent more time improving your skills than a normal person, you gain one  additional perk. The tradeoff is that you do not gain as many statistics. You lose 7 primary attributes points.}
-# TRAIT_LONER
-{105651}{}{Loner}
-{105652}{}{You appreciate the nature more than company of others. You gain 10% more experience, but you can't have any followers.}
+# TRAIT_DEAD_MAN_WALKING
+{105651}{}{Dead Man Walking}
+{105652}{}{You've stared death in the face and walked away. Your maximum Hit Points are reduced by 30, but you won't perish until your Hit Points reach -120. Your sheer willpower keeps you going when others would have fallen.}
 # TRAIT_FAST_SHOT
 {105661}{}{Fast Shot}
 {105662}{}{You don't have time to aim for a targeted attack, because you attack faster than normal people.  It costs you one less action point for guns and thrown weapons, and then one less with two handed weapons.}

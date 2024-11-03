@@ -239,6 +239,7 @@ bool start()
     SetSendParameter(ST_TURN_BASED_AC, true);
     SetSendParameter(TRAIT_FAST_METABOLISM, true);
     SetSendParameter(TRAIT_SMALL_FRAME, true);
+    SetSendParameter(TRAIT_BERSERKER, true);
     // Strenght
     SetSendParameter(ST_STRENGTH, true);
     SetSendParameter(ST_STRENGTH_EXT, true);
