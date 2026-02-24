@@ -15,6 +15,26 @@
 
 import bool TryRepairItem(Critter& cr, Item& item) from "repair";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
+
+const uint SKILL_WEARINESS_MESSAGE_COOLDOWN = 1000;
+dictionary SkillWearinessMessageTick;
+
+bool IsWearinessMessageAllowed(Critter& cr, int skill)
+{
+    string key = "" + cr.Id + ":" + skill;
+    uint lastTick = 0;
+    if(SkillWearinessMessageTick.get(key, lastTick) && ELAPSED_TIME < lastTick + SKILL_WEARINESS_MESSAGE_COOLDOWN)
+        return false;
+    SkillWearinessMessageTick.set(key, ELAPSED_TIME);
+    return true;
+}
+
+void ClearSkillWearinessCache(Critter& cr)
+{
+    SkillWearinessMessageTick.delete("" + cr.Id + ":" + SK_FIRST_AID);
+    SkillWearinessMessageTick.delete("" + cr.Id + ":" + SK_DOCTOR);
+}
+
 Item@ SelectSkillItem(Critter& cr, Item@ item, uint16 skill)
 {
     Item@ handItem = _CritGetItemHand(cr);
@@ -60,7 +80,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 
     if(cr.Timeout[TO_SK_FIRST_AID] > 0)
     {
-        if(cr.IsPlayer())
+        if(cr.IsPlayer() && IsWearinessMessageAllowed(cr, SK_FIRST_AID))
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
         return true;
     }
@@ -155,7 +175,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 
     if(cr.Timeout[TO_SK_DOCTOR] > 0)
     {
-        if(cr.IsPlayer())
+        if(cr.IsPlayer() && IsWearinessMessageAllowed(cr, SK_DOCTOR))
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SKILL_WEARINESS);
         return true;
     }

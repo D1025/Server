@@ -16,6 +16,13 @@
 import bool GodOfTheRealm(uint) from "cheats";
 import bool GuardNotLegit(Critter@ cr, Item@ item, bool deleteItem) from "cheats";
 import void GuardMultihexMove(Item& item, uint8 fromSlot, uint8 toSlot) from "multihex";
+
+dictionary SpeedboostLastState;
+
+void speedboost_forget(Critter& cr)
+{
+    SpeedboostLastState.delete("" + cr.Id);
+}
 #endif
 
 #ifdef __CLIENT
@@ -413,16 +420,32 @@ void speedboost(Critter& cr)
 	uint current_weight; 										//Get current weight count
 	uint skill=cr.Skill[SK_RUNNING];							//Get Unarmed skill count
 	uint bonus=skill/6; 										//50 max(25%)
-	current_weight = cr.ItemsWeight() < 30000 ? 0 : cr.ItemsWeight();	//Get count to var
+    uint itemsWeight = cr.ItemsWeight();
+	current_weight = itemsWeight < 30000 ? 0 : itemsWeight;	//Get count to var
 	uint penalty=(current_weight / 5000);						//Weight penalty 1 for every 5kg(0,5% every 5kg)
 	Item@ CritterArmor = cr.GetItem(0,SLOT_ARMOR);				//Get critter armor indentifier
-	Item@ CritterHelmet = cr.GetItem(0,SLOT_HEAD);				//Get critter helm identifier
 	uint8 mode = 0;
 	uint8 use = _WeaponModeUse(mode);
 	ProtoItem@ weapon1 = cr.GetSlotProto(SLOT_HAND1, mode);
 	ProtoItem@ weapon2 = cr.GetSlotProto(SLOT_HAND2, mode);
 	int skillNum1 = _WeaponSkill(weapon1, use);
 	int skillNum2 = _WeaponSkill(weapon2, use);
+
+    bool berserkActive = false;
+    if(cr.Trait[TRAIT_BERSERKER] == 1)
+        berserkActive = ((cr.Stat[ST_CURRENT_HP] * 100) / GetMaxLife(cr)) <= 50;
+
+    uint armorPid = valid(CritterArmor) ? CritterArmor.GetProtoId() : 0;
+    uint weapon1Pid = valid(weapon1) ? weapon1.ProtoId : 0;
+    uint weapon2Pid = valid(weapon2) ? weapon2.ProtoId : 0;
+    string state = "" + skill + "|" + penalty + "|" + armorPid + "|" + weapon1Pid + "|" + weapon2Pid + "|" + skillNum1 + "|" + skillNum2 + "|" +
+                   cr.Perk[PE_BONUS_HTH_DAMAGE] + "|" + cr.Perk[PE_BONUS_MOVE] + "|" + cr.Trait[TRAIT_SMALL_FRAME] + "|" + cr.Trait[TRAIT_BRUISER] + "|" + (berserkActive ? 1 : 0);
+
+    string key = "" + cr.Id;
+    string lastState;
+    if(SpeedboostLastState.get(key, lastState) && lastState == state)
+        return;
+    SpeedboostLastState.set(key, state);
 	
 	if (cr.Perk[PE_BONUS_HTH_DAMAGE] !=0)	bonus+=14;		//Bonus from Bonus HtH Attacks perk 14 pts (7%)
 	if (cr.Trait[TRAIT_SMALL_FRAME] != 0) bonus+=20;
@@ -447,7 +470,7 @@ void speedboost(Critter& cr)
         penalty=20;
     }
 
-    if (cr.Trait[TRAIT_BERSERKER]==1 && ((cr.Stat[ST_CURRENT_HP]*100)/GetMaxLife(cr)) <= 50)
+    if (cr.Trait[TRAIT_BERSERKER]==1 && berserkActive)
     	bonus+=20;
 	
 	if (valid(CritterArmor))
@@ -476,7 +499,9 @@ void speedboost(Critter& cr)
 		}
 	}
 		
-	cr.StatBase[ST_RUN_TIME]=CLAMP(200-bonus+penalty,120,224);					//Formula
+    int runTime = CLAMP(200 - bonus + penalty, 120, 224);                    // Formula
+    if(cr.Stat[ST_RUN_TIME] != runTime)
+	    cr.StatBase[ST_RUN_TIME] = runTime;
 	}
 }
 #endif

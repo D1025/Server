@@ -1233,7 +1233,7 @@
 #define SCORE_MARIPOSA_CUR                       (48)
 #define SCORE_SIERRA_CUR                         (49)
 
-#define SCORES_MAX                               (50)
+#define SCORES_MAX                               (100)
 
 // Car flags
 #define CAR_BIO_ENGINE                           (0x0001)

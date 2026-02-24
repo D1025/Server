@@ -55,6 +55,7 @@
 #include "_entires.fos"
 // Imports
 import void speedboost(Critter& cr) from "critter_item_movement"; 			//Imported function to recalculate speed boost in calls.
+import void speedboost_forget(Critter& cr) from "critter_item_movement";
 import void DropDrugEffects(Critter& cr) from "drugs";
 import bool FindBaseEncounter(array<Critter@>& group, Item@ car, uint x, uint y, uint& encounterDescriptor, bool& waitForAnswer) from "factions_player";
 import bool IsArenaCombatant(Critter& cr) from "arena";
@@ -132,6 +133,7 @@ import void   WorldmapRemovePlayer(Critter@ player) from "worldmap_players";
 import void   TrackLocation(Critter& player) from "globalmap_group";
 import bool   UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item) from "skills";
 import bool   UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item) from "skills";
+import void   ClearSkillWearinessCache(Critter& cr) from "skills";
 import array<Critter@> WorldmapGetPlayers(uint zx, uint zy) from "worldmap_players";
 import uint CheckPlayerName( const string& name ) from "parameters";
 
@@ -160,11 +162,15 @@ dictionary    ItemPids;
 dictionary    VarIds;
 dictionary    BaseTypes;
 dictionary    MapData;
+dictionary    AttackReactionTicks;
+dictionary    NpcWalkRunTimeCache;
 array<string> ItemNames;
 array<string> VarNames;
 array<uint> BannedIDs;
 array<uint> BanEvents;
 array<string> BannedReason;
+
+const uint ATTACK_REACTION_INTERVAL = 500;
 
 //// Get the id of the item using identifiers
 // stored in ITEMPID.H file
@@ -185,6 +191,21 @@ bool GetBaseType(const string& in identifier, int& out id)
 bool GetMapData(const string& in identifier, int& out id)
 {
     return MapData.get(identifier, id);
+}
+
+bool ShouldProcessAttackReaction(Critter& cr)
+{
+    string key = "" + cr.Id;
+    uint lastTick = 0;
+    if(AttackReactionTicks.get(key, lastTick) && ELAPSED_TIME < lastTick + ATTACK_REACTION_INTERVAL)
+        return false;
+    AttackReactionTicks.set(key, ELAPSED_TIME);
+    return true;
+}
+
+void ClearAttackReactionCache(Critter& cr)
+{
+    AttackReactionTicks.delete("" + cr.Id);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -636,6 +657,10 @@ void critter_attacked(Critter& cr, Critter& attacker)
     }
     if(!cr.IsPlayer() && (!_IsTrueNpc(attacker) || (crGroup != attackerGroup)))
         AddAttackPlane(cr, 0, attacker);
+
+    // Heavy guard/helper scans are throttled to avoid per-hit map-wide processing spikes.
+    if(!ShouldProcessAttackReaction(cr))
+        return;
 		
 	//Base Control - retake on attack!
 	if(IsBaseControl(map) &&
@@ -1282,6 +1307,20 @@ bool critter_use_item(Critter& cr, Item& item, Critter@ targetCr, Item@ targetIt
 //
 bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetItem, Scenery@ targetScen)
 {
+    if(skill == SK_FIRST_AID && !valid(targetItem) && !valid(targetScen) && cr.Timeout[TO_SK_FIRST_AID] > 0)
+    {
+        if(!valid(targetCr))
+            @targetCr = cr;
+        return UseFirstAidOnCritter(cr, targetCr, null);
+    }
+
+    if(skill == SK_DOCTOR && !valid(targetItem) && !valid(targetScen) && cr.Timeout[TO_SK_DOCTOR] > 0)
+    {
+        if(!valid(targetCr))
+            @targetCr = cr;
+        return UseDoctorOnCritter(cr, targetCr, null);
+    }
+
 	speedboost(cr);
     bool isPlayer = cr.IsPlayer();
 	
@@ -2409,6 +2448,9 @@ uint e_CritterInit_XFire(array<int>@ data)
 void critter_finish(Critter& cr, bool toDelete)
 {
 	speedboost(cr);
+    ClearAttackReactionCache(cr);
+    speedboost_forget(cr);
+    ClearSkillWearinessCache(cr);
     if(!(FLAG(_getMinigameFlags(cr.Param[ST_MINIGAME_DATA]), MINIGAME_PERSISTENT)))
         UnsetMinigame(cr, false);     // Minigames end along with gaming session IF the minigame team isn't persistent
 
@@ -2956,7 +2998,8 @@ void critter_respawn(Critter& cr)
 void map_critter_in(Map& map, Critter& cr)
 {
 	speedboost(cr);
-	SetWalkRunTimeForNpcs(map, 0);
+    if(!map.IsTurnBased())
+        SetWalkRunTimeForNpcs(map, 0, false);
     RemoveArenaItems(cr);
     Location@ loc = map.GetLocation();
 	
@@ -3658,7 +3701,7 @@ void player_levelup(Critter& player, uint skillIndex, uint skillUp, uint perkInd
 
 void turn_based_begin(Map& map)
 {
-	SetWalkRunTimeForNpcs(map, 100);
+	SetWalkRunTimeForNpcs(map, 100, true);
     array<Critter@> critters;
     array<Critter@> players;
     uint count = map.GetCritters(0, FIND_LIFE_AND_KO, critters);
@@ -3707,13 +3750,18 @@ void turn_based_begin(Map& map)
 // Call on end turn-based battle
 void turn_based_end(Map& map)
 {
-	SetWalkRunTimeForNpcs(map, 0);
+	SetWalkRunTimeForNpcs(map, 0, true);
     array<Critter@> critters;
     uint count = map.GetCritters(0, FIND_LIFE_AND_KO, critters);
 }
 
-void SetWalkRunTimeForNpcs(Map& map, uint time)
+void SetWalkRunTimeForNpcs(Map& map, uint time, bool force)
 {
+    string mapKey = "" + map.Id;
+    uint cachedTime = 0;
+    if(!force && NpcWalkRunTimeCache.get(mapKey, cachedTime) && cachedTime == time)
+        return;
+
 	Critter@[] critters;
 	map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE_AND_KO, critters);
 
@@ -3722,10 +3770,14 @@ void SetWalkRunTimeForNpcs(Map& map, uint time)
 	{
 		if(valid(critters[i]))
 		{
-			critters[i].StatBase[ST_WALK_TIME] = time;
-			critters[i].StatBase[ST_RUN_TIME] = time;
+            if(critters[i].Stat[ST_WALK_TIME] != time)
+			    critters[i].StatBase[ST_WALK_TIME] = time;
+            if(critters[i].Stat[ST_RUN_TIME] != time)
+			    critters[i].StatBase[ST_RUN_TIME] = time;
 		}
 	}
+
+    NpcWalkRunTimeCache.set(mapKey, time);
 }
 
 

@@ -37,6 +37,7 @@ import bool IsCurrentController(Critter& cr) from "mob_dynamic";
 //#define CONTROLLING_TIME                       (1) // in minutes
 #define CONTROLLING_BEST_SCORE_BASE            (44)
 #define ANTI_ATTACK_BUFFOR                     (15) // in seconds
+#define BASE_CONTROL_CHECK_INTERVAL            (2)  // in seconds
 
 bool CanTakeWaterworks = true, CanTakeArea51 = true, CanTakeNukaCola = true, CanTakeMariposa = true, CanTakeHawthorne = true,
 	IsTakingByNpcWW = false, IsTakingByNpcA51 = false, IsTakingByNpcNC = false, IsTakingByNpcMB = false, IsTakingByNpcHMB = false;
@@ -405,7 +406,7 @@ uint e_TakeControlByNPC(array<uint>@ controllingdata)
 	
 	// Controls that player or his teammates are in taken base.
 	SetIsTakingByMobs(baseLoc, true);
-	CreateTimeEvent(AFTER(REAL_SECOND(1)), "e_CheckPlayers", controllingdata, false);
+	CreateTimeEvent(AFTER(REAL_SECOND(BASE_CONTROL_CHECK_INTERVAL)), "e_CheckPlayers", controllingdata, false);
 	
 	return 0;
 }
@@ -599,7 +600,7 @@ bool s_Terminal(Critter& player, Scenery& terminal, int skill, Item@ item)
 	
 	// Controls that player or his teammates are in taken base.
 	SetIsTakingByMobs(baseLoc, false);
-	CreateTimeEvent(AFTER(REAL_SECOND(1)), "e_CheckPlayers", controllingdata, false);
+	CreateTimeEvent(AFTER(REAL_SECOND(BASE_CONTROL_CHECK_INTERVAL)), "e_CheckPlayers", controllingdata, false);
 	
     return true;
 }
@@ -713,7 +714,6 @@ uint e_CheckPlayers(array<uint>@ values)
 		}
 	
 		// Player left base location
-		Map@ baseMap = player.GetMap();
 		/*if(!valid(baseMap))
 		{
 			player.Say(SAY_NETMSG, "You've left base during taking control.");
@@ -745,7 +745,9 @@ uint e_CheckPlayers(array<uint>@ values)
 		}*/
 		
 		//if(!valid(baseMap)) return 0;
-		Location@ baseLoc = GetLocationByPid(location, 0);
+		Location@ baseLoc = GetLocation(values[2]);
+		if(!valid(baseLoc))
+			return 0;
 	
 		array<Map@> maps;
 		baseLoc.GetMaps(maps);
@@ -759,12 +761,12 @@ uint e_CheckPlayers(array<uint>@ values)
 			{
 				array<Critter@> playersinpolygon;
 				maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+				IPolygon@ HawthorneMilitaryBase = ::LoadShapeFromEntires(maps[i], HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
 				uint8 polygonsPlayerQty = 0;
 				
 				for(uint8 j=0; j<playersinpolygon.length(); j++)
 				{
-					IPolygon@ HawthorneMilitaryBase = ::LoadShapeFromEntires(maps[i], HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
-					if(HawthorneMilitaryBase.IsWithin(playersinpolygon[j]))
+					if(valid(HawthorneMilitaryBase) && HawthorneMilitaryBase.IsWithin(playersinpolygon[j]))
 					{
 						polygonsPlayerQty++;
 						players.resize(polygonsPlayerQty);
@@ -778,12 +780,12 @@ uint e_CheckPlayers(array<uint>@ values)
 				{
 					array<Critter@> playersinpolygon;
 					maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+					IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
 					uint8 polygonsPlayerQty = 0;
 				
 					for(uint8 j=0; j<playersinpolygon.length(); j++)
 					{
-						IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
-						if(NukaColaBottlePlant.IsWithin(playersinpolygon[j]))
+						if(valid(NukaColaBottlePlant) && NukaColaBottlePlant.IsWithin(playersinpolygon[j]))
 						{
 							polygonsPlayerQty++;
 							players.resize(polygonsPlayerQty);
@@ -1080,7 +1082,6 @@ uint e_CheckPlayers(array<uint>@ values)
 									
 					for(uint8 j=0; j<npcsinpolygon.length(); j++)
 					{
-						IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
 						if(IsNukaColaWorker(npcsinpolygon[j]))
 						{
 							npcscounter++;
@@ -1135,7 +1136,7 @@ uint e_CheckPlayers(array<uint>@ values)
 		}
 	}
 	
-	return REAL_SECOND(1);
+	return REAL_SECOND(BASE_CONTROL_CHECK_INTERVAL);
 }
 
 void CountPlayers(Location& baseLoc, uint16 faction)
@@ -2011,12 +2012,12 @@ uint e_AntiLogOut(array<uint>@ logoutdata)
 		{
 			array<Critter@> playersinpolygon;
 			maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+			IPolygon@ HawthorneMilitaryBase = ::LoadShapeFromEntires(maps[i], HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
 			uint8 polygonsPlayerQty = 0;
 			
 			for(uint8 j=0; j<playersinpolygon.length(); j++)
 			{
-				IPolygon@ HawthorneMilitaryBase = ::LoadShapeFromEntires(maps[i], HAWTHORNE_MILITARY_AREA_START, HAWTHORNE_MILITARY_AREA_STOP);
-				if(HawthorneMilitaryBase.IsWithin(playersinpolygon[j]))
+				if(valid(HawthorneMilitaryBase) && HawthorneMilitaryBase.IsWithin(playersinpolygon[j]))
 				{
 					polygonsPlayerQty++;
 					players.resize(polygonsPlayerQty);
@@ -2030,12 +2031,12 @@ uint e_AntiLogOut(array<uint>@ logoutdata)
 			{
 				array<Critter@> playersinpolygon;
 				maps[i].GetCritters(0, FIND_LIFE_AND_KO | FIND_ONLY_PLAYERS, playersinpolygon);
+				IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
 				uint8 polygonsPlayerQty = 0;
 			
 				for(uint8 j=0; j<playersinpolygon.length(); j++)
 				{
-					IPolygon@ NukaColaBottlePlant = ::LoadShapeFromEntires(maps[i], NUKA_COLA_AREA_START, NUKA_COLA_AREA_STOP);
-					if(NukaColaBottlePlant.IsWithin(playersinpolygon[j]))
+					if(valid(NukaColaBottlePlant) && NukaColaBottlePlant.IsWithin(playersinpolygon[j]))
 					{
 						polygonsPlayerQty++;
 						players.resize(polygonsPlayerQty);

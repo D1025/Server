@@ -219,7 +219,7 @@ EXPORT_UNINITIALIZED const char* (ScriptGetLibraryVersion) ( );
 
 #define LEXEMS_SIZE                  ( 128 )
 #define MAX_HOLO_INFO                ( 250 )
-#define SCORES_MAX                   ( 50 )
+#define SCORES_MAX                   ( 100 )
 #define MAX_NPC_BAGS_PACKS           ( 20 )
 #define MAX_ENEMY_STACK              ( 30 )
 #define MAX_NPC_BAGS                 ( 50 )
@@ -1969,9 +1969,9 @@ inline void static_asserts()
     STATIC_ASSERT( offsetof( GlobalMapGroup, EncounterForce )  == 64   );
     STATIC_ASSERT( offsetof( Item, IsNotValid )                == 146  );
     STATIC_ASSERT( offsetof( CritterTimeEvent, Identifier )    == 12   );
-    STATIC_ASSERT( offsetof( Critter, RefCounter )             == 9388 );
-    STATIC_ASSERT( offsetof( Client, LanguageMsg )             == 9548 );
-    STATIC_ASSERT( offsetof( Npc, Reserved )                   == 9408 );
+    STATIC_ASSERT( offsetof( Critter, RefCounter )             == 9588 );
+    STATIC_ASSERT( offsetof( Client, LanguageMsg )             == 9748 );
+    STATIC_ASSERT( offsetof( Npc, Reserved )                   == 9608 );
     STATIC_ASSERT( offsetof( CritterCl, MoveSteps )            == 5700 );
     STATIC_ASSERT( offsetof( MapEntire, Dir )                  == 8    );
     STATIC_ASSERT( offsetof( SceneryToClient, Reserved1 )      == 30   );
