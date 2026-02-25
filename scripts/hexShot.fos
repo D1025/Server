@@ -87,8 +87,6 @@ int HexShotingToHit(CritterMutual& cr, uint16 tx, uint16 ty, ProtoItem& weapon, 
         toHit -= 25;
     
     //weapon handling modifiers
-    if(cr.Trait[TRAIT_ONE_HANDER] != 0)
-        toHit += (FLAG(weapon.Flags, ITEM_TWO_HANDS) ? -40 : 20);
     int handlingStrength = cr.Stat[ST_STRENGTH];
     int reqStrength = weapon.Weapon_MinStrength;
     if(cr.Perk[PE_WEAPON_HANDLING] != 0)

@@ -8,7 +8,7 @@
 #define TRAIT_FAST_METABOLISM       (550)
 #define TRAIT_BRUISER               (551)
 #define TRAIT_SMALL_FRAME           (552) // Used in engine
-#define TRAIT_ONE_HANDER            (553)
+#define TRAIT_SUPPRESSOR            (553)
 #define TRAIT_FINESSE               (554)
 #define TRAIT_KAMIKAZE              (555)
 #define TRAIT_HEAVY_HANDED          (556)

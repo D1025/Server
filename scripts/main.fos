@@ -279,6 +279,7 @@ bool start()
     // Battle timeout
     SetSendParameter(TO_BATTLE, true);
     SetSendParameter(TO_SK_FIRST_AID, true, "Utils.dll@_AllowParameterIfLivingAnatomy");
+    SetSendParameter(TO_WEAKENED, true);
     // Injures
     SetSendParameter(DAMAGE_EYE, true);
     SetSendParameter(DAMAGE_RIGHT_ARM, true);

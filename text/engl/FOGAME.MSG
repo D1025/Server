@@ -2169,9 +2169,9 @@
 # TRAIT_SMALL_FRAME
 {105521}{}{Small Frame}
 {105522}{}{You are not quite as big as the other ordinary man, but that never slowed you down.  You can't carry as much and your limbs are a little weaker, but you are more agile.}
-# TRAIT_ONE_HANDER
-{105531}{}{One Hander}
-{105532}{}{One of your hands is very dominant.  You excel with single-handed weapons, but two-handed weapons cause a problem.}
+# TRAIT_SUPPRESSOR
+{105531}{}{Suppressor}
+{105532}{}{Your attacks suppress enemies. Any successful attack applies Weakened for 10 seconds, reducing their final damage by 25%. As a drawback, you deal only 50% damage to player characters.}
 # TRAIT_FINESSE
 {105541}{}{Finesse}
 {105542}{}{Your strikes are surgically precise, bypassing 10% of enemy Damage Resistance and adding a 0.25x critical limb damage multiplier. After each attack, you can't run for 3 seconds as you steady yourself for the next precise blow.}

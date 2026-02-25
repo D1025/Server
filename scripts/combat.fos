@@ -318,9 +318,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         baseToHit -= 25;
     if(!isUnarmed)
     {
-        if(cr.Trait[TRAIT_ONE_HANDER] != 0)
-            baseToHit += (FLAG(weapon.Flags, ITEM_TWO_HANDS) ? -40 : 20);
-
         int handlingStrength = cr.Stat[ST_STRENGTH];
         int reqStrength = weapon.Weapon_MinStrength;
         if(cr.Perk[PE_WEAPON_HANDLING] != 0)
@@ -1681,10 +1678,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		        totalDmg = 0;
 		    totalDmg += 30 * totalDmg * attack.Attacker.Perk[PE_PYROMANIAC] / 100;
 		}
-        
-		//druto
-		if(attack.Attacker.Trait[TRAIT_ONE_HANDER] != 0 && (!valid(realWeapon) || FLAG(realWeapon.Flags, ITEM_TWO_HANDS)))
-            totalDmg += 5;
 		if(attack.Attacker.Trait[TRAIT_KAMIKAZE] != 0)
 			totalDmg *= 1.1;
 
@@ -1795,6 +1788,15 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         ac = ac + attack.ACMod;
         ac = CLAMP(ac, 0, 95);
         totalDmg = totalDmg * (100 - ac) / 100;
+    }
+
+    if(validAttacker && totalDmg > 0)
+    {
+        if(attacker.Timeout[TO_WEAKENED] > 0)
+            totalDmg = totalDmg * 75 / 100;
+
+        if(attacker.Trait[TRAIT_SUPPRESSOR] != 0 && targetIsPlayer && attacker.Id != target.Id)
+            totalDmg /= 2;
     }
 
     if(totalDmg > 0)
@@ -2429,6 +2431,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			}
 		}
     }
+
+    if(validAttacker && attacker.Id != target.Id && attacker.Trait[TRAIT_SUPPRESSOR] != 0 && target.IsLife())
+        _SetTimeout(target, TO_WEAKENED, WEAKENED_TIMEOUT(target));
 
     LogDamage(map, attacker, target, realWeapon, attack.Ammo, aim, attack.IsBurst, totalDmg, isCritical, eff, realrounds);
     PostDamage(target);
@@ -3094,9 +3099,6 @@ int RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, P
 
     if(valid(weapon))
     {
-        if(!(weapon.Weapon_IsUnarmed) && cr.Trait[TRAIT_ONE_HANDER] != 0)
-            toHit += (FLAG(weapon.Flags, ITEM_TWO_HANDS) ? -40 : 20);
-
         int handlingStrength = cr.Stat[ST_STRENGTH];
         int reqStrength = weapon.Weapon_MinStrength;
         if(cr.Perk[PE_WEAPON_HANDLING] != 0)

@@ -1106,8 +1106,6 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
                 int strength = npc.Stat[ST_STRENGTH] + (_CritHasPerk(npc, PE_WEAPON_HANDLING) ? 2 : 0);
                 if(strength < weapon.Weapon_MinStrength)
                     base -= 20 * (weapon.Weapon_MinStrength - strength);
-                if(npc.Trait[TRAIT_ONE_HANDER] > 0)
-                    base += (FLAG(weapon.Flags, ITEM_TWO_HANDS) ? -40 : 20);
             }
             int ai_min = AI_MIN_TO_HIT(npc.Stat[ST_AI_ID]);
             if(base < ai_min)
@@ -1176,8 +1174,6 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
             int strength = npc.Stat[ST_STRENGTH] + (_CritHasPerk(npc, PE_WEAPON_HANDLING) ? 2 : 0);
             if(strength < weapon.Weapon_MinStrength)
                 base -= 20 * (weapon.Weapon_MinStrength - strength);
-            if(npc.Trait[TRAIT_ONE_HANDER] > 0)
-                base += (FLAG(weapon.Flags, ITEM_TWO_HANDS) ? -40 : 20);
 
             int ai_min = AI_MIN_TO_HIT(npc.Stat[ST_AI_ID]);
             int perception = npc.Stat[ST_PERCEPTION];

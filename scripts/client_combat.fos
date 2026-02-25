@@ -193,9 +193,6 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
         toHit -= 10 * blockers;
     } // end range modifiers
 
-    if(!(weapon.Weapon_IsUnarmed) && chosen.Trait[TRAIT_ONE_HANDER] != 0 && valid(realWeapon))
-        toHit += (FLAG(weapon.Flags, ITEM_TWO_HANDS) ? -40 : 20);
-
     int handlingStrength = chosen.Stat[ST_STRENGTH];
     int reqStrength = weapon.Weapon_MinStrength;
     if(chosen.Perk[PE_WEAPON_HANDLING] != 0)
