@@ -290,6 +290,9 @@ int NextLevelNeedExp(Critter& cr)   // Export
 #ifdef __CLIENT
 void changedParam_Level(CritterCl& cr, uint, int oldValue)   // client
 {
+    if(!cr.IsChosen())
+        return;
+
     if(cr.ParamBase[ST_LEVEL] > oldValue)
     {
         PlaySound("LEVELUP.ACM");
@@ -300,6 +303,9 @@ void changedParam_Level(CritterCl& cr, uint, int oldValue)   // client
 
 void changedParam_Experience(CritterCl& cr, uint, int oldValue)   // client
 {
+    if(!cr.IsChosen())
+        return;
+
     int curValue = cr.ParamBase[ST_EXPERIENCE];
     if(curValue > oldValue)
         Message(ReplaceText(GetMsgStr(TEXTMSG_GAME, STR_GAIN_EXPERIENCE), "VALUE", curValue - oldValue), FOMB_GAME);
@@ -307,6 +313,9 @@ void changedParam_Experience(CritterCl& cr, uint, int oldValue)   // client
 
 void changedParam_UnspentPerks(CritterCl& cr, uint, int oldValue)   // client
 {
+    if(!cr.IsChosen())
+        return;
+
     if(cr.ParamBase[ST_UNSPENT_PERKS] > 0 && GUI_GetActiveScreen() == CLIENT_SCREEN_CHARACTER)
         ShowScreen(CLIENT_SCREEN_PERK, 0, 0, 0);
 }
