@@ -3761,6 +3761,7 @@ void SetWalkRunTimeForNpcs(Map& map, uint time, bool force)
     uint cachedTime = 0;
     if(!force && NpcWalkRunTimeCache.get(mapKey, cachedTime) && cachedTime == time)
         return;
+    int timeValue = int(time);
 
 	Critter@[] critters;
 	map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE_AND_KO, critters);
@@ -3770,10 +3771,10 @@ void SetWalkRunTimeForNpcs(Map& map, uint time, bool force)
 	{
 		if(valid(critters[i]))
 		{
-            if(critters[i].Stat[ST_WALK_TIME] != time)
-			    critters[i].StatBase[ST_WALK_TIME] = time;
-            if(critters[i].Stat[ST_RUN_TIME] != time)
-			    critters[i].StatBase[ST_RUN_TIME] = time;
+            if(critters[i].Stat[ST_WALK_TIME] != timeValue)
+			    critters[i].StatBase[ST_WALK_TIME] = timeValue;
+            if(critters[i].Stat[ST_RUN_TIME] != timeValue)
+			    critters[i].StatBase[ST_RUN_TIME] = timeValue;
 		}
 	}
 

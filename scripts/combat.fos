@@ -2015,6 +2015,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
     int  currentAp = target.Stat[ST_CURRENT_AP];
     int  targetAp = currentAp;
+    bool targetWasKnockout = target.IsKnockout();
 	
     // Dead
     if(isDead)
@@ -2223,7 +2224,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             target.StatBase[ST_MOVE_AP] = 0;
         }
         	
-		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || isSlugger || knockbackFromCrit) && !target.IsKnockout() && target.Mode[MODE_NO_KNOCK] == 0)
+		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || isSlugger || knockbackFromCrit) && !targetWasKnockout && target.Mode[MODE_NO_KNOCK] == 0)
         {
             //Log("jest knockOut albo knockDown");
             int knockDist = knockDmg;
@@ -2263,7 +2264,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     if(knockOut)
         targetAp = quick ? -1 : -4;
 
-    if(knockDown && !(target.IsKnockout() && map.IsTurnBased()))
+    if(knockDown && !(targetWasKnockout && map.IsTurnBased()))
         targetAp -= quick ? 1 : 3;
 
     if(targetAp < currentAp)
@@ -2863,7 +2864,8 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 
     if(FLAG(eff, MF_LOST_NEXT_TURN))
     {
-        cr.StatBase[ST_CURRENT_AP] = (cr.Perk[PE_QUICK_RECOVERY] > 0 ? (-100 * cr.Stat[ST_ACTION_POINTS]) / 3 : -100 * cr.Stat[ST_ACTION_POINTS]);
+        int lostAp = cr.Perk[PE_QUICK_RECOVERY] > 0 ? -(cr.Stat[ST_ACTION_POINTS] / 3) : -cr.Stat[ST_ACTION_POINTS];
+        cr.StatBase[ST_CURRENT_AP] = 100 * lostAp;
         cr.StatBase[ST_MOVE_AP] = 0;
     }
 

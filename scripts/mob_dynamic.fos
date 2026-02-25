@@ -34,6 +34,8 @@ import bool BaseIsTakingByMobs(Location& loc) from "base_control";
 //Shared variables:
 string groupname = "NOT SPECIFIED";
 uint16 statteamid = 5003, dialog = 0, aiid = 0;
+const bool MOB_DYNAMIC_DEBUG_SPAWN_LOGS = false;
+const bool MOB_DYNAMIC_DEBUG_WEAPON_LOGS = true;
 
 void InitializeDynamicMob(Map& map)
 {
@@ -438,15 +440,18 @@ array<uint16>@ GenerateGroup(Map& map, uint8 kindofmob = 0, uint8 subtypemob = 0
 		
 	
 	//Debug - comment it if not needed!
-	if(kindofmob != 0)
+	if(MOB_DYNAMIC_DEBUG_SPAWN_LOGS)
 	{
-		Log("Trying to generate one mob kindofmob = " + kindofmob + ", subtypemob = " + subtypemob + " for mapId <" + map.Id + ">, ProtoId <" + map.GetProtoId() + ">.");
-	}
-	else
-	{
-		Location@ loc = map.GetLocation();
-		//string locationName = GetLocationName(loc.Id);
-		Log("Trying to generate group of mobs <" + groupname + ">, subtypemob = " + subtypemob + " for mapId <" + map.Id + ">, location name <" + GetLocationName(loc.Id) + ">.");
+		if(kindofmob != 0)
+		{
+			Log("Trying to generate one mob kindofmob = " + kindofmob + ", subtypemob = " + subtypemob + " for mapId <" + map.Id + ">, ProtoId <" + map.GetProtoId() + ">.");
+		}
+		else
+		{
+			Location@ loc = map.GetLocation();
+			//string locationName = GetLocationName(loc.Id);
+			Log("Trying to generate group of mobs <" + groupname + ">, subtypemob = " + subtypemob + " for mapId <" + map.Id + ">, location name <" + GetLocationName(loc.Id) + ">.");
+		}
 	}
 	
 	if(groupname == "Slag bandits" || kindofmob == 1)
@@ -1086,10 +1091,10 @@ array<uint16>@ GenerateGroup(Map& map, uint8 kindofmob = 0, uint8 subtypemob = 0
 		x Log for debug, comment it if everything is fine. x
 		xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx	*/
 	
-	if(kindofmob == 0) // For town raiders, other events
+	if(MOB_DYNAMIC_DEBUG_SPAWN_LOGS && kindofmob == 0) // For town raiders, other events
 		Log("Generating mobs's group: " + groupname);
 		
-	if(kindofmob != 0) // For dungeons.
+	if(MOB_DYNAMIC_DEBUG_SPAWN_LOGS && kindofmob != 0) // For dungeons.
 		Log("Generating mob from group with params: kindofmob = " + kindofmob + ", subtypemob = " + subtypemob);
 		
 	/*	xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -2245,7 +2250,7 @@ uint e_TrySpawnMob(array<uint>@ mobdata)
 		}
 		
 		// Log debug part
-		if(howmanyspawns == 1)
+		if(MOB_DYNAMIC_DEBUG_SPAWN_LOGS && howmanyspawns == 1)
 			Log("Trying to add mob pid <" + pid + "> to map <" + map.Id + "> at entire number <" + entire.Number + ">.");
 		
 		
@@ -3746,6 +3751,8 @@ bool IsHtHOnlyMob(uint16 pid)
 			pid == 242 || pid == 243 || pid == 517 || //aliens
 			pid == 244 || pid == 245 || pid == 275 || //deathclaws
 			pid == 248 || pid == 249 || //centaurs
+			pid == 586 || pid == 587 || pid == 588 || //rats
+			pid == 178 || pid == 179 || //reactor ghouls
 			pid == 572 || pid == 573 || pid == 574 || pid == 575; //endless walkers
 }
 
@@ -5012,7 +5019,13 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 	if(weapontype != 0)
 		generatedweapon = GenerateWeapon(weapontype, weaponlevel);
 	else
-		Log("Can't set weapon for mob.Id <" + mob.Id + ">, ProtoId <" + mob.GetProtoId() + ">."); //For debug
+	{
+		// Many beasts (for example rats) are intentionally unarmed and use built-in attacks.
+		if(MOB_DYNAMIC_DEBUG_WEAPON_LOGS &&
+			weaponforgroup != WEAPONGROUP_UNARMED &&
+			!IsHtHOnlyMob(mob.GetProtoId()))
+			Log("Can't set weapon for mob.Id <" + mob.Id + ">, ProtoId <" + mob.GetProtoId() + ">."); //For debug
+	}
 		
 	if(generatedweapon != 0)
 	{
