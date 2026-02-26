@@ -153,6 +153,7 @@
 # pragma globalvar "bool  __ConfigFog                 = false"
 # pragma globalvar "uint  __ConfigFogColor           = 0" // default set in InitConfig()
 # pragma globalvar "bool  __ConfigIgnoreLangChange    = false"
+# pragma globalvar "uint8 __ConfigRtsLeftAction       = 0" // 0 - interact, 1 - attack
 # pragma globalvar "bool  __ConfigMsFov  = false"
 # pragma globalvar "uint8 __ConfigOnHeadAwareness  = 1"
 # pragma globalvar "bool  __ConfigShowNpcAwareness  = false"

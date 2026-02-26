@@ -13,6 +13,7 @@
 #include "client_utils_h.fos"
 #include "client_smart_cursor_h.fos"
 #include "gmtools_h.fos"
+#include "chosen_actions_h.fos"
 #include "_defines.fos"
 
 import bool IsGMTEnabled() from "client_main";
@@ -62,6 +63,79 @@ import void ChangeOnHeadAwarenessNPC() from "client_critter_onhead";
 
 int PrevMouseX = __MouseX;
 int PrevMouseY = __MouseY;
+bool RtsMoveCursorPreview = false;
+int RtsCursorBeforeMove = CURSOR_DEFAULT;
+
+#define RTS_LEFT_INTERACT  (0)
+#define RTS_LEFT_ATTACK    (1)
+
+void SaveRtsConfig()
+{
+    bool autosave = string2bool(GetConfigValue(CONFIG_FILE, CONFIG_2238, "Autosave"));
+    if(!autosave)
+        return;
+
+    if(SetConfigValue(CONFIG_FILE, CONFIG_2238, "RTSLeftAction", __ConfigRtsLeftAction))
+    {
+        SaveConfig(CONFIG_FILE);
+    }
+}
+
+void SetRtsLeftAction(uint8 action)
+{
+    __ConfigRtsLeftAction = CLAMP(action, 0, 1);
+}
+
+void ApplyRtsCursor()
+{
+    ChangeCursor(__ConfigRtsLeftAction == RTS_LEFT_ATTACK ? CURSOR_USE_WEAPON : CURSOR_DEFAULT);
+}
+
+void SyncRtsLeftActionFromCursor()
+{
+    if(!__RTSCombat || GUI_GetActiveScreen() != CLIENT_MAIN_SCREEN_GAME)
+        return;
+
+    uint8 newAction = __ConfigRtsLeftAction;
+    int cursor = GetCurrentCursor();
+
+    if(cursor == CURSOR_USE_WEAPON)
+        newAction = RTS_LEFT_ATTACK;
+    else if(cursor == CURSOR_DEFAULT || cursor == CURSOR_USE_OBJECT || cursor == CURSOR_HAND)
+        newAction = RTS_LEFT_INTERACT;
+
+    if(newAction != __ConfigRtsLeftAction)
+    {
+        SetRtsLeftAction(newAction);
+        SaveRtsConfig();
+    }
+}
+
+bool TryRtsMove()
+{
+    CritterCl@ chosen = GetChosen();
+    if(!valid(chosen))
+        return false;
+
+    uint run = __AlwaysRun ? 1 : 0;
+
+    CritterCl@ target = GetMonitorCritter(__MouseX, __MouseY);
+    if(valid(target) && target.Id != chosen.Id)
+    {
+        uint[] action = { CHOSEN_MOVE_TO_CRIT, target.Id, 0, run, 0, 0, 0 };
+        SetChosenActions(action);
+        return true;
+    }
+
+    uint16 hx = 0, hy = 0;
+    if(GetMonitorHex(__MouseX, __MouseY, hx, hy))
+    {
+        uint[] action = { CHOSEN_MOVE, hx, hy, run, 0, 0, 0 };
+        SetChosenActions(action);
+        return true;
+    }
+    return false;
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Called on mouse/keyboard input lost (alt-tab, minimize, lost focus).
@@ -72,6 +146,14 @@ void input_lost()
     HexThrowingInputLost();
     IndicatorMouse(false, 0);
     __MapZooming = false;
+    if(GetCurrentCursor() == CURSOR_MOVE)
+    {
+        if(RtsMoveCursorPreview)
+            ChangeCursor(RtsCursorBeforeMove);
+        else
+            ApplyRtsCursor();
+    }
+    RtsMoveCursorPreview = false;
 
     GUI_InputLost();
 }
@@ -116,6 +198,8 @@ bool key_down(uint8 key, string& keyText)
     bool oldFog = __ConfigFog;
     if(ProcessBind(key))
     {
+        SyncRtsLeftActionFromCursor();
+
         bool newFog = __ConfigFog;
         if(newFog != oldFog)
         {
@@ -164,6 +248,7 @@ bool key_down(uint8 key, string& keyText)
     case DIK_F9:
         ChangeOnHeadAwarenessPlayer();
         break;
+
 	}
 	
 	if(key == DIK_F10 && (!LeftShift && !RightShift))
@@ -274,9 +359,69 @@ bool mouse_down(int click)
     }
     else if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME && LeftAlt)
     {
+        uint16 hx = 0;
+        uint16 hy = 0;
+        if(GetMonitorHex(__MouseX, __MouseY, hx, hy))
+        {
+            if(click == MOUSE_CLICK_LEFT)
+            {
+                RunServerScriptUnsafe("followers_menu@unsafe_Command", COMMAND_MOVE, hx, hy, null, null);
+                return true;
+            }
+            if(click == MOUSE_CLICK_RIGHT)
+            {
+                RunServerScriptUnsafe("followers_menu@unsafe_Command", COMMAND_ATTACK, hx, hy, null, null);
+                return true;
+            }
+            if(click == MOUSE_CLICK_MIDDLE)
+            {
+                RunServerScriptUnsafe("followers_menu@unsafe_Command", COMMAND_DEFEND, hx, hy, null, null);
+                return true;
+            }
+        }
+        return true;
+    }
+    else if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME && RightAlt)
+    {
         ChangeCursor(CURSOR_DEFAULT);
         GUI_ShowScreen(CLIENT_SCREEN_FOLLOWERSMENU, __MouseX, __MouseY, 0);
         return(true);
+    }
+    else if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME && __RTSCombat)
+    {
+        if(click == MOUSE_CLICK_WHEEL_UP || click == MOUSE_CLICK_WHEEL_DOWN)
+        {
+            SetRtsLeftAction(__ConfigRtsLeftAction == RTS_LEFT_ATTACK ? RTS_LEFT_INTERACT : RTS_LEFT_ATTACK);
+            ApplyRtsCursor();
+            SaveRtsConfig();
+            return true;
+        }
+
+        if(click == MOUSE_CLICK_RIGHT)
+        {
+            RtsCursorBeforeMove = GetCurrentCursor();
+            RtsMoveCursorPreview = true;
+            ChangeCursor(CURSOR_MOVE);
+            TryRtsMove();
+            return true;
+        }
+
+        if(click == MOUSE_CLICK_LEFT)
+        {
+            if(GetCurrentCursor() == CURSOR_USE_SKILL)
+                return GUI_MouseDown(__MouseX, __MouseY, click);
+
+            if(__ConfigRtsLeftAction == RTS_LEFT_ATTACK)
+            {
+                bool result = GUI_MouseDown(__MouseX, __MouseY, click);
+                ApplyRtsCursor();
+                return result;
+            }
+
+            return GUI_MouseDown(__MouseX, __MouseY, click);
+        }
+
+        return GUI_MouseDown(__MouseX, __MouseY, click);
     }
     /*
        else if( GetCurrentCursor() == CURSOR_USE_WEAPON && click == MOUSE_CLICK_LEFT &&
@@ -301,7 +446,18 @@ bool mouse_up(int click)
 {
     IndicatorMouse(false, 0);
 
-    return(GUI_MouseUp(__MouseX, __MouseY, click));
+    bool result = GUI_MouseUp(__MouseX, __MouseY, click);
+
+    if(__RTSCombat && click == MOUSE_CLICK_RIGHT && RtsMoveCursorPreview)
+    {
+        RtsMoveCursorPreview = false;
+        if(RtsCursorBeforeMove == CURSOR_MOVE)
+            ApplyRtsCursor();
+        else
+            ChangeCursor(RtsCursorBeforeMove);
+    }
+
+    return result;
 }
 
 void mouse_move(int x, int y)

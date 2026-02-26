@@ -250,6 +250,7 @@ float __EffectValue7;
 float __EffectValue8;
 float __EffectValue9;
 bool __AlwaysRun;
+bool __RTSCombat;
 uint __AlwaysRunMoveDist;
 uint __AlwaysRunUseDist;
 uint __CritterFidgetTime;

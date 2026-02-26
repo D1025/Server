@@ -457,24 +457,89 @@ void unsafe_UseJetAntidote(Critter& player, int, int, int, string@, array<int>@)
 	}
 }
 
-//Can be also added check for ST_FACTION_RANK from officer (4) and leader (5)
+#define COMMAND_PING_DURATION                  (REAL_SECOND(10))
+
+bool IsCommandRecipient(Critter& sender, Critter& target, bool useArenaTeam, int senderArenaTeam)
+{
+    if(sender.Id == target.Id)
+        return true;
+
+    if(useArenaTeam)
+        return target.Stat[ST_VAR9] == senderArenaTeam;
+
+    if(sender.Stat[ST_TEAM_ID] >= 200)
+        return target.Stat[ST_TEAM_ID] == sender.Stat[ST_TEAM_ID];
+
+    return false;
+}
+
+void SetCommandPing(Critter& cr, int command, int hexX, int hexY)
+{
+    cr.StatBase[ST_COMMAND] = command;
+    cr.StatBase[ST_COMMAND_X] = hexX;
+    cr.StatBase[ST_COMMAND_Y] = hexY;
+}
+
+uint e_ClearCommand(uint[]@ values)
+{
+    if(!valid(values) || values.length() < 4)
+        return 0;
+
+    Critter@ cr = GetCritter(values[0]);
+    if(!valid(cr))
+        return 0;
+
+    int command = int(values[1]);
+    int hexX = int(values[2]);
+    int hexY = int(values[3]);
+
+    // Don't clear command if it was already replaced by a newer ping.
+    if(cr.Stat[ST_COMMAND] != command || cr.Stat[ST_COMMAND_X] != hexX || cr.Stat[ST_COMMAND_Y] != hexY)
+        return 0;
+
+    SetCommandPing(cr, COMMAND_NONE, 0, 0);
+    return 0;
+}
+
+// Can be also added check for ST_FACTION_RANK from officer (4) and leader (5).
 void unsafe_Command(Critter& player, int command, int hexX, int hexY, string@, int[]@)
 {
-	Map@ map = player.GetMap();
-	    if(!valid(map))
+    Map@ map = player.GetMap();
+    if(!valid(map))
         return;
-	player.StatBase[ST_COMMAND]=command;
-	player.StatBase[ST_COMMAND_X]=hexX;
-	player.StatBase[ST_COMMAND_Y]=hexY;
-	array<Critter@> crits;
-	map.GetCritters(0,FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO,crits);
-	for(uint i = 0; i < crits.length(); i++)
-	{
-		if((crits[i].Stat[ST_TEAM_ID] == player.Stat[ST_TEAM_ID]) && player.Stat[ST_TEAM_ID] >= 200)
-		{
-			crits[i].StatBase[ST_COMMAND] = player.Stat[ST_COMMAND];
-			crits[i].StatBase[ST_COMMAND_X] = player.Stat[ST_COMMAND_X];
-			crits[i].StatBase[ST_COMMAND_Y] = player.Stat[ST_COMMAND_Y];
-		}
-	}
+
+    if(command < COMMAND_NONE || command > COMMAND_DEFEND)
+        return;
+
+    if(command != COMMAND_NONE && (hexX <= 0 || hexY <= 0))
+        return;
+
+    bool useArenaTeam = false;
+    int  senderArenaTeam = player.Stat[ST_VAR9];
+    Location@ loc = map.GetLocation();
+    if(valid(loc) && loc.GetProtoId() == LOCATION_Hinkley && (senderArenaTeam == 1 || senderArenaTeam == 2))
+        useArenaTeam = true;
+
+    array<Critter@> crits;
+    map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, crits);
+
+    for(uint i = 0, len = crits.length(); i < len; i++)
+    {
+        if(!IsCommandRecipient(player, crits[i], useArenaTeam, senderArenaTeam))
+            continue;
+
+        SetCommandPing(crits[i], command, hexX, hexY);
+
+        if(command != COMMAND_NONE)
+        {
+            uint[] pingData =
+            {
+                crits[i].Id,
+                uint(command),
+                uint(hexX),
+                uint(hexY)
+            };
+            CreateTimeEvent(AFTER(COMMAND_PING_DURATION), "followers_menu@e_ClearCommand", pingData, true);
+        }
+    }
 }

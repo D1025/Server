@@ -547,6 +547,7 @@ struct GameOptions
     const float        SpritesZoomMin;
     const float        EffectValues[ EFFECT_SCRIPT_VALUES ];
     const bool         AlwaysRun;
+    const bool         RTSCombat;
     const int          AlwaysRunMoveDist;
     const int          AlwaysRunUseDist;
     const ScriptString KeyboardRemap;
