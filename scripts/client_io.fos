@@ -417,10 +417,17 @@ bool mouse_down(int click)
 
         if(click == MOUSE_CLICK_RIGHT)
         {
+            // Let UI/hardcoded interactions use RMB first (e.g. weapon mode switch on interface).
+            if(GUI_MouseDown(__MouseX, __MouseY, click))
+                return true;
+
+            // If no valid move target/hex, don't steal RMB from default engine handling.
+            if(!TryRtsMove())
+                return false;
+
             RtsCursorBeforeMove = GetCurrentCursor();
             RtsMoveCursorPreview = true;
             ChangeCursor(CURSOR_MOVE);
-            TryRtsMove();
             return true;
         }
 
