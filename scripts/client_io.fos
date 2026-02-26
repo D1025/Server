@@ -399,6 +399,11 @@ bool mouse_down(int click)
             if(GUI_MouseDown(__MouseX, __MouseY, click))
                 return true;
 
+            // Outside map hexes (chat/interface area), don't steal wheel from default engine handling.
+            uint16 hx = 0, hy = 0;
+            if(!GetMonitorHex(__MouseX, __MouseY, hx, hy))
+                return false;
+
             SetRtsLeftAction(__ConfigRtsLeftAction == RTS_LEFT_ATTACK ? RTS_LEFT_INTERACT : RTS_LEFT_ATTACK);
             ApplyRtsCursor();
             SaveRtsConfig();
