@@ -118,6 +118,8 @@ bool TryRtsMove()
         return false;
 
     uint run = __AlwaysRun ? 1 : 0;
+    if(LeftShift || RightShift)
+        run = (run == 0 ? 1 : 0);
 
     CritterCl@ target = GetMonitorCritter(__MouseX, __MouseY);
     if(valid(target) && target.Id != chosen.Id)
@@ -357,7 +359,7 @@ bool mouse_down(int click)
         GUI_ShowScreen(CLIENT_SCREEN_DEVMENU, __MouseX, __MouseY, 0);
         return(true);
     }
-    else if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME && LeftAlt)
+    else if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME && (LeftCtrl || RightCtrl))
     {
         uint16 hx = 0;
         uint16 hy = 0;
