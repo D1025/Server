@@ -391,6 +391,14 @@ bool mouse_down(int click)
     {
         if(click == MOUSE_CLICK_WHEEL_UP || click == MOUSE_CLICK_WHEEL_DOWN)
         {
+            // Keep default zoom behavior (e.g. Z + wheel) in RTS mode.
+            if(__MapZooming || GUI_IsKeyPressed(DIK_Z))
+                return GUI_MouseDown(__MouseX, __MouseY, click);
+
+            // Let GUI consume wheel first (chat/message box and other UI scrollables).
+            if(GUI_MouseDown(__MouseX, __MouseY, click))
+                return true;
+
             SetRtsLeftAction(__ConfigRtsLeftAction == RTS_LEFT_ATTACK ? RTS_LEFT_INTERACT : RTS_LEFT_ATTACK);
             ApplyRtsCursor();
             SaveRtsConfig();
