@@ -1558,6 +1558,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	//### IMPLEMENTACJA melee attack swing i thrust ###
 	//#################################################
 	uint8 use=_WeaponModeUse(attack.weaponMode);
+    bool isSewingAttack = IsSewingAttackByPidUse(weapPid, use);
 	bool isSwing=false;
 	bool isThrust=false;
     
@@ -1805,7 +1806,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	// isCritical end
 	
     // Heavy Handed Trait
-    if(validAttacker && attack.IsUnarmed && attacker.Trait[TRAIT_HEAVY_HANDED] > 0)
+    if(validAttacker && attack.IsUnarmed && !isSewingAttack && attacker.Trait[TRAIT_HEAVY_HANDED] > 0)
     {
         int bonus = (valid(realWeaponTarget) && realWeaponTarget.Proto.Weapon_Perk == WEAPON_PERK_HAND_TO_HAND ? 1 : 0) - (valid(realWeapon) && realWeapon.Proto.Weapon_Perk == WEAPON_PERK_HAND_TO_HAND ? 1 : 0);
         if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + bonus < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
