@@ -394,6 +394,10 @@ bool mouse_down(int click)
     }
     else if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME && __RTSCombat)
     {
+        // Keep internal RTS action in sync with the visible cursor
+        // (e.g. after opening/closing inventory screens).
+        SyncRtsLeftActionFromCursor();
+
         if(click == MOUSE_CLICK_WHEEL_UP || click == MOUSE_CLICK_WHEEL_DOWN)
         {
             // Keep default zoom behavior (e.g. Z + wheel) in RTS mode.
