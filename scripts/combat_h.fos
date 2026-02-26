@@ -51,5 +51,6 @@
 // melee weapon attack mode by Cubik & John (from 2155)
 #define MODE_PRIMARY_ATTACK                 (0)
 #define MODE_SECONDARY_ATTACK               (1)
+#define MODE_THIRD_ATTACK                   (2)
 
 #endif // _COMBAT_H_
