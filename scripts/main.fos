@@ -2530,7 +2530,7 @@ void critter_idle(Critter& cr)
             if(cr.Stat[ST_HEALING_RATE] > 0)
 			{
 			    int maxhp = GetActualMaxHp(cr);
-			    int hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 4) * (100 - CLAMP(cr.StatBase[ST_POISONING_LEVEL], 0, 100))/100;
+			    int hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 4) * (100 - (CLAMP(cr.StatBase[ST_POISONING_LEVEL]*4/10), 0, 100))/100;
 				cr.StatBase[ST_CURRENT_HP] += hpFromHealingRate;
 				if (cr.DamageBase[DAMAGE_EYE] == 0)
 				    cr.StatBase[ST_HP_HEAD] += hpFromHealingRate;

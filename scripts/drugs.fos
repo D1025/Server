@@ -601,7 +601,7 @@ void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
 uint cte_SuperStimHealing(Critter& cr, int identifier, uint& rate) {
     if(cr.IsDead())
         return 0;
-    int heal = (cr.Stat[ST_HEALING_RATE] * (100 - CLAMP(cr.Stat[ST_POISONING_LEVEL], 0, 100))) / 100;
+    int heal = (cr.Stat[ST_HEALING_RATE] * (100 - CLAMP(cr.Stat[ST_POISONING_LEVEL]*4/10, 0, 100))) / 100;
     int maxHp = GetActualMaxHp(cr);
     cr.StatBase[ST_CURRENT_HP] += heal;
     cr.StatBase[ST_HP_HEAD] += heal;
