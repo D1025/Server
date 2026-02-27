@@ -488,8 +488,8 @@ void speedboost(Critter& cr)
     	bonus+=20;
 
     // Kilo of cocaine movement phases:
-    // stage 1 (first 10s): +40 movement speed equivalent
-    // stage 2 (next 10s): -10 movement speed equivalent
+    // stage 1 (first 10s): +100 movement speed equivalent
+    // stage 2 (next 10s): -100 movement speed equivalent
     if(cocaineStage == 1)
         bonus += 100;
     else if(cocaineStage == 2)
