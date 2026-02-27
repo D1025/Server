@@ -491,9 +491,9 @@ void speedboost(Critter& cr)
     // stage 1 (first 10s): +40 movement speed equivalent
     // stage 2 (next 10s): -10 movement speed equivalent
     if(cocaineStage == 1)
-        bonus += 40;
+        bonus += 100;
     else if(cocaineStage == 2)
-        penalty += 10;
+        penalty += 100;
 	
 	if (valid(CritterArmor))
 	{
