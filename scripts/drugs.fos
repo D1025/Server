@@ -168,6 +168,28 @@ int ApplyPoisonHealingReduction(Critter& cr, uint16 drugPid, int amount)
     return (amount * (100 - CLAMP(cr.Stat[ST_POISONING_LEVEL] * 4 / 10, 0, 100))) / 100;
 }
 
+bool IsHealingItemForApPenalty(uint16 pid)
+{
+    return pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK || pid == PID_HYPO ||
+           pid == PID_MUTATED_FRUIT || IsLowPureHealingDrug(pid);
+}
+
+void ApplyHealingPowderApPenalty(Critter& cr, uint16 pid)
+{
+    if(!HasHealingPowderCooldownBonus(cr) || !IsHealingItemForApPenalty(pid))
+        return;
+
+    // Apply AP penalty after the engine completes item use AP processing.
+    cr.AddTimeEvent("cte_HealingPowderApPenalty", 0, pid);
+}
+
+uint cte_HealingPowderApPenalty(Critter& cr, int identifier, uint& rate)
+{
+    int currentAp = cr.Stat[ST_CURRENT_AP];
+    cr.StatBase[ST_CURRENT_AP] = 100 *  (currentAp - 2);
+    return 0;
+}
+
 void UseDrug(Critter& cr, Item& drug)   // Export
 {
     uint pid = drug.GetProtoId();
@@ -219,6 +241,7 @@ void UseDrug(Critter& cr, Item& drug)   // Export
         SetDrug(cr, pid);
         SetDrugCooldown(cr, pid);
         _SubItem(drug, 1);
+        ApplyHealingPowderApPenalty(cr, uint16(pid));
     }
     if(pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK || pid == PID_HYPO)
     {
@@ -416,6 +439,7 @@ void UseDrugOn(Critter& cr, Critter& onCr, Item& drug)   // Export
     onCr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_SUCC);
     SetDrug(onCr, pid);
     _SubItem(drug, 1);
+    ApplyHealingPowderApPenalty(cr, uint16(pid));
 
     if((pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK))
     {

@@ -109,6 +109,30 @@ bool IsRunning(CritterMutual& cr);
 int GetArmorDR(CritterMutual& cr, int dmgType, const Item* armor);
 int GetArmorDT(CritterMutual& cr, int dmgType, const Item* armor);
 
+static bool IsHealingItemWithExtraApCost(const Item& item)
+{
+	switch(item.GetProtoId())
+	{
+	case 40:
+	case 144:
+	case 525:
+	case 9655:
+	case 605:
+	case 533:
+	case 103:
+	case 81:
+	case 378:
+	case 71:
+	case 47:
+	case 408:
+	case 91:
+	case 409:
+		return true;
+	default:
+		return false;
+	}
+}
+
 // utils.dll mixing for client
 #ifdef __CLIENT
 extern void RegisterAngelScriptExtensions();
@@ -661,6 +685,10 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 			apCost = FOnline->TbApCostUseItem;
 		else
 			apCost = FOnline->RtApCostUseItem;
+		
+		if(item.GetProtoId()==144) apCost=5;
+		if(getParam_Timeout(cr, TO_HEALING_POWDER) > 0 && IsHealingItemWithExtraApCost(item))
+			apCost += 2;
 	}
 	else if(use == USE_RELOAD)
 	{
@@ -688,7 +716,6 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 	}
 
 	if(apCost < 1) apCost = 1;
-	if(item.GetProtoId()==144) apCost=5;
 	return apCost;
 }
 

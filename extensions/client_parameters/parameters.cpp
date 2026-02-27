@@ -67,6 +67,30 @@ uint GetAimHit(int hitLocation);
 uint GetMultihex(CritterMutual& cr);
 Item* GetHeadArmor(CritterMutual& cr);
 
+static bool IsHealingItemWithExtraApCost(const Item& item)
+{
+	switch(item.GetProtoId())
+	{
+	case 40:
+	case 144:
+	case 525:
+	case 9655:
+	case 605:
+	case 533:
+	case 103:
+	case 81:
+	case 378:
+	case 71:
+	case 47:
+	case 408:
+	case 91:
+	case 409:
+		return true;
+	default:
+		return false;
+	}
+}
+
 /************************************************************************/
 /* Initialization                                                       */
 /************************************************************************/
@@ -499,6 +523,10 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 			apCost = Game->TbApCostUseItem;
 		else
 			apCost = Game->RtApCostUseItem;
+		
+		if(item.GetProtoId()==144) apCost=5;
+		if(getParam_Timeout(cr, TO_HEALING_POWDER) > 0 && IsHealingItemWithExtraApCost(item))
+			apCost += 2;
 	}
 	else if(use == USE_RELOAD)
 	{
