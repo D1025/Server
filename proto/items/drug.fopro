@@ -451,3 +451,18 @@ Cost=1
 Material=7
 CraftLevel=1
 
+[Proto]
+ProtoId=29990
+Type=2
+PicMap=art\items\drugs\hpowder.frm
+PicInv=art\inven\1_kilogram_of_Cocaine.png
+Flags=150994974
+DisableEgg=1
+Stackable=1
+Weight=1000
+Volume=1
+SoundId=48
+Cost=2500
+Material=1
+CraftLevel=2
+

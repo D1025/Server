@@ -448,7 +448,8 @@ enum ConsumableDrug
     PID_MENTATS                                                     = 53,
     PID_BUFFOUT                                                     = 87,
     PID_PSYCHO                                                      = 110,
-    PID_JET                                                         = 259
+    PID_JET                                                         = 259,
+    PID_KILO_OF_COCAINE                                     = 29990
 };
 
 enum ConsumableFood

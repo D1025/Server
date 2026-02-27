@@ -695,6 +695,7 @@
 #define TO_ROENTGEN_RUM                          (983)
 #define TO_HEALING_POWDER                        (984)
 #define TO_ROT_GUT                               (985)
+#define TO_KILO_OF_COCAINE                       (986)
 
 /// Kills
 // Reserved 260..299 (BT_MEN..BT_BIG_BAD_BOSS)
@@ -1732,7 +1733,7 @@
 # pragma crdata "Stat 0 199"
 # pragma crdata "Skill 200 217"
 # pragma crdata "TagSkill 226 229"
-# pragma crdata "Timeout 950 985"
+# pragma crdata "Timeout 950 986"
 # pragma crdata "Kill 260 283"
 # pragma crdata "Perk 300 469"
 # pragma crdata "Addiction 470 478"

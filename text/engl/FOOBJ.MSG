@@ -9869,6 +9869,8 @@ a58ew64v}
 {2554601}{}{The specific size of a leather jacket, probably designed only for mutants}
 {2554700}{}{Plating Mutant Armor}
 {2554701}{}{It is crude armor that uses straps of leather and metal bands to form a sparse but effective covering. It can only be worn by super mutants. }
+{2999000}{}{Cocaine Brick}
+{2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 #====================
 # 11355 to 11405 are tiles! next proto can start at 11406!
 #====================

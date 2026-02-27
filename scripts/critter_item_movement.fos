@@ -412,6 +412,19 @@ int GetMaxLife(Critter& cr)
     return CLAMP(val, 1, 9999);
 }
 
+uint GetKiloOfCocaineStage(Critter& cr)
+{
+    if(cr.Timeout[TO_KILO_OF_COCAINE] <= 0)
+        return 0;
+
+    array<uint> indexes;
+    array<uint> rates;
+    if(cr.GetTimeEvents(PID_KILO_OF_COCAINE, indexes, null, rates) == 0 || rates.length() == 0)
+        return 1;
+
+    return (rates[0] & 0xFFFFFF);
+}
+
 //Speed boost bonus for runing. 1 is 0,5%
 void speedboost(Critter& cr)
 {
@@ -434,12 +447,13 @@ void speedboost(Critter& cr)
     bool berserkActive = false;
     if(cr.Trait[TRAIT_BERSERKER] == 1)
         berserkActive = ((cr.Stat[ST_CURRENT_HP] * 100) / GetMaxLife(cr)) <= 50;
+    uint cocaineStage = GetKiloOfCocaineStage(cr);
 
     uint armorPid = valid(CritterArmor) ? CritterArmor.GetProtoId() : 0;
     uint weapon1Pid = valid(weapon1) ? weapon1.ProtoId : 0;
     uint weapon2Pid = valid(weapon2) ? weapon2.ProtoId : 0;
     string state = "" + skill + "|" + penalty + "|" + armorPid + "|" + weapon1Pid + "|" + weapon2Pid + "|" + skillNum1 + "|" + skillNum2 + "|" +
-                   cr.Perk[PE_BONUS_HTH_DAMAGE] + "|" + cr.Perk[PE_BONUS_MOVE] + "|" + cr.Trait[TRAIT_SMALL_FRAME] + "|" + cr.Trait[TRAIT_BRUISER] + "|" + (berserkActive ? 1 : 0);
+                   cr.Perk[PE_BONUS_HTH_DAMAGE] + "|" + cr.Perk[PE_BONUS_MOVE] + "|" + cr.Trait[TRAIT_SMALL_FRAME] + "|" + cr.Trait[TRAIT_BRUISER] + "|" + (berserkActive ? 1 : 0) + "|" + cocaineStage;
 
     string key = "" + cr.Id;
     string lastState;
@@ -472,6 +486,14 @@ void speedboost(Critter& cr)
 
     if (cr.Trait[TRAIT_BERSERKER]==1 && berserkActive)
     	bonus+=20;
+
+    // Kilo of cocaine movement phases:
+    // stage 1 (first 10s): +40 movement speed equivalent
+    // stage 2 (next 10s): -10 movement speed equivalent
+    if(cocaineStage == 1)
+        bonus += 40;
+    else if(cocaineStage == 2)
+        penalty += 10;
 	
 	if (valid(CritterArmor))
 	{

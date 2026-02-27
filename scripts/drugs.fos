@@ -49,6 +49,8 @@ bool IsDrugCooldownActive(Critter& cr, uint pid)
         return cr.Timeout[TO_MINOR_HEAL] > 0;
     if(pid == PID_ANTIDOTE)
         return cr.Timeout[TO_ANTIDOTE] > 0;
+    if(pid == PID_KILO_OF_COCAINE)
+        return cr.Timeout[TO_KILO_OF_COCAINE] > 0;
     return false;
 }
 
@@ -82,6 +84,15 @@ void SetDrugCooldown(Critter& cr, uint pid)
 
 uint GetDrugStageDurationTimer(uint16 drugPid, uint stage, uint flags)
 {
+    if(drugPid == PID_KILO_OF_COCAINE)
+    {
+        if(stage == 0 || stage == 1)
+            return REAL_SECOND(10);
+        if(stage == 2)
+            return REAL_MINUTE(2);
+        return 0;
+    }
+
     int index = GetDrugTableIndex(drugPid);
     uint duration = DrugEffects[index + TABLE_DURATION(stage)];
 
@@ -333,6 +344,11 @@ void UseDrug(Critter& cr, Item& drug)   // Export
         }
         cr.PlaySound("jet.ogg", true);
     }
+    else if(pid == PID_KILO_OF_COCAINE)
+    {
+        VerboseAction(cr, "uses cocaine");
+        cr.PlaySound("jet.ogg", true);
+    }
     else if(pid == PID_PSYCHO)
     {
         VerboseAction(cr, "injects psycho");
@@ -543,6 +559,9 @@ void SetDrug(Critter& cr, uint16 drugPid)
     // Make Healing Powder bonus available immediately after use.
     if(drugPid == PID_HEALING_POWDER)
         SetDrugTimer(cr, drugPid, GetDrugStageDurationTimer(drugPid, 0, flags));
+    // Make cocaine timer visible and blocking immediately after use.
+    if(drugPid == PID_KILO_OF_COCAINE)
+        SetDrugTimer(cr, drugPid, GetDrugStageDurationTimer(drugPid, 0, flags));
 
     // Other drugs
     array<uint> indexes;
@@ -622,6 +641,26 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
         durationTimer = GetDrugStageDurationTimer(drugPid, stage, flags);
         SetDrugTimer(cr, drugPid, durationTimer);
     }
+    else if(stage == 2 && drugPid == PID_KILO_OF_COCAINE && !drugRefreshed)
+    {
+        // Transition from crash to rest phase: remove temporary slowdown.
+        if(cr.Trait[TRAIT_CHEM_RESISTANT] == 0)
+        {
+            for(uint i = 0; i < 5; i++)
+            {
+                int stat = DrugEffects[index + TABLE_STAT(i)];
+                int amount = DrugEffects[index + TABLE_AMOUNT(i, 2)];
+                if(stat < 0 || amount == 0)
+                    continue;
+
+                if(stat < STAT_EXT_BEGIN)
+                    cr.StatBase[STAT_EXT_BEGIN + stat] += amount;
+            }
+        }
+
+        durationTimer = GetDrugStageDurationTimer(drugPid, stage, flags);
+        SetDrugTimer(cr, drugPid, durationTimer);
+    }
 
     stage++;
     rate = FORM_RATE(stage, flags);
@@ -693,6 +732,9 @@ void SetDrugTimer(Critter& cr, uint16 drugPid, uint timer)
         break;
     case PID_ROT_GUT:
         _SetTimeout(cr, TO_ROT_GUT, timer);
+        break;
+    case PID_KILO_OF_COCAINE:
+        _SetTimeout(cr, TO_KILO_OF_COCAINE, timer);
         break;
     case PID_JET:
         _SetTimeout(cr, TO_JET, timer);

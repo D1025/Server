@@ -343,6 +343,7 @@
 #define PID_BUFFOUT                         (87)
 #define PID_PSYCHO                          (110)
 #define PID_JET                             (259)
+#define PID_KILO_OF_COCAINE                 (29990)
 
 //Other
 #define PID_MUTATED_FRUIT                   (71)

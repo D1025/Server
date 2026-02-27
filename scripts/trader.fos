@@ -1175,6 +1175,16 @@ void AddItems(Critter@ npc, array<int>@ tvalues, array<Item@>@ items)
             // Log(""+npc.Id+","+type+","+level+" SI end with "+tval);
         }
     }
+    // Keep cocaine available at every trader.
+    if(npc.CountItem(PID_KILO_OF_COCAINE) == 0)
+    {
+        uint cocaineAmount = MAX(1, GetTraderLevel(npc, ITEMTYPE_DRUG));
+        cocaineAmount = CLAMP(cocaineAmount, 1, 3);
+        Item@ cocaine = npc.AddItem(PID_KILO_OF_COCAINE, cocaineAmount);
+        if(valid(items) && valid(cocaine))
+            items.insertLast(cocaine);
+    }
+
     if(caps > 0)     // these caps come from not-listed items
     {
         Item@ it = npc.AddItem(PID_BOTTLE_CAPS, caps);
