@@ -235,7 +235,13 @@ void UseDrug(Critter& cr, Item& drug)   // Export
                                      activePid == PID_RADAWAY || activePid == PID_WATERBAG || activePid == PID_BOTTLE_FULL ||
                                      activePid == PID_ANTIDOTE || activePid == PID_RAD_X || activePid == PID_WEAK_HEALING_POWDER
                                     || activePid == PID_MEAT_ON_A_STICK || activePid == PID_IGUANA_ON_A_STICK || activePid == PID_MUTATED_FRUIT);
-            if (activePid != pid && !activeIsGoodDrug) {
+            bool shouldCountDrug = !activeIsGoodDrug;
+            // Kilo of cocaine can be used only when there is a truly free drug slot.
+            // For other drugs keep legacy behavior (refreshing same drug doesn't consume another slot).
+            if (shouldCountDrug && pid != PID_KILO_OF_COCAINE && activePid == pid)
+                shouldCountDrug = false;
+
+            if (shouldCountDrug) {
                 activeDrugs++;
             }
         }
