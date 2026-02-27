@@ -21,13 +21,13 @@ lang=engl
 4 3060 R _item n PID_BUFFOUT + 1 R _script arena@r_TransferItems 0  #
 4 3070 R _item n PID_BEER + 1 R _script arena@r_TransferItems 0  #
 4 3080 R _item n PID_MENTATS + 1 R _script arena@r_TransferItems 0  #
-4 3090 R _item n PID_JET_ANTIDOTE + 1 R _script arena@r_TransferItems 0  #
 4 3110 R _item n PID_BOOZE + 1 R _script arena@r_TransferItems 0  #
 4 3120 R _item n PID_GAMMA_GULP_BEER + 1 R _script arena@r_TransferItems 0  #
 4 3130 R _item n PID_ROENTGEN_RUM + 1 R _script arena@r_TransferItems 0  #
 4 3140 R _item n PID_HEALING_POWDER + 1 R _script arena@r_TransferItems 0  #
 4 3150 R _item n PID_ROT_GUT + 1 R _script arena@r_TransferItems 0  #
-0 3100 @
+4 3160 R _item n PID_JET_ANTIDOTE + 1 R _script arena@r_TransferItems 0  #
+0 3170 @
 4 4000 None 0 @
 5 5000 None 0 &
 
@@ -50,13 +50,13 @@ lang=engl
 {3060}{}{Buffout.}
 {3070}{}{Beer.}
 {3080}{}{Mentants}
-{3090}{}{Drug Antidote.}
-{3100}{}{Nothing.}
 {3110}{}{Booze.}
 {3120}{}{Gamma Gulp Beer.}
 {3130}{}{Roentgen Rum.}
 {3140}{}{Healing Powder.}
 {3150}{}{Rot Gut.}
+{3160}{}{Drug Antidote.}
+{3170}{}{Nothing.}
 {4000}{}{Here you go.}
 {5000}{}{Slow down a bit, you've taken enough for now.}
 
