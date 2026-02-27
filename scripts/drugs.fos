@@ -236,6 +236,7 @@ void UseDrug(Critter& cr, Item& drug)   // Export
 
     if ((pid == PID_SUPER_STIMPAK && cr.Timeout[TO_SUPER_STIMPAK] > 0) || IsDrugCooldownActive(cr, pid)) {
         cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_FAIL_SELF);
+        ApplyHealingPowderApPenalty(cr, uint16(pid));
         return;
     } else {
         SetDrug(cr, pid);
