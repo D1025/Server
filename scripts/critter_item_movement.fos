@@ -491,9 +491,9 @@ void speedboost(Critter& cr)
     // stage 1 (first 10s): +100 movement speed equivalent
     // stage 2 (next 10s): -100 movement speed equivalent
     if(cocaineStage == 1)
-        bonus += 100;
+        bonus += 50;
     else if(cocaineStage == 2)
-        penalty += 100;
+        penalty += 500;
 	
 	if (valid(CritterArmor))
 	{
@@ -521,8 +521,7 @@ void speedboost(Critter& cr)
 		}
 	}
 		
-    //int runTime = CLAMP(200 - bonus + penalty, 80, 300);                    // Formula
-    int runTime = 200 - bonus + penalty;
+    int runTime = CLAMP(200 - bonus + penalty, 100, 300);                    // Formula
     if(cr.Stat[ST_RUN_TIME] != runTime)
 	    cr.StatBase[ST_RUN_TIME] = runTime;
 	}
