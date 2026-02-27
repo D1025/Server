@@ -521,7 +521,7 @@ void speedboost(Critter& cr)
 		}
 	}
 		
-    int runTime = CLAMP(200 - bonus + penalty, 120, 224);                    // Formula
+    int runTime = CLAMP(200 - bonus + penalty, 80, 300);                    // Formula
     if(cr.Stat[ST_RUN_TIME] != runTime)
 	    cr.StatBase[ST_RUN_TIME] = runTime;
 	}
