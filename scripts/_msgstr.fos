@@ -546,6 +546,7 @@
 #define STR_DRUG_PARISH                 (10305)
 #define STR_DRUG_USE_ON_SUCC            (10306)
 #define STR_DRUG_USE_ON_FAIL            (10307)
+#define STR_DRUG_USE_FAIL_SELF          (10308)
 // Books
 #define STR_BOOK_READ_SUCCESS           (10450)
 #define STR_BOOK_READ_FAIL              (10451)
@@ -654,15 +655,18 @@
 #define STR_SKILL_OUTDOORSMAN_DESCRIPTION	(102172)
 
 //Timeouts
-#define STR_GAME_TO_SK_FIRST_AID             (102301)
-#define STR_GAME_TO_SK_DOCTOR                (102311)
-#define STR_GAME_TO_SK_REPAIR                (102321) 
-#define STR_GAME_TO_SK_SCIENCE               (102331) 
-#define STR_GAME_TO_SK_LOCKPICK              (102341)
-#define STR_GAME_TO_SK_STEAL                 (102351)
-#define STR_GAME_TO_BATTLE                   (102381)
-#define STR_GAME_TO_SK_SNEAK                 (102431)
-#define STR_GAME_TO_REPLICATION              (102411)
+#define STR_GAME_TO_SK_FIRST_AID             (109501)
+#define STR_GAME_TO_SK_DOCTOR                (109511)
+#define STR_GAME_TO_SK_REPAIR                (109521) 
+#define STR_GAME_TO_SK_SCIENCE               (109531) 
+#define STR_GAME_TO_SK_LOCKPICK              (109541)
+#define STR_GAME_TO_SK_STEAL                 (109551)
+#define STR_GAME_TO_BATTLE                   (109581)
+#define STR_GAME_TO_SK_SNEAK                 (109771)
+#define STR_GAME_TO_REPLICATION              (109611)
+#define STR_GAME_TO_STIMPAK                  (109781)
+#define STR_GAME_TO_MINOR_HEAL               (109791)
+#define STR_GAME_TO_ANTIDOTE                 (109801)
 
 
 //***************************************************************************************

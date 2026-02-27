@@ -504,6 +504,7 @@
 #define STR_DRUG_PARISH                 (10305)
 #define STR_DRUG_USE_ON_SUCC            (10306)
 #define STR_DRUG_USE_ON_FAIL            (10307)
+#define STR_DRUG_USE_FAIL_SELF          (10308)
 // Books
 #define STR_BOOK_READ_SUCCESS           (10450)
 #define STR_BOOK_READ_FAIL              (10451)

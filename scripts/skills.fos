@@ -35,6 +35,24 @@ void ClearSkillWearinessCache(Critter& cr)
     SkillWearinessMessageTick.delete("" + cr.Id + ":" + SK_DOCTOR);
 }
 
+bool HasHealingPowderCooldownBonus(Critter& cr)
+{
+    if(cr.Timeout[TO_HEALING_POWDER] > 0)
+        return true;
+
+    array<uint> indexes;
+    return cr.GetTimeEvents(PID_HEALING_POWDER, indexes, null, null) > 0;
+}
+
+uint ApplyHealingPowderCooldownBonus(Critter& cr, uint cooldown)
+{
+    if(!HasHealingPowderCooldownBonus(cr))
+        return cooldown;
+
+    uint reducedCooldown = (cooldown * 90) / 100;
+    return reducedCooldown > 0 ? reducedCooldown : 1;
+}
+
 Item@ SelectSkillItem(Critter& cr, Item@ item, uint16 skill)
 {
     Item@ handItem = _CritGetItemHand(cr);
@@ -125,7 +143,8 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self)
         targetCr.Say(SAY_NETMSG, "Hit Points +" + heal);
 
-    _SetTimeout(cr, TO_SK_FIRST_AID, REAL_SECOND((100-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
+    uint firstAidCooldown = REAL_SECOND((100-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) );
+    _SetTimeout(cr, TO_SK_FIRST_AID, ApplyHealingPowderCooldownBonus(cr, firstAidCooldown));
 
     cr.StatBase[ST_EXPERIENCE] += heal * 3*(GetGvar(GVAR_experience_multipler));
     if(_IsTrueNpc(targetCr) && cr.Id != targetCr.Id && IsHumanoid(targetCr) && !IsCurrentEnemy(targetCr, cr.Id))
@@ -227,7 +246,8 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
 	//druto
-	_SetTimeout(cr, TO_SK_DOCTOR, REAL_SECOND((90-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) ));
+    uint doctorCooldown = REAL_SECOND((90-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) );
+	_SetTimeout(cr, TO_SK_DOCTOR, ApplyHealingPowderCooldownBonus(cr, doctorCooldown));
 
     if(uninjured > 0)
     {

@@ -15,6 +15,24 @@
 
 import bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetItem, Scenery@ targetScen) from "main";
 
+bool HasHealingPowderCooldownBonus(Critter& cr)
+{
+    if(cr.Timeout[TO_HEALING_POWDER] > 0)
+        return true;
+
+    array<uint> indexes;
+    return cr.GetTimeEvents(PID_HEALING_POWDER, indexes, null, null) > 0;
+}
+
+uint ApplyHealingPowderCooldownBonus(Critter& cr, uint cooldown)
+{
+    if(!HasHealingPowderCooldownBonus(cr))
+        return cooldown;
+
+    uint reducedCooldown = (cooldown * 90) / 100;
+    return reducedCooldown > 0 ? reducedCooldown : 1;
+}
+
 class ItemSkillUse : IObject
 {
     uint     skill;
@@ -133,10 +151,18 @@ void ApplyToolTimeout(Critter& cr, int skill)
     switch(skill)
     {
     case SK_FIRST_AID:
-        _SetTimeout(cr, TO_SK_FIRST_AID, FIRST_AID_TIMEOUT(cr) - TOOL_TIMEOUT_DIV);
+        {
+            int baseCooldown = int(FIRST_AID_TIMEOUT(cr)) - int(TOOL_TIMEOUT_DIV);
+            uint finalCooldown = baseCooldown > 0 ? uint(baseCooldown) : 1;
+            _SetTimeout(cr, TO_SK_FIRST_AID, ApplyHealingPowderCooldownBonus(cr, finalCooldown));
+        }
         break;
     case SK_DOCTOR:
-        _SetTimeout(cr, TO_SK_DOCTOR, DOCTOR_TIMEOUT(cr) - TOOL_TIMEOUT_DIV);
+        {
+            int baseCooldown = int(DOCTOR_TIMEOUT(cr)) - int(TOOL_TIMEOUT_DIV);
+            uint finalCooldown = baseCooldown > 0 ? uint(baseCooldown) : 1;
+            _SetTimeout(cr, TO_SK_DOCTOR, ApplyHealingPowderCooldownBonus(cr, finalCooldown));
+        }
         break;
     case SK_REPAIR:
         _SetTimeout(cr, TO_SK_REPAIR, REPAIR_TIMEOUT(cr) / TOOL_TIMEOUT_DIV);

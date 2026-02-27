@@ -41,14 +41,142 @@ import int  GetActualMaxHp(Critter@ cr) from "utils";
 // Dumbed Down Drugs (only two stages)
 #define SPECIAL_DRUG                      # (_pid) ((_pid) == PID_MENTATS || (_pid) == PID_BUFFOUT || (_pid) == PID_PSYCHO || (_pid) == PID_JET || (_pid) == PID_BEER || (_pid) == PID_NUKA_COLA || (_pid) == PID_CIGARETTES || (_pid) == PID_SUPER_STIMPAK)
 
+bool IsDrugCooldownActive(Critter& cr, uint pid)
+{
+    if(pid == PID_STIMPAK)
+        return cr.Timeout[TO_STIMPAK] > 0;
+    if(IsLowPureHealingDrug(uint16(pid)))
+        return cr.Timeout[TO_MINOR_HEAL] > 0;
+    if(pid == PID_ANTIDOTE)
+        return cr.Timeout[TO_ANTIDOTE] > 0;
+    return false;
+}
+
+bool HasHealingPowderCooldownBonus(Critter& cr)
+{
+    if(cr.Timeout[TO_HEALING_POWDER] > 0)
+        return true;
+
+    array<uint> indexes;
+    return cr.GetTimeEvents(PID_HEALING_POWDER, indexes, null, null) > 0;
+}
+
+uint ApplyHealingPowderCooldownBonus(Critter& cr, uint cooldown)
+{
+    if(!HasHealingPowderCooldownBonus(cr))
+        return cooldown;
+
+    uint reducedCooldown = (cooldown * 90) / 100;
+    return reducedCooldown > 0 ? reducedCooldown : 1;
+}
+
+void SetDrugCooldown(Critter& cr, uint pid)
+{
+    if(pid == PID_STIMPAK)
+        _SetTimeout(cr, TO_STIMPAK, ApplyHealingPowderCooldownBonus(cr, REAL_SECOND(10)));
+    else if(IsLowPureHealingDrug(uint16(pid)))
+        _SetTimeout(cr, TO_MINOR_HEAL, ApplyHealingPowderCooldownBonus(cr, REAL_SECOND(5)));
+    else if(pid == PID_ANTIDOTE)
+        _SetTimeout(cr, TO_ANTIDOTE, REAL_SECOND(60));
+}
+
+uint GetDrugStageDurationTimer(uint16 drugPid, uint stage, uint flags)
+{
+    int index = GetDrugTableIndex(drugPid);
+    uint duration = DrugEffects[index + TABLE_DURATION(stage)];
+
+    if(FLAG(flags, DRUG_EFFECT_MUL2_DURATION))
+        duration *= 2;
+    if(FLAG(flags, DRUG_EFFECT_DIV2_DURATION))
+        duration /= 2;
+
+    if(stage == 1)
+        return 0;
+    if(stage == 0 && (drugPid == PID_BOOZE || drugPid == PID_GAMMA_GULP_BEER || drugPid == PID_ROENTGEN_RUM ||
+                      drugPid == PID_HEALING_POWDER || drugPid == PID_ROT_GUT))
+        return REAL_MINUTE(30);
+
+    return GAME_MINUTE(duration);
+}
+
+uint GetDrugMaxHealAmount(uint16 drugPid)
+{
+    if(DrugsIdentifiers.find(drugPid) < 0)
+        return 0;
+
+    int index = GetDrugTableIndex(drugPid);
+    uint maxHeal = 0;
+    for(uint i = 0; i < 5; i++)
+    {
+        int stat = DrugEffects[index + TABLE_STAT(i)];
+        if(stat != ST_CURRENT_HP)
+            continue;
+
+        for(uint stage = 0; stage < 5; stage++)
+        {
+            int amount = DrugEffects[index + TABLE_AMOUNT(i, stage)];
+            if(amount > int(maxHeal))
+                maxHeal = uint(amount);
+        }
+    }
+
+    return maxHeal;
+}
+
+bool DrugHasNonHealingEffects(uint16 drugPid)
+{
+    if(DrugsIdentifiers.find(drugPid) < 0)
+        return false;
+
+    int index = GetDrugTableIndex(drugPid);
+    for(uint i = 0; i < 5; i++)
+    {
+        int stat = DrugEffects[index + TABLE_STAT(i)];
+        if(stat < 0 || stat == ST_CURRENT_HP)
+            continue;
+
+        for(uint stage = 0; stage < 5; stage++)
+        {
+            if(DrugEffects[index + TABLE_AMOUNT(i, stage)] != 0)
+                return true;
+        }
+    }
+
+    return false;
+}
+
+bool IsLowPureHealingDrug(uint16 drugPid)
+{
+    if(drugPid == PID_STIMPAK)
+        return false;
+
+    uint stimpakMaxHeal = GetDrugMaxHealAmount(PID_STIMPAK);
+    uint drugMaxHeal = GetDrugMaxHealAmount(drugPid);
+    if(drugMaxHeal == 0 || drugMaxHeal >= stimpakMaxHeal)
+        return false;
+
+    return !DrugHasNonHealingEffects(drugPid);
+}
+
+int ApplyPoisonHealingReduction(Critter& cr, uint16 drugPid, int amount)
+{
+    if(amount <= 0)
+        return amount;
+    if(drugPid != PID_STIMPAK && drugPid != PID_ROT_GUT)
+        return amount;
+
+    return (amount * (100 - CLAMP(cr.Stat[ST_POISONING_LEVEL] * 4 / 10, 0, 100))) / 100;
+}
+
 void UseDrug(Critter& cr, Item& drug)   // Export
 {
     uint pid = drug.GetProtoId();
 
     // Definiowanie isGoodDrug
     bool isGoodDrug = (pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK ||
-                       pid == PID_RADAWAY || pid == PID_WATERBAG || pid == PID_BOTTLE_FULL || pid == PID_HEALING_POWDER ||
-                       pid == PID_ANTIDOTE || pid == PID_RAD_X);
+                       pid == PID_RADAWAY || pid == PID_WATERBAG || pid == PID_BOTTLE_FULL ||
+                       pid == PID_ANTIDOTE || pid == PID_RAD_X || pid == PID_WEAK_HEALING_POWDER
+                        || pid == PID_MEAT_ON_A_STICK || pid == PID_IGUANA_ON_A_STICK || pid == PID_MUTATED_FRUIT);
 
     // Ustalanie limitu narkotyków w zależności od cech
     int drugLimit = 5; // Domyślny limit
@@ -72,22 +200,24 @@ void UseDrug(Critter& cr, Item& drug)   // Export
             uint activePid = identifiers[i];
             bool activeIsGoodDrug = (activePid == PID_STIMPAK || activePid == PID_SUPER_STIMPAK ||
                                      activePid == PID_RADAWAY || activePid == PID_WATERBAG || activePid == PID_BOTTLE_FULL ||
-                                     activePid == PID_HEALING_POWDER || activePid == PID_ANTIDOTE || activePid == PID_RAD_X);
+                                     activePid == PID_ANTIDOTE || activePid == PID_RAD_X || activePid == PID_WEAK_HEALING_POWDER
+                                    || activePid == PID_MEAT_ON_A_STICK || activePid == PID_IGUANA_ON_A_STICK || activePid == PID_MUTATED_FRUIT);
             if (activePid != pid && !activeIsGoodDrug) {
                 activeDrugs++;
             }
         }
         if (activeDrugs >= drugLimit) {
-            cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_FAIL);
+            cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_FAIL_SELF);
             return;
         }
     }
 
-    if (pid == PID_SUPER_STIMPAK && cr.Timeout[TO_SUPER_STIMPAK] > 0) {
-        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_FAIL);
+    if ((pid == PID_SUPER_STIMPAK && cr.Timeout[TO_SUPER_STIMPAK] > 0) || IsDrugCooldownActive(cr, pid)) {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_FAIL_SELF);
         return;
     } else {
         SetDrug(cr, pid);
+        SetDrugCooldown(cr, pid);
         _SubItem(drug, 1);
     }
     if(pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK || pid == PID_HYPO)
@@ -241,12 +371,12 @@ void UseDrugOn(Critter& cr, Critter& onCr, Item& drug)   // Export
 
     // Definiowanie isGoodDrug
     bool isGoodDrug = (pid == PID_STIMPAK || pid == PID_SUPER_STIMPAK ||
-                       pid == PID_RADAWAY || pid == PID_WATERBAG || pid == PID_BOTTLE_FULL || pid == PID_HEALING_POWDER ||
+                       pid == PID_RADAWAY || pid == PID_WATERBAG || pid == PID_BOTTLE_FULL ||
                        pid == PID_ANTIDOTE || pid == PID_RAD_X);
 
     // Jeśli narkotyk nie jest isGoodDrug i nie jest PID_JET_ANTIDOTE
     if (!isGoodDrug && pid != PID_JET_ANTIDOTE) {
-        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_FAIL);
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_FAIL_SELF);
         return;
     }
 
@@ -270,14 +400,15 @@ void UseDrugOn(Critter& cr, Critter& onCr, Item& drug)   // Export
         for (uint i = 0; i < count; i++) {
             uint activePid = identifiers[i];
             bool activeIsGoodDrug = (activePid == PID_STIMPAK || activePid == PID_SUPER_STIMPAK ||
-                                     activePid == PID_RADAWAY || activePid == PID_WATERBAG || activePid == PID_BOTTLE_FULL ||
-                                     activePid == PID_HEALING_POWDER || activePid == PID_ANTIDOTE || activePid == PID_RAD_X);
+                                     activePid == PID_RADAWAY || activePid == PID_WATERBAG || activePid == PID_BOTTLE_FULL
+                                    || activePid == PID_ANTIDOTE || activePid == PID_RAD_X || activePid == PID_WEAK_HEALING_POWDER
+                                    || activePid == PID_MEAT_ON_A_STICK || activePid == PID_IGUANA_ON_A_STICK || activePid == PID_MUTATED_FRUIT);
             if (activePid == pid && !activeIsGoodDrug) {
                 activeDrugs++;
             }
         }
         if (activeDrugs >= drugLimit) {
-            cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_FAIL);
+            cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_FAIL_SELF);
             return;
         }
     }
@@ -374,8 +505,19 @@ void SetDrug(Critter& cr, uint16 drugPid)
         return;
     }
 
+    if(drugPid == PID_ANTIDOTE)
+    {
+        if(cr.Stat[ST_POISONING_LEVEL] > 0)
+            AffectPoison(cr, -cr.Stat[ST_POISONING_LEVEL]);
+        return;
+    }
+
     // Chem flags
     uint flags = 0;
+
+    // Make Healing Powder bonus available immediately after use.
+    if(drugPid == PID_HEALING_POWDER)
+        SetDrugTimer(cr, drugPid, GetDrugStageDurationTimer(drugPid, 0, flags));
 
     // Other drugs
     array<uint> indexes;
@@ -398,7 +540,7 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
         return REAL_YEAR(25);                  // Only after Jet Antidote was used
 
     int  index = GetDrugTableIndex(drugPid);
-    uint duration = 0;
+    uint durationTimer = 0;
 
     bool drugRefreshed = RefreshDrug(cr, drugPid, rate);
 
@@ -425,9 +567,15 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
             if (stage == 1 && cr.Trait[TRAIT_CHEM_RESISTANT] == 1 && amount > 0 && stat != ST_POISONING_LEVEL)
                 amount = 0;
             if(stat < STAT_EXT_BEGIN)
+            {
                 cr.StatBase[STAT_EXT_BEGIN + stat] += amount;
+                // Keep current HP within a reduced max HP cap.
+                if(stat == ST_MAX_LIFE && amount < 0)
+                    cr.StatBase[ST_CURRENT_HP] = MIN(cr.StatBase[ST_CURRENT_HP], GetActualMaxHp(cr));
+            }
             else if(stat == ST_CURRENT_HP)
             {
+                amount = ApplyPoisonHealingReduction(cr, drugPid, amount);
                 cr.StatBase[ST_CURRENT_HP] = CLAMP(statVal + amount, -9999,  GetActualMaxHp(cr));
                 if(amount < 0 && cr.Stat[ST_CURRENT_HP] < 0)
                     cr.ToDead(Random(0, 1) == 0 ? ANIM2_DEAD_FRONT : ANIM2_DEAD_BACK, null);
@@ -446,20 +594,13 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
                 cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_STAT_LOSE, "$name @msg game " + STR_PARAM_NAME(stat) + "@$value" + (-statVal));
         }
 
-        duration = DrugEffects[index + TABLE_DURATION(stage)];
-        if(FLAG(flags, DRUG_EFFECT_MUL2_DURATION))
-            duration *= 2;
-        if(FLAG(flags, DRUG_EFFECT_DIV2_DURATION))
-            duration /= 2;
-
-        if (stage == 1)
-            duration = 0;
-        SetDrugTimer(cr, drugPid, GAME_MINUTE(duration));
+        durationTimer = GetDrugStageDurationTimer(drugPid, stage, flags);
+        SetDrugTimer(cr, drugPid, durationTimer);
     }
 
     stage++;
     rate = FORM_RATE(stage, flags);
-    return GAME_MINUTE(duration);
+    return durationTimer;
 }
 
 
@@ -513,6 +654,21 @@ void SetDrugTimer(Critter& cr, uint16 drugPid, uint timer)
     case PID_BEER:
         _SetTimeout(cr, TO_BEER, timer);
         break;
+    case PID_BOOZE:
+        _SetTimeout(cr, TO_BOOZE, timer);
+        break;
+    case PID_GAMMA_GULP_BEER:
+        _SetTimeout(cr, TO_GAMMA_GULP_BEER, timer);
+        break;
+    case PID_ROENTGEN_RUM:
+        _SetTimeout(cr, TO_ROENTGEN_RUM, timer);
+        break;
+    case PID_HEALING_POWDER:
+        _SetTimeout(cr, TO_HEALING_POWDER, timer);
+        break;
+    case PID_ROT_GUT:
+        _SetTimeout(cr, TO_ROT_GUT, timer);
+        break;
     case PID_JET:
         _SetTimeout(cr, TO_JET, timer);
         break;
@@ -555,15 +711,9 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
 {
     if(cr.IsPlayer())
     {
-        int         index = GetDrugTableIndex(drugPid);
         uint        flags = RATE_TO_FLAGS(rate);
         uint        stage = RATE_TO_STAGE(rate);
-        uint        duration = DrugEffects[index + TABLE_DURATION(stage)];
-
-        if(FLAG(flags, DRUG_EFFECT_MUL2_DURATION))
-            duration *= 2;
-        if(FLAG(flags, DRUG_EFFECT_DIV2_DURATION))
-            duration /= 2;
+        uint        durationTimer = GetDrugStageDurationTimer(drugPid, stage, flags);
 
         array<int>  identifiers;
         array<uint> indexes;
@@ -577,7 +727,7 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
                 if(identifiers[i] == drugPid)
                 {
                     cr.Say(SAY_NETMSG, "Refreshing drug effects.");
-                    cr.ChangeTimeEvent(indexes[i], GAME_MINUTE(duration), rates[i]);
+                    cr.ChangeTimeEvent(indexes[i], durationTimer, rates[i]);
                     return true;
                 }
         }
@@ -589,7 +739,7 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
 void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
     if(cr.IsDead() || cr.Timeout[TO_SUPER_STIMPAK] > 0)
         return;
-    _SetTimeout(cr, TO_SUPER_STIMPAK, REAL_SECOND(45));
+    _SetTimeout(cr, TO_SUPER_STIMPAK, ApplyHealingPowderCooldownBonus(cr, REAL_SECOND(45)));
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(0), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(2), CTE_SUPERSTIMHEALING);
     cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(4), CTE_SUPERSTIMHEALING);

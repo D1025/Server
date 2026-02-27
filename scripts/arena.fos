@@ -1605,6 +1605,7 @@ void OnTeleportToLobby(Critter& cr)   // export
     MakeItemsUseless(cr);
     RemoveSuperStims(cr);
     RemoveAntidote(cr);
+    RemoveWeakHealingPowder(cr);
 	RemoveFAKit(cr);
     RestoreItems(cr);
     UnsetMinigame(cr);
@@ -1640,6 +1641,7 @@ void OnTeleportToArena(Critter& cr)   // export
     MakeItemsUseful(cr);
     AddSuperStims(cr, 5);
     AddAntidote(cr, 3);
+    AddWeakHealingPowder(cr, 5);
 	AddFAKit(cr, 1);
 }
 
@@ -1659,6 +1661,13 @@ void AddSuperStims(Critter& cr, int cnt)
 void AddAntidote(Critter& cr, int cnt)
 {
     Item@ it = cr.AddItem(PID_ANTIDOTE, cnt);
+    it.Val9 = SPECIAL_ITEM_ARENA;
+    it.Update();
+}
+
+void AddWeakHealingPowder(Critter& cr, int cnt)
+{
+    Item@ it = cr.AddItem(PID_WEAK_HEALING_POWDER, cnt);
     it.Val9 = SPECIAL_ITEM_ARENA;
     it.Update();
 }
@@ -1695,6 +1704,15 @@ void RemoveAntidote(Critter& cr)
     if(valid(ss))
     {
         DeleteItem(ss);
+    }
+}
+
+void RemoveWeakHealingPowder(Critter& cr)
+{
+    Item@ weakPowder = cr.GetItem(PID_WEAK_HEALING_POWDER, -1);
+    if(valid(weakPowder))
+    {
+        DeleteItem(weakPowder);
     }
 }
 

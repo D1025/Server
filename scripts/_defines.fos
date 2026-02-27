@@ -652,44 +652,49 @@
 #define TIMEOUT_BEGIN                            (__TimeoutBegin)
 #define TIMEOUT_END                              (__TimeoutEnd)
 #define TIMEOUT_COUNT                            (TIMEOUT_END - TIMEOUT_BEGIN + 1)
-#define TO_SK_FIRST_AID                          (230)
-#define TO_SK_DOCTOR                             (231)
-#define TO_SK_REPAIR                             (232) // Used in engine
-#define TO_SK_SCIENCE                            (233) // Used in engine
-#define TO_SK_LOCKPICK                           (234)
-#define TO_SK_STEAL                              (235)
-#define TO_WEAKENED                              (236)
-#define TO_FIXBOY                                (237)
-#define TO_BATTLE                                (238) // Used in engine
-#define TO_TRANSFER                              (239) // Used in engine
-#define TO_REMOVE_FROM_GAME                      (240) // Used in engine
-#define TO_REPLICATION                           (241)
-#define TO_KARMA_VOTING                          (242) // Used in engine
-#define TO_GATHERING                             (243)
-#define TO_SUPER_STIMPAK                         (244)
-#define TO_HEALING                               (245)
-#define TO_CIGARETTES							 (246)
+#define TO_SK_FIRST_AID                          (950)
+#define TO_SK_DOCTOR                             (951)
+#define TO_SK_REPAIR                             (952) // Used in engine
+#define TO_SK_SCIENCE                            (953) // Used in engine
+#define TO_SK_LOCKPICK                           (954)
+#define TO_SK_STEAL                              (955)
+#define TO_WEAKENED                              (956)
+#define TO_FIXBOY                                (957)
+#define TO_BATTLE                                (958) // Used in engine
+#define TO_TRANSFER                              (959) // Used in engine
+#define TO_REMOVE_FROM_GAME                      (960) // Used in engine
+#define TO_REPLICATION                           (961)
+#define TO_KARMA_VOTING                          (962) // Used in engine
+#define TO_GATHERING                             (963)
+#define TO_SUPER_STIMPAK                         (964)
+#define TO_HEALING                               (965)
+#define TO_CIGARETTES							 (966)
 
-#define TO_NUKA_COLA							 (247)
-#define TO_BEER                                  (248)
+#define TO_NUKA_COLA							 (967)
+#define TO_BEER                                  (968)
 
-// 246..249
-#define TO_GOD_MODE                              (249) // fixes hex camping
-#define TO_PSYCHO							 	 (250)
-#define TO_JET								 	 (251)
-#define TO_IMMUNITY_TIME                         (252)
+// 966..969
+#define TO_GOD_MODE                              (969) // fixes hex camping
+#define TO_PSYCHO							 	 (970)
+#define TO_JET								 	 (971)
+#define TO_IMMUNITY_TIME                         (972)
 
-#define TO_MENTATS							 	 (253)
-#define TO_BUFFOUT							 	 (254)
+#define TO_MENTATS							 	 (973)
+#define TO_BUFFOUT							 	 (974)
 
 // Radiation drugs timeouts
-#define TO_RADAWAY							 	 (255)
-#define TO_RAD_X							 	 (256)
-#define TO_SNEAK                                 (257)
+#define TO_RADAWAY							 	 (975)
+#define TO_RAD_X							 	 (976)
+#define TO_SNEAK                                 (977)
+#define TO_STIMPAK                               (978)
+#define TO_MINOR_HEAL                            (979)
+#define TO_ANTIDOTE                              (980)
 
-
-
-// 253..259
+#define TO_BOOZE                                 (981)
+#define TO_GAMMA_GULP_BEER                       (982)
+#define TO_ROENTGEN_RUM                          (983)
+#define TO_HEALING_POWDER                        (984)
+#define TO_ROT_GUT                               (985)
 
 /// Kills
 // Reserved 260..299 (BT_MEN..BT_BIG_BAD_BOSS)
@@ -1727,7 +1732,7 @@
 # pragma crdata "Stat 0 199"
 # pragma crdata "Skill 200 217"
 # pragma crdata "TagSkill 226 229"
-# pragma crdata "Timeout 230 257"
+# pragma crdata "Timeout 950 985"
 # pragma crdata "Kill 260 283"
 # pragma crdata "Perk 300 469"
 # pragma crdata "Addiction 470 478"

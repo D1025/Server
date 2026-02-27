@@ -831,6 +831,7 @@
 {10305}{}{%s succumbs to the adverse effects of chems.}
 {10306}{}{You have been drugged with something!}
 {10307}{}{Somebody tried to drug you with something!}
+{10308}{}{You can't use this drug right now.}
 # Geiger
 {10350}{}{Geiger counter has no charges left.}
 {10351}{}{Geiger counter is on.}
@@ -1511,38 +1512,7 @@
 {102171}{}{Outdoorsman}
 {102172}{}{Practical knowledge of the outdoors, and the ability to live off the land. The knowledge of plants and animals.}
 
-# 102300
-# TO_SK_FIRST_AID, timeouts
-{102301}{}{First aid}
-# TO_SK_DOCTOR, timeouts
-{102311}{}{Doctor}
-# TO_SK_REPAIR, timeouts
-{102321}{}{Repair}
-# TO_SK_SCIENCE, timeouts
-{102331}{}{Science}
-# TO_SK_LOCKPICK, timeouts
-{102341}{}{Lockpick}
-# TO_SK_STEAL, timeouts
-{102351}{}{Steal}
-# TO_WEAKENED
-# {102361}{}{Weakened}
-# TO_FIXBOY
-{102371}{}{Crafting}
-# 102380
-# TO_BATTLE, timeouts
-{102381}{}{Battle}
-# # TO_TRANSFER, timeouts
-# {102391}{}{Transitions}
-# TO_REMOVE_FROM_GAME, timeouts
-# {102401}{}{Exit game}
-# TO_REPLICATION, timeouts
-{102411}{}{Replication}
-# TO_KARMA_VOTING, timeouts
-#{102421}{}{Voting}
-# TO_GATHERING
-{102431}{}{Gathering}
-# TO_SNEAK, timeouts
-# {102432}{}{Sneak}
+# Timeout labels moved below (109xxx range), to keep MSG ids strictly ascending.
 
 ####################################################################################################################################
 #
@@ -2354,6 +2324,35 @@
 # 3d attributes
 #
 ####################
+
+# 109500
+# TO_SK_FIRST_AID, timeouts
+{109501}{}{First aid}
+# TO_SK_DOCTOR, timeouts
+{109511}{}{Doctor}
+# TO_SK_REPAIR, timeouts
+{109521}{}{Repair}
+# TO_SK_SCIENCE, timeouts
+{109531}{}{Science}
+# TO_SK_LOCKPICK, timeouts
+{109541}{}{Lockpick}
+# TO_SK_STEAL, timeouts
+{109551}{}{Steal}
+# TO_FIXBOY
+{109571}{}{Crafting}
+# 109580
+# TO_BATTLE, timeouts
+{109581}{}{Battle}
+# TO_REPLICATION, timeouts
+{109611}{}{Replication}
+# TO_GATHERING
+{109631}{}{Gathering}
+# TO_STIMPAK
+{109781}{}{Stimpak}
+# TO_MINOR_HEAL
+{109791}{}{Minor Heal}
+# TO_ANTIDOTE
+{109801}{}{Antidote}
 
 # Skin
 {150000}{}{White 1}

@@ -128,8 +128,8 @@ void InitializeGame()                  // Export
     __AbsoluteOffsets = true;
     __SkillBegin = 200;
     __SkillEnd = 217;
-    __TimeoutBegin = 230;
-    __TimeoutEnd = 257;
+    __TimeoutBegin = 950;
+    __TimeoutEnd = 985;
     __KillBegin = 260;
     __KillEnd = 285;
     __PerkBegin = 300;
