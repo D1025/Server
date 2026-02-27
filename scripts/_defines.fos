@@ -648,54 +648,7 @@
 #define TAG_SKILL3                               (228) // Used in engine
 #define TAG_SKILL4                               (229) // Used in engine
 
-/// Timeouts
-#define TIMEOUT_BEGIN                            (__TimeoutBegin)
-#define TIMEOUT_END                              (__TimeoutEnd)
-#define TIMEOUT_COUNT                            (TIMEOUT_END - TIMEOUT_BEGIN + 1)
-#define TO_SK_FIRST_AID                          (950)
-#define TO_SK_DOCTOR                             (951)
-#define TO_SK_REPAIR                             (952) // Used in engine
-#define TO_SK_SCIENCE                            (953) // Used in engine
-#define TO_SK_LOCKPICK                           (954)
-#define TO_SK_STEAL                              (955)
-#define TO_WEAKENED                              (956)
-#define TO_FIXBOY                                (957)
-#define TO_BATTLE                                (958) // Used in engine
-#define TO_TRANSFER                              (959) // Used in engine
-#define TO_REMOVE_FROM_GAME                      (960) // Used in engine
-#define TO_REPLICATION                           (961)
-#define TO_KARMA_VOTING                          (962) // Used in engine
-#define TO_GATHERING                             (963)
-#define TO_SUPER_STIMPAK                         (964)
-#define TO_HEALING                               (965)
-#define TO_CIGARETTES							 (966)
-
-#define TO_NUKA_COLA							 (967)
-#define TO_BEER                                  (968)
-
-// 966..969
-#define TO_GOD_MODE                              (969) // fixes hex camping
-#define TO_PSYCHO							 	 (970)
-#define TO_JET								 	 (971)
-#define TO_IMMUNITY_TIME                         (972)
-
-#define TO_MENTATS							 	 (973)
-#define TO_BUFFOUT							 	 (974)
-
-// Radiation drugs timeouts
-#define TO_RADAWAY							 	 (975)
-#define TO_RAD_X							 	 (976)
-#define TO_SNEAK                                 (977)
-#define TO_STIMPAK                               (978)
-#define TO_MINOR_HEAL                            (979)
-#define TO_ANTIDOTE                              (980)
-
-#define TO_BOOZE                                 (981)
-#define TO_GAMMA_GULP_BEER                       (982)
-#define TO_ROENTGEN_RUM                          (983)
-#define TO_HEALING_POWDER                        (984)
-#define TO_ROT_GUT                               (985)
-#define TO_KILO_OF_COCAINE                       (986)
+/// 230..299
 
 /// Kills
 // Reserved 260..299 (BT_MEN..BT_BIG_BAD_BOSS)
@@ -756,7 +709,7 @@
 #define PE_MASTER_THIEF                          (334) // Nolevel
 #define PE_SPEAKER                               (335) // Nolevel
 #define PE_HEAVE_HO                              (336) // In dll
-#define PE_AND_STAY_BACK                          (337) // Not implemented
+#define PE_AND_STAY_BACK                         (337)
 #define PE_PICKPOCKET                            (338) // Nolevel
 #define PE_GHOST                                 (339) // In dll
 #define PE_CULT_OF_PERSONALITY                   (340) // Not implemented
@@ -1077,9 +1030,61 @@
 #define FV_FLAG_MASTER_SPEAKER                   (0x1)
 #define FV_FLAG_FLED_BATTLE                      (0x2) // Has fled battle and is waiting on worldmap.
 
+
 //
-// 943..999
+// 943..950
 //
+
+
+/// Timeouts
+#define TIMEOUT_BEGIN                            (__TimeoutBegin)
+#define TIMEOUT_END                              (__TimeoutEnd)
+#define TIMEOUT_COUNT                            (TIMEOUT_END - TIMEOUT_BEGIN + 1)
+#define TO_SK_FIRST_AID                          (950)
+#define TO_SK_DOCTOR                             (951)
+#define TO_SK_REPAIR                             (952) // Used in engine
+#define TO_SK_SCIENCE                            (953) // Used in engine
+#define TO_SK_LOCKPICK                           (954)
+#define TO_SK_STEAL                              (955)
+#define TO_WEAKENED                              (956)
+#define TO_FIXBOY                                (957)
+#define TO_BATTLE                                (958) // Used in engine
+#define TO_TRANSFER                              (959) // Used in engine
+#define TO_REMOVE_FROM_GAME                      (960) // Used in engine
+#define TO_REPLICATION                           (961)
+#define TO_KARMA_VOTING                          (962) // Used in engine
+#define TO_GATHERING                             (963)
+#define TO_SUPER_STIMPAK                         (964)
+#define TO_HEALING                               (965)
+#define TO_CIGARETTES							 (966)
+
+#define TO_NUKA_COLA							 (967)
+#define TO_BEER                                  (968)
+
+// 966..969
+#define TO_GOD_MODE                              (969) // fixes hex camping
+#define TO_PSYCHO							 	 (970)
+#define TO_JET								 	 (971)
+#define TO_IMMUNITY_TIME                         (972)
+
+#define TO_MENTATS							 	 (973)
+#define TO_BUFFOUT							 	 (974)
+
+// Radiation drugs timeouts
+#define TO_RADAWAY							 	 (975)
+#define TO_RAD_X							 	 (976)
+#define TO_SNEAK                                 (977)
+#define TO_STIMPAK                               (978)
+#define TO_MINOR_HEAL                            (979)
+#define TO_ANTIDOTE                              (980)
+
+#define TO_BOOZE                                 (981)
+#define TO_GAMMA_GULP_BEER                       (982)
+#define TO_ROENTGEN_RUM                          (983)
+#define TO_HEALING_POWDER                        (984)
+#define TO_ROT_GUT                               (985)
+#define TO_KILO_OF_COCAINE                       (986)
+
 #define ST_EX_IDX                                (999)
 #define PARAMS_COUNT                             (1000)
 
