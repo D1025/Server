@@ -43,6 +43,12 @@ int getParamDialog_Reputation(Critter@ master, Critter@ slave, uint index)
 void changedParam_Hp(Critter& cr, uint, int oldValue)   // server
 {
     int curHp = cr.StatBase[ST_CURRENT_HP];
+    if(curHp > oldValue && oldValue > 0 && cr.Trait[TRAIT_VAMPIRISM] != 0)
+    {
+        int reducedHeal = (curHp - oldValue) / 2;
+        curHp = oldValue + reducedHeal;
+        cr.StatBase[ST_CURRENT_HP] = curHp;
+    }
     if(curHp <= 0 && cr.IsLife())
         cr.StatBase[ST_CURRENT_HP] = 1;
     if(cr.Perk[PE_DEAD_MAN_WALKING] != 0)
@@ -391,7 +397,7 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
 	   _param_[ST_LUCK] -= 1;
 	}*/
 
-    /*if(_param_[TRAIT_GOOD_NATURED]!=0)
+    /*if(_param_[TRAIT_VAMPIRISM]!=0)
        {
             _param_[SK_FIRST_AID]+=15;
             _param_[SK_DOCTOR]+=15;
@@ -467,6 +473,8 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     if (_param_[TRAIT_BRUISER] != 0)
         _param_[ST_ARMOR_CLASS] = 0;
 	_param_[ST_MAX_LIFE] += _param_[ST_ENDURANCE]/2 + (_param_[TRAIT_DEAD_MAN_WALKING] == 0 ? 150 : 120);
+    if(_param_[TRAIT_VAMPIRISM] != 0)
+        _param_[ST_MAX_LIFE] = MAX((_param_[ST_MAX_LIFE] * 75) / 100, 1);
 
     _param_[ST_ACTION_POINTS] = 10;
     _param_[ST_CARRY_WEIGHT] += 400000;

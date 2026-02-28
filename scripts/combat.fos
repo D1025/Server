@@ -2067,6 +2067,14 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             }
             //END
             target.StatBase[ST_CURRENT_HP] -= totalDmg;
+            if(validAttacker && attacker.Id != target.Id && attacker.IsLife() && attacker.Trait[TRAIT_VAMPIRISM] != 0)
+            {
+                // changedParam_Hp applies global 50% heal reduction for vampirism,
+                // so apply 50% raw to get effective 25% life steal from final damage dealt.
+                int vampirismHeal = totalDmg / 2;
+                if(vampirismHeal > 0)
+                    attacker.StatBase[ST_CURRENT_HP] += vampirismHeal;
+            }
             if(dmgType == DAMAGE_EXPLODE)
             {
                 target.StatBase[ST_HP_LA] -= totalDmg/2;

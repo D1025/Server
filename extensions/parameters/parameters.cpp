@@ -1,6 +1,10 @@
 #define INCLUDE_GLOBAL_VARIABLES
 #include "../fonline2238.h"
 
+#ifndef TRAIT_VAMPIRISM
+#define TRAIT_VAMPIRISM (560)
+#endif
+
 #ifndef __SERVER
 #ifndef __CLIENT
 #pragma error ("PANIC: no defines in server/client parameters")
@@ -328,6 +332,7 @@ EXPORT int getParam_HpRl(CritterMutual& cr, uint)
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_MAX_LIFE] + CLAMP(cr.Params[ST_LEVEL], 0, 30)* getParam_Endurance(cr, 0)/2 + cr.Params[ST_MAX_LIFE_EXT];
+	if(cr.Params[TRAIT_VAMPIRISM]) val = val * 75 / 100;
 	return CLAMP(val, 1, 9999);
 }
 
