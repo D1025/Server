@@ -2067,6 +2067,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             }
             //END
             target.StatBase[ST_CURRENT_HP] -= totalDmg;
+            if(target.Trait[TRAIT_DEAD_MAN_WALKING] > 0 && target.Stat[ST_CURRENT_HP] < 0)
+                _SetTimeout(target, TO_HEALING, REAL_SECOND(3));
             if(validAttacker && attacker.Id != target.Id && attacker.IsLife() && attacker.Trait[TRAIT_VAMPIRISM] != 0)
             {
                 // changedParam_Hp applies global 50% heal reduction for vampirism,
@@ -3131,7 +3133,11 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         map.RunEffect(PID_EXPLODE_FIRE_SMALL, cr.HexX, cr.HexY, 2);
 
     if(totalDmg > 0)
+    {
         cr.StatBase[ST_CURRENT_HP] -= totalDmg;
+        if(cr.Trait[TRAIT_DEAD_MAN_WALKING] > 0 && cr.Stat[ST_CURRENT_HP] < 0)
+            _SetTimeout(cr, TO_HEALING, REAL_SECOND(3));
+    }
 
     uint[] allEff = { CMSG_CRIT_MISS, cr.Id, 0, eff };
 
