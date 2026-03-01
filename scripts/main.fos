@@ -2527,10 +2527,13 @@ void critter_idle(Critter& cr)
         //druto
 		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 && cr.Stat[ST_CURRENT_HP] < GetActualMaxHp(cr))
         {
+            int hpFromHealingRate = 15;
+
             if(cr.Stat[ST_HEALING_RATE] > 0)
 			{
 			    int maxhp = GetActualMaxHp(cr);
-			    int hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 4) * (100 - CLAMP(cr.StatBase[ST_POISONING_LEVEL]*4/10, 0, 100))/100;
+                if (!(cr.Trait[TRAIT_DEAD_MAN_WALKING] > 0 && cr.Stat[ST_CURRENT_HP] < 0))
+			        hpFromHealingRate = MAX(cr.Stat[ST_HEALING_RATE], 4) * (100 - CLAMP(cr.StatBase[ST_POISONING_LEVEL]*4/10, 0, 100))/100;
 				cr.StatBase[ST_CURRENT_HP] += hpFromHealingRate;
 				if (cr.DamageBase[DAMAGE_EYE] == 0)
 				    cr.StatBase[ST_HP_HEAD] += hpFromHealingRate;
