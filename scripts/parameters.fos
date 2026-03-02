@@ -18,6 +18,8 @@ import string critter_description(CritterCl& cr, int lookType) from "client_inte
 import int    GUI_GetActiveScreen() from "client_gui";
 #endif
 
+int __StartTagSkillPointsDefault = -1;
+
 #ifdef __SERVER
 # include "achievements_h.fos"
 # include "backend_h.fos"
@@ -376,6 +378,14 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
         __StartSpecialPoints = 33;
     else
         __StartSpecialPoints = 40;
+		
+    if(__StartTagSkillPointsDefault < 0)
+        __StartTagSkillPointsDefault = __StartTagSkillPoints;
+
+    if(_param_[TRAIT_BONEHEAD] != 0)
+        __StartTagSkillPoints = 0;
+    else
+        __StartTagSkillPoints = __StartTagSkillPointsDefault;
 
 	/*if(_param_[TRAIT_GIFTED] != 0) {
 	    _param_[ST_STRENGTH] += 1;
