@@ -84,10 +84,10 @@ void CreateCompanion()
     switch(type)
     {
     case COMPANION_TYPE_MELEE:
-        cr.SkillBase[SK_MELEE_WEAPONS] = Random(150, 175);
+        cr.SkillBase[SK_RIFLES] = Random(150, 175);
         break;
     case COMPANION_TYPE_SG:
-        cr.SkillBase[SK_SMALL_GUNS] = Random(150, 175);
+        cr.SkillBase[SK_PISTOLS] = Random(150, 175);
         break;
     case COMPANION_TYPE_BG:
         cr.SkillBase[SK_BIG_GUNS] = Random(150, 175);

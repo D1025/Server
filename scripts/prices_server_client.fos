@@ -254,7 +254,7 @@ uint TradingItemType(uint pid)
         int skill = pi.Weapon_Skill_0;
         switch(skill)
         {
-        case SK_SMALL_GUNS:
+        case SK_PISTOLS:
             return ITEMTYPE_SMALL_GUNS;
         case SK_BIG_GUNS:
             return ITEMTYPE_BIG_GUNS;

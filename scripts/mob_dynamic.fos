@@ -2376,10 +2376,10 @@ void SetParatersToMob(Critter& mob, Map& map, bool MobIsBoss)
 	if(MobIsBoss)
 	{
 		//Set combat skills
-		mob.SkillBase[SK_SMALL_GUNS] = Random(250, 300);
+		mob.SkillBase[SK_PISTOLS] = Random(250, 300);
 		mob.SkillBase[SK_BIG_GUNS] = Random(250, 300);
 		mob.SkillBase[SK_ENERGY_WEAPONS] = Random(250, 300);
-		mob.SkillBase[SK_UNARMED] = Random(250, 300);
+		mob.SkillBase[SK_CLOSE_COMBAT] = Random(250, 300);
 		//Set support skills
 		mob.SkillBase[SK_DOCTOR] = Random(150, 250);
 		mob.SkillBase[SK_FIRST_AID] = Random(150, 250);
@@ -2390,10 +2390,10 @@ void SetParatersToMob(Critter& mob, Map& map, bool MobIsBoss)
 	else
 	{
 		//Set combat skills
-		mob.SkillBase[SK_SMALL_GUNS] = Random(100, 200);
+		mob.SkillBase[SK_PISTOLS] = Random(100, 200);
 		mob.SkillBase[SK_BIG_GUNS] = Random(100, 200);
 		mob.SkillBase[SK_ENERGY_WEAPONS] = Random(100, 200);
-		mob.SkillBase[SK_UNARMED] = Random(100, 200);
+		mob.SkillBase[SK_CLOSE_COMBAT] = Random(100, 200);
 		//Set support skills
 		mob.SkillBase[SK_DOCTOR] = Random(50, 150);
 		mob.SkillBase[SK_FIRST_AID] = Random(50, 150);

@@ -22,7 +22,7 @@ lang=engl
 0 3050 @
 5 4000 None 0 #
 6 4010 D _param p SK_DOCTOR } 100 D or D _param p SK_FIRST_AID } 120 #
-7 4020 D _param p SK_SMALL_GUNS } 125 #
+7 4020 D _param p SK_PISTOLS } 125 #
 7 4030 D _param p SK_BIG_GUNS } 125 #
 8 4040 D _param p SK_SPEECH } 100 #
 7 4050 D _param p SK_ENERGY_WEAPONS } 125 #

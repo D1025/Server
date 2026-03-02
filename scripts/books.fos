@@ -38,7 +38,7 @@ void TryReadBook(Critter& cr, Item& book) // Export
 	case PID_FIRST_AID_BOOK: skillNum=SK_FIRST_AID; strNum=STR_BOOK_READ_FISRT_AID; readAlready=LVAR_Book_FirstAid; break; // First Aid
 	case PID_SCOUT_HANDBOOK: skillNum=SK_OUTDOORSMAN; strNum=STR_BOOK_READ_OUTDOORSMAN; readAlready=LVAR_Book_Outdoorsman; break; // Outdoorsman
 	case PID_BARTER_BOOK: skillNum=SK_BARTER; strNum=10458; readAlready=LVAR_Book_Barter; break;
-	case PID_GUNS_AND_BULLETS: skillNum=SK_SMALL_GUNS; strNum=STR_BOOK_READ_SMALL_GUNS; readAlready=LVAR_Book_SmallGuns; break; // Small Guns
+	case PID_GUNS_AND_BULLETS: skillNum=SK_PISTOLS; strNum=STR_BOOK_READ_SMALL_GUNS; readAlready=LVAR_Book_SmallGuns; break; // Small Guns
 	//case PID_CATS_PAW_ISSUE_5: skillNum=SK_ENERGY_WEAPONS; strNum=STR_BOOK_READ_ENERGY_WEAPONS; readAlready=LVAR_FO2077_Book_EnergyWeapons; break; // Energy Weapons
 	//case PID_CHEMISTRY_MANUAL: cr.SayMsg(SAY_NETMSG,TEXTMSG_GAME,STR_BOOK_READ_FAIL);return;
 	//case PID_TECHNICAL_MANUAL: cr.SayMsg(SAY_NETMSG,TEXTMSG_GAME,STR_BOOK_READ_FAIL);return;
@@ -85,7 +85,7 @@ void TryReadBook(Critter& cr, Item& book) // Export
 	if(cr.Skill[SK_REPAIR]>200) cr.SkillBase[SK_REPAIR]=200;
 	if(cr.Skill[SK_BARTER]>150) cr.SkillBase[SK_BARTER]=150;
 	if(cr.Skill[SK_FIRST_AID]>200) cr.SkillBase[SK_FIRST_AID]=200;
-	if(cr.Skill[SK_SMALL_GUNS]>300) cr.SkillBase[SK_SMALL_GUNS]=300;
+	if(cr.Skill[SK_PISTOLS]>300) cr.SkillBase[SK_PISTOLS]=300;
 	}
 	else cr.SayMsg(SAY_NETMSG,TEXTMSG_GAME,STR_BOOK_READ_FAIL);
 }

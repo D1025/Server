@@ -337,11 +337,11 @@ class CChessNpc : IChessNpc
         critter.StatBase[ST_MAX_LIFE_EXT] = -6;
         critter.StatBase[ST_CURRENT_HP] = critter.Stat[ST_MAX_LIFE];
 
-        critter.SkillBase[SK_SMALL_GUNS] =
+        critter.SkillBase[SK_PISTOLS] =
             critter.SkillBase[SK_BIG_GUNS] =
                 critter.SkillBase[SK_ENERGY_WEAPONS] =
-                    critter.SkillBase[SK_UNARMED] =
-                        critter.SkillBase[SK_MELEE_WEAPONS] =
+                    critter.SkillBase[SK_CLOSE_COMBAT] =
+                        critter.SkillBase[SK_RIFLES] =
                             critter.SkillBase[SK_THROWING] =
                                 300;
 

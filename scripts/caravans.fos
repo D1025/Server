@@ -109,7 +109,7 @@ void _CaravanGuard(Critter& cr, bool firstTime)
 	_CritSetMode(cr, MODE_UNLIMITED_AMMO);
     cr.ParamBase[ST_PERCEPTION] = 10;
     cr.ParamBase[ST_MAX_LIFE] += 30;
-    cr.ParamBase[SK_SMALL_GUNS]=200;
+    cr.ParamBase[SK_PISTOLS]=200;
     cr.ParamBase[SK_BIG_GUNS]=200;
     cr.ParamBase[SK_ENERGY_WEAPONS]=200;
     cr.SetEvent(CRITTER_EVENT_ATTACKED, "_GuardAttacked");
@@ -386,7 +386,7 @@ void _CaravanDriver(Critter& cr, bool firstTime)
     cr.SetEvent(CRITTER_EVENT_SMTH_MOVE_ITEM, "_OnSmthMoveItemEncounter");
 	cr.SetEvent(CRITTER_EVENT_SMTH_DEAD, "_DriverSmthDied");
     /*
-       cr.ParamBase[SK_SMALL_GUNS]=300;
+       cr.ParamBase[SK_PISTOLS]=300;
        cr.ParamBase[SK_BIG_GUNS]=300;
        cr.ParamBase[SK_ENERGY_WEAPONS]=300;*/
     cr.SetEventExt(CRITTER_EVENT_EXT_MAP_IN, "_DriverMapEnter");

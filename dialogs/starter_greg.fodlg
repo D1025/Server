@@ -41,7 +41,7 @@ lang=engl
 12 11010 #
 12 11020 @
 12 12000 None 0 #
-13 12010 R _param p SK_THROWING + 55 R _param p SK_MELEE_WEAPONS + 40 R _param p SK_UNARMED + 30 R _item p PID_BRASS_KNUCKLES + 1 R _item p PID_KNIFE + 1 R _item p PID_ROCK + 3 @
+13 12010 R _param p SK_THROWING + 55 R _param p SK_RIFLES + 40 R _param p SK_CLOSE_COMBAT + 30 R _item p PID_BRASS_KNUCKLES + 1 R _item p PID_KNIFE + 1 R _item p PID_ROCK + 3 @
 13 13000 None 0 #
 14 13010 @
 14 14000 None 0 #

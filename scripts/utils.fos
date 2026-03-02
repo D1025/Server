@@ -428,13 +428,13 @@ string SkillName(uint8 skill)
 {
     string result = "";
 
-    if(skill < SK_SMALL_GUNS || skill > SK_OUTDOORSMAN)
+    if(skill < SK_PISTOLS || skill > SK_OUTDOORSMAN)
         return(result);
 
     switch(skill)
     {
-    case SK_SMALL_GUNS:
-        result = "Small Guns";
+    case SK_PISTOLS:
+        result = "Pistols";
         break;
     case SK_BIG_GUNS:
         result = "Big Guns";
@@ -442,11 +442,11 @@ string SkillName(uint8 skill)
     case SK_ENERGY_WEAPONS:
         result = "Energy Weapons";
         break;
-    case SK_UNARMED:
-        result = "Unarmed";
+    case SK_CLOSE_COMBAT:
+        result = "Close Combat";
         break;
-    case SK_MELEE_WEAPONS:
-        result = "Melee Weapons";
+    case SK_RIFLES:
+        result = "Rifles";
         break;
     case SK_THROWING:
         result = "Throwing";
@@ -652,7 +652,7 @@ uint GetBestWeaponSkill(Critter@ cr)
 {
     int skill = -1;
     int highest = 0;
-    for(int i = SK_SMALL_GUNS; i <= SK_THROWING + 1; i++)
+    for(int i = SK_PISTOLS; i <= SK_THROWING + 1; i++)
     {
         if(cr.Skill[i] > highest)
         {

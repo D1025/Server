@@ -380,12 +380,12 @@ uint GetNearFactionGuards(Map@ map, uint16 hexX, uint16 hexY, uint radius, uint 
 
 /**
  * Arm the best weapon available to the NPC.
- * @remarks Firstly, weapons of the best skill of the NPC is tried, then in the following order: SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_SMALL_GUNS, SK_THROWING, SK_MELEE_WEAPONS
+ * @remarks Firstly, weapons of the best skill of the NPC is tried, then in the following order: SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_PISTOLS, SK_THROWING, SK_RIFLES
  */
 Item@ ArmBestWeapon(Critter& critter)
 {
     uint bestskill = GetBestWeaponSkill(critter);
-    int[] skills = { bestskill, SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_SMALL_GUNS, SK_THROWING, SK_MELEE_WEAPONS };
+    int[] skills = { bestskill, SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_PISTOLS, SK_THROWING, SK_RIFLES };
 
     array<Item@> items;
     uint         num = critter.GetItems(SLOT_INV, items);

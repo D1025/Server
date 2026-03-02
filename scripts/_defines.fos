@@ -620,12 +620,12 @@
 #define SKILL_END                                (__SkillEnd)
 #define SKILL_COUNT                              (SKILL_END - SKILL_BEGIN + 1)
 #define MAX_SKILL_VAL                            (__SkillMaxValue)
-#define SK_SMALL_GUNS                            (200) // Used in engine
-#define SK_BIG_GUNS                              (201) // Used in engine
-#define SK_ENERGY_WEAPONS                        (202) // Used in engine
-#define SK_UNARMED                               (203) // Used in engine
-#define SK_MELEE_WEAPONS                         (204) // Used in engine
-#define SK_THROWING                              (205) // Used in engine
+#define SK_PISTOLS                              (200) // Used in engine
+#define SK_RIFLES                               (201) // Used in engine
+#define SK_BIG_GUNS                             (202) // Used in engine
+#define SK_ENERGY_WEAPONS                       (203) // Used in engine
+#define SK_CLOSE_COMBAT                         (204) // Used in engine
+#define SK_THROWING                             (205) // Used in engine
 #define SK_FIRST_AID                             (206) // Used in engine
 #define SK_DOCTOR                                (207) // Used in engine
 #define SK_SNEAK                                 (208) // Used in engine

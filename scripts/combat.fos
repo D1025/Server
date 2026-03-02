@@ -274,7 +274,7 @@ bool PerformSewingFollowUpHit(Critter& attacker, Critter& target, uint16 weaponP
     attacker.SetDir(GetDirection(attacker.HexX, attacker.HexY, target.HexX, target.HexY));
 
     int skillNum = _WeaponSkill(protoWeapon, use);
-    uint8 weaponSubtype = (skillNum == SK_SMALL_GUNS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_MELEE_WEAPONS) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
+    uint8 weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_RIFLES) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
     bool isHthAttack = (weaponSubtype == WS_MELEE || weaponSubtype == WS_UNARMED);
 
     AttackStruct attack;
@@ -378,10 +378,10 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     }
     int    skillVal = cr.Skill[skillNum]; // skillVal wykorzystane pozniej jako: baseToHit = skillVal; oraz WearItem(cr, realWeapon, (MAX_SKILL_VAL - MIN(skillVal,200)) / 6);
 	
-	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) skillVal = MAX(cr.Skill[SK_SMALL_GUNS], cr.Skill[SK_DOCTOR]);  //25-07-2013 Cubik: podczas uzywania Needler pistola pod uwage bedzie brany max ze skilli SG i Doc do celnosci i psucia sie pistola
+	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) skillVal = MAX(cr.Skill[SK_PISTOLS], cr.Skill[SK_DOCTOR]);  //25-07-2013 Cubik: podczas uzywania Needler pistola pod uwage bedzie brany max ze skilli SG i Doc do celnosci i psucia sie pistola
 	
 	
-    uint8  weaponSubtype = (skillNum == SK_SMALL_GUNS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_MELEE_WEAPONS) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
+    uint8  weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_RIFLES) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
     bool   isRanged = (weaponSubtype == WS_THROWING || weaponSubtype == WS_GUN);
     bool   isUnarmed = weapon.Weapon_IsUnarmed;
     bool   isHthAttack = (weaponSubtype == WS_MELEE || weaponSubtype == WS_UNARMED);
@@ -476,9 +476,9 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     {
         if(weaponSubtype == WS_GUN)
             AddScore(cr, SCORE_SHOOTER, 1);
-		else if(skillNum == SK_UNARMED || skillNum == SK_THROWING)
+		else if(skillNum == SK_CLOSE_COMBAT || skillNum == SK_THROWING)
             AddScore(cr, SCORE_MELEE, 1);
-        else if(skillNum == SK_UNARMED)
+        else if(skillNum == SK_CLOSE_COMBAT)
             AddScore(cr, SCORE_UNARMED, 1);
     }
 
@@ -640,7 +640,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         Item@ targetWeapon = _CritGetItemHand(target);
         in_your_face_valid = (!valid(targetWeapon) && dist == 1) ||
                              (valid(targetWeapon) && targetWeapon.GetType() == ITEM_TYPE_WEAPON &&
-                              targetWeapon.Proto.Weapon_Skill_0 == SK_UNARMED &&
+                              targetWeapon.Proto.Weapon_Skill_0 == SK_CLOSE_COMBAT &&
                               _WeaponMaxDist(targetWeapon.Proto, 0) >= uint(dist));
     }
 
@@ -2370,7 +2370,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 attacker.StatBase[ST_EXPERIENCE] += target.Stat[ST_KILL_EXPERIENCE];
             attacker.KillBase[KILL_BEGIN + bt]++;
             if(target.IsNpc())
-                LogExperience(attacker, target.Stat[ST_KILL_EXPERIENCE], valid(realWeapon) ? realWeapon.Proto.Weapon_Skill_0 : SK_UNARMED, "Kill", target.GetProtoId()); // may cause errors with spear
+                LogExperience(attacker, target.Stat[ST_KILL_EXPERIENCE], valid(realWeapon) ? realWeapon.Proto.Weapon_Skill_0 : SK_CLOSE_COMBAT, "Kill", target.GetProtoId()); // may cause errors with spear
             */
             //_OLD VERSION_
 
@@ -2459,7 +2459,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			attacker.KillBase[KILL_BEGIN + bt]++;	// Everything else
 			
             if(target.IsNpc())
-                LogExperience(attacker, target.Stat[ST_KILL_EXPERIENCE]*(GetGvar(GVAR_experience_multipler_kill))*(GetGvar(GVAR_experience_multipler)), valid(realWeapon) ? realWeapon.Proto.Weapon_Skill_0 : SK_UNARMED, "Kill", target.GetProtoId()); // may cause errors with spear
+                LogExperience(attacker, target.Stat[ST_KILL_EXPERIENCE]*(GetGvar(GVAR_experience_multipler_kill))*(GetGvar(GVAR_experience_multipler)), valid(realWeapon) ? realWeapon.Proto.Weapon_Skill_0 : SK_CLOSE_COMBAT, "Kill", target.GetProtoId()); // may cause errors with spear
             //_NEW VERSION_
         }
         
@@ -3299,12 +3299,12 @@ uint GetHitAim(int hitLocation)
 // Used by AI
 int RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, ProtoItem@ ammo)   // export
 {
-    int skillNum = valid(weapon) ? _WeaponSkill(weapon, weaponUse) : SK_UNARMED;
+    int skillNum = valid(weapon) ? _WeaponSkill(weapon, weaponUse) : SK_CLOSE_COMBAT;
     int toHit = cr.Skill[skillNum];
     int weaponPerk = valid(weapon) ? weapon.Weapon_Perk : 0;
     int blockers = 0;
     int dist = GetDistantion(cr.HexX, cr.HexY, target.HexX, target.HexY);
-    if(skillNum != SK_UNARMED)
+    if(skillNum != SK_CLOSE_COMBAT)
     {
         // Ranged attack modifiers
         int distmod1 = 2;       // Used for initial weapon bonus

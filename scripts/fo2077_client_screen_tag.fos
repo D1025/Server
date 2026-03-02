@@ -56,12 +56,20 @@ void ShowChooseTagScreen()
 	{
 		CritterCl@ player = GetChosen(); 
 		
-		if(!_CritIsTagSkill(player, SK_SMALL_GUNS))
+		if(!_CritIsTagSkill(player, SK_PISTOLS))
 		skillWindow.Add(Skill(
-			SK_SMALL_GUNS,
+			SK_PISTOLS,
 			GUI_AddImage(CLIENT_SCREEN_TAG, "gunsml.frm", PT_ART_SKILLDEX, 413, 64),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_SG_TITLE),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_SG_DESCRIPTION)
+		));
+		
+		if(!_CritIsTagSkill(player, SK_RIFLES))
+		skillWindow.Add(Skill(
+			SK_RIFLES,
+			GUI_AddImage(CLIENT_SCREEN_TAG, "melee.frm", PT_ART_SKILLDEX, 413, 64),
+			GetMsgStr(TEXTMSG_GAME, STR_SKILL_MELEE_TITLE),
+			GetMsgStr(TEXTMSG_GAME, STR_SKILL_MELEE_DESCRIPTION)
 		));
 		
 		
@@ -81,20 +89,12 @@ void ShowChooseTagScreen()
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_ENERGY_DESCRIPTION)
 		));
 
-		if(!_CritIsTagSkill(player, SK_UNARMED))
+		if(!_CritIsTagSkill(player, SK_CLOSE_COMBAT))
 		skillWindow.Add(Skill(
-			SK_UNARMED,
+			SK_CLOSE_COMBAT,
 			GUI_AddImage(CLIENT_SCREEN_TAG, "unarmed.frm", PT_ART_SKILLDEX, 413, 64),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_UNARMED_TITLE),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_UNARMED_DESCRIPTION)
-		));
-
-		if(!_CritIsTagSkill(player, SK_MELEE_WEAPONS))
-		skillWindow.Add(Skill(
-			SK_MELEE_WEAPONS,
-			GUI_AddImage(CLIENT_SCREEN_TAG, "melee.frm", PT_ART_SKILLDEX, 413, 64),
-			GetMsgStr(TEXTMSG_GAME, STR_SKILL_MELEE_TITLE),
-			GetMsgStr(TEXTMSG_GAME, STR_SKILL_MELEE_DESCRIPTION)
 		));
 
 		if(!_CritIsTagSkill(player, SK_THROWING))
@@ -188,7 +188,7 @@ void ShowChooseTagScreen()
 		if(!_CritIsTagSkill(player, SK_RUNNING))
 		skillWindow.Add(Skill(
 			SK_RUNNING,
-			GUI_AddImage(CLIENT_SCREEN_TAG, "gambling.frm", PT_ART_SKILLDEX, 413, 64),
+			GUI_AddImage(CLIENT_SCREEN_TAG, "sk_running.png", PT_ART_SKILLDEX, 413, 64),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_GAMBLING_TITLE),
 			GetMsgStr(TEXTMSG_GAME, STR_SKILL_GAMBLING_DESCRIPTION)
 		));

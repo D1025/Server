@@ -316,30 +316,30 @@ bool _OrSkill(Critter& cr, int perk, int level, int skill1, int skill2, int mins
 
 bool _OrRangedSkill(Critter& cr, int perk, int level, int, int, int minskill)
 {
-    return cr.SkillBase[SK_SMALL_GUNS] >= minskill || cr.SkillBase[SK_BIG_GUNS] >= minskill ||
-           cr.SkillBase[SK_ENERGY_WEAPONS] >= minskill || cr.SkillBase[SK_THROWING] >= minskill || cr.SkillBase[SK_MELEE_WEAPONS] >= minskill;
+    return cr.SkillBase[SK_PISTOLS] >= minskill || cr.SkillBase[SK_BIG_GUNS] >= minskill ||
+           cr.SkillBase[SK_ENERGY_WEAPONS] >= minskill || cr.SkillBase[SK_THROWING] >= minskill || cr.SkillBase[SK_RIFLES] >= minskill;
 }
 
 bool _OrRangedGunSkill(Critter& cr, int perk, int level, int, int, int minskill)
 {
-    return cr.SkillBase[SK_SMALL_GUNS] >= minskill || cr.SkillBase[SK_BIG_GUNS] >= minskill ||
+    return cr.SkillBase[SK_PISTOLS] >= minskill || cr.SkillBase[SK_BIG_GUNS] >= minskill ||
            cr.SkillBase[SK_ENERGY_WEAPONS] >= minskill;
 }
 
 bool _OrRangedHtHSkill(Critter& cr, int perk, int level, int, int, int minskill)
 {
-    return cr.SkillBase[SK_SMALL_GUNS] >= minskill || cr.SkillBase[SK_BIG_GUNS] >= minskill ||
-           cr.SkillBase[SK_ENERGY_WEAPONS] >= minskill || cr.SkillBase[SK_UNARMED] >= minskill || cr.SkillBase[SK_MELEE_WEAPONS] >= minskill || cr.SkillBase[SK_THROWING] >= minskill;
+    return cr.SkillBase[SK_PISTOLS] >= minskill || cr.SkillBase[SK_BIG_GUNS] >= minskill ||
+           cr.SkillBase[SK_ENERGY_WEAPONS] >= minskill || cr.SkillBase[SK_CLOSE_COMBAT] >= minskill || cr.SkillBase[SK_RIFLES] >= minskill || cr.SkillBase[SK_THROWING] >= minskill;
 }
 
 bool _BRD(Critter& cr, int perk, int level, int, int, int)
 {
-    return cr.SkillBase[SK_BIG_GUNS] >= 150 + level * 25 || cr.SkillBase[SK_SMALL_GUNS] >= 150 + level * 25;
+    return cr.SkillBase[SK_BIG_GUNS] >= 150 + level * 25 || cr.SkillBase[SK_PISTOLS] >= 150 + level * 25;
 }
 
 bool _Awareness(Critter& cr, int perk, int level, int, int, int)
 {
-    return cr.StatBase[ST_PERCEPTION] >= 6 || cr.SkillBase[SK_UNARMED] >= 100 || cr.SkillBase[SK_MELEE_WEAPONS] >= 100;
+    return cr.StatBase[ST_PERCEPTION] >= 6 || cr.SkillBase[SK_CLOSE_COMBAT] >= 100 || cr.SkillBase[SK_RIFLES] >= 100;
 }
 
 // professions

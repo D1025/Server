@@ -777,7 +777,7 @@ bool ReverseItemGeneric(Critter& cr, Item& item, bool isMassScience)
 	uint protoItemCost = item.Proto.Cost;
 	uint expAmount=0;
     uint8      weaponSubtype =
-        (skillNum == SK_SMALL_GUNS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_MELEE_WEAPONS) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
+        (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_RIFLES) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
 
     // analogue to repair chance
     int    sk = cr.Skill[SK_SCIENCE]*2;

@@ -23,7 +23,7 @@ lang=engl
 0 6030 @
 7 7000 None 0 #
 9 7010 D _param p ST_CHARISMA > 4 #
-9 7020 D _param p SK_SMALL_GUNS > 89 #
+9 7020 D _param p SK_PISTOLS > 89 #
 9 7030 D _param p ST_INTELLECT > 6 #
 9 7040 D _param p ST_CHARISMA < 4 D _param p ST_INTELLECT > 3 D _script dialog@d_WeaponInHand 0  #
 8 7050 #

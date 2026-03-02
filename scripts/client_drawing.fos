@@ -383,7 +383,7 @@ class WeaponRadiusChosen
 					break;
 				
 			}
-/*			if(wepSkill == SK_SMALL_GUNS || wepSkill == SK_BIG_GUNS || wepSkill == SK_ENERGY_WEAPONS)
+/*			if(wepSkill == SK_PISTOLS || wepSkill == SK_BIG_GUNS || wepSkill == SK_ENERGY_WEAPONS)
 				wpnMaxDist*= MARKSMAN_MOD;
 */
 			

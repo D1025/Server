@@ -466,14 +466,14 @@ void speedboost(Critter& cr)
     if ( valid(weapon1) )										//No bonus if player have BG weapon or Gatling in 1st slot
 	{
 		if ( (skillNum1 == SK_BIG_GUNS) || (weapon1.ProtoId == PID_GATLING_LASER) ) bonus=0;
-		if ( (skillNum1 == SK_MELEE_WEAPONS) || (skillNum1 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
-        if ( skillNum1 == SK_SMALL_GUNS) bonus = CLAMP(bonus, 0, 50);
+		if ( (skillNum1 == SK_RIFLES) || (skillNum1 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
+        if ( skillNum1 == SK_PISTOLS) bonus = CLAMP(bonus, 0, 50);
 	}
 	if ( valid(weapon2) )										//No bonus if player have BG weapon or Gatling in 2nd slot
 	{
 		if ( (skillNum2 == SK_BIG_GUNS) || (weapon2.ProtoId == PID_GATLING_LASER) ) bonus=0;
-		if ( (skillNum1 == SK_MELEE_WEAPONS) || (skillNum1 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
-        if ( skillNum1 == SK_SMALL_GUNS) bonus = CLAMP(bonus, 0, 50);
+		if ( (skillNum1 == SK_RIFLES) || (skillNum1 == SK_ENERGY_WEAPONS) ) bonus = CLAMP(bonus,0,30);
+        if ( skillNum1 == SK_PISTOLS) bonus = CLAMP(bonus, 0, 50);
 	}
 
 	if ( cr.Perk[PE_BONUS_MOVE]!=0) {

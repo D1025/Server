@@ -21,7 +21,7 @@ lang=engl
 5 5000 None 0 #
 6 5010 @
 6 6000 None 0 #
-0 6010 D _param p SK_UNARMED > 90 #
+0 6010 D _param p SK_CLOSE_COMBAT > 90 #
 8 6020 #
 0 6030 #
 7 6040 @

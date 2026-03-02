@@ -979,7 +979,7 @@ void critter_init(Critter& npc, bool firstTime)
         array<uint8> crTypes = (npc.Stat[ST_GENDER] == GENDER_MALE ? crTypesMale : crTypesFemale);
         ChangeCrTypeSafe(npc, random_from_array(crTypes));
 
-        for(uint skill = SK_SMALL_GUNS; skill < SK_THROWING; skill++)
+        for(uint skill = SK_PISTOLS; skill < SK_THROWING; skill++)
         {
             npc.SkillBase[skill] = Random(50, 200);
             Report(npc, SkillName(skill) + ": " + npc.Skill[skill]);
@@ -1055,7 +1055,7 @@ Item@ WearBestWeapon(Critter& npc, uint8 slot)
     }
 
     uint bestskill = GetBestWeaponSkill(npc);
-    int[] skills = { bestskill, SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_SMALL_GUNS, SK_THROWING, SK_MELEE_WEAPONS };
+    int[] skills = { bestskill, SK_BIG_GUNS, SK_ENERGY_WEAPONS, SK_PISTOLS, SK_THROWING, SK_RIFLES };
 
     array<Item@> items;
     uint         num = npc.GetItems(SLOT_INV, items);

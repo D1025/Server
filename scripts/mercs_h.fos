@@ -34,7 +34,7 @@ uint e_DisableBagRefresh(array<uint>@ values)
 
 void NerfWeaponSkills(Critter& cr, uint primary, uint secondary)
 {
-    for(uint i = SK_SMALL_GUNS; i <= SK_THROWING; i++)
+    for(uint i = SK_PISTOLS; i <= SK_THROWING; i++)
     {
         if(i != primary && i != secondary)
         {
@@ -147,11 +147,11 @@ class CMerc : IMerc
             {
             case FOLLOWER_TYPE_MERC_HUMAN_MELEE:
             case FOLLOWER_TYPE_MERC_GHOUL_MELEE:
-                NerfWeaponSkills(SpawnedNpc, SK_MELEE_WEAPONS, SK_UNARMED);
+                NerfWeaponSkills(SpawnedNpc, SK_RIFLES, SK_CLOSE_COMBAT);
                 break;
             case FOLLOWER_TYPE_MERC_HUMAN_SG:
             case FOLLOWER_TYPE_MERC_GHOUL_SG:
-                NerfWeaponSkills(SpawnedNpc, SK_SMALL_GUNS, 0);
+                NerfWeaponSkills(SpawnedNpc, SK_PISTOLS, 0);
                 break;
             case FOLLOWER_TYPE_MERC_HUMAN_BG:
             case FOLLOWER_TYPE_MERC_MUTANT_BG:
@@ -159,7 +159,7 @@ class CMerc : IMerc
                 break;
             case FOLLOWER_TYPE_MERC_HUMAN_UNARMED:
             case FOLLOWER_TYPE_MERC_MUTANT_UNARMED:
-                NerfWeaponSkills(SpawnedNpc, SK_UNARMED, SK_MELEE_WEAPONS);
+                NerfWeaponSkills(SpawnedNpc, SK_CLOSE_COMBAT, SK_RIFLES);
                 break;
             case FOLLOWER_TYPE_MERC_HUMAN_EW:
                 NerfWeaponSkills(SpawnedNpc, SK_ENERGY_WEAPONS, 0);

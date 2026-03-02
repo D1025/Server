@@ -105,7 +105,7 @@ void r_PurchaseMine(Critter& player, Critter@ npc)
             mob.ParamBase[ST_REPLICATION_TIME] = 60 * Random(5, 10);
             mob.ParamBase[ST_NPC_ROLE] = ROLE_MOB_MINE;
             mob.ParamBase[ST_PERCEPTION] = 10;
-			mob.ParamBase[SK_UNARMED] = 285;
+			mob.ParamBase[SK_CLOSE_COMBAT] = 285;
         }
 		if (chanceformob < 3)
         {
@@ -113,7 +113,7 @@ void r_PurchaseMine(Critter& player, Critter@ npc)
             mob.ParamBase[ST_REPLICATION_TIME] = 60 * Random(5, 10);
             mob.ParamBase[ST_NPC_ROLE] = ROLE_MOB_MINE;
             mob.ParamBase[ST_PERCEPTION] = 10;
-			mob.ParamBase[SK_UNARMED] = 285;
+			mob.ParamBase[SK_CLOSE_COMBAT] = 285;
         }
 		}
 

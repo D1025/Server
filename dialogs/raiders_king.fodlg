@@ -8,7 +8,7 @@ lang=engl
 1 1000 None 0 #
 3 1010 D _var p q_raiders_king = 0 D _param p ST_CHARISMA > 4 D _param p ST_STRENGTH > 6 #
 3 1020 D _param p ST_ENDURANCE > 6 D _param p ST_CHARISMA > 4 D _var p q_raiders_king = 0 #
-3 1030 D _param p ST_CHARISMA > 4 D _param p SK_UNARMED > 99 D _var p q_raiders_king = 0 #
+3 1030 D _param p ST_CHARISMA > 4 D _param p SK_CLOSE_COMBAT > 99 D _var p q_raiders_king = 0 #
 2 1040 @
 2 2000 None 0 @
 3 3000 None 0 #
@@ -49,7 +49,7 @@ lang=engl
 15 15000 None 0 #
 0 15010 R _var p q_raiders_king = 1 R _param p ST_EXPERIENCE + 191 R _item p PID_BUFFOUT + 2 @
 16 16000 None 0 #
-0 16010 R _var p q_raiders_king = 1 R _param p ST_EXPERIENCE + 183 R _param p SK_UNARMED + 15 @
+0 16010 R _var p q_raiders_king = 1 R _param p ST_EXPERIENCE + 183 R _param p SK_CLOSE_COMBAT + 15 @
 17 17000 None 0 #
 18 17010 @
 18 18000 None 0 #
@@ -60,7 +60,7 @@ lang=engl
 20 20000 None 0 #
 0 20010 R _var p q_raiders_king = 1 R _param p ST_EXPERIENCE + 192 R _item p PID_BUFFOUT + 2 @
 21 21000 None 0 #
-0 21010 R _var p q_raiders_king = 1 R _param p ST_EXPERIENCE + 198 R _param p SK_UNARMED + 8 &
+0 21010 R _var p q_raiders_king = 1 R _param p ST_EXPERIENCE + 198 R _param p SK_CLOSE_COMBAT + 8 &
 
 [engl]
 {100}{}{King}

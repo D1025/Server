@@ -32,10 +32,10 @@ LEVEL.FRM     ; Level
 CRITCHNC.FRM  ; Critical Power
 
 *200
-GUNSML.FRM    ; Small Guns
+GUNSML.FRM    ; Pistols
+SK_RIFLES.FRM ; Rifles
 GUNBIG.FRM    ; Big Guns
 ENERGYWP.FRM  ; Energy Weapons
-UNARMED.FRM   ; Unarmed
 MELEE.FRM     ; Melee Weapons
 THROWING.FRM  ; Throwing
 FIRSTAID.FRM  ; First Aid
@@ -48,7 +48,7 @@ SCIENCE.FRM   ; Science
 REPAIR.FRM    ; Repair
 SPEECH.FRM    ; Speech
 BARTER.FRM    ; Barter
-GAMBLING.FRM  ; Gambling
+SK_RUNNING.PNG; Running
 OUTDOORS.FRM  ; Outdoorsman
 
 *260

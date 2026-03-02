@@ -446,13 +446,13 @@ int GetRunningAc(CritterMutual& cr, bool head)
 		if(!weapon->IsWeapon())
 			break;
 		if(weapon->Proto->Weapon_Skill[0]!=SK_THROWING &&
-			weapon->Proto->Weapon_Skill[0]!=SK_UNARMED)
+			weapon->Proto->Weapon_Skill[0]!=SK_CLOSE_COMBAT)
 			break; // damn spears
 		weapon=cr.ItemSlotExt;
 		if(!weapon->IsWeapon())
 			break;
 		if(weapon->Proto->Weapon_Skill[0]!=SK_THROWING &&
-			weapon->Proto->Weapon_Skill[0]!=SK_UNARMED)
+			weapon->Proto->Weapon_Skill[0]!=SK_CLOSE_COMBAT)
 			break; // damn spears
 
 		if(cr.Params[PE_HTH_EVADE]) val+=20;
@@ -639,21 +639,21 @@ EXPORT bool Item_Weapon_IsHtHAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_UNARMED;
+	return skill == SK_CLOSE_COMBAT;
 }
 
 EXPORT bool Item_Weapon_IsGunAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_SMALL_GUNS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_MELEE_WEAPONS;
+	return skill == SK_PISTOLS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_RIFLES;
 }
 
 EXPORT bool Item_Weapon_IsRangedAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_SMALL_GUNS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_THROWING || skill == SK_MELEE_WEAPONS;
+	return skill == SK_PISTOLS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_THROWING || skill == SK_RIFLES;
 }
 
 

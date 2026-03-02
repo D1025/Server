@@ -510,7 +510,7 @@ bool ValidCritter(Critter@ cr, Contract@ contract, uint number)
             for(uint i = 0; i < num; i++)
             {
                 if((items[i].GetType() == ITEM_TYPE_WEAPON))
-                    if(items[i].Proto.Weapon_Skill_0 != SK_UNARMED)
+                    if(items[i].Proto.Weapon_Skill_0 != SK_CLOSE_COMBAT)
                     {
                         cr.Say(SAY_NETMSG, "You were not transported inside the arena. Match rules disallow having non-melee weapons.");
                         return false;

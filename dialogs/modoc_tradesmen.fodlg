@@ -24,7 +24,7 @@ lang=engl
 11 2010 #
 65506 2020 D _param p ST_STRENGTH = 1337 #
 4 2030 #
-8 2040 D _param p SK_SMALL_GUNS > 50 #
+8 2040 D _param p SK_PISTOLS > 50 #
 0 2050 @
 3 3000 None 0 #
 65506 3010 D _param p ST_STRENGTH = 1337 #

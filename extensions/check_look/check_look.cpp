@@ -276,7 +276,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 				sk+=BONUS_WEAPON_HEAVY;
 				break;
 			default:
-				if(proto->Weapon_Skill[0]<=SK_ENERGY_WEAPONS || proto->Weapon_Skill[0]==SK_MELEE_WEAPONS) sk+=BONUS_WEAPON_RIFLE;
+				if(proto->Weapon_Skill[0]<=SK_ENERGY_WEAPONS || proto->Weapon_Skill[0]==SK_RIFLES) sk+=BONUS_WEAPON_RIFLE;
 				break;
 			}
 		}
@@ -293,7 +293,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 				sk+=BONUS_WEAPON_HEAVY;
 				break;
 			default:
-				if(proto->Weapon_Skill[0]<=SK_ENERGY_WEAPONS || proto->Weapon_Skill[0]==SK_MELEE_WEAPONS) sk+=BONUS_WEAPON_RIFLE;
+				if(proto->Weapon_Skill[0]<=SK_ENERGY_WEAPONS || proto->Weapon_Skill[0]==SK_RIFLES) sk+=BONUS_WEAPON_RIFLE;
 				break;
 			}
 		}

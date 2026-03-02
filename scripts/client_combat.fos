@@ -134,7 +134,7 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
 
     int toHit = int(chosen.Skill[skillNum]);
 	
-	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) toHit = int(MAX(chosen.Skill[SK_SMALL_GUNS], chosen.Skill[SK_DOCTOR])); // 25-07-2013 Cubik: przy uzywaniu Needlera do celnosci brany jest max(sg,doc)
+	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) toHit = int(MAX(chosen.Skill[SK_PISTOLS], chosen.Skill[SK_DOCTOR])); // 25-07-2013 Cubik: przy uzywaniu Needlera do celnosci brany jest max(sg,doc)
 	
 	if(valid(realWeapon))
 		toHit+= checkBonus(realWeapon, BONUS_WEAPON_ACCURACY);
@@ -142,7 +142,7 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
     int weaponPerk = weapon.Weapon_Perk;
     int blockers = 0;
 
-    if(skillNum != SK_UNARMED)
+    if(skillNum != SK_CLOSE_COMBAT)
     {
         // cr.Say(SAY_NETMSG, "Applying range modifiers.");
         // ranged attack modifiers
@@ -218,7 +218,7 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
         toHit += 15;
 
     int hitMod = GetHitAim(hitLocation);
-    if(skillNum == SK_UNARMED)
+    if(skillNum == SK_CLOSE_COMBAT)
         hitMod /= 2;
     toHit -= hitMod;
     toHit = CLAMP(toHit, 0, 100);
@@ -721,7 +721,7 @@ void combat_result(array<uint>& data)
 			bool 	isBurst = rounds > 1;
 			int8 	dmgType = _WeaponDmgType(weapon.Proto, use);
 			int 	skillNum = _WeaponSkill(weapon.Proto, use);
-			uint8  	weaponSubtype = (skillNum == SK_SMALL_GUNS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_MELEE_WEAPONS) ? WS_GUN : (skillNum == SK_THROWING ? WS_THROWING : WS_UNARMED);
+			uint8  	weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_RIFLES) ? WS_GUN : (skillNum == SK_THROWING ? WS_THROWING : WS_UNARMED);
 			bool   	isRanged 	 = 	(weaponSubtype == WS_GUN);
 			bool	isPistol 	 =	(weapon.Proto.Weapon_Anim1 == ANIM1_PISTOL);
 			bool	isMinigun 	 = 	(weapon.Proto.Weapon_Anim1 == ANIM1_MINIGUN);

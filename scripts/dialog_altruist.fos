@@ -20,10 +20,10 @@ void init_altruist(Critter& altruist, bool firstTime)
 	altruist.StatBase[ST_ACTION_POINTS] = 1000;
 	
 	//Set combat skills
-	altruist.SkillBase[SK_SMALL_GUNS] = 300;
+	altruist.SkillBase[SK_PISTOLS] = 300;
 	altruist.SkillBase[SK_BIG_GUNS] = 300;
 	altruist.SkillBase[SK_ENERGY_WEAPONS] = 300;
-	altruist.SkillBase[SK_UNARMED] = 300;
+	altruist.SkillBase[SK_CLOSE_COMBAT] = 300;
 	//Set support skills
 	altruist.SkillBase[SK_DOCTOR] = 300;
 	altruist.SkillBase[SK_FIRST_AID] = 300;

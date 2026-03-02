@@ -111,7 +111,7 @@ void critter_init(Critter& cr, bool firstTime)
         cr.PerkBase[PE_BONUS_RANGED_DAMAGE] += Random(1, 2);
         cr.PerkBase[PE_BONUS_HTH_DAMAGE] += Random(1, 2);
 
-        for(uint i = SK_SMALL_GUNS; i <= SK_THROWING; i++)
+        for(uint i = SK_PISTOLS; i <= SK_THROWING; i++)
             cr.SkillBase[i] = Random(180, 240);
 
         cr.StatBase[ST_INTELLECT] = Random(7, 10);

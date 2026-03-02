@@ -173,15 +173,15 @@ uint r_TellWeaponSkill(Critter& player, Critter@ follower)
 {
     switch(GetBestWeaponSkill(follower))
     {
-    case SK_SMALL_GUNS:
+    case SK_PISTOLS:
         return 13;
     case SK_BIG_GUNS:
         return 14;
     case SK_ENERGY_WEAPONS:
         return 15;
-    case SK_UNARMED:
+    case SK_CLOSE_COMBAT:
         return 11;
-    case SK_MELEE_WEAPONS:
+    case SK_RIFLES:
         return 12;
     case SK_THROWING:
         return 16;
@@ -336,11 +336,11 @@ if(!IS_DIALOG_GENERATED(text)) return;
 	
 	switch(GetBestWeaponSkill(npc))
     {
-    case SK_SMALL_GUNS: {text+="Small Guns (" + npc.Skill[SK_SMALL_GUNS] + "%)";break;}
+    case SK_PISTOLS: {text+="Pistols (" + npc.Skill[SK_PISTOLS] + "%)";break;}
     case SK_BIG_GUNS: {text+="Big Guns (" + npc.Skill[SK_BIG_GUNS] + "%)";break;}
     case SK_ENERGY_WEAPONS: {text+="Energy Weapons (" + npc.Skill[SK_ENERGY_WEAPONS] + "%)";break;}
-    case SK_UNARMED: {text+="Close Combat (" + npc.Skill[SK_UNARMED] + "%)";break;}
-    case SK_MELEE_WEAPONS: {text+="Close Combat (" + npc.Skill[SK_UNARMED] + "%)";break;}
+    case SK_CLOSE_COMBAT: {text+="Close Combat (" + npc.Skill[SK_CLOSE_COMBAT] + "%)";break;}
+    case SK_RIFLES: {text+="Rifles (" + npc.Skill[SK_RIFLES] + "%)";break;}
     case SK_THROWING:{ text+="Throwing (" + npc.Skill[SK_THROWING] + "%)";break;}
 	default: break;
     }

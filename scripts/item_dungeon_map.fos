@@ -322,7 +322,7 @@ void SpawnDungeonMobs(uint8 tier, Map@ map) // search for all entires that are d
 			mob.StatBase[ST_MAX_LIFE] += hpRnd;
 			mob.StatBase[ST_CURRENT_HP] += hpRnd;
 			mob.StatBase[ST_PERCEPTION] = 2*(tier+1);
-			mob.SkillBase[SK_SMALL_GUNS] += skills;
+			mob.SkillBase[SK_PISTOLS] += skills;
 			mob.SkillBase[SK_THROWING] += skills;
 			mob.SkillBase[SK_BIG_GUNS] += skills;
 			mob.SkillBase[SK_ENERGY_WEAPONS] += skills;

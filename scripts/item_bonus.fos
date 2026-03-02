@@ -234,7 +234,7 @@ void AddWeaponBonus(Item@ it, int number, bool isCrafting = false)
 	uint bonusType=0;
 
 	int skillNum = it.Proto.Weapon_Skill_0;
-    bool isRangeWeapon = (skillNum == SK_SMALL_GUNS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS);
+    bool isRangeWeapon = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS);
 	// Choose which bonus and specify bonus value range
 	do
 	{

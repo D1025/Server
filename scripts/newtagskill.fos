@@ -106,7 +106,7 @@ int getBaseSkillValue(Critter &player, int skill)
 
 	switch(skill)
 	{
-		case SK_SMALL_GUNS: {
+		case SK_PISTOLS: {
 			baseSkill = 5 + 4 * player.StatBase[ST_AGILITY];
 			break;
 		}
@@ -118,11 +118,11 @@ int getBaseSkillValue(Critter &player, int skill)
 			baseSkill = 0 + 2 * player.StatBase[ST_AGILITY];
 			break;
 		}
-		case SK_UNARMED: {
+		case SK_CLOSE_COMBAT: {
 			baseSkill = 30 + 2 * (player.StatBase[ST_AGILITY] + player.StatBase[ST_STRENGTH]);
 			break;
 		}
-		case SK_MELEE_WEAPONS: {
+		case SK_RIFLES: {
 			baseSkill = 20 + 2 * (player.StatBase[ST_AGILITY] + player.StatBase[ST_STRENGTH]);
 			break;
 		}

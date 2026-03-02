@@ -25,7 +25,7 @@ int[][] PerksData = {
 
 	{ 302, 2, 1 }, // Bonus HtH Attacks, Levelling, 1 ranks
 	{ // level 1 requirements
-		203, 1, 180 // Unarmed at least 180
+		204, 1, 180 // Close Combat at least 180
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -37,7 +37,7 @@ int[][] PerksData = {
 
 	{ 303, 0, 1 }, // Bonus HtH Damage, Levelling, 1 ranks
 	{ // level 1 requirements
-		203, 1, 75, // Unarmed at least 75
+		204, 1, 75, // Close Combat at least 75
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1028,17 +1028,17 @@ int[][] PerksData = {
 #ifdef __SERVER
 	{ // level 1 perk up effects
 		0, 1, 2, // Strength increased by 2
-		203, 1, 30,
+		204, 1, 30,
 		216, 1, 15,
 	},
 		{ // level 1 perk up effects
     		0, 1, 2, // Strength increased by 2
-    		203, 1, 30,
+    		204, 1, 30,
     		216, 1, 15,
     	},
     		{ // level 1 perk up effects
         		0, 1, 2, // Strength increased by 2
-        		203, 1, 30,
+        		204, 1, 30,
         		216, 1, 15,
         	},
 	{ // level 1 perk down effects
@@ -1065,15 +1065,15 @@ int[][] PerksData = {
 #ifdef __SERVER
 	{ // level 1 perk up effects
 		1, 1, 2, // Perception increased by 2
-		204, 1, 30,
+		201, 1, 30,
 	},
 		{ // level 1 perk up effects
     		1, 1, 2, // Perception increased by 2
-    		204, 1, 30,
+    		201, 1, 30,
     	},
     		{ // level 1 perk up effects
         		1, 1, 2, // Perception increased by 2
-        		204, 1, 30,
+        		201, 1, 30,
         	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -1099,15 +1099,15 @@ int[][] PerksData = {
 #ifdef __SERVER
 	{ // level 1 perk up effects
 		2, 1, 2, // Endurance increased by 2
-		201, 1, 30,
+		202, 1, 30,
 	},
 		{ // level 1 perk up effects
     		2, 1, 2, // Endurance increased by 2
-    		201, 1, 30,
+    		202, 1, 30,
     	},
     		{ // level 1 perk up effects
         		2, 1, 2, // Endurance increased by 2
-        		201, 1, 30,
+        		202, 1, 30,
         	},
 	{ // level 1 perk down effects
 		-1 // Just revert
@@ -1176,7 +1176,7 @@ int[][] PerksData = {
 #ifdef __SERVER
 	{ // level 1 perk up effects
 		4, 1, 2, // Intelligence increased by 2
-				202, 1, 30,
+				203, 1, 30,
         		206, 1, 15,
         		207, 1, 15,
         		209, 1, 30,
@@ -1186,7 +1186,7 @@ int[][] PerksData = {
 	},
 		{ // level 1 perk up effects
     		4, 1, 2, // Intelligence increased by 2
-    				202, 1, 30,
+    				203, 1, 30,
             		206, 1, 15,
             		207, 1, 15,
             		209, 1, 30,
@@ -1196,7 +1196,7 @@ int[][] PerksData = {
     	},
     		{ // level 1 perk up effects
         		4, 1, 2, // Intelligence increased by 2
-        				202, 1, 30,
+        				203, 1, 30,
                 		206, 1, 15,
                 		207, 1, 15,
                 		209, 1, 30,
@@ -1326,7 +1326,7 @@ int[][] PerksData = {
 
 	{ 394, 0, 1 }, // HtH Evade, Levelling, 1 ranks
 	{ // level 1 requirements
-		203, 1, 150, // Unarmed at least 150
+		204, 1, 150, // Close Combat at least 150
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1739,7 +1739,7 @@ int[][] PerksData = {
 
 	{ 436, 2, 1 }, // HtH Evade+, Disabled, 1 ranks
 	{ // level 1 requirements
-		203, 1, 150, // Unarmed at least 150
+		204, 1, 150, // Close Combat at least 150
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1838,7 +1838,7 @@ int[][] PerksData = {
 
 	{ 444, 0, 1 }, // In Your Face!, Levelling, 1 ranks
 	{ // level 1 requirements
-		203, 1, 125, // Unarmed at least 125
+		204, 1, 125, // Close Combat at least 125
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
@@ -1863,7 +1863,7 @@ int[][] PerksData = {
 
 	{ 446, 2, 1 }, // Better HtH Criticals, Levelling, 1 ranks
 	{ // level 1 requirements
-		203, 1, 175, // Unarmed at least 175
+		204, 1, 175, // Close Combat at least 175
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects
