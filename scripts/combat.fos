@@ -2653,29 +2653,30 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
         radius += 1;
 
     bool reduceSplashDamage = (!isLegacyGrenade && protoBlastPerkStacks == 0 && upgradeBlastPerkStacks > 0);
+    uint effectRadius = (radius > 0 ? radius : 1);
 	//nowy wybuch molotova z fire_hexes - worldremaker 26.03.2017
 	if(weapPid==PID_MOLOTOV_COCKTAIL) 
 	{
 		MolotovBlast( map, tx, ty, PID_FIRE_HEX, ( valid( attack.Attacker ) ? attack.Attacker.Id : 0 ) );
-		map.RunEffect(PID_EXPLODE_FIRE_BIG, tx, ty, 2);
+		map.RunEffect(PID_EXPLODE_FIRE_BIG, tx, ty, effectRadius);
 	}
 // stary wybuch molotova
    //if(weapPid == PID_MOLOTOV_COCKTAIL)
        // map.RunEffect(PID_EXPLODE_FIRE_BIG, tx, ty, 2); 
     else if(weapPid == PID_FRAG_GRENADE || weapPid == PID_HOLY_HAND_GRENADE)
-        map.RunEffect(PID_EXPLODE_FIRE_SMALL, tx, ty, 2);
+        map.RunEffect(PID_EXPLODE_FIRE_SMALL, tx, ty, effectRadius);
     else if(weapPid == PID_PULSE_GRENADE)
-        map.RunEffect(PID_EXPLODE_EMP, tx, ty, 2);
+        map.RunEffect(PID_EXPLODE_EMP, tx, ty, effectRadius);
     else if(weapPid == PID_PLASMA_GRENADE || weapPid == PID_FAKE_PLASMA_GRENADE)
-        map.RunEffect(PID_EXPLODE_PLASMA, tx, ty, 2);
+        map.RunEffect(PID_EXPLODE_PLASMA, tx, ty, effectRadius);
     else if(isRocket)
-        map.RunEffect(PID_EXPLODE_ROCKET, tx, ty, 1);
+        map.RunEffect(PID_EXPLODE_ROCKET, tx, ty, effectRadius);
     else if(weapPid == PID_DYNACORD)
-        map.RunEffect(PID_EXPLODE_FIRE_BIG, tx, ty, 3);
+        map.RunEffect(PID_EXPLODE_FIRE_BIG, tx, ty, effectRadius);
 	else if(weapPid == PID_BOSS_RIFLE)
-		map.RunEffect(PID_EXPLODE_PLASMA, tx, ty, 5);
+		map.RunEffect(PID_EXPLODE_PLASMA, tx, ty, effectRadius);
     else
-        map.RunEffect(PID_EXPLODE_FIRE_BIG, tx, ty, 2);   // default case
+        map.RunEffect(PID_EXPLODE_FIRE_BIG, tx, ty, effectRadius);   // default case
 
     // Explosion sound. this could use some rework.
     string     soundName = "WHN1XXX1.ACM";
