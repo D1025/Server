@@ -33,7 +33,7 @@
 
 // int Val2;
 //  wrecked car - critter id, geiger counter charges left, nuka cola prod fruits count,
-//  still rotgut fruits count, explosives owner id, shot trap - min damage
+//  still rotgut fruits count, explosives owner id, shot trap - damage lower bound
 //  motion sensor charges left
 //	firetruck - current water
 //  dynamic spawnpoint captureEventNum (event number of the spawnpoint capture counter event)
@@ -48,7 +48,7 @@
 // int Val4;
 //  cheats - blockers group id, bag spawner id, hotel room lock - room id,
 //  item spawner id, spear trap and bear trap bonus damage, explosives bonus damage,
-//  shot trap - max damage, alert trap - bag/level/entire bits
+//  shot trap - damage upper bound, alert trap - bag/level/entire bits
 //  courier box - opening/disarming status
 //  dynamic spawnpoint nextSpawnpoint (id of next spawnpoint in spawnpoint chain)
 

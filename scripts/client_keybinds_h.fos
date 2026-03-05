@@ -161,7 +161,7 @@ class ReloadBind : BaseBind
             return;
         uint[] Reload = { CHOSEN_USE_ITEM, item.Id, 0, TARGET_SELF_ITEM, 0, ITEM_MODE_RELOAD, 0 };
 
-        if(item.GetType() == ITEM_TYPE_WEAPON && item.AmmoCount < item.Proto.Weapon_MaxAmmoCount)
+        if(item.GetType() == ITEM_TYPE_WEAPON && item.AmmoCount < UpgradeWeaponMaxAmmo(item))
         {
             uint mode = item.Mode;
             RunServerScriptUnsafe("unsafe_client@unsafe_WeaponMode", mode, 0, 0, "", null);

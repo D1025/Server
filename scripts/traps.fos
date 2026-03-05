@@ -27,15 +27,15 @@ import void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint a
 
 // item init functions
 // void _SpearTrap(Item& item, bool firstTime) // vals: 1 - spear count; 3 - complexity
-// void _GenericShot(Item& item, bool firstTime) // vals: 1 - pid, 2 - min, 3 - complexity
+// void _GenericShot(Item& item, bool firstTime) // vals: 1 - pid, 2 - damage from, 3 - complexity
 // void _BearTrapInit(Item& item, bool firstTime) // vals: 3 - complexity; 4 - bonus damage
-// void _AlarmTrapInit(Item& item, bool firstTime) // 1 - pid, min, max (16, 8, 8 bits); 3 - complexity; 4 - bag, level, entire (16, 8, 8 bits)
+// void _AlarmTrapInit(Item& item, bool firstTime) // 1 - pid, damage from, damage to (16, 8, 8 bits); 3 - complexity; 4 - bag, level, entire (16, 8, 8 bits)
 
 // script functions
 // void MakeSpearTrap(Item& trap, uint complexity, uint hideSkill, uint spearcount)
-// void MakeGenericShotTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint dmgmin, uint dmgmax)
+// void MakeGenericShotTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint damageFrom, uint damageTo)
 // void MakeBearTrap(Item& trap, uint complexity, uint hideSkill, uint bonusDamage)
-// void MakeAlarmTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint8 min, uint8 max, uint16 bag, uint8 level, uint8 entire)
+// void MakeAlarmTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint8 damageFrom, uint8 damageTo, uint16 bag, uint8 level, uint8 entire)
 
 /**
  * Sets the spear trap script for the item and assigns its parameters
@@ -102,18 +102,18 @@ void ShootSpear(Item& trap, Critter& cr)
  * @param     complexity       Complexity level for disarming the trap
  * @param     hideSkill     Value of traps skill used to hide the item, 0 to disable
  * @param     pid       Proto id for object to be shot
- * @param     dmgmin       Minimum amount of damage dealt
- * @param     dmgmax       Maximum amount of damage dealt
+ * @param     damageFrom   Lower bound of dealt damage
+ * @param     damageTo     Upper bound of dealt damage
  */
-void MakeGenericShotTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint dmgmin, uint dmgmax)   // export
+void MakeGenericShotTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint damageFrom, uint damageTo)   // export
 {
     if(hideSkill > 0)
         trap.TrapValue = TRAPS_HIDE(hideSkill);
     _Complexity(trap) = complexity;
     trap.SetScript("_GenericShot");
     _Pid(trap) = pid;
-    _DmgMin(trap) = dmgmin;
-    _DmgMax(trap) = dmgmax;
+    _DmgFrom(trap) = damageFrom;
+    _DmgTo(trap) = damageTo;
 }
 
 void _GenericShot(Item& item, bool firstTime)
@@ -141,7 +141,7 @@ void ShootGeneric(Item& trap, Critter& cr)
     map.MoveHexByDir(fx, fy, dir, Random(5, 15));
     map.RunFlyEffect(_Pid(trap), null, null, fx, fy, cr.HexX, cr.HexY);
     // hurt player
-    InjureCritter(cr, Random(_DmgMin(trap), _DmgMax(trap)), DAMAGE_NORMAL, (dir + 3) % 6, 0);
+    InjureCritter(cr, Random(_DmgFrom(trap), _DmgTo(trap)), DAMAGE_NORMAL, (dir + 3) % 6, 0);
     map.AddItem(cr.HexX, cr.HexY, _Pid(trap), 1);
     return;
 }

@@ -550,6 +550,8 @@ class ProtoItem
 	const uint16 Weapon_DefaultAmmoPid;
 	const int Weapon_MinStrength;
 	const int Weapon_Perk;
+	const uint8 Weapon_Perk_2;
+	const uint8 Weapon_Perk_3;
 	const uint Weapon_ActiveUses;
 	const int Weapon_Skill_0;
 	const int Weapon_Skill_1;
@@ -630,12 +632,9 @@ class ProtoItem
 	const uint Weapon_Anim2_0;
 	const uint Weapon_Anim2_1;
 	const uint Weapon_Anim2_2;
-	const int Weapon_DmgMin_0;
-	const int Weapon_DmgMin_1;
-	const int Weapon_DmgMin_2;
-	const int Weapon_DmgMax_0;
-	const int Weapon_DmgMax_1;
-	const int Weapon_DmgMax_2;
+	const int Weapon_Dmg_0;
+	const int Weapon_Dmg_1;
+	const int Weapon_Dmg_2;
 	const uint16 Weapon_Effect_0;
 	const uint16 Weapon_Effect_1;
 	const uint16 Weapon_Effect_2;
@@ -647,6 +646,7 @@ class ProtoItem
 	const uint Weapon_CriticalFailture;
 	const bool Weapon_UnarmedArmorPiercing;
 	const bool Weapon_NoRunning;
+	const uint8 Weapon_ReloadCount;
 	const int Ammo_AcMod;
 	const int Ammo_DrMod;
 	const uint Ammo_DmgMult;

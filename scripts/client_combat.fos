@@ -7,6 +7,7 @@
 
 #include "_client_defines.fos"
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "combat_h.fos"
 #include "lexems_h.fos"
 
@@ -74,12 +75,7 @@ void CombatLogConfig()
 
 int checkBonus(ItemCl@ it, int bonusType)
 {
-	if(it.Val0==bonusType) return it.Val5;
-	if(it.Val1==bonusType) return it.Val6;
-	if(it.Val2==bonusType) return it.Val7;
-	if(it.Val3==bonusType) return it.Val8;
-	if(it.Val4==bonusType) return it.Val9;
-	return 0;
+	return UpgradeWeaponBonus(it, bonusType);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -117,8 +113,8 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
     int  wpnMaxDist = _WeaponMaxDist(weapon, use);
     if(valid(realWeapon))
     {
-        wpnMaxDist += checkBonus(realWeapon, BONUS_WEAPON_MAX_RANGE);
-        if (realWeapon.Proto.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE && chosen.Perk[PE_SHARPSHOOTER] == 1)
+        wpnMaxDist += UpgradeWeaponRangeBonus(realWeapon, wpnMaxDist);
+        if (WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_SCOPE_RANGE) && chosen.Perk[PE_SHARPSHOOTER] == 1)
             wpnMaxDist+=5;
     }
     if(skillNum == SK_THROWING)
@@ -139,7 +135,10 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
 	if(valid(realWeapon))
 		toHit+= checkBonus(realWeapon, BONUS_WEAPON_ACCURACY);
 		
-    int weaponPerk = weapon.Weapon_Perk;
+    bool perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
+    bool perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
+    bool perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);
+    bool perkAccurate = WeaponHasProtoPerk(weapon, WEAPON_PERK_ACCURATE);
     int blockers = 0;
 
     if(skillNum != SK_CLOSE_COMBAT)
@@ -148,41 +147,40 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
         // ranged attack modifiers
         int distmod1 = 2; // used for initial weapon bonus
         int distmod2 = 0; // minimal distance
-        if(weaponPerk == WEAPON_PERK_LONG_RANGE)
+        if(perkSkilleless)
+        {
+            distmod1 = 0;
+            distmod2 = 0;
+        }
+        else if(perkLongRange)
             distmod1 = 4;
-        else if(weaponPerk == WEAPON_PERK_SCOPE_RANGE)
+        else if(perkScopeRange)
         {
             distmod1 = 5;
             distmod2 = 8;
         }
 
         int perception = chosen.Stat[ST_PERCEPTION];
-        int acc = dist;
+        int accloss = (chosen.IsPlayer() ? (perception - 2) * distmod1 : (perception * distmod1)); // keep player-specific branch for possessed NPC display
+        int sharpshooter = 2 * chosen.Perk[PE_SHARPSHOOTER];
+        bool eyeDamage = chosen.Damage[DAMAGE_EYE] != 0;
 
-        if(dist < distmod2)
-            acc += distmod2;
-        else
+        int acc = (perkSkilleless ? 0 : dist);
+        if(!perkSkilleless)
         {
-            if(chosen.IsPlayer())
-                acc -= (perception - 2) * distmod1;              // we want to keep it, because fo2238 might use it to display NPCs chance (via possessing)
+            if(dist < distmod2)
+                acc += distmod2;
             else
-                acc -= perception * distmod1;
+                acc -= accloss;
+
+            if(-2 * perception > acc)
+                acc = -2 * perception;
         }
 
-        if(-2 * perception > acc)
-            acc = -2 * perception;
-
-        acc -= 2 * chosen.Perk[PE_SHARPSHOOTER];
-
-        if(acc >= 0)
-        {
-            if(chosen.Damage[DAMAGE_EYE] != 0)
-                acc *= -12;
-            else
-                acc *= -4;
-        }
-        else
-            acc *= -4;
+        acc -= sharpshooter;
+        if(acc > 0 && eyeDamage)
+            acc *= 3;
+        acc *= -4;
 
         toHit += acc;
 
@@ -199,7 +197,7 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
         handlingStrength += 2;
     if(handlingStrength < reqStrength)
         toHit -= (reqStrength - handlingStrength) * 20;
-    if(weaponPerk == WEAPON_PERK_ACCURATE)
+    if(perkAccurate)
         toHit += 20;
 
     int acmod = target.GetAC(hitLocation == HIT_LOCATION_HEAD || hitLocation == HIT_LOCATION_EYES);

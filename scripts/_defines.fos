@@ -199,11 +199,33 @@
 // Possible weapon bonus
 #define BONUS_WEAPON_CRITICAL_ROLL				(100)
 #define BONUS_WEAPON_CRITICAL_CHANCE			(101)
-#define BONUS_WEAPON_MIN_DMG					(102)
-#define BONUS_WEAPON_MAX_DMG					(103)
+#define BONUS_WEAPON_DAMAGE						(102)
+#define BONUS_WEAPON_DAMAGE_EXTRA				(103) // Legacy secondary slot, treated as damage.
 #define BONUS_WEAPON_ACCURACY					(104)
 #define BONUS_WEAPON_MAX_AP						(105)
 #define BONUS_WEAPON_MAX_RANGE                  (106)
+
+// Upgrade slots/perks
+#define UPGRADE_SLOT_EMPTY                      (9000)
+#define UPGRADE_SLOT_USED                       (9001)
+#define UPGRADE_MAX_PERKS                       (3)
+#define UPGRADE_MAX_SLOTS                       (7)
+#define LEGENDARY_TARGET                        (1000)
+
+// Weapon upgrade perks (item-based, not ProtoItem::Weapon_Perk)
+#define UPGRADE_WEAPON_PERK_ACCURATE            (1000)
+#define UPGRADE_WEAPON_PERK_PENETRATE           (1001)
+#define UPGRADE_WEAPON_PERK_COMMANDO            (1002)
+#define UPGRADE_WEAPON_PERK_FAST_RELOAD         (1003)
+#define UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE     (1004)
+#define UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE     (1005)
+#define UPGRADE_WEAPON_PERK_AP_BOOST            (1006)
+#define UPGRADE_WEAPON_PERK_CRITICAL_POWER      (1007)
+#define UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER (1008)
+#define UPGRADE_WEAPON_PERK_BLAST               (1009)
+#define UPGRADE_WEAPON_PERK_PERSISTENT          (1010)
+#define UPGRADE_WEAPON_PERK_MARKED_SHOT         (1011)
+#define UPGRADE_WEAPON_PERK_INCREASED_RANGE     (1012)
 
 // Possible armor bonus
 #define BONUS_ARMOR_NORMAL_DT					(100)
@@ -358,11 +380,15 @@
 #define WEAPON_PERK_CASCADE                      (10)
 #define WEAPON_PERK_COMMANDO                     (11)
 #define WEAPON_PERK_RIPPER_SAWING                (12)
+#define WEAPON_PERK_SKILLESS                     (13)
+#define WEAPON_PERK_EXTRA_UPGRADE_SLOTS          (14)
+#define WEAPON_PERK_BLAST                        (15)
 
 #define ARMOR_PERK_POWERED                       (1)    // +3 strength, +30 radiation resist
 #define ARMOR_PERK_COMBAT                        (2)    // +20 radiation resist
 #define ARMOR_PERK_ADVANCED_I                    (3)    // +4 strength, +60 radiation resist
 #define ARMOR_PERK_ADVANCED_II                   (4)    // +4 strength, +75 radiation resist
+#define ARMOR_PERK_EXTRA_UPGRADE_SLOTS           (5)    // +2 upgrade slots for armor
 
 #define HELMET_PERK_CHARISMA                     (1)    // +1 charisma
 #define HELMET_PERK_PERCEPTION_GLASSES           (2)    // PE1:+3, PE2:+2, PE3:+1, PE4+:0
@@ -1873,12 +1899,9 @@
 # pragma bindfield "const uint   ProtoItem::Weapon_Anim2_0   -> 212"
 # pragma bindfield "const uint   ProtoItem::Weapon_Anim2_1   -> 216"
 # pragma bindfield "const uint   ProtoItem::Weapon_Anim2_2   -> 220"
-# pragma bindfield "const int    ProtoItem::Weapon_DmgMin_0  -> 224"
-# pragma bindfield "const int    ProtoItem::Weapon_DmgMin_1  -> 228"
-# pragma bindfield "const int    ProtoItem::Weapon_DmgMin_2  -> 232"
-# pragma bindfield "const int    ProtoItem::Weapon_DmgMax_0  -> 236"
-# pragma bindfield "const int    ProtoItem::Weapon_DmgMax_1  -> 240"
-# pragma bindfield "const int    ProtoItem::Weapon_DmgMax_2  -> 244"
+# pragma bindfield "const int    ProtoItem::Weapon_Dmg_0     -> 224"
+# pragma bindfield "const int    ProtoItem::Weapon_Dmg_1     -> 228"
+# pragma bindfield "const int    ProtoItem::Weapon_Dmg_2     -> 232"
 # pragma bindfield "const uint16 ProtoItem::Weapon_Effect_0  -> 248"
 # pragma bindfield "const uint16 ProtoItem::Weapon_Effect_1  -> 250"
 # pragma bindfield "const uint16 ProtoItem::Weapon_Effect_2  -> 252"
@@ -1890,6 +1913,9 @@
 # pragma bindfield "const uint   ProtoItem::Weapon_CriticalFailture     -> 268"
 # pragma bindfield "const bool   ProtoItem::Weapon_UnarmedArmorPiercing -> 272"
 # pragma bindfield "const bool   ProtoItem::Weapon_NoRunning            -> 273"
+# pragma bindfield "const uint8  ProtoItem::Weapon_ReloadCount         -> 274"
+# pragma bindfield "const uint8  ProtoItem::Weapon_Perk_2              -> 275"
+# pragma bindfield "const uint8  ProtoItem::Weapon_Perk_3              -> 276"
 // Ammo
 # pragma bindfield "const int    ProtoItem::Ammo_AcMod   -> 300"
 # pragma bindfield "const int    ProtoItem::Ammo_DrMod   -> 304"

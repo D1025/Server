@@ -179,22 +179,22 @@ public:
     const uint8 Weapon_Anim2_T;
 
     /** \~russian Минимальное повреждение. */
-    const uint16 Weapon_DmgMin_F;
+    const uint16 Weapon_Dmg_F;
 
     /** \~russian Минимальное повреждение. */
-    const uint16 Weapon_DmgMin_S;
+    const uint16 Weapon_Dmg_S;
 
     /** \~russian Минимальное повреждение. */
-    const uint16 Weapon_DmgMin_T;
+    const uint16 Weapon_Dmg_T;
 
     /** \~russian Максимальное повреждение. */
-    const uint16 Weapon_DmgMax_F;
+    const uint16 Weapon_Dmg_F;
 
     /** \~russian Максимальное повреждение. */
-    const uint16 Weapon_DmgMax_S;
+    const uint16 Weapon_Dmg_S;
 
     /** \~russian Максимальное повреждение. */
-    const uint16 Weapon_DmgMax_T;
+    const uint16 Weapon_Dmg_T;
 
     /** \~russian Максимальная дистанция. */
     const uint16 Weapon_MaxDist_F;
@@ -344,3 +344,4 @@ public:
      */
     bool IsWeared();
 }
+

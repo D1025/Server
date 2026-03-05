@@ -9869,6 +9869,32 @@ a58ew64v}
 {2554601}{}{The specific size of a leather jacket, probably designed only for mutants}
 {2554700}{}{Plating Mutant Armor}
 {2554701}{}{It is crude armor that uses straps of leather and metal bands to form a sparse but effective covering. It can only be worn by super mutants. }
+{2554800}{}{Advanced Weapon Blueprint: Accurate}
+{2554801}{}{Technical sketch for applying the Accurate perk to a weapon. Use it on a weapon in your inventory.}
+{2554900}{}{Advanced Weapon Blueprint: Penetrate}
+{2554901}{}{Technical sketch for applying the Penetrate perk to a weapon. Use it on a weapon in your inventory.}
+{2555000}{}{Advanced Weapon Blueprint: Commando}
+{2555001}{}{Technical sketch for applying the Commando perk to a weapon. Use it on a weapon in your inventory.}
+{2555100}{}{Advanced Weapon Blueprint: Fast Reload}
+{2555101}{}{Technical sketch for applying the Fast Reload perk to a weapon. Use it on a weapon in your inventory.}
+{2555200}{}{Advanced Weapon Blueprint: Double Magazine}
+{2555201}{}{Technical sketch for applying the Double Magazine perk to a weapon. Use it on a weapon in your inventory.}
+{2555300}{}{Advanced Weapon Blueprint: Enhanced Damage}
+{2555301}{}{Technical sketch for applying the Enhanced Damage perk to a weapon. Use it on a weapon in your inventory.}
+{2555400}{}{Advanced Weapon Blueprint: AP Boost}
+{2555401}{}{Technical sketch for applying the AP Boost perk to a weapon. Use it on a weapon in your inventory.}
+{2555500}{}{Advanced Weapon Blueprint: Critical Power}
+{2555501}{}{Technical sketch for applying the Critical Power perk to a weapon. Use it on a weapon in your inventory.}
+{2555600}{}{Advanced Weapon Blueprint: Silent Hill Monster}
+{2555601}{}{Technical sketch for applying the Silent Hill Monster perk to a weapon. Use it on a weapon in your inventory.}
+{2555700}{}{Advanced Weapon Blueprint: Blast}
+{2555701}{}{Technical sketch for applying the Blast perk to a weapon. Use it on a weapon in your inventory.}
+{2555800}{}{Advanced Weapon Blueprint: Persistent}
+{2555801}{}{Technical sketch for applying the Persistent perk to a weapon. Use it on a weapon in your inventory.}
+{2555900}{}{Advanced Weapon Blueprint: Marked Shot}
+{2555901}{}{Technical sketch for applying the Marked Shot perk to a weapon. Use it on a weapon in your inventory.}
+{2556000}{}{Advanced Weapon Blueprint: Increased Range}
+{2556001}{}{Technical sketch for applying the Increased Range perk to a weapon. Use it on a weapon in your inventory.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 #====================

@@ -541,7 +541,7 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		else
 			apCost = Game->RtApCostReloadWeapon;
 
-		if(item.IsWeapon() && item.Proto->Weapon_Perk == WEAPON_PERK_FAST_RELOAD) apCost--;
+		if(item.IsWeapon() && item.Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD)) apCost--;
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{

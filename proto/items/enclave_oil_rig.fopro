@@ -1,4 +1,4 @@
-# 3.2.0
+﻿# 3.2.0
 
 [Proto]
 ProtoId=25473
@@ -15,6 +15,7 @@ Cost=201
 Material=1
 Weapon_Anim1=11
 Weapon_MaxAmmoCount=100
+Weapon_ReloadCount=100
 Weapon_Caliber=1
 Weapon_DefaultAmmoPid=14
 Weapon_MinStrength=4
@@ -30,10 +31,6 @@ Weapon_Anim2_1=Anim2Burst
 Weapon_PicUse_0=art\intrface\throw.frm
 Weapon_PicUse_1=art\intrface\throw.frm
 Weapon_PicUse_2=art\intrface\blank.frm
-Weapon_DmgMin_0=250
-Weapon_DmgMin_1=250
-Weapon_DmgMax_0=500
-Weapon_DmgMax_1=500
 Weapon_MaxDist_0=45
 Weapon_MaxDist_1=45
 Weapon_Round_0=5
@@ -42,6 +39,8 @@ Weapon_ApCost_1=5
 Weapon_SoundId_0=64
 Weapon_SoundId_1=64
 
+Weapon_Dmg_0=375
+Weapon_Dmg_1=375
 [Proto]
 ProtoId=25474
 Type=3
@@ -57,6 +56,7 @@ Cost=3220
 Material=1
 Weapon_Anim1=11
 Weapon_MaxAmmoCount=300
+Weapon_ReloadCount=300
 Weapon_Caliber=20
 Weapon_DefaultAmmoPid=621
 Weapon_MinStrength=6
@@ -73,10 +73,6 @@ Weapon_Anim2_1=Anim2Flame
 Weapon_PicUse_0=art\intrface\single.frm
 Weapon_PicUse_1=art\intrface\burst.frm
 Weapon_PicUse_2=art\intrface\blank.frm
-Weapon_DmgMin_0=80
-Weapon_DmgMin_1=80
-Weapon_DmgMax_0=90
-Weapon_DmgMax_1=90
 Weapon_Effect_0=4025
 Weapon_MaxDist_0=25
 Weapon_MaxDist_1=15
@@ -87,6 +83,8 @@ Weapon_ApCost_1=3
 Weapon_SoundId_0=78
 Weapon_SoundId_1=73
 
+Weapon_Dmg_0=85
+Weapon_Dmg_1=85
 [Proto]
 ProtoId=25475
 Type=3
@@ -114,10 +112,6 @@ Weapon_Anim2_1=Anim2Thrust1H
 Weapon_PicUse_0=art\intrface\swing.frm
 Weapon_PicUse_1=art\intrface\thrust.frm
 Weapon_PicUse_2=art\intrface\blank.frm
-Weapon_DmgMin_0=50
-Weapon_DmgMin_1=40
-Weapon_DmgMax_0=100
-Weapon_DmgMax_1=75
 Weapon_MaxDist_0=5
 Weapon_MaxDist_1=5
 Weapon_ApCost_0=3
@@ -126,3 +120,5 @@ Weapon_Aim_0=1
 Weapon_Aim_1=1
 Weapon_SoundId_0=36
 
+Weapon_Dmg_0=75
+Weapon_Dmg_1=57

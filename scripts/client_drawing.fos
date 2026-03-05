@@ -7,6 +7,7 @@
 
 #include "client_drawing_h.fos"
 #include "_colors.fos"
+#include "item_upgrades_shared.fos"
 
 bool SpritesInit = false;
 
@@ -364,7 +365,7 @@ class WeaponRadiusChosen
 			uint16 hexX, hexY;
 			uint8 wepMode  = chosenWeapon.Mode&0x0F;
 			uint wpnMaxDist = _WeaponMaxDist(chosenWeapon.Proto, wepMode);
-			if( chosen.Perk[PE_SHARPSHOOTER] == 1 && chosenWeapon.Proto.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE )
+			if( chosen.Perk[PE_SHARPSHOOTER] == 1 && WeaponHasProtoPerk(chosenWeapon.Proto, WEAPON_PERK_SCOPE_RANGE) )
 			    wpnMaxDist+=5;
 
 			/*wpnMaxDist += checkBonus(chosenWeapon, BONUS_WEAPON_MAX_RANGE);*/

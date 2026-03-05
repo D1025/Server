@@ -1,4 +1,5 @@
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "MsgStr.h"
 
 #ifdef __SERVER
@@ -23,16 +24,7 @@ import void WearItem(Critter& cr, Item& item, int wearCount) from "repair";
 
 int SelectWeaponBonus(ItemMutual@ RealWeapon, int Int_Val_WeaponBonus)
 {
-    if(valid(RealWeapon))
-    {
-        if(RealWeapon.Val0 == Int_Val_WeaponBonus) return  RealWeapon.Val5;
-        if(RealWeapon.Val1 == Int_Val_WeaponBonus) return  RealWeapon.Val6;
-        if(RealWeapon.Val2 == Int_Val_WeaponBonus) return  RealWeapon.Val7;
-        if(RealWeapon.Val3 == Int_Val_WeaponBonus) return  RealWeapon.Val8;
-        if(RealWeapon.Val4 == Int_Val_WeaponBonus) return  RealWeapon.Val9;
-        return 0;
-    }
-    else return 0;
+    return UpgradeWeaponBonus(RealWeapon, Int_Val_WeaponBonus);
 }   
 
 bool IsHexShotWeapon(ItemMutual@ item)
@@ -56,7 +48,7 @@ uint HexShotGetMaxRange(CritterMutual& cr, ItemMutual@ item)
     if(IsHexShotWeapon(item))
     {
         uint8 use = _WeaponModeUse(item.Mode);
-        uint bonusRange = SelectWeaponBonus(item, BONUS_WEAPON_MAX_RANGE);
+        uint bonusRange = uint(MAX(0, UpgradeWeaponRangeBonus(item, _WeaponMaxDist(item.Proto, use))));
         return MIN(_WeaponMaxDist(item.Proto, use) + bonusRange, viewRange);
     }
     else
@@ -79,7 +71,9 @@ int HexShotingToHit(CritterMutual& cr, uint16 tx, uint16 ty, ProtoItem& weapon, 
     if(!cr.IsLife())
         return 0;
 
-    int weaponPerk = weapon.Weapon_Perk;
+    bool perkAccurate = WeaponHasProtoPerk(weapon, WEAPON_PERK_ACCURATE);
+    bool perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
+    bool perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);
     int skillNum = _WeaponSkill(weapon, 0);
     int toHit = int(cr.Skill[skillNum]);
     
@@ -94,7 +88,7 @@ int HexShotingToHit(CritterMutual& cr, uint16 tx, uint16 ty, ProtoItem& weapon, 
     if(handlingStrength < reqStrength)
         toHit -= (reqStrength - handlingStrength) * 20;
 
-    if(weaponPerk == WEAPON_PERK_ACCURATE)
+    if(perkAccurate)
         toHit += 20;
 
     toHit += SelectWeaponBonus(realWeapon, BONUS_WEAPON_ACCURACY);
@@ -102,28 +96,37 @@ int HexShotingToHit(CritterMutual& cr, uint16 tx, uint16 ty, ProtoItem& weapon, 
     // ranged attack modifiers
     int distmod1 = 2;   // used for initial weapon bonus
     int distmod2 = 0;   // minimal distance
-    if(weaponPerk == WEAPON_PERK_LONG_RANGE)
+    if(perkSkilleless)
+    {
+        distmod1 = 0;
+        distmod2 = 0;
+    }
+    else if(perkLongRange)
         distmod1 = 4;
 
     int perception = cr.Stat[ST_PERCEPTION];
     int dist = GetDistantion(cr.HexX, cr.HexY, tx, ty);
 
-    int acc = dist;
+    int accloss = (perception - 2) * distmod1;
+    int sharpshooter = 2 * cr.Perk[PE_SHARPSHOOTER];
+    bool eyeDamage = cr.Damage[DAMAGE_EYE] != 0;
+    int acc = (perkSkilleless ? 0 : dist);
 
-    if(dist < distmod2)
-        acc += distmod2;
-    else
-        acc -= (perception - 2) * distmod1; 
+    if(!perkSkilleless)
+    {
+        if(dist < distmod2)
+            acc += distmod2;
+        else
+            acc -= accloss; 
 
-    if(-2 * perception > acc)
-        acc = -2 * perception;
+        if(-2 * perception > acc)
+            acc = -2 * perception;
+    }
 
-    acc -= 2 * cr.Perk[PE_SHARPSHOOTER];
-
-    if(acc >= 0 && cr.Damage[DAMAGE_EYE] != 0)
-        acc *= -12;
-    else
-        acc *= -4;
+    acc -= sharpshooter;
+    if(acc > 0 && eyeDamage)
+        acc *= 3;
+    acc *= -4;
     
     toHit += acc;
 
@@ -157,6 +160,40 @@ int HexShotActionPointsCost(ItemMutual& item, CritterMutual& cr)
         return apCost;
     }
     return 0;
+}
+
+int HexShotBlastRadius(ItemMutual@ item, CritterMutual@ cr)
+{
+    if(!valid(item))
+        return 0;
+
+    int radius = 1;
+    int protoBlastPerkStacks = WeaponProtoPerkStacks(item.Proto, WEAPON_PERK_BLAST);
+
+    int upgradeBlastPerkStacks = UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_BLAST);
+    int upgradeBonusRadius = 0;
+    if(upgradeBlastPerkStacks > 0)
+        upgradeBonusRadius = upgradeBlastPerkStacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_BLAST);
+
+    bool onlyUpgradeBlast = (protoBlastPerkStacks == 0 && upgradeBonusRadius > 0);
+    if(onlyUpgradeBlast)
+    {
+        radius = MAX(1, upgradeBonusRadius);
+    }
+    else
+    {
+        radius += protoBlastPerkStacks;
+        if(upgradeBonusRadius > 0)
+            radius += upgradeBonusRadius;
+
+        if(item.AmmoPid == PID_EXPLOSIVE_ROCKET || item.AmmoPid == PID_40MM_GRENADE)
+            radius += 1;
+
+        if(valid(cr) && cr.Perk[PE_DEMOLITION_EXPERT] > 0 && radius > 1)
+            radius += 1;
+    }
+
+    return radius;
 }
 
 bool IsHexShotableThere(CritterMutual& cr, ItemMutual@ item, uint16 tx, uint16 ty)
@@ -398,9 +435,7 @@ void RenderHexShoting() // export
     if(!GetHexPos(hx, hy, x, y))
         return;                           // should not happen
 
-    int radius = (item.AmmoPid == PID_ROCKET_AP)?3:4;
-    if (chosen.Perk[PE_DEMOLITION_EXPERT] > 0)
-        radius += 1;
+    int radius = HexShotBlastRadius(item, chosen);
 
     uint tohit = ::HexShotingToHit(chosen, hx, hy, item.Proto, item);
     int  ap = ::HexShotActionPointsCost(item, chosen);

@@ -7,6 +7,7 @@
 
 #include "client_gui_h.fos"
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "polygon_h.fos"
 #include "_client_defines.fos"
 #include "_globalvars.fos"
@@ -61,7 +62,7 @@ void RebuildFog(CritterCl& cr)
     bool isWeaponScoped = false;
     uint8 mode = 0;
     ProtoItem@ weapon1 = cr.GetSlotProto(SLOT_HAND1, mode);
-    if ( valid(weapon1) && weapon1.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE)
+    if ( valid(weapon1) && WeaponHasProtoPerk(weapon1, WEAPON_PERK_SCOPE_RANGE))
         isWeaponScoped=true;
     uint   cSight = cr.IsLife() ? __LookNormal + cr.Stat[ST_PERCEPTION] * 3 + cr.Param[PE_SHARPSHOOTER] * 6 + (isWeaponScoped ? 5 : 0) : __LookMinimum;
 

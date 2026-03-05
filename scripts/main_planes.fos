@@ -6,6 +6,7 @@
 //
 
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "_npc_pids.fos"
 #include "_vals.fos"
 #include "groups_h.fos"
@@ -1075,10 +1076,18 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
         Critter@   target = GetCritter(r0);
         uint8      mode = 0;
         ProtoItem@ weapon = npc.GetSlotProto(SLOT_HAND1, mode);
+        Item@      realWeapon = _CritGetItemHand(npc);
         int        use = _WeaponModeUse(mode);
-        ProtoItem@ ammo = (weapon.Weapon_MaxAmmoCount > 0 && weapon.Weapon_Caliber != 0 ? GetProtoItem(_CritGetItemHand(npc).AmmoPid) : null);
+        ProtoItem@ ammo = (weapon.Weapon_MaxAmmoCount > 0 && weapon.Weapon_Caliber != 0 && valid(realWeapon) ? GetProtoItem(realWeapon.AmmoPid) : null);
         int        wpnDist = _WeaponMaxDist(weapon, use);
+        if(valid(realWeapon))
+            wpnDist += UpgradeWeaponRangeBonus(realWeapon, wpnDist);
         int        multihex = npc.GetMultihex() + target.GetMultihex();
+        bool       perkAccurate = WeaponHasProtoPerk(weapon, WEAPON_PERK_ACCURATE);
+        int        weaponAccBonus = valid(realWeapon) ? UpgradeWeaponBonus(realWeapon, BONUS_WEAPON_ACCURACY) : 0;
+        bool       perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
+        bool       perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
+        bool       perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);
 
         if(!npc.IsCanWalk())
         {
@@ -1102,7 +1111,8 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
 
             if(!weapon.Weapon_IsUnarmed)
             {
-                base += (weapon.Weapon_Perk == WEAPON_PERK_ACCURATE ? 20 : 0);
+                base += (perkAccurate ? 20 : 0);
+                base += weaponAccBonus;
                 int strength = npc.Stat[ST_STRENGTH] + (_CritHasPerk(npc, PE_WEAPON_HANDLING) ? 2 : 0);
                 if(strength < weapon.Weapon_MinStrength)
                     base -= 20 * (weapon.Weapon_MinStrength - strength);
@@ -1155,7 +1165,7 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
                 }
             }
 
-            if((weapon.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE) && (r1 < 8))
+            if(!perkSkilleless && perkScopeRange && (r1 < 8))
                 r1 = 8;
 
             if(int(r1) > wpnDist)
@@ -1169,7 +1179,7 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
             int base = npc.Skill[skill] -
                        MAX(0, target.GetAC(false) + (valid(ammo) ? ammo.Ammo_AcMod : 0)) +
                        (target.IsKnockout() ? 40 : 0) -
-                       (_CritDamaged(npc, DAMAGE_EYE) ? 25 : 0) + (weapon.Weapon_Perk == WEAPON_PERK_ACCURATE ? 20 : 0);
+                       (_CritDamaged(npc, DAMAGE_EYE) ? 25 : 0) + (perkAccurate ? 20 : 0);
 
             int strength = npc.Stat[ST_STRENGTH] + (_CritHasPerk(npc, PE_WEAPON_HANDLING) ? 2 : 0);
             if(strength < weapon.Weapon_MinStrength)
@@ -1179,7 +1189,25 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
             int perception = npc.Stat[ST_PERCEPTION];
             int sharpshooter = 8 * _CritGetPerk(npc, PE_SHARPSHOOTER);
 
-            int mod = (weapon.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE ? 5 : (weapon.Weapon_Perk == WEAPON_PERK_LONG_RANGE ? 4 : 2));
+            if(perkSkilleless)
+            {
+                if(base < ai_min)
+                {
+                    r1 = 0;
+                    r0 = 0;
+                    r2 = 0;
+                    return true;
+                }
+
+                r0 = r1;
+                r2 = wpnDist;
+                r0 += multihex;
+                r1 += multihex;
+                r2 += multihex;
+                return true;
+            }
+
+            int mod = (perkScopeRange ? 5 : (perkLongRange ? 4 : 2));
 
             if(base + 8 * perception + sharpshooter < 95)
             {

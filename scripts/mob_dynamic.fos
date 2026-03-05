@@ -18,16 +18,13 @@
 #include "broadcast_h.fos"
 #include "_npc_pids.fos"
 #include "item_bonus.fos"
+#include "lexems_h.fos"
 #include "_dialogs.fos"
 #include "_ai.fos"
 #include "_entires.fos"
 #include "polygon_h.fos"
 #include "mob_dynamic_h.fos"
 #include "factions_h.fos"
-
-import string GetLexem(Item& item, string& lex) from "lexems";
-import bool IsLexem(Item& it, string& lex) from "lexems";
-import void UnsetLexem(Item& item, string& lex) from "lexems";
 import bool BaseIsTakingByMobs(Location& loc) from "base_control";
 //import bool BaseIsTaking(uint16 locid) from "base_control";
 

@@ -1,0 +1,492 @@
+//
+// Shared helpers for item upgrade slots and perk effects.
+// This file is included both on client and server scripts.
+//
+
+#ifndef __ITEM_UPGRADES_SHARED__
+#define __ITEM_UPGRADES_SHARED__
+
+#include "_defines.fos"
+
+#ifdef __SERVER
+# define UpgradeItemMutual Item
+#endif
+
+#ifdef __CLIENT
+# define UpgradeItemMutual ItemCl
+#endif
+
+const int UPGRADE_SLOT_PACK_BASE = 2000000;
+const int UPGRADE_SLOT_PACK_STEP = 1000;
+const int UPGRADE_SLOT_PACK_BIAS = 500;
+
+bool UpgradeIsLegacyLayout(UpgradeItemMutual@ item)
+{
+    if(@item == null)
+        return false;
+
+    int r0 = item.Val0;
+    int r1 = item.Val1;
+    int r2 = item.Val2;
+    int r3 = item.Val3;
+    int r4 = item.Val4;
+    int[] raws = { r0, r1, r2, r3, r4 };
+    for(uint i = 0; i < raws.length(); i++)
+    {
+        int raw = raws[i];
+        if(raw == 0 || raw == UPGRADE_SLOT_EMPTY || raw == UPGRADE_SLOT_USED)
+            continue;
+        if(raw >= UPGRADE_SLOT_PACK_BASE)
+            continue;
+        return true;
+    }
+
+    if((item.Val5 == 0 && item.Val6 == 0) && (item.Val0 != 0 || item.Val1 != 0 || item.Val2 != 0 || item.Val3 != 0 || item.Val4 != 0))
+        return true;
+
+    return false;
+}
+
+int UpgradeSlotRaw(UpgradeItemMutual@ item, uint slot)
+{
+    if(@item == null)
+        return 0;
+
+    bool legacyLayout = UpgradeIsLegacyLayout(item);
+
+    switch(slot)
+    {
+    case 0:
+        return item.Val0;
+    case 1:
+        return item.Val1;
+    case 2:
+        return item.Val2;
+    case 3:
+        return item.Val3;
+    case 4:
+        return item.Val4;
+    case 5:
+        if(legacyLayout)
+            return 0;
+        return item.Val5;
+    case 6:
+        if(legacyLayout)
+            return 0;
+        return item.Val6;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+int UpgradeLegacySlotValue(UpgradeItemMutual@ item, uint slot)
+{
+    if(@item == null)
+        return 0;
+
+    switch(slot)
+    {
+    case 0:
+        return item.Val5;
+    case 1:
+        return item.Val6;
+    case 2:
+        return item.Val7;
+    case 3:
+        return item.Val8;
+    case 4:
+        return item.Val9;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+bool UpgradeSlotIsPackedRaw(int raw)
+{
+    return raw >= UPGRADE_SLOT_PACK_BASE;
+}
+
+int UpgradePackSlotData(int type, int value)
+{
+    if(type == 0 || type == UPGRADE_SLOT_EMPTY || type == UPGRADE_SLOT_USED)
+        return type;
+
+    if(value < -UPGRADE_SLOT_PACK_BIAS)
+        value = -UPGRADE_SLOT_PACK_BIAS;
+    else if(value > UPGRADE_SLOT_PACK_BIAS - 1)
+        value = UPGRADE_SLOT_PACK_BIAS - 1;
+
+    return UPGRADE_SLOT_PACK_BASE + type * UPGRADE_SLOT_PACK_STEP + (value + UPGRADE_SLOT_PACK_BIAS);
+}
+
+int UpgradeUnpackSlotType(int raw)
+{
+    if(!UpgradeSlotIsPackedRaw(raw))
+        return raw;
+
+    return (raw - UPGRADE_SLOT_PACK_BASE) / UPGRADE_SLOT_PACK_STEP;
+}
+
+int UpgradeUnpackSlotValue(int raw)
+{
+    if(!UpgradeSlotIsPackedRaw(raw))
+        return 0;
+
+    return (raw - UPGRADE_SLOT_PACK_BASE) % UPGRADE_SLOT_PACK_STEP - UPGRADE_SLOT_PACK_BIAS;
+}
+
+int UpgradeSlotType(UpgradeItemMutual@ item, uint slot)
+{
+    int raw = UpgradeSlotRaw(item, slot);
+    if(raw == 0)
+    {
+        if(slot >= 5 && UpgradeIsLegacyLayout(item))
+        {
+            int extra = UpgradeExtraSlotsFromProto(item.Proto);
+            int baseSlots = 0;
+            if(item.Val0 != 0) baseSlots++;
+            if(item.Val1 != 0) baseSlots++;
+            if(item.Val2 != 0) baseSlots++;
+            if(item.Val3 != 0) baseSlots++;
+            if(item.Val4 != 0) baseSlots++;
+            uint extraSlotsMax = uint(CLAMP(baseSlots + extra, 0, UPGRADE_MAX_SLOTS));
+            if(extra > 0 && slot < UPGRADE_MAX_SLOTS && slot < extraSlotsMax)
+                return UPGRADE_SLOT_EMPTY;
+        }
+        return 0;
+    }
+
+    if(raw == UPGRADE_SLOT_EMPTY || raw == UPGRADE_SLOT_USED)
+        return raw;
+    return UpgradeUnpackSlotType(raw);
+}
+
+int UpgradeSlotValue(UpgradeItemMutual@ item, uint slot)
+{
+    int raw = UpgradeSlotRaw(item, slot);
+    if(raw == 0 || raw == UPGRADE_SLOT_EMPTY || raw == UPGRADE_SLOT_USED)
+        return 0;
+    if(UpgradeSlotIsPackedRaw(raw))
+        return UpgradeUnpackSlotValue(raw);
+
+    // Backward compatibility for old format: type in Val0..Val4, value in Val5..Val9.
+    return UpgradeLegacySlotValue(item, slot);
+}
+
+bool UpgradeIsSlotMarker(int type)
+{
+    return type == UPGRADE_SLOT_EMPTY || type == UPGRADE_SLOT_USED;
+}
+
+int WeaponProtoPerkStacks(const ProtoItem@ proto, uint perkType)
+{
+    if(@proto == null || perkType == 0)
+        return 0;
+
+    int perk = int(perkType);
+    int count = 0;
+    if(proto.Weapon_Perk == perk)
+        count++;
+    if(proto.Weapon_Perk_2 == perk)
+        count++;
+    if(proto.Weapon_Perk_3 == perk)
+        count++;
+    return count;
+}
+
+int WeaponProtoPerkStacks(const ProtoItem@ proto, int perkType)
+{
+    if(perkType <= 0)
+        return 0;
+    return WeaponProtoPerkStacks(proto, uint(perkType));
+}
+
+bool WeaponHasProtoPerk(const ProtoItem@ proto, uint perkType)
+{
+    return WeaponProtoPerkStacks(proto, perkType) > 0;
+}
+
+bool WeaponHasProtoPerk(const ProtoItem@ proto, int perkType)
+{
+    if(perkType <= 0)
+        return false;
+    return WeaponHasProtoPerk(proto, uint(perkType));
+}
+
+bool WeaponHasItemPerk(UpgradeItemMutual@ item, uint perkType)
+{
+    if(@item == null)
+        return false;
+
+    return WeaponHasProtoPerk(item.Proto, perkType);
+}
+
+bool WeaponHasItemPerk(UpgradeItemMutual@ item, int perkType)
+{
+    if(perkType <= 0)
+        return false;
+    return WeaponHasItemPerk(item, uint(perkType));
+}
+
+int UpgradeExtraSlotsFromProto(const ProtoItem@ proto)
+{
+    if(@proto == null)
+        return 0;
+
+    if(proto.Type == ITEM_TYPE_WEAPON && WeaponHasProtoPerk(proto, WEAPON_PERK_EXTRA_UPGRADE_SLOTS))
+        return 2;
+
+    if(proto.Type == ITEM_TYPE_ARMOR && proto.Armor_Perk == ARMOR_PERK_EXTRA_UPGRADE_SLOTS)
+        return 2;
+
+    return 0;
+}
+
+int UpgradeQualitySlots(UpgradeItemMutual@ item)
+{
+    if(@item == null)
+        return 0;
+
+    int count = 0;
+    for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
+    {
+        if(UpgradeSlotType(item, i) != 0)
+            count++;
+    }
+    return count;
+}
+
+int UpgradeBaseQualitySlots(UpgradeItemMutual@ item)
+{
+    if(@item == null)
+        return 0;
+
+    int quality = UpgradeQualitySlots(item);
+    int baseQuality = quality - UpgradeExtraSlotsFromProto(item.Proto);
+    if(baseQuality < 0)
+        baseQuality = 0;
+    if(baseQuality > 5)
+        baseQuality = 5;
+    return baseQuality;
+}
+
+int UpgradeUsedSlots(UpgradeItemMutual@ item)
+{
+    if(@item == null)
+        return 0;
+
+    int count = 0;
+    for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
+    {
+        int t = UpgradeSlotType(item, i);
+        if(t != 0 && t != UPGRADE_SLOT_EMPTY)
+            count++;
+    }
+    return count;
+}
+
+int UpgradeFreeSlots(UpgradeItemMutual@ item)
+{
+    int freeSlots = UpgradeQualitySlots(item) - UpgradeUsedSlots(item);
+    return freeSlots > 0 ? freeSlots : 0;
+}
+
+int UpgradePerksCount(UpgradeItemMutual@ item)
+{
+    if(@item == null)
+        return 0;
+
+    int count = 0;
+    for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
+    {
+        int t = UpgradeSlotType(item, i);
+        if(t != 0 && !UpgradeIsSlotMarker(t))
+            count++;
+    }
+    return count;
+}
+
+int UpgradePerkStacks(UpgradeItemMutual@ item, int perkType)
+{
+    if(@item == null || perkType == 0)
+        return 0;
+
+    int count = 0;
+    for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
+    {
+        if(UpgradeSlotType(item, i) == perkType)
+            count++;
+    }
+    return count;
+}
+
+bool UpgradeHasPerk(UpgradeItemMutual@ item, int perkType)
+{
+    return UpgradePerkStacks(item, perkType) > 0;
+}
+
+bool IsWeaponUpgradePerk(int perkType)
+{
+    return perkType >= UPGRADE_WEAPON_PERK_ACCURATE && perkType <= UPGRADE_WEAPON_PERK_INCREASED_RANGE;
+}
+
+uint WeaponUpgradePerkCost(int perkType)
+{
+    switch(perkType)
+    {
+    case UPGRADE_WEAPON_PERK_ACCURATE:
+        return 1;
+    case UPGRADE_WEAPON_PERK_PENETRATE:
+        return 2;
+    case UPGRADE_WEAPON_PERK_COMMANDO:
+        return 2;
+    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
+        return 1;
+    case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+        return 2;
+    case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+        return 1;
+    case UPGRADE_WEAPON_PERK_AP_BOOST:
+        return 3;
+    case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+        return 2;
+    case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+        return 2;
+    case UPGRADE_WEAPON_PERK_BLAST:
+        return 3;
+    case UPGRADE_WEAPON_PERK_PERSISTENT:
+        return 3;
+    case UPGRADE_WEAPON_PERK_MARKED_SHOT:
+        return 2;
+    case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+        return 1;
+    default:
+        return 0;
+    }
+    return 0;
+}
+
+int WeaponUpgradePerkBaseValue(int perkType)
+{
+    switch(perkType)
+    {
+    case UPGRADE_WEAPON_PERK_ACCURATE:
+        return 10;
+    case UPGRADE_WEAPON_PERK_PENETRATE:
+        return 4;
+    case UPGRADE_WEAPON_PERK_COMMANDO:
+        return -30;
+    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
+        return -1;
+    case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+        return 100;
+    case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+        return 5;
+    case UPGRADE_WEAPON_PERK_AP_BOOST:
+        return 1;
+    case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+        return 5;
+    case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+        return 1;
+    case UPGRADE_WEAPON_PERK_BLAST:
+        return 1;
+    case UPGRADE_WEAPON_PERK_PERSISTENT:
+        return 1;
+    case UPGRADE_WEAPON_PERK_MARKED_SHOT:
+        return 10;
+    case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+        return 10;
+    default:
+        return 0;
+    }
+    return 0;
+}
+
+int UpgradeLegacyBonus(UpgradeItemMutual@ item, int bonusType)
+{
+    if(@item == null)
+        return 0;
+
+    for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
+    {
+        if(UpgradeSlotType(item, i) == bonusType)
+            return UpgradeSlotValue(item, i);
+    }
+    return 0;
+}
+
+int UpgradeWeaponBonus(UpgradeItemMutual@ item, int bonusType)
+{
+    int bonus = UpgradeLegacyBonus(item, bonusType);
+    if(@item == null)
+        return bonus;
+
+    if(bonusType == BONUS_WEAPON_DAMAGE)
+        bonus += UpgradeLegacyBonus(item, BONUS_WEAPON_DAMAGE_EXTRA);
+
+    if(bonusType == BONUS_WEAPON_ACCURACY)
+    {
+        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_ACCURATE) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_ACCURATE);
+        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_MARKED_SHOT) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_MARKED_SHOT);
+    }
+    else if(bonusType == BONUS_WEAPON_DAMAGE)
+    {
+        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE);
+    }
+    else if(bonusType == BONUS_WEAPON_CRITICAL_ROLL)
+    {
+        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_CRITICAL_POWER) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_CRITICAL_POWER);
+    }
+    else if(bonusType == BONUS_WEAPON_MAX_AP)
+    {
+        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_AP_BOOST) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_AP_BOOST);
+    }
+
+    return bonus;
+}
+
+int UpgradeWeaponRangeBonus(UpgradeItemMutual@ item, int baseRange)
+{
+    int bonus = UpgradeWeaponBonus(item, BONUS_WEAPON_MAX_RANGE);
+    if(@item != null && baseRange > 0)
+    {
+        int rangeStacks = UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_INCREASED_RANGE);
+        if(rangeStacks > 0)
+            bonus += (baseRange * rangeStacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_INCREASED_RANGE)) / 100;
+    }
+    return bonus;
+}
+
+int UpgradeReloadApMod(UpgradeItemMutual@ item)
+{
+    if(@item != null)
+    {
+        int stacks = UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_FAST_RELOAD);
+        if(stacks > 0)
+            return stacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_FAST_RELOAD);
+    }
+    return 0;
+}
+
+uint UpgradeWeaponMaxAmmo(UpgradeItemMutual@ item)
+{
+    if(@item == null)
+        return 0;
+
+    uint maxAmmo = item.Proto.Weapon_MaxAmmoCount;
+    int stacks = UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE);
+    if(stacks > 0)
+        maxAmmo += item.Proto.Weapon_MaxAmmoCount * uint(stacks);
+    return maxAmmo;
+}
+
+int UpgradeWeaponPenetrateDtReduction(UpgradeItemMutual@ item)
+{
+    return UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_PENETRATE) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_PENETRATE);
+}
+
+#endif // __ITEM_UPGRADES_SHARED__

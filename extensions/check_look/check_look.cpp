@@ -137,7 +137,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 	// dead/unconcious/neg hp - only minimum range
 	if(cr.Cond != COND_LIFE) return (dist <= (int)(FOnline->LookMinimum));
 
-	bool isWeaponScoped = cr.ItemSlotMain->Proto->Weapon_Perk == WEAPON_PERK_SCOPE_RANGE;
+	bool isWeaponScoped = cr.ItemSlotMain->Proto->WeaponHasPerk( WEAPON_PERK_SCOPE_RANGE );
 
     int front_range=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]),1,30));
 	if(cr.Params[PE_SHARPSHOOTER]) front_range+=2*cr.Params[PE_SHARPSHOOTER];

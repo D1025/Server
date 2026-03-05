@@ -2085,35 +2085,31 @@ uint e_SpecialItemEvent(array<uint>@ values)
 	baseprice = it.GetCost();
 	podniesienieceny = it.GetCost();
 		
-	
-	if(it.Val0 >= 100)
+	uint quality = BonusNumber(it);
+	switch(quality)
 	{
+	case 1:
 		bonustype = " Quality ";
 		it.Cost = 3 * (baseprice + podniesienieceny / 2 );
-	}
-	
-	if(it.Val1 >= 100)
-	{
+		break;
+	case 2:
 		bonustype = " Improved ";
 		it.Cost = 4 * (baseprice + podniesienieceny / 2 );
-	}
-	
-	if(it.Val2 >= 100)
-	{
+		break;
+	case 3:
 		bonustype = " Superior ";
 		it.Cost = 5 * (baseprice + podniesienieceny / 2 );
-	}
-	
-	if(it.Val3 >= 100)
-	{
+		break;
+	case 4:
 		bonustype = " Advanced ";
 		it.Cost = 6 * (baseprice + podniesienieceny / 2 );
-	}
-	
-	if(it.Val4 >= 100)
-	{
+		break;
+	case 5:
 		bonustype = " Unique ";
 		it.Cost = 7 * (baseprice + podniesienieceny / 2 );
+		break;
+	default:
+		break;
 	}
 	
 	if(it.IsStackable())

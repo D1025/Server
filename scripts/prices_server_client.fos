@@ -17,17 +17,13 @@
 # define Critter    CritterCl
 #endif
 
+#include "item_upgrades_shared.fos"
+
 //import uint BonusNumber(Item@ item) from "item_bonus";		// this doesn't work
 
 uint BonusNumber(Item@ it)
 {
-	uint number=0;
-	if(it.Val5!=0) return 5;
-	else if(it.Val4!=0) return 4;
-	else if(it.Val3!=0) return 3;
-	else if(it.Val2!=0) return 2;
-	else if(it.Val1!=0) return 1;
-	else return 0;
+	return uint(UpgradeQualitySlots(it));
 }
 
 

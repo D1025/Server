@@ -9,7 +9,7 @@
 // 2238
 
 // 23-07-2013 Cubik:
-// poprawione obliczanie min-max dmg od bonusow crafconych broni
+// poprawione obliczanie obrazen od bonusow crafconych broni
 // naprawiony bug z niewlasciwym wyliczaniem DT/DR armorow od bonusow (wyliczane sa w dll-ce Kilgora)
 // bonusy armorow przetwarzane w combat.fos: BONUS_ARMOR_CRIT_CHANCE, BONUS_ARMOR_CRIT_POWER	
 // pozostałe bonusy armorow przetwarzane sa w dll-ce Kilgora
@@ -17,6 +17,7 @@
 
 #include "_basetypes.fos"
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "backend_h.fos"
 #include "combat_msg.fos"
 #include "critical_table.fos"
@@ -62,8 +63,7 @@ class AttackStruct
     bool       IsUnarmed = false;
     int        WeaponPerk = -1;
     uint8      WeaponSubtype = 0;
-    int        DmgMin = 0;
-    int        DmgMax = 0;
+    int        Damage = 0;
     int        DmgType = 0;
     int        BonusDmg = 0;
     int        DmgMul = 2;
@@ -95,32 +95,14 @@ class AttackStruct
 	
 	int SelectWeaponBonus(int Int_Val_WeaponBonus)
 	{
-		if(valid(RealWeapon))
-		{
-			if(RealWeapon.Val0 == Int_Val_WeaponBonus) return  RealWeapon.Val5;
-			if(RealWeapon.Val1 == Int_Val_WeaponBonus) return  RealWeapon.Val6;
-			if(RealWeapon.Val2 == Int_Val_WeaponBonus) return  RealWeapon.Val7;
-			if(RealWeapon.Val3 == Int_Val_WeaponBonus) return  RealWeapon.Val8;
-			if(RealWeapon.Val4 == Int_Val_WeaponBonus) return  RealWeapon.Val9;
-			return 0;
-		}
-		else return 0;
+		return UpgradeWeaponBonus(RealWeapon, Int_Val_WeaponBonus);
 	}		
 	
 }
 
 int SelectArmorBonus(Item@ armor, int Int_Val_ArmorBonus)
 {
-	if(valid(armor))
-	{
-		if(armor.Val0 == Int_Val_ArmorBonus) return  armor.Val5;
-		if(armor.Val1 == Int_Val_ArmorBonus) return  armor.Val6;
-		if(armor.Val2 == Int_Val_ArmorBonus) return  armor.Val7;
-		if(armor.Val3 == Int_Val_ArmorBonus) return  armor.Val8;
-		if(armor.Val4 == Int_Val_ArmorBonus) return  armor.Val9;
-		return 0;
-	}
-	else return 0;
+	return UpgradeLegacyBonus(armor, Int_Val_ArmorBonus);
 }
 
 
@@ -133,6 +115,28 @@ float CalculateDamageReduction(Item@ weapon) {
         }
     }
     return 1.0;
+}
+
+int ComputeRangedAccMod(int dist, int distmod2, int accloss, int perception, int sharpshooter, bool eyeDamage, bool perkSkilleless)
+{
+    int acc = (perkSkilleless ? 0 : dist);
+
+    if(!perkSkilleless)
+    {
+        if(dist < distmod2)
+            acc += distmod2;
+        else
+            acc -= accloss;
+
+        if(-2 * perception > acc)
+            acc = -2 * perception;
+    }
+
+    acc -= sharpshooter;
+    if(acc > 0 && eyeDamage)
+        acc *= 3;
+
+    return acc * -4;
 }
 
 const uint SEWING_TOTAL_HITS = 5;
@@ -172,15 +176,14 @@ bool IsSewingAttack(ProtoItem& weapon, uint8 use)
 
 void ApplySewingDamageScale(AttackStruct& attack)
 {
-    attack.DmgMin = MAX(1, attack.DmgMin * int(SEWING_DAMAGE_PERCENT) / 100);
-    attack.DmgMax = MAX(attack.DmgMin, attack.DmgMax * int(SEWING_DAMAGE_PERCENT) / 100);
+    attack.Damage = MAX(1, attack.Damage * int(SEWING_DAMAGE_PERCENT) / 100);
 }
 
 uint ComputeSewingTotalHits(ProtoItem& weapon)
 {
     uint hits = SEWING_TOTAL_HITS;
     // Ripper perk bonus: one extra sewing strike.
-    if(weapon.ProtoId == PID_RIPPER && weapon.Weapon_Perk == WEAPON_PERK_RIPPER_SAWING)
+    if(weapon.ProtoId == PID_RIPPER && WeaponHasProtoPerk(weapon, WEAPON_PERK_RIPPER_SAWING))
         hits += SEWING_RIPPER_BONUS_HITS;
 
     return hits;
@@ -289,8 +292,7 @@ bool PerformSewingFollowUpHit(Critter& attacker, Critter& target, uint16 weaponP
     attack.IsUnarmed = (weaponSubtype == WS_UNARMED);
     attack.WeaponPerk = (attack.IsUnarmed && protoWeapon.Weapon_UnarmedArmorPiercing) ? WEAPON_PERK_PENETRATE : protoWeapon.Weapon_Perk;
     attack.WeaponSubtype = weaponSubtype;
-    attack.DmgMin = _WeaponDmgMin(protoWeapon, use);
-    attack.DmgMax = _WeaponDmgMax(protoWeapon, use);
+    attack.Damage = _WeaponDmg(protoWeapon, use);
     attack.DmgType = _WeaponDmgType(protoWeapon, use);
     attack.weaponMode = int8(weaponMode);
     attack.weaponPid = weaponPid;
@@ -299,13 +301,11 @@ bool PerformSewingFollowUpHit(Critter& attacker, Critter& target, uint16 weaponP
     bool isGrenade = weaponSubtype == WS_THROWING && (attack.DmgType == DAMAGE_PLASMA || attack.DmgType == DAMAGE_EMP || attack.DmgType == DAMAGE_EXPLODE);
     if(isHthAttack || (weaponSubtype == WS_THROWING && !isGrenade))
     {
-        attack.DmgMin += attacker.Stat[ST_MELEE_DAMAGE];
-        attack.DmgMax += attacker.Stat[ST_MELEE_DAMAGE];
+        attack.Damage += attacker.Stat[ST_MELEE_DAMAGE];
     }
     if(weaponSubtype == WS_GUN)
     {
-        attack.DmgMin += attack.DmgMin * attacker.Perk[PE_BONUS_RANGED_DAMAGE] * 10 / 100;
-        attack.DmgMax += attack.DmgMax * attacker.Perk[PE_BONUS_RANGED_DAMAGE] * 10 / 100;
+        attack.Damage += attack.Damage * attacker.Perk[PE_BONUS_RANGED_DAMAGE] * 10 / 100;
     }
 
     ApplySewingDamageScale(attack);
@@ -372,7 +372,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         //wpnMaxDist += 3 * (cr.Perk[PE_HEAVE_HO] + cr.Perk[PE_HEAVE_HO_II]);
 		wpnMaxDist += 6 * (cr.Perk[PE_HEAVE_HO]);
     }
-    if(valid(realWeapon) && cr.Perk[PE_SHARPSHOOTER] == 1 && realWeapon.Proto.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE )
+    if(valid(realWeapon) && cr.Perk[PE_SHARPSHOOTER] == 1 && WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_SCOPE_RANGE))
     {
         wpnMaxDist+=5;
     }
@@ -404,6 +404,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     bool             isFlamethrower = (weapPid == PID_FLAMER) || (weapPid == PID_IMPROVED_FLAMETHROWER) || (weapPid == PID_FIRE_GECKO_FLAME_WEAPON);
     bool             isRocket = (ammoPid == PID_EXPLOSIVE_ROCKET) || (ammoPid == PID_40MM_GRENADE) || (ammoPid == PID_ROCKET_AP) || (ammoPid == PID_ROBO_ROCKET_AMMO);
 	bool 			 isExplodeRocket = (ammoPid == PID_EXPLOSIVE_ROCKET) || (ammoPid == PID_40MM_GRENADE);
+    bool             hasBlastArea = WeaponHasProtoPerk(weapon, WEAPON_PERK_BLAST) || (UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_BLAST) > 0);
     bool             isShotgun = weapon.Weapon_Caliber == 11;
 	bool             isBozar = weapPid == PID_BOZAR;
 	bool             isLSW = weapPid == PID_LIGHT_SUPPORT_WEAPON;
@@ -413,6 +414,11 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
     bool             eyeDamage = cr.Damage[DAMAGE_EYE] != 0;
     int              weaponPerk = weapon.Weapon_Perk;
+    bool             perkAccurate = WeaponHasProtoPerk(weapon, WEAPON_PERK_ACCURATE);
+    bool             perkPenetrate = WeaponHasProtoPerk(weapon, WEAPON_PERK_PENETRATE) || UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_PENETRATE) > 0;
+    bool             perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
+    bool             perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
+    bool             perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);
     bool             crIsPlayer = cr.IsPlayer();
     bool             isHit = false;
     bool             isCritical = false;
@@ -505,17 +511,16 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     attack.BloodyMess = cr.Trait[TRAIT_BLOODY_MESS] != 0;
     attack.CombatMessage = true;
     attack.IsUnarmed = (weaponSubtype == WS_UNARMED);
-    attack.WeaponPerk = (isUnarmed && weapon.Weapon_UnarmedArmorPiercing) ? WEAPON_PERK_PENETRATE : weaponPerk;
+    attack.WeaponPerk = (isUnarmed && weapon.Weapon_UnarmedArmorPiercing) ? WEAPON_PERK_PENETRATE : (perkPenetrate ? WEAPON_PERK_PENETRATE : weaponPerk);
     attack.WeaponSubtype = weaponSubtype;
-    attack.DmgMin = _WeaponDmgMin(weapon, use);
-    attack.DmgMax = _WeaponDmgMax(weapon, use);
+    attack.Damage = _WeaponDmg(weapon, use);
     attack.DmgType = dmgType;
     attack.BonusDmg = 0;
     attack.IsFlamethrower = isFlamethrower;
 	
     if(valid(realWeapon))
     {
-        wpnMaxDist += attack.SelectWeaponBonus(BONUS_WEAPON_MAX_RANGE);
+        wpnMaxDist += UpgradeWeaponRangeBonus(realWeapon, wpnMaxDist);
     }
 
 
@@ -538,7 +543,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         if(handlingStrength < reqStrength)
             baseToHit -= (reqStrength - handlingStrength) * 20;
 
-        if(weaponPerk == WEAPON_PERK_ACCURATE)
+        if(perkAccurate)
             baseToHit += 20;
     }
 
@@ -554,14 +559,12 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 				
     if(isHthAttack || (weaponSubtype == WS_THROWING && !isGrenade))
 	{
-		attack.DmgMin += cr.Stat[ST_MELEE_DAMAGE];
-		attack.DmgMax += cr.Stat[ST_MELEE_DAMAGE];
+		attack.Damage += cr.Stat[ST_MELEE_DAMAGE];
 	}
 
 	if(weaponSubtype == WS_GUN)
 	{
-	    attack.DmgMin += attack.DmgMin*cr.Perk[PE_BONUS_RANGED_DAMAGE]*10/100;
-	    attack.DmgMax += attack.DmgMax*cr.Perk[PE_BONUS_RANGED_DAMAGE]*10/100;
+	    attack.Damage += attack.Damage*cr.Perk[PE_BONUS_RANGED_DAMAGE]*10/100;
 	}
 
     attack.DmgMul = 2;
@@ -578,8 +581,11 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         if(attack.DDMod == 0)
             attack.DDMod = 1;
     }
-    if(weaponPerk == WEAPON_PERK_COMMANDO)
+    if(WeaponHasProtoPerk(weapon, WEAPON_PERK_COMMANDO))
         attack.ACMod -= 30;
+    int commandoStacks = UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_COMMANDO);
+    if(commandoStacks > 0)
+        attack.ACMod -= 30 * commandoStacks;
 
     // To check if the original target was hit:
     attack.TargetId = target.Id;
@@ -592,9 +598,14 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     int distmod1 = 2;   // Used for initial weapon bonus
     int distmod2 = 0;   // Minimal distance
 
-    if(weaponPerk == WEAPON_PERK_LONG_RANGE)
+    if(perkSkilleless)
+    {
+        distmod1 = 0;
+        distmod2 = 0;
+    }
+    else if(perkLongRange)
         distmod1 = 4;
-    else if(weaponPerk == WEAPON_PERK_SCOPE_RANGE)
+    else if(perkScopeRange)
     {
         distmod1 = 5;
         distmod2 = 8;
@@ -610,16 +621,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     // +++ the following is to be copypasted many times, in fact it should be an inline function but AngelScript won't allow that... Yet
     if(!isHthAttack)
     {
-        if(dist < distmod2)
-            acc += distmod2;
-        else
-            acc -= accloss;
-        if(-2 * perception > acc)
-            acc = -2 * perception;
-        acc -= sharpshooter;
-        if(acc > 0 && eyeDamage)
-            acc *= 3;
-        acc *= -4;
+        acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
         toHit += acc;
         int blockers = map.GetCrittersPath(hx, hy, tx, ty, 0.0f, dist, FIND_LIFE, null);
         if(!target.IsKnockout())
@@ -799,7 +801,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 NotifyMiss(cr, results);
         }
     }
-    else if((weaponSubtype == WS_GUN) && !isBurst && !isRocket && !isFlamethrower)       // single shot, normal
+    else if((weaponSubtype == WS_GUN) && !isBurst && !isRocket && !isFlamethrower && !hasBlastArea)       // single shot, normal
     {
         if(isHit || changedTarget)
 		{
@@ -822,18 +824,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
                 // adjust tohit
                 dist = GetDistantion(hx, hy, critsLine[i].HexX, critsLine[i].HexY);
-                acc = dist;
+                acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
                 toHit = baseToHit;
-                if(dist < distmod2)
-                    acc += distmod2;
-                else
-                    acc -= accloss;
-                if(-2 * perception > acc)
-                    acc = -2 * perception;
-                acc -= sharpshooter;
-                if(acc > 0 && eyeDamage)
-                    acc *= 3;
-                acc *= -4;
                 toHit += acc;
                 toHit -= 10 * bl;
                 if(critsLine[i].IsKnockout())
@@ -863,18 +855,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         if(changedTarget)
         {
             dist = GetDistantion(hx, hy, tx, ty);
-            acc = dist;
+            acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
             toHit = baseToHit;
-            if(dist < distmod2)
-                acc += distmod2;
-            else
-                acc -= accloss;
-            if(-2 * perception > acc)
-                acc = -2 * perception;
-            acc -= sharpshooter;
-            if(acc > 0 && eyeDamage)
-                acc *= 3;
-            acc *= -4;
             toHit += acc;
             if(realTarget.IsKnockout())
                 toHit += 40;
@@ -920,17 +902,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 // Adjust tohit
                 toHit = baseToHit - 10 * bl;
                 dist = GetDistantion(hx, hy, lineCentral[i].HexX, lineCentral[i].HexY);
-                acc = dist;
-                if(dist < distmod2)
-                    acc += distmod2;
-                else
-                    acc -= accloss;
-                if(-2 * perception > acc)
-                    acc = -2 * perception;
-                acc -= sharpshooter;
-                if(acc > 0 && eyeDamage)
-                    acc *= 3;
-                acc *= -4;
+                acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
                 toHit += acc;
                 if(lineCentral[i].IsKnockout())
                     toHit += 40;
@@ -980,17 +952,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 dist = GetDistantion(hx, hy, lineLeft[i].HexX, lineLeft[i].HexY);
                 bl = map.GetCrittersPath(hx, hy, lineLeft[i].HexX, lineLeft[i].HexY, 0.0f, dist, FIND_LIFE, null) - 1;
                 toHit = baseToHit - 10 * bl;
-                acc = dist;
-                if(dist < distmod2)
-                    acc += distmod2;
-                else
-                    acc -= accloss;
-                if(-2 * perception > acc)
-                    acc = -2 * perception;
-                acc -= sharpshooter;
-                if(acc > 0 && eyeDamage)
-                    acc *= 3;
-                acc *= -4;
+                acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
                 toHit += acc;
                 if(lineLeft[i].IsKnockout())
                     toHit += 40;
@@ -1033,17 +995,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 dist = GetDistantion(hx, hy, lineRight[i].HexX, lineRight[i].HexY);
                 bl = map.GetCrittersPath(hx, hy, lineRight[i].HexX, lineRight[i].HexY, 0.0f, dist, FIND_LIFE, null) - 1;
                 toHit = baseToHit - 10 * bl;
-                acc = dist;
-                if(dist < distmod2)
-                    acc += distmod2;
-                else
-                    acc -= accloss;
-                if(-2 * perception > acc)
-                    acc = -2 * perception;
-                acc -= sharpshooter;
-                if(acc > 0 && eyeDamage)
-                    acc *= 3;
-                acc *= -4;
+                acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
                 toHit += acc;
                 if(lineRight[i].IsKnockout())
                     toHit += 40;
@@ -1080,18 +1032,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         if(changedTarget)
         {
             dist = GetDistantion(hx, hy, tx, ty);
-            acc = dist;
+            acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
             toHit = baseToHit;
-            if(dist < distmod2)
-                acc += distmod2;
-            else
-                acc -= accloss;
-            if(-2 * perception > acc)
-                acc = -2 * perception;
-            acc -= sharpshooter;
-            if(acc > 0 && eyeDamage)
-                acc *= 3;
-            acc *= -4;
             toHit += acc;
             if(realTarget.IsKnockout())
                 toHit += 40;
@@ -1110,7 +1052,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             totalRounds = realWeapon.AmmoCount;
 
         // Sprawdzenie, czy broń ma perk CASCADE
-        bool hasCascade = (weaponPerk == WEAPON_PERK_CASCADE);
+        bool hasCascade = WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE);
 
         // Obliczenie liczby linii
          uint numberOfLines = hasCascade ? 5 : 1;
@@ -1223,22 +1165,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 // Obliczenie toHit dla bieżącego celu
                 float toHitLocal = baseToHit - 10 * bl;
                 float dist = GetDistantion(hx, hy, currentTarget.HexX, currentTarget.HexY);
-                float acc = dist;
-
-                if (dist < distmod2)
-                    acc += distmod2;
-                else
-                    acc -= accloss;
-
-                if (-2 * perception > acc)
-                    acc = -2 * perception;
-
-                acc -= sharpshooter;
-
-                if (acc > 0 && eyeDamage)
-                    acc *= 3;
-
-                acc *= -4;
+                float acc = float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
                 toHitLocal += acc;
 
                 if (currentTarget.IsKnockout())
@@ -1318,9 +1245,9 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     }
 	// Burst attack end
 	
-    else if(isRocket || (weaponSubtype == WS_THROWING))   // ROCKETS, THROWING
+    else if(isRocket || (weaponSubtype == WS_THROWING) || hasBlastArea)   // ROCKETS, THROWING, OR BLAST WEAPONS
     {
-        bool exploding = isRocket || isGrenade;
+        bool exploding = isRocket || isGrenade || hasBlastArea;
 
         if(isHit || changedTarget)
         {
@@ -1355,18 +1282,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
                 // Adjust tohit
                 dist = GetDistantion(hx, hy, critsLine[i].HexX, critsLine[i].HexY);
-                acc = dist;
+                acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
                 toHit = baseToHit;
-                if(dist < distmod2)
-                    acc += distmod2;
-                else
-                    acc -= accloss;
-                if(-2 * perception > acc)
-                    acc = -2 * perception;
-                acc -= sharpshooter;
-                if(acc > 0 && eyeDamage)
-                    acc *= 3;
-                acc *= -4;
                 toHit += acc;
                 toHit -= 10 * bl;
                 if(critsLine[i].IsKnockout())
@@ -1540,7 +1457,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     knockbackFromCrit = false;
 	bool     quick = target.Perk[PE_QUICK_RECOVERY] > 0;
 
-	bool     isWeaponBluedgeoning = (weaponPerk == WEAPON_PERK_BLUDGEONING);
+	bool     isWeaponBluedgeoning = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_BLUDGEONING) : (weaponPerk == WEAPON_PERK_BLUDGEONING);
 
 
     int realrounds = rounds;
@@ -1718,7 +1635,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 					extraMessage = cFailureMessage;
 				} */
 
-			if(weaponPerk == WEAPON_PERK_ENHANCED_KNOCKOUT && FLAG(eff, HF_KNOCKDOWN)) {
+			if((valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_ENHANCED_KNOCKOUT) : (weaponPerk == WEAPON_PERK_ENHANCED_KNOCKOUT)) && FLAG(eff, HF_KNOCKDOWN)) {
 			    UNSETFLAG(eff, HF_KNOCKDOWN);
                 SETFLAG(eff, HF_KNOCKOUT);
 			}
@@ -1810,7 +1727,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     // Heavy Handed Trait
     if(validAttacker && attack.IsUnarmed && !isSewingAttack && attacker.Trait[TRAIT_HEAVY_HANDED] > 0)
     {
-        int bonus = (valid(realWeaponTarget) && realWeaponTarget.Proto.Weapon_Perk == WEAPON_PERK_HAND_TO_HAND ? 1 : 0) - (valid(realWeapon) && realWeapon.Proto.Weapon_Perk == WEAPON_PERK_HAND_TO_HAND ? 1 : 0);
+        int bonus = (valid(realWeaponTarget) && WeaponHasProtoPerk(realWeaponTarget.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0) - (valid(realWeapon) && WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0);
         if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + bonus < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
         {
             SETFLAG(eff, HF_KNOCKDOWN);
@@ -1877,8 +1794,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             targetDR -= 10;
         }
     }
-    if(weaponPerk == WEAPON_PERK_PENETRATE)
-        targetDT /= 5;
+    if(valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_PENETRATE) : (weaponPerk == WEAPON_PERK_PENETRATE))
+        targetDT = MAX(0, targetDT - WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_PENETRATE));
+    int penetrateReduction = UpgradeWeaponPenetrateDtReduction(realWeapon);
+    if(penetrateReduction > 0)
+        targetDT = MAX(0, targetDT - penetrateReduction);
     if(COMBAT_AMMO_AP(attack.Ammo))
         targetDT /= attack.Ammo.Ammo_DTDiv;
 	if(isThrust)
@@ -1887,10 +1807,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     targetDR = CLAMP(targetDR, 0, 95);
 
 
-    int dmgMin = attack.DmgMin + attack.BonusDmg + attack.DmgMin * attack.SelectWeaponBonus(BONUS_WEAPON_MIN_DMG)/100;	
-    ;
-    int dmgMax = attack.DmgMax + attack.BonusDmg + attack.DmgMax * attack.SelectWeaponBonus(BONUS_WEAPON_MAX_DMG)/100;
-    ;
+    int damage = attack.Damage + attack.BonusDmg + attack.Damage * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
     int rawDmg;
     int totalDmg = 0;
     //dmgMul *= attack.DMMod;
@@ -1899,7 +1816,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	
     for(uint i = 0; i < rounds; i++)
     {
-		rawDmg = Random(dmgMin, dmgMax) * CalculateDamageReduction(attack.RealWeapon);
+		rawDmg = damage * CalculateDamageReduction(attack.RealWeapon);
 		
         _dmgMul[i] *= attack.DMMod;
 		rawDmg *= _dmgMul[i];
@@ -2484,10 +2401,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             //Log("jest knockOut albo knockDown");
             int knockDist = knockDmg;
 			//Log("knockDist = " + knockDist);
-            if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun  || isSlugger || weaponPerk == WEAPON_PERK_KNOCKBACK || knockbackFromCrit) && target.IsCanWalk())
+            if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun  || isSlugger || (valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_KNOCKBACK) : (weaponPerk == WEAPON_PERK_KNOCKBACK)) || knockbackFromCrit) && target.IsCanWalk())
             {
 				//Log(" bron jest WS_MELEE");
-				if(weaponPerk == WEAPON_PERK_KNOCKBACK || (isShotgun && rounds > 1 && attacker.Perk[PE_AND_STAY_BACK]!=0))
+				if((valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_KNOCKBACK) : (weaponPerk == WEAPON_PERK_KNOCKBACK)) || (isShotgun && rounds > 1 && attacker.Perk[PE_AND_STAY_BACK]!=0))
                     knockDist /= 5;
                 else
                     knockDist /= 15;
@@ -2695,15 +2612,47 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Critter@ target, uint weapPid, bool isCritical, uint intentionallyId, bool isRocket, array<CombatRes>& results, bool isExplodeRocket)
 {
-    uint radius = 2;	
-    if(isRocket) radius = isExplodeRocket?4:3;	
-	
-	
+    ProtoItem@ proto = GetProtoItem(weapPid);
+    int protoBlastPerkStacks = WeaponProtoPerkStacks(proto, WEAPON_PERK_BLAST);
+    int upgradeBlastPerkStacks = UpgradePerkStacks(attack.RealWeapon, UPGRADE_WEAPON_PERK_BLAST);
+    bool isLegacyGrenade = (weapPid == PID_FRAG_GRENADE || weapPid == PID_HOLY_HAND_GRENADE || weapPid == PID_PULSE_GRENADE ||
+                            weapPid == PID_PLASMA_GRENADE || weapPid == PID_FAKE_PLASMA_GRENADE || weapPid == PID_FAKE_FRAG_GRENADE ||
+                            weapPid == PID_DYNACORD);
+
+    uint radius = (isLegacyGrenade ? 2 : 1);
     if(weapPid == PID_DYNACORD)
         radius = 4;
 
-    if(attack.Attacker.Perk[PE_DEMOLITION_EXPERT] != 0)
+    if(!isLegacyGrenade)
+    {
+        int upgradeBonusRadius = 0;
+        if(upgradeBlastPerkStacks > 0)
+            upgradeBonusRadius = upgradeBlastPerkStacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_BLAST);
+
+        bool onlyUpgradeBlast = (protoBlastPerkStacks == 0 && upgradeBonusRadius > 0);
+        if(onlyUpgradeBlast)
+        {
+            radius = uint(MAX(1, upgradeBonusRadius));
+        }
+        else
+        {
+        if(protoBlastPerkStacks > 0)
+            radius += uint(protoBlastPerkStacks);
+
+            if(upgradeBonusRadius > 0)
+                radius += uint(upgradeBonusRadius);
+
+            if(isExplodeRocket)
+                radius += 1;
+
+            if(attack.Attacker.Perk[PE_DEMOLITION_EXPERT] != 0 && radius > 1)
+                radius += 1;
+        }
+    }
+    else if(attack.Attacker.Perk[PE_DEMOLITION_EXPERT] != 0)
         radius += 1;
+
+    bool reduceSplashDamage = (!isLegacyGrenade && protoBlastPerkStacks == 0 && upgradeBlastPerkStacks > 0);
 	//nowy wybuch molotova z fire_hexes - worldremaker 26.03.2017
 	if(weapPid==PID_MOLOTOV_COCKTAIL) 
 	{
@@ -2730,7 +2679,6 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
 
     // Explosion sound. this could use some rework.
     string     soundName = "WHN1XXX1.ACM";
-    ProtoItem@ proto = GetProtoItem(weapPid);
     if(valid(proto))
         soundName.rawSet( 2, proto.Weapon_SoundId_0 );
     map.PlaySound(soundName, tx, ty, 50);
@@ -2763,7 +2711,11 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
     for(int i = 0, j = critsHit.length(); i < j; i++)
         if(!validTarget || targetId != critsHit[i].Id)
             {
+             int originalDamage = attack.Damage;
+             if(reduceSplashDamage)
+                 attack.Damage = MAX(1, originalDamage / 2);
 			 ApplyDamage(attack, critsHit[i], 1, false, intentionally, results, 0);
+             attack.Damage = originalDamage;
 			// no i jesli jest typ lezy na nokaucie to ma go grzebac jak wikinga :D burn baby, burn kurwa
 			if(weapPid==PID_MOLOTOV_COCKTAIL)
 			{
@@ -2784,8 +2736,7 @@ void CommenceExplosionEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, Crit
     attack.Aim = HIT_LOCATION_UNCALLED;
     ProtoItem@ proto = GetProtoItem(weapPid);
 
-    attack.DmgMin = _WeaponDmgMin(proto, 0) + _WeaponDmgMin(proto, 0) * attack.SelectWeaponBonus(BONUS_WEAPON_MIN_DMG)/100;
-    attack.DmgMax = _WeaponDmgMax(proto, 0) + _WeaponDmgMax(proto, 0) * attack.SelectWeaponBonus(BONUS_WEAPON_MAX_DMG)/100;
+    attack.Damage = _WeaponDmg(proto, 0) + _WeaponDmg(proto, 0) * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
     attack.DmgType = _WeaponDmgType(proto, 0);
     attack.WeaponPerk = proto.Weapon_Perk;
 
@@ -2802,8 +2753,7 @@ void CommenceExplosionHexEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, C
     @attack.RealWeapon = usedWeapon;
     ProtoItem@ proto = GetProtoItem(weapPid);
 
-    attack.DmgMin = _WeaponDmgMin(proto, 0);
-    attack.DmgMax = _WeaponDmgMax(proto, 0);
+    attack.Damage = _WeaponDmg(proto, 0);
     attack.DmgType = _WeaponDmgType(proto, 0);
     attack.WeaponPerk = proto.Weapon_Perk;
     if(ammoPid > 0)
@@ -2813,15 +2763,14 @@ void CommenceExplosionHexEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, C
     FlushResults(results);
 }
 
-void CommenceDischargeEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, uint dmgRad, uint dmgMin, uint dmgMax, int effChance, uint rechargeVal)   //export
+void CommenceDischargeEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, uint dmgRad, uint dmgFrom, uint dmgTo, int effChance, uint rechargeVal)   //export
 {
     array<CombatRes> results;
     
     AttackStruct     attack;
     @attack.Attacker = attacker;
     attack.Aim = HIT_LOCATION_UNCALLED;
-    attack.DmgMin = dmgMin;
-    attack.DmgMax = dmgMax;
+    attack.Damage = Random(dmgFrom, dmgTo);
     attack.DmgType = DAMAGE_ELECTR;
 
     uint radius = dmgRad;    
@@ -2931,6 +2880,7 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
     int   totalDmg = 0;
     bool  tookDamage = false;
     Item@ realWeapon = _CritGetItemHand(cr);
+    @attack.RealWeapon = realWeapon;
     bool  wpnIsRemoved = _WeaponRemove(weapon, weaponUse);
     Map@  map = cr.GetMap();
 
@@ -2974,8 +2924,11 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 		int  armorDR = cr.GetArmorDR(dmgType, false) * bypassPower;	
 		
 
-        if(weapon.Weapon_Perk == WEAPON_PERK_PENETRATE)
-            targetDT /= 5;
+        if(WeaponHasProtoPerk(weapon, WEAPON_PERK_PENETRATE))
+            targetDT = MAX(0, targetDT - WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_PENETRATE));
+        int penetrateReduction = UpgradeWeaponPenetrateDtReduction(realWeapon);
+        if(penetrateReduction > 0)
+            targetDT = MAX(0, targetDT - penetrateReduction);
         else if(validAmmo && COMBAT_AMMO_AP(ammo))
             targetDT /= validAmmo ? ammo.Ammo_DTDiv : 1;
 
@@ -2995,11 +2948,10 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 
         targetDR = CLAMP(targetDR, 0, 100);
 
-        int dmgMin = _WeaponDmgMin(weapon, weaponUse) + _WeaponDmgMin(weapon, weaponUse) * attack.SelectWeaponBonus(BONUS_WEAPON_MIN_DMG)/100;
-        int dmgMax = _WeaponDmgMax(weapon, weaponUse) + _WeaponDmgMax(weapon, weaponUse) * attack.SelectWeaponBonus(BONUS_WEAPON_MAX_DMG)/100;
+        int damage = _WeaponDmg(weapon, weaponUse) + _WeaponDmg(weapon, weaponUse) * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
         int dmgMul = validAmmo ? ammo.Ammo_DmgMult : 1;   // Technically, should be *2
         int dmgDiv = validAmmo ? ammo.Ammo_DmgDiv : 1;    // Technically, should be *2
-        totalDmg = Random(dmgMin, dmgMax) + 2 * cr.Perk[PE_BONUS_RANGED_DAMAGE] + cr.Perk[PE_MORE_RANGED_DAMAGE] * 3;
+        totalDmg = damage + 2 * cr.Perk[PE_BONUS_RANGED_DAMAGE] + cr.Perk[PE_MORE_RANGED_DAMAGE] * 3;
         totalDmg *= dmgMul;
         totalDmg /= dmgDiv;
 
@@ -3213,8 +3165,7 @@ void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attacker
     attack.CombatMessage = false;
     attack.WeaponPerk = -1;
     attack.WeaponSubtype = 0;
-    attack.DmgMin = dmg;
-    attack.DmgMax = dmg;
+    attack.Damage = dmg;
     attack.DmgType = dmgType;
     attack.BonusDmg = 0;
     attack.DmgMul = 2;
@@ -3301,7 +3252,10 @@ int RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, P
 {
     int skillNum = valid(weapon) ? _WeaponSkill(weapon, weaponUse) : SK_CLOSE_COMBAT;
     int toHit = cr.Skill[skillNum];
-    int weaponPerk = valid(weapon) ? weapon.Weapon_Perk : 0;
+    bool perkLongRange = valid(weapon) ? WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE) : false;
+    bool perkScopeRange = valid(weapon) ? WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE) : false;
+    bool perkSkilleless = valid(weapon) ? WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS) : false;
+    bool perkAccurate = valid(weapon) ? WeaponHasProtoPerk(weapon, WEAPON_PERK_ACCURATE) : false;
     int blockers = 0;
     int dist = GetDistantion(cr.HexX, cr.HexY, target.HexX, target.HexY);
     if(skillNum != SK_CLOSE_COMBAT)
@@ -3309,41 +3263,24 @@ int RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, P
         // Ranged attack modifiers
         int distmod1 = 2;       // Used for initial weapon bonus
         int distmod2 = 0;       // Minimal distance
-        if(weaponPerk == WEAPON_PERK_LONG_RANGE)
+        if(perkSkilleless)
+        {
+            distmod1 = 0;
+            distmod2 = 0;
+        }
+        else if(perkLongRange)
             distmod1 = 4;
-        else if(weaponPerk == WEAPON_PERK_SCOPE_RANGE)
+        else if(perkScopeRange)
         {
             distmod1 = 5;
             distmod2 = 8;
         }
 
         int perception = cr.Stat[ST_PERCEPTION];
-        int acc = dist;
-
-        if(dist < distmod2)
-            acc += distmod2;
-        else
-        {
-            if(cr.IsPlayer())
-                acc -= (perception - 2) * distmod1;
-            else
-                acc -= perception * distmod1;
-        }
-
-        if(-2 * perception > acc)
-            acc = -2 * perception;
-
-        acc -= 2 * cr.Perk[PE_SHARPSHOOTER];
-
-        if(acc >= 0)
-        {
-            if(cr.Damage[DAMAGE_EYE] != 0)
-                acc *= -12;
-            else
-                acc *= -4;
-        }
-        else
-            acc *= -4;
+        int accloss = (cr.IsPlayer() ? (perception - 2) * distmod1 : (perception * distmod1));
+        int sharpshooter = 2 * cr.Perk[PE_SHARPSHOOTER];
+        bool eyeDamage = cr.Damage[DAMAGE_EYE] != 0;
+        int acc = ComputeRangedAccMod(dist, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
 
         toHit += acc;
 
@@ -3363,7 +3300,7 @@ int RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, P
         if(handlingStrength < reqStrength)
             toHit -= (reqStrength - handlingStrength) * 20;
 
-        if(weaponPerk == WEAPON_PERK_ACCURATE)
+        if(perkAccurate)
             toHit += 20;
     }
 

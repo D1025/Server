@@ -9,6 +9,7 @@
 #include "_basetypes.fos"
 #include "_colors.fos"
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "_town.fos"
 #include "_vars.fos"
 #include "_npc_pids.fos"
@@ -1880,7 +1881,7 @@ void critter_reload_weapon(Critter& cr, Item& weapon, Item@ ammo)
                 cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_SOLAR_SCORCHER_NO_LIGHT);
             else
             {
-                weapon.AmmoCount = weapon.Proto.Weapon_MaxAmmoCount;
+                weapon.AmmoCount = UpgradeWeaponMaxAmmo(weapon);
                 if(cr.Param[MODE_LAST_WPN_MODE] != 0)
                 {
                     weapon.SetMode(cr.Param[MODE_LAST_WPN_MODE]);
@@ -1911,16 +1912,19 @@ void critter_reload_weapon(Critter& cr, Item& weapon, Item@ ammo)
     // Load
     if(valid(ammo))
     {
-        uint count = MIN(ammo.GetCount(), weapon.Proto.Weapon_MaxAmmoCount - weapon.AmmoCount);
-        weapon.AmmoCount += count;
-        weapon.AmmoPid = ammo.GetProtoId();
-        _SubItem(ammo, count);
-        if(cr.Param[MODE_LAST_WPN_MODE] != 0)
+        Item@ weaponHandle = @weapon;
+        bool loaded = ReloadWeapon(cr, weaponHandle, ammo, false);
+        if(loaded && cr.Param[MODE_LAST_WPN_MODE] != 0)
         {
             weapon.SetMode(cr.Param[MODE_LAST_WPN_MODE]);
             cr.ParamBase[MODE_LAST_WPN_MODE] = 0;
         }
     }
+
+    // TODO: remove, apply to extensions/parameters.cpp
+    // Fast reload upgrade: effectively reduce reload AP cost by 1.
+    if(UpgradeReloadApMod(weapon) < 0 && cr.Stat[ST_CURRENT_AP] < cr.Stat[ST_ACTION_POINTS])
+        cr.StatBase[ST_CURRENT_AP] = MIN(cr.Stat[ST_ACTION_POINTS], cr.Stat[ST_CURRENT_AP] + uint(-UpgradeReloadApMod(weapon)));
 
     weapon.Update();
 }
@@ -3490,7 +3494,17 @@ void items_crafted(array<Item@>& items, array<uint>& itemsCount, array<Item@>& r
                         items[i].Val6 = resources[i].Val6;
                         items[i].Val7 = resources[i].Val7;
                         items[i].Val8 = resources[i].Val8;
-                        items[i].Val9 = resources[i].Val9;                  
+                        items[i].Val9 = resources[i].Val9;
+
+                        if(IsLexem(resources[i], "$-"))
+                            SetLexem(items[i], "$-", GetLexem(resources[i], "$-"));
+                        else
+                            UnsetLexem(items[i], "$-");
+
+                        if(IsLexem(resources[i], "$legendary"))
+                            SetLexem(items[i], "$legendary", GetLexem(resources[i], "$legendary"));
+                        else
+                            UnsetLexem(items[i], "$legendary");
                     }
                 }
             }
@@ -3575,7 +3589,7 @@ bool FovCheck(Critter& cr, Critter& opponent)
 
     Item@ realWeapon = _CritGetItemHand(cr);
     bool isWeaponScoped = false;
-    if (valid(realWeapon) && realWeapon.Proto.Weapon_Perk == WEAPON_PERK_SCOPE_RANGE)
+    if (valid(realWeapon) && WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_SCOPE_RANGE))
         isWeaponScoped = true;
 
     uint16 dist = GetDistantion(cx, cy, ox, oy);

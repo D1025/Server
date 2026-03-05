@@ -11,6 +11,7 @@
 #include "_colors.fos"
 #include "_defines.fos"
 #include "_scripts.fos"
+#include "item_upgrades_shared.fos"
 #include "buffer_h.fos"
 #include "debug_h.fos"
 #include "entire.fos"
@@ -235,9 +236,24 @@ void AddScore(Critter@ cr, uint score, uint points)
         cr.AddScore(score, points);
 }
 
-bool ReloadWeapon(Critter& cr)
+uint WeaponReloadCount(Item@ weapon)
 {
-    Item@ weapon = _CritGetItemHand(cr);
+    if(!valid(weapon))
+        return 0;
+
+    uint reloadCount = weapon.Proto.Weapon_ReloadCount;
+    if(reloadCount == 0)
+        reloadCount = weapon.Proto.Weapon_MaxAmmoCount;
+
+    uint maxAmmo = UpgradeWeaponMaxAmmo(weapon);
+    if(reloadCount > maxAmmo)
+        reloadCount = maxAmmo;
+
+    return reloadCount;
+}
+
+bool ReloadWeapon(Critter& cr, Item@ weapon, Item@ ammo, bool playAction)
+{
     if(!valid(weapon) || weapon.GetType() != ITEM_TYPE_WEAPON)
         return false;
 
@@ -245,28 +261,67 @@ bool ReloadWeapon(Critter& cr)
     if(skillNum == SK_THROWING)
         return false;
 
-    Item@ ammo = cr.GetItem(weapon.AmmoPid, -1);
-	if(weapon.GetProtoId()==PID_SOLAR_SCORCHER && (weapon.Proto.Weapon_MaxAmmoCount - weapon.AmmoCount)>0 && !IS_NIGHT(__Hour))
-	{
-		weapon.AmmoCount=weapon.Proto.Weapon_MaxAmmoCount;
-		cr.Action(ACTION_RELOAD_WEAPON, 3, weapon);
-		weapon.Update();
-		return true;
-	}
+    bool consumeAp = false;
+    int reloadApScaled = 0;
+    Map@ map = cr.GetMap();
+    if(playAction && valid(map) && map.IsTurnBased())
+    {
+        int reloadAp = int(weapon.Proto.Weapon_ReloadAp);
+        if(reloadAp <= 0)
+            reloadAp = 2;
+        reloadApScaled = reloadAp * 100;
+        consumeAp = true;
+    }
+
+    uint maxAmmo = UpgradeWeaponMaxAmmo(weapon);
+    if(weapon.GetProtoId() == PID_SOLAR_SCORCHER && weapon.AmmoCount < maxAmmo && !IS_NIGHT(__Hour))
+    {
+        if(consumeAp && cr.StatBase[ST_CURRENT_AP] < reloadApScaled)
+            return false;
+
+        weapon.AmmoCount = maxAmmo;
+        if(consumeAp)
+            cr.StatBase[ST_CURRENT_AP] -= reloadApScaled;
+        if(playAction)
+            cr.Action(ACTION_RELOAD_WEAPON, 3, weapon);
+        weapon.Update();
+        return true;
+    }
+
     if(!valid(ammo))
         return false;
 
+    uint canLoad = (weapon.AmmoCount >= maxAmmo ? 0 : maxAmmo - weapon.AmmoCount);
+    uint reloadCount = WeaponReloadCount(weapon);
+    if(reloadCount > 0)
+        canLoad = MIN(canLoad, reloadCount);
 
-    uint count = MIN(ammo.GetCount(), weapon.Proto.Weapon_MaxAmmoCount - weapon.AmmoCount);
-    if(count > 0)
-    {
-        weapon.AmmoCount += count;
-        weapon.AmmoPid = ammo.GetProtoId();
-        _SubItem(ammo, count);
+    uint count = MIN(ammo.GetCount(), canLoad);
+    if(count == 0)
+        return false;
+
+    if(consumeAp && cr.StatBase[ST_CURRENT_AP] < reloadApScaled)
+        return false;
+
+    weapon.AmmoCount += count;
+    weapon.AmmoPid = ammo.GetProtoId();
+    _SubItem(ammo, count);
+    if(consumeAp)
+        cr.StatBase[ST_CURRENT_AP] -= reloadApScaled;
+    if(playAction)
         cr.Action(ACTION_RELOAD_WEAPON, 3, weapon);
-        weapon.Update();
-    }
+    weapon.Update();
     return true;
+}
+
+bool ReloadWeapon(Critter& cr)
+{
+    Item@ weapon = _CritGetItemHand(cr);
+    if(!valid(weapon) || weapon.GetType() != ITEM_TYPE_WEAPON)
+        return false;
+
+    Item@ ammo = cr.GetItem(weapon.AmmoPid, -1);
+    return ReloadWeapon(cr, weapon, ammo, true);
 }
 
 /**

@@ -14,6 +14,7 @@
 #include "_macros.fos"
 #include "_colors.fos"
 #include "_basetypes.fos"
+#include "item_upgrades_shared.fos"
 
 #include "buffer_h.fos"
 #include "client_gui_h.fos"
@@ -85,19 +86,11 @@ import void DrawIcons() from "client_faction_icons";
 #define AW_COLOR_ARMOR          COLOR_DGREEN
 #define AW_COLOR_HEADGEAR       COLOR_DGREEN
 #define AW_COLOR_WEAPON         COLOR_LGREEN
+#define AW_COLOR_WEAPON_PERK    COLOR_RGB(0, 190, 180)
 #define AW_COLOR_INJURIES       COLOR_DRED
 #define AW_COLOR_NPC_NAME       COLOR_DDGREEN
 #define AW_COLOR_FACTION_NAME   COLOR_DGREEN
 #define AW_COLOR_FACTION_RANK   COLOR_LGRAY
-
-#define BONUS_WEAPON_CRITICAL_ROLL              (100)
-#define BONUS_WEAPON_CRITICAL_CHANCE            (101)
-#define BONUS_WEAPON_MIN_DMG                    (102)
-#define BONUS_WEAPON_MAX_DMG                    (103)
-#define BONUS_WEAPON_ACCURACY                   (104)
-#define BONUS_WEAPON_MAX_AP                     (105)
-#define BONUS_WEAPON_MAX_RANGE                  (106)
-
 
 #define CtrlPressed         ( GUI_IsKeyPressed( DIK_LCONTROL ) || GUI_IsKeyPressed( DIK_RCONTROL ) )
 #define OnlyCtrlPressed     ( CtrlPressed && !ShiftPressed && !AltPressed )
@@ -843,8 +836,8 @@ void render_iface(uint layer)
                                 {
                                     if(_WeaponSkill(item.Proto, _WeaponModeUse(item.Mode)) == SK_THROWING)
                                         _item += " ["+item.GetCount()+"]";
-                                    else if(item.Proto.Weapon_MaxAmmoCount > 0)
-                                        _item += " ["+item.AmmoCount+"/"+item.Proto.Weapon_MaxAmmoCount+"]";
+                                    else if(GetWeaponMaxAmmoDisplay(item) > 0)
+                                        _item += " [" + item.AmmoCount + "/" + GetWeaponMaxAmmoDisplay(item) + "]";
                                 }
                             }
                             DrawText(_item, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, (valid(item) && item.GetType() == ITEM_TYPE_WEAPON) ? AW_COLOR_WEAPON : COLOR_GRAY, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
@@ -1089,32 +1082,18 @@ string generic_description(int descType, int& offsX, int& offsY)
             {
                 int nfix = 2;
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
-				int wpnMinDmg = _WeaponDmgMin(weaponMain.Proto, use);
+				int weaponDmg = _WeaponDmg(weaponMain.Proto, use);
 				int meleeDamage=chosen.Stat[ST_MELEE_DAMAGE];
-				if(weaponMain.Proto.Weapon_Perk==WEAPON_PERK_BLUDGEONING)
+				if(WeaponHasProtoPerk(weaponMain.Proto, WEAPON_PERK_BLUDGEONING))
 				    meleeDamage*=2;
                 if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
 				{
-                    //if (wpnMinDmg==0) 
-					//	wpnMinDmg += MAX(1,chosen.Stat[ST_MELEE_DAMAGE]/2); 
-					//else 
-					//	wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE]/2;
-					wpnMinDmg += meleeDamage;
-				} else {
-				    wpnMinDmg += wpnMinDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
+					weaponDmg += meleeDamage;
+                } else {
+				    weaponDmg += weaponDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
 				}
-                wpnMinDmg += wpnMinDmg * SelectWeaponBonus(weaponMain, BONUS_WEAPON_MIN_DMG) / 100;
-				result += wpnMinDmg+"-";		
-                
-                int wpnMaxDmg = _WeaponDmgMax(weaponMain.Proto, use);
-                if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
-				{
-                    wpnMaxDmg += meleeDamage;
-				}  else {
-                    wpnMaxDmg += wpnMaxDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
-                }
-                wpnMaxDmg += wpnMaxDmg * SelectWeaponBonus(weaponMain, BONUS_WEAPON_MAX_DMG) / 100;
-                result += wpnMaxDmg;
+                weaponDmg += weaponDmg * SelectWeaponBonus(weaponMain, BONUS_WEAPON_DAMAGE) / 100;
+                result += weaponDmg;
 
                 if(_WeaponMaxDist(weaponMain.Proto, use) > 1)
                 {
@@ -1126,16 +1105,16 @@ string generic_description(int descType, int& offsX, int& offsY)
                         //wpnMaxDist += 3 * (chosen.Perk[PE_HEAVE_HO] + chosen.Perk[PE_HEAVE_HO_II]);
 						wpnMaxDist += 6 * (chosen.Perk[PE_HEAVE_HO]);
                     }
-                    wpnMaxDist += SelectWeaponBonus(weaponMain, BONUS_WEAPON_MAX_RANGE);
+                    wpnMaxDist += UpgradeWeaponRangeBonus(weaponMain, wpnMaxDist);
                     result += wpnMaxDist + "\n";
                     nfix--;
                 }
 
-                if(weaponMain.Proto.Weapon_MaxAmmoCount > 0)
+                if(GetWeaponMaxAmmoDisplay(weaponMain) > 0)
                 {
                     result += GetMsgStr(TEXTMSG_GAME, STR_INV_AMMO) + " ";
                     result += weaponMain.AmmoCount + "/";
-                    result += weaponMain.Proto.Weapon_MaxAmmoCount + " ";
+                    result += GetWeaponMaxAmmoDisplay(weaponMain) + " ";
                     result += GetMsgStr(TEXTMSG_GAME, STR_CALIBER(weaponMain.Proto.Weapon_Caliber));
                     result += "\n";
                     nfix--;
@@ -1172,14 +1151,7 @@ string generic_description(int descType, int& offsX, int& offsY)
             ProtoItem@ unarmed = chosen.GetSlotProto(SLOT_HAND1, mode);
             result += GetMsgStr(TEXTMSG_GAME, STR_INV_NO_ITEM) + "\n";
             result += GetMsgStr(TEXTMSG_GAME, STR_INV_UNARMED_DMG) + " ";
-            
-			//if(_WeaponDmgMin(unarmed,_WeaponModeUse(mode))==0) 
-			//	result += MAX(1, chosen.Stat[ST_MELEE_DAMAGE]/1) + "-"; 
-			//else 
-			//	result += _WeaponDmgMin(unarmed,_WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE]/1 + "-";	
-			
-            result += _WeaponDmgMin(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE] + "-";
-			result += _WeaponDmgMax(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE];
+            result += _WeaponDmg(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE];
             result += "\n\n";
         }
         result += "---------------------\n";
@@ -1200,32 +1172,18 @@ string generic_description(int descType, int& offsX, int& offsY)
             {
                 int nfix = 2;
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
-                //result += _WeaponDmgMin(weaponExt.Proto, use) + "-";
-				int wpnMinDmg=_WeaponDmgMin(weaponExt.Proto,use);
+				int weaponDmg=_WeaponDmg(weaponExt.Proto,use);
 				int meleeDamage=chosen.Stat[ST_MELEE_DAMAGE];
-				if(weaponExt.Proto.Weapon_Perk==WEAPON_PERK_BLUDGEONING)
+				if(WeaponHasProtoPerk(weaponExt.Proto, WEAPON_PERK_BLUDGEONING))
 				    meleeDamage*=2;
 				if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use))
 				{		
-					//if (wpnMinDmg==0) 
-					//	wpnMinDmg += MAX(1, chosen.Stat[ST_MELEE_DAMAGE]/1); 
-					//else 
-					//	wpnMinDmg += chosen.Stat[ST_MELEE_DAMAGE]/1;
-					wpnMinDmg += meleeDamage;
+					weaponDmg += meleeDamage;
 				}  else {
-                  	wpnMinDmg += wpnMinDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
+                  	weaponDmg += weaponDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
                 }
-                wpnMinDmg += wpnMinDmg * SelectWeaponBonus(weaponExt, BONUS_WEAPON_MIN_DMG) / 100;			
-				result+=wpnMinDmg+"-";				
-				
-                int wpnMaxDmg = _WeaponDmgMax(weaponExt.Proto, use);
-                if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use)) {
-                    wpnMaxDmg += meleeDamage;
-				}  else {
-                  	wpnMaxDmg += wpnMaxDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
-                }
-                wpnMaxDmg += wpnMaxDmg * SelectWeaponBonus(weaponExt, BONUS_WEAPON_MAX_DMG) / 100;
-                result += wpnMaxDmg;
+                weaponDmg += weaponDmg * SelectWeaponBonus(weaponExt, BONUS_WEAPON_DAMAGE) / 100;
+                result += weaponDmg;
                 if(_WeaponMaxDist(weaponExt.Proto, use) > 1)
                 {
                     result += " " + GetMsgStr(TEXTMSG_GAME, STR_INV_DIST) + " ";
@@ -1236,16 +1194,16 @@ string generic_description(int descType, int& offsX, int& offsY)
                         //wpnMaxDist += 3 * (chosen.Perk[PE_HEAVE_HO] + chosen.Perk[PE_HEAVE_HO_II]);
 						wpnMaxDist += 6 * (chosen.Perk[PE_HEAVE_HO]);
                     }
-                    wpnMaxDist += SelectWeaponBonus(weaponExt, BONUS_WEAPON_MAX_RANGE);
+                    wpnMaxDist += UpgradeWeaponRangeBonus(weaponExt, wpnMaxDist);
                     result += wpnMaxDist + "\n";
                     nfix--;
                 }
 
-                if(weaponExt.Proto.Weapon_MaxAmmoCount > 0)
+                if(GetWeaponMaxAmmoDisplay(weaponExt) > 0)
                 {
                     result += GetMsgStr(TEXTMSG_GAME, STR_INV_AMMO) + " ";
                     result += weaponExt.AmmoCount + "/";
-                    result += weaponExt.Proto.Weapon_MaxAmmoCount + " ";
+                    result += GetWeaponMaxAmmoDisplay(weaponExt) + " ";
                     result += GetMsgStr(TEXTMSG_GAME, STR_CALIBER(weaponExt.Proto.Weapon_Caliber));
                     result += "\n";
                     nfix--;
@@ -1282,15 +1240,7 @@ string generic_description(int descType, int& offsX, int& offsY)
             ProtoItem@ unarmed = chosen.GetSlotProto(SLOT_HAND2, mode);
             result += GetMsgStr(TEXTMSG_GAME, STR_INV_NO_ITEM) + "\n";
             result += GetMsgStr(TEXTMSG_GAME, STR_INV_UNARMED_DMG) + " ";
-			
-			//if(_WeaponDmgMin(unarmed,_WeaponModeUse(mode))==0) 
-			//	result += MAX(1, chosen.Stat[ST_MELEE_DAMAGE]/1) + "-"; 
-			//else 
-			//	result += _WeaponDmgMin(unarmed,_WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE]/1 + "-";	
-			
-            result += _WeaponDmgMin(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE] + "-";
-			
-            result += (_WeaponDmgMax(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE]);
+            result += _WeaponDmg(unarmed, _WeaponModeUse(mode)) + chosen.Stat[ST_MELEE_DAMAGE];
             result += "\n\n";
         }
 
@@ -1612,21 +1562,36 @@ string item_description(ItemCl& item, int lookType)
             if(item.GetType() == ITEM_TYPE_WEAPON)
             {
                 // Ammo load
-                if(item.Proto.Weapon_MaxAmmoCount > 0)
+                if(GetWeaponMaxAmmoDisplay(item) > 0)
                 {
                     result += "\n";
                     string str = GetMsgStr(TEXTMSG_GAME, STR_INV_HAS_SHOTS);
                     str = ReplaceText(str, "VALUE", item.AmmoCount);
-                    str = ReplaceText(str, "MAX_VALUE", item.Proto.Weapon_MaxAmmoCount);
+                    str = ReplaceText(str, "MAX_VALUE", GetWeaponMaxAmmoDisplay(item));
                     str = ReplaceText(str, "AMMO", GetMsgStr(TEXTMSG_GAME, STR_CALIBER(item.Proto.Weapon_Caliber)));
                     result += str;
                 }
 
-                if(item.Proto.Weapon_Perk != 0)
+                bool hasWeaponPerks = false;
+                string weaponPerks = "";
+                int[] weaponProtoPerks = { item.Proto.Weapon_Perk, item.Proto.Weapon_Perk_2, item.Proto.Weapon_Perk_3 };
+                for(uint i = 0; i < weaponProtoPerks.length(); i++)
                 {
-                    string str = GetMsgStr(TEXTMSG_GAME, STR_WEAPON_PERK(item.Proto.Weapon_Perk));
-                    result += "\nPerk: " + str + ".";
+                    int perk = weaponProtoPerks[i];
+                    if(perk == 0)
+                        continue;
+
+                    string str = GetMsgStr(TEXTMSG_GAME, STR_WEAPON_PERK(perk));
+                    if(str.length() == 0)
+                        continue;
+
+                    if(hasWeaponPerks)
+                        weaponPerks += ", ";
+                    weaponPerks += str;
+                    hasWeaponPerks = true;
                 }
+                if(hasWeaponPerks)
+                    result += "\nPerks: " + weaponPerks;
 
                 if(item.Proto.Weapon_MinStrength > 1)
                 {
@@ -1638,12 +1603,27 @@ string item_description(ItemCl& item, int lookType)
             {
                 result += "\nCrit chance mod: " + (item.Proto.Armor_CMCritChance);
                 result += "\nCrit power mod: " + (item.Proto.Armor_CMCritPower);
+                string armorPerk = GetArmorProtoPerkText(item.Proto.Armor_Perk);
+                if(armorPerk.length() > 0)
+                    result += "\nPerks: " + armorPerk;
                 if(item.GetProtoId() == PID_TESLA_ARMOR)
                     result += "\nCharges: "+item.Charge+"/"+item.Proto.Misc_ChargeMax;
             }
 
+            int qualitySlots = UpgradeQualitySlots(item);
+            if(item.GetType() == ITEM_TYPE_WEAPON || item.GetType() == ITEM_TYPE_ARMOR)
+            {
+                int extraSlots = UpgradeExtraSlotsFromProto(item.Proto);
+                if(extraSlots > 0 && qualitySlots < extraSlots)
+                    qualitySlots = extraSlots;
+            }
+            if((item.GetType() == ITEM_TYPE_WEAPON || item.GetType() == ITEM_TYPE_ARMOR) && qualitySlots > 0)
+                result += "\nUpgrade slots: " + UpgradeUsedSlots(item) + "/" + qualitySlots;
 
-            else if(item.GetType() == ITEM_TYPE_AMMO)
+            if(IsLexem(item, "$legendary"))
+                result += "\nLegendary: " + GetLexem(item, "$legendary") + "/" + LEGENDARY_TARGET;
+
+            if(item.GetType() == ITEM_TYPE_AMMO)
             {
                 result += "\nDM mod: " + (item.Proto.Ammo_DmgMult) + "/" + (item.Proto.Ammo_DmgDiv);
                 result += "\nDR mod: " + (item.Proto.Ammo_DrMod) + "%";
@@ -1720,12 +1700,8 @@ string item_description(ItemCl& item, int lookType)
 			if(IsLexem(item, "$crafter")) result += "\nCrafter: " + GetLexem(item, "$crafter");
 			if(IsLexem(item, "$spawnedby")) result += "\nSpawned by: " + GetLexem(item, "$spawnedby");
 			
-			// Show bonuses
-			result += showItemBonus(item, item.Val0, item.Val5);
-			result += showItemBonus(item, item.Val1, item.Val6);
-			result += showItemBonus(item, item.Val2, item.Val7);
-			result += showItemBonus(item, item.Val3, item.Val8);
-			result += showItemBonus(item, item.Val4, item.Val9);
+			// Show bonuses (stack same upgrade types in one line).
+			result += showItemBonusesStacked(item);
 			
 			if(item.GetProtoId() == PID_BOOK_OF_ACHIEVEMENT)
 			{
@@ -1744,19 +1720,73 @@ string item_description(ItemCl& item, int lookType)
 
 int SelectWeaponBonus(ItemCl& it, int Int_Val_WeaponBonus)
 {
-    if(valid(it))
-    {
-        if(it.Val0 == Int_Val_WeaponBonus) return  it.Val5;
-        if(it.Val1 == Int_Val_WeaponBonus) return  it.Val6;
-        if(it.Val2 == Int_Val_WeaponBonus) return  it.Val7;
-        if(it.Val3 == Int_Val_WeaponBonus) return  it.Val8;
-        if(it.Val4 == Int_Val_WeaponBonus) return  it.Val9;
-        return 0;
-    }
-    else return 0;
+    return UpgradeWeaponBonus(it, Int_Val_WeaponBonus);
 }
 
-string showItemBonus(ItemCl& it, int type, int value)
+uint GetWeaponMaxAmmoDisplay(ItemCl@ it)
+{
+    return UpgradeWeaponMaxAmmo(it);
+}
+
+string GetWeaponUpgradePerkText(int type)
+{
+    switch(type)
+    {
+    case UPGRADE_WEAPON_PERK_ACCURATE:
+        return "Accurate";
+    case UPGRADE_WEAPON_PERK_PENETRATE:
+        return "Penetrate";
+    case UPGRADE_WEAPON_PERK_COMMANDO:
+        return "Commando";
+    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
+        return "Fast Reload";
+    case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+        return "Double Magazine";
+    case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+        return "Enhanced Damage";
+    case UPGRADE_WEAPON_PERK_AP_BOOST:
+        return "AP Boost";
+    case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+        return "Critical Power";
+    case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+        return "Silent Hill Monster";
+    case UPGRADE_WEAPON_PERK_BLAST:
+        return "Blast";
+    case UPGRADE_WEAPON_PERK_PERSISTENT:
+        return "Persistent";
+    case UPGRADE_WEAPON_PERK_MARKED_SHOT:
+        return "Marked Shot";
+    case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+        return "Increased Range";
+    default:
+        return "";
+    }
+
+    return "";
+}
+
+string GetArmorProtoPerkText(int perk)
+{
+    switch(perk)
+    {
+    case ARMOR_PERK_POWERED:
+        return "Powered";
+    case ARMOR_PERK_COMBAT:
+        return "Combat";
+    case ARMOR_PERK_ADVANCED_I:
+        return "Advanced I";
+    case ARMOR_PERK_ADVANCED_II:
+        return "Advanced II";
+    case ARMOR_PERK_EXTRA_UPGRADE_SLOTS:
+        return "Extra Upgrade Slots";
+    default:
+        return "";
+    }
+
+    return "";
+}
+
+string showItemBonus(ItemCl& it, int type, int value, int stacks)
 {
 string result="";
 if(type==0) return result;
@@ -1797,15 +1827,78 @@ else if(it.GetType() == ITEM_TYPE_WEAPON)
 	{
 		case 100: {result="\nCrit Power +" + value + "";break;}
 		case 101: {result="\nCrit Chance +" + value + "";break;}
-		case 102: {result="\nMin dmg +" + value + "%";break;}
-		case 103: {result="\nMax dmg +" + value + "%";break;}
+		case BONUS_WEAPON_DAMAGE:
+		case BONUS_WEAPON_DAMAGE_EXTRA: {result="\nDamage +" + value + "%";break;}
 		case 104: {result="\nAccuracy +" + value + "%";break;}
 		case 105: {result="\nAction points +" + value + "";break;}
         case 106: {result="\nRange +" + value + "";break;}
+		case UPGRADE_WEAPON_PERK_ACCURATE:
+		case UPGRADE_WEAPON_PERK_PENETRATE:
+		case UPGRADE_WEAPON_PERK_COMMANDO:
+		case UPGRADE_WEAPON_PERK_FAST_RELOAD:
+		case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+		case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+		case UPGRADE_WEAPON_PERK_AP_BOOST:
+		case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+		case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+		case UPGRADE_WEAPON_PERK_BLAST:
+		case UPGRADE_WEAPON_PERK_PERSISTENT:
+		case UPGRADE_WEAPON_PERK_MARKED_SHOT:
+		case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+		{
+			string txt = GetWeaponUpgradePerkText(type);
+			if(txt.length() > 0)
+			{
+				result = "\n|" + AW_COLOR_WEAPON_PERK + " Perk: " + txt;
+				if(stacks > 1)
+					result += " x" + stacks;
+				result += "|" + COLOR_TEXT + " ";
+			}
+			break;
+		}
 		default: break;
 		}
 }
 return result;
+}
+
+string showItemBonusesStacked(ItemCl& it)
+{
+    int[] mergedTypes;
+    int[] mergedValues;
+    int[] mergedStacks;
+
+    for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
+    {
+        int type = UpgradeSlotType(it, i);
+        if(type == 0)
+            continue;
+        int value = UpgradeSlotValue(it, i);
+
+        bool merged = false;
+        for(uint j = 0; j < mergedTypes.length(); j++)
+        {
+            if(mergedTypes[j] == type)
+            {
+                mergedValues[j] += value;
+                mergedStacks[j]++;
+                merged = true;
+                break;
+            }
+        }
+
+        if(!merged)
+        {
+            mergedTypes.insertLast(type);
+            mergedValues.insertLast(value);
+            mergedStacks.insertLast(1);
+        }
+    }
+
+    string result = "";
+    for(uint i = 0; i < mergedTypes.length(); i++)
+        result += showItemBonus(it, mergedTypes[i], mergedValues[i], mergedStacks[i]);
+    return result;
 }
 
 string showPrefix(ItemCl@ it)
@@ -1815,12 +1908,13 @@ string showPrefix(ItemCl@ it)
 	{
 		if(it.BrokenFlags == BI_ETERNAL)
 			result += "|" + COLOR_RED + " Broken " + "|" + COLOR_TEXT + " ";
-		
-		if(it.Val4!=0)	result +="|" + COLOR_SAND + " Unique " + "|" + COLOR_TEXT + " ";
-		else if(it.Val3!=0)	result +="|" + COLOR_GREEN_RED + " Advanced " + "|" + COLOR_TEXT + " ";
-		else if(it.Val2!=0)	result +="|" + COLOR_WHITE + " Superior " + "|" + COLOR_TEXT + " ";
-		else if(it.Val1!=0)	result +="|" + COLOR_LGRAY + " Improved " + "|" + COLOR_TEXT + " ";
-		else if(it.Val0!=0) result +="|" + COLOR_GRAY + " Quality " + "|" + COLOR_TEXT + " ";
+
+        int quality = UpgradeBaseQualitySlots(it);
+		if(quality >= 5)	result +="|" + COLOR_SAND + " Unique " + "|" + COLOR_TEXT + " ";
+		else if(quality == 4)	result +="|" + COLOR_GREEN_RED + " Advanced " + "|" + COLOR_TEXT + " ";
+		else if(quality == 3)	result +="|" + COLOR_WHITE + " Superior " + "|" + COLOR_TEXT + " ";
+		else if(quality == 2)	result +="|" + COLOR_LGRAY + " Improved " + "|" + COLOR_TEXT + " ";
+		else if(quality == 1) result +="|" + COLOR_GRAY + " Quality " + "|" + COLOR_TEXT + " ";
 	}
 	
 	return result;
@@ -2138,7 +2232,7 @@ string critter_description(CritterCl& cr, int lookType)
                             result+=GetMsgStr(TEXTMSG_GAME,STR_CRIT_LOOK_WEAP_AMMO);
                             result=ReplaceText(result,"WEAPON",GetMsgStr(TEXTMSG_ITEM,STR_ITEM_INFO(item)));
                             result=ReplaceText(result,"CUR",item.AmmoCount);
-                            result=ReplaceText(result,"MAX",item.Proto.Weapon_MaxAmmoCount);
+                            result=ReplaceText(result,"MAX",GetWeaponMaxAmmoDisplay(item));
                             result=ReplaceText(result,"AMMO",GetMsgStr(TEXTMSG_GAME,STR_CALIBER(item.Proto.Weapon_Caliber)));
                        }
                      */
@@ -2570,7 +2664,7 @@ void DrawIndicators()
     DrawText(RightLegText, 140, __ScreenHeight-40, 90, 20, COLOR_RGB(255 - greenRightLeg, greenRightLeg, 0), FONT_FAT, FT_CENTERXY | FT_BORDERED);
 
     int     wear_proc = (valid(item) && item.IsDeteriorable()) ? 100 - (item.Deterioration * 100) / MAX_DETERIORATION : 0;
-    int     max_ammo = (valid(item) && item.GetType() == ITEM_TYPE_WEAPON) ? item.Proto.Weapon_MaxAmmoCount : 0;
+    int     max_ammo = (valid(item) && item.GetType() == ITEM_TYPE_WEAPON) ? int(GetWeaponMaxAmmoDisplay(item)) : 0;
     int     cur_ammo = (valid(item) && item.GetType() == ITEM_TYPE_WEAPON) ? (_WeaponSkill(item.Proto, _WeaponModeUse(item.Mode)) == SK_THROWING ? item.GetCount() : item.AmmoCount) : 0;
 
     if(valid(item) && max_ammo == 0 && cur_ammo == 0 && item.Proto.Misc_ChargeMax > 0)

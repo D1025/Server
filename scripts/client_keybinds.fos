@@ -10,6 +10,7 @@
 #define CLIENT_KEYBINDS
 #include "_client_defines.fos"
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "client_keybinds_h.fos"
 #include "config_file_h.fos"
 

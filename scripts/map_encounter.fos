@@ -229,9 +229,8 @@ void _CritterIn(Map& map, Critter& cr)
 						}
 				case 3:
 						{
-							it.Val0=BONUS_WEAPON_MIN_DMG; it.Val5=Random(1,15); 
-							it.Val1=BONUS_WEAPON_MAX_DMG; it.Val6=Random(1,15); 
-							Log("Bonus: Min-Max dmg, Pid: " +pids[i]);
+							it.Val0=BONUS_WEAPON_DAMAGE; it.Val5=Random(1,30);
+							Log("Bonus: Damage, Pid: " +pids[i]);
 							break;
 						}
 				case 4: {

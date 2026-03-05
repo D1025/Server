@@ -203,21 +203,86 @@ EXPORT bool allowSlot_Hand1(uint8, Item&, Critter&, Critter& toCr)
 
 int checkBonus(Item& it, int bonusType)
 {
-	if(it.Data.ScriptValues[0]==bonusType) return it.Data.ScriptValues[5];
-	if(it.Data.ScriptValues[1]==bonusType) return it.Data.ScriptValues[6];
-	if(it.Data.ScriptValues[2]==bonusType) return it.Data.ScriptValues[7];
-	if(it.Data.ScriptValues[3]==bonusType) return it.Data.ScriptValues[8];
-	if(it.Data.ScriptValues[4]==bonusType) return it.Data.ScriptValues[9];
+	const int slotEmpty = 9000;
+	const int slotUsed = 9001;
+	const int slotPackBase = 2000000;
+	const int slotPackStep = 1000;
+	const int slotPackBias = 500;
+	bool legacyLayout = false;
+	for(int i = 0; i < 5; i++)
+	{
+		int raw = it.Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+		if(raw >= slotPackBase)
+			continue;
+		legacyLayout = true;
+		break;
+	}
+
+	int maxSlots = legacyLayout ? 5 : 7;
+	for(int i = 0; i < maxSlots; i++)
+	{
+		int raw = it.Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+
+		int type = (raw >= slotPackBase ? (raw - slotPackBase) / slotPackStep : raw);
+		if(type != bonusType)
+			continue;
+
+		if(raw >= slotPackBase)
+			return (raw - slotPackBase) % slotPackStep - slotPackBias;
+
+		// Backward compatibility for old format: value in ScriptValues[5..9].
+		if(i < 5)
+			return it.Data.ScriptValues[5 + i];
+		return 0;
+	}
 	return 0;
 }
 
 int checkBonus(const Item* it, int bonusType)
 {
-	if(it->Data.ScriptValues[0]==bonusType) return it->Data.ScriptValues[5];
-	if(it->Data.ScriptValues[1]==bonusType) return it->Data.ScriptValues[6];
-	if(it->Data.ScriptValues[2]==bonusType) return it->Data.ScriptValues[7];
-	if(it->Data.ScriptValues[3]==bonusType) return it->Data.ScriptValues[8];
-	if(it->Data.ScriptValues[4]==bonusType) return it->Data.ScriptValues[9];
+	if(!it)
+		return 0;
+
+	const int slotEmpty = 9000;
+	const int slotUsed = 9001;
+	const int slotPackBase = 2000000;
+	const int slotPackStep = 1000;
+	const int slotPackBias = 500;
+	bool legacyLayout = false;
+	for(int i = 0; i < 5; i++)
+	{
+		int raw = it->Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+		if(raw >= slotPackBase)
+			continue;
+		legacyLayout = true;
+		break;
+	}
+
+	int maxSlots = legacyLayout ? 5 : 7;
+	for(int i = 0; i < maxSlots; i++)
+	{
+		int raw = it->Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+
+		int type = (raw >= slotPackBase ? (raw - slotPackBase) / slotPackStep : raw);
+		if(type != bonusType)
+			continue;
+
+		if(raw >= slotPackBase)
+			return (raw - slotPackBase) % slotPackStep - slotPackBias;
+
+		// Backward compatibility for old format: value in ScriptValues[5..9].
+		if(i < 5)
+			return it->Data.ScriptValues[5 + i];
+		return 0;
+	}
 	return 0;
 }
 
@@ -738,7 +803,7 @@ uint GetAttackDistantion(CritterMutual& cr, Item& item, uint8 mode)
 	if(Item_Weapon_IsHtHAttack(item, mode) && cr.Params[MODE_RANGE_HTH]) dist++;
 	dist += GetMultihex(cr);
 	dist += checkBonus(item, BONUS_WEAPON_MAX_RANGE);
-	if(item.Proto->Weapon_Perk == WEAPON_PERK_SCOPE_RANGE && cr.Params[PE_SHARPSHOOTER])
+	if(item.Proto->WeaponHasPerk(WEAPON_PERK_SCOPE_RANGE) && cr.Params[PE_SHARPSHOOTER])
 		dist+=5;
 	if(dist < 0) dist = 0;
 	return dist;

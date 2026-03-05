@@ -32,8 +32,8 @@
 
 // generic shot trap only
 #define _Pid                      # (it)              (it.Val1)
-#define _DmgMin                   # (it)   (it.Val2)
-#define _DmgMax                   # (it)   (it.Val4)
+#define _DmgFrom                  # (it)   (it.Val2)
+#define _DmgTo                    # (it)   (it.Val4)
 
 // alert trap only
 #define _SetPidNum                # (_it, _pid, _min, _max) do { _it.Val1 = ((_pid) << 16) | ((_min) << 8) | (_max); } while(false)
@@ -48,7 +48,7 @@
 #ifndef __TRAPS_MODULE__
 import void MakeMine(Item& mine, uint explodeOwner, uint complexity, uint hideSkill, uint bonusDamage, uint bonusRadius) from "explode";
 import void MakeSpearTrap(Item& trap, uint complexity, uint hideSkill, uint spearcount) from "traps";
-import void MakeGenericShotTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint dmgmin, uint dmgmax) from "traps";
+import void MakeGenericShotTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint damageFrom, uint damageTo) from "traps";
 import void MakeBearTrap(Item& trap, uint complexity, uint hideSkill, uint bonusDamage) from "traps";
 import void MakeAlarmTrap(Item& trap, uint complexity, uint hideSkill, uint16 pid, uint8 min, uint8 max, uint16 bag, uint8 level, uint8 entire) from "traps";
 import void ClearWalkTrap(Item& item) from "traps";

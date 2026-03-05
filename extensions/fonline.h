@@ -734,8 +734,8 @@ struct ProtoItem
     // Weapon, offset 200
     const int    Weapon_DmgType[ 3 ];
     const uint   Weapon_Anim2[ 3 ];
-    const int    Weapon_DmgMin[ 3 ];
-    const int    Weapon_DmgMax[ 3 ];
+    const int    Weapon_Dmg[ 3 ];
+    const int    Weapon_UnusedDamage[ 3 ];
     const uint16 Weapon_Effect[ 3 ];
     const bool   Weapon_Remove[ 3 ];
     const uint   Weapon_ReloadAp;
@@ -792,12 +792,16 @@ struct ProtoItem
     const uint   Car_Entrance;
     const uint   Car_MovementType;
 
+    // Item scripting uses Weapon_Dmg_* as a single-damage alias.
+    int GetWeaponDamage( uint8 use ) const { return use < 3 ? Weapon_Dmg[ use ] : 0; }
+
     bool IsItem()      const { return Type != ITEM_TYPE_GENERIC && Type != ITEM_TYPE_WALL; }
     bool IsScen()      const { return Type == ITEM_TYPE_GENERIC; }
     bool IsWall()      const { return Type == ITEM_TYPE_WALL; }
     bool IsArmor()     const { return Type == ITEM_TYPE_ARMOR; }
     bool IsDrug()      const { return Type == ITEM_TYPE_DRUG; }
     bool IsWeapon()    const { return Type == ITEM_TYPE_WEAPON; }
+    bool WeaponHasPerk( int perk ) const { return IsWeapon() && ( Weapon_Perk == perk || Weapon_Unused[ 2 ] == perk || Weapon_Unused[ 3 ] == perk ); }
     bool IsAmmo()      const { return Type == ITEM_TYPE_AMMO; }
     bool IsMisc()      const { return Type == ITEM_TYPE_MISC; }
     bool IsKey()       const { return Type == ITEM_TYPE_KEY; }
@@ -1083,10 +1087,56 @@ struct Item
     // Weapon
     bool IsWeapon()                  const { return GetType() == ITEM_TYPE_WEAPON; }
     bool WeapIsEmpty()               const { return !Data.AmmoCount; }
-    bool WeapIsFull()                const { return Data.AmmoCount >= Proto->Weapon_MaxAmmoCount; }
+    bool WeapIsFull()                const { return Data.AmmoCount >= WeapGetMaxAmmoCount(); }
     uint WeapGetAmmoCount()          const { return Data.AmmoCount; }
     uint WeapGetAmmoPid()            const { return Data.AmmoPid; }
-    uint WeapGetMaxAmmoCount()       const { return Proto->Weapon_MaxAmmoCount; }
+    uint WeapGetMaxAmmoCount()       const
+    {
+        uint maxAmmo = Proto->Weapon_MaxAmmoCount;
+        if( !maxAmmo )
+            return 0;
+
+        // Upgrade slots are stored in ScriptValues[0..6] as packed values, where 1004 is Double Magazine.
+        const int doubleMagazinePerkType = 1004;
+        const int slotEmpty = 9000;
+        const int slotUsed = 9001;
+        const int slotPackBase = 2000000;
+        const int slotPackStep = 1000;
+
+        bool legacyLayout = false;
+        for( int i = 0; i < 5; i++ )
+        {
+            int raw = Data.ScriptValues[ i ];
+            if( raw == 0 || raw == slotEmpty || raw == slotUsed )
+                continue;
+            if( raw >= slotPackBase )
+                continue;
+            legacyLayout = true;
+            break;
+        }
+
+        auto decodeSlotType = [slotEmpty, slotUsed, slotPackBase, slotPackStep]( int raw ) -> int
+        {
+            if( raw == 0 || raw == slotEmpty || raw == slotUsed )
+                return raw;
+            if( raw >= slotPackBase )
+                return ( raw - slotPackBase ) / slotPackStep;
+            return raw;
+        };
+
+        uint stacks = 0;
+        int maxSlots = legacyLayout ? 5 : 7;
+        for( int i = 0; i < maxSlots; i++ )
+        {
+            if( decodeSlotType( Data.ScriptValues[ i ] ) == doubleMagazinePerkType )
+                stacks++;
+        }
+
+        if( stacks > 0 )
+            maxAmmo += maxAmmo * stacks;
+
+        return maxAmmo;
+    }
     int  WeapGetAmmoCaliber()        const { return Proto->Weapon_Caliber; }
     int  WeapGetNeedStrength()       const { return Proto->Weapon_MinStrength; }
     bool WeapIsUseAviable( int use ) const { return use >= USE_PRIMARY && use <= USE_THIRD ? ( ( ( Proto->Weapon_ActiveUses >> use ) & 1 ) != 0 ) : false; }

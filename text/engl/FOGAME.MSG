@@ -888,6 +888,9 @@
 {10860}{}{Cascade}
 {10861}{}{Commando}
 {10862}{}{Ripper Sewing}
+{10863}{}{Skilless}
+{10864}{}{Extra Upgrade Slots}
+{10865}{}{Blast}
 
 ####################################################################################################################################
 #
@@ -1896,7 +1899,7 @@
 {104272}{}{You cover your target in bullets... one of them is bound to find a hole. You ignore armour’s Critical Modifier.}
 # PE_MORE_RANGED_DAMAGE       (428)
 {104281}{}{More Ranged Damage}
-{104282}{}{Your advanced training in firearms and other ranged weapons has made you even more deadly in ranged combat than those with a basic training. You do +3 points of damage with ranged weapons {}
+{104282}{}{Your advanced training in firearms and other ranged weapons has made you even more deadly in ranged combat than those with a basic training. You do +3 points of damage with ranged weapons}
 # PE_LIVEWIRE                 (429)
 {104291}{}{Livewire}
 {104292}{}{You have learnt to harness your extra energy and in battle you are a blur. You double your bonus AC gained from your AG.}
@@ -2557,7 +2560,7 @@ Shift + Enter - Radio
 {2000001000}{}{20} # Speed
 {2000001010}{}{
 |0xff8c8c84 FOnline: New Dawn
-|0xff907824 worldremaker
+|0xff907824 worldremaker | Donald
 
 Special thanks to
 FOnline: Reloaded

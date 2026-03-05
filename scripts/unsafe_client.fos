@@ -39,7 +39,7 @@ import void PlayMusic(Critter& cr, string& musicName, uint pos, uint repeat) fro
 
 import void SetSpectator(Critter& cr, bool on) from "utils";
 
-import void CommenceDischargeEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, uint dmgRad, uint dmgMin, uint dmgMax, int effChance, uint rechargeVal) from "combat";
+import void CommenceDischargeEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, uint dmgRad, uint damageFrom, uint damageTo, int effChance, uint rechargeVal) from "combat";
 
 import bool ReversableItem(Item& item) from "fix_boy";
 import bool ReverseAllItems(Critter& cr, array<Item@>& items, uint cnt, uint max) from "fix_boy";

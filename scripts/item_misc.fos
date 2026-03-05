@@ -19,6 +19,8 @@
 
 #include "item_misc_h.fos"
 
+import bool ApplyWeaponUpgradePerk(Item@ it, int perkType) from "item_bonus";
+
 void _Waterpipe(Item& item, bool firstTime)
 {
     item.SetEvent(ITEM_EVENT_SKILL, "_SkillWaterpipe");
@@ -192,4 +194,150 @@ bool _MapToLocationUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem
 
     return(true);
 }
+
+string _WeaponPerkBlueprintName(int perkType)
+{
+    switch(perkType)
+    {
+    case UPGRADE_WEAPON_PERK_ACCURATE:
+        return "Accurate";
+    case UPGRADE_WEAPON_PERK_PENETRATE:
+        return "Penetrate";
+    case UPGRADE_WEAPON_PERK_COMMANDO:
+        return "Commando";
+    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
+        return "Fast Reload";
+    case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+        return "Double Magazine";
+    case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+        return "Enhanced Damage";
+    case UPGRADE_WEAPON_PERK_AP_BOOST:
+        return "AP Boost";
+    case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+        return "Critical Power";
+    case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+        return "Silent Hill Monster";
+    case UPGRADE_WEAPON_PERK_BLAST:
+        return "Blast";
+    case UPGRADE_WEAPON_PERK_PERSISTENT:
+        return "Persistent";
+    case UPGRADE_WEAPON_PERK_MARKED_SHOT:
+        return "Marked Shot";
+    case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+        return "Increased Range";
+    default:
+        return "Unknown";
+    }
+
+    return "Unknown";
+}
+
+bool _UseWeaponPerkBlueprint(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery, int perkType)
+{
+    if(valid(onCritter) || valid(onScenery))
+    {
+        cr.Say(SAY_NETMSG, "Use this blueprint on a weapon in your inventory.");
+        return true;
+    }
+
+    if(item.Accessory != ACCESSORY_CRITTER || item.CritId != cr.Id)
+    {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+        return true;
+    }
+
+    if(valid(onItem))
+    {
+        _ApplyWeaponPerkBlueprintOnWeapon(item, cr, onItem, perkType);
+        return true;
+    }
+
+    // Open inventory picker without repair-pid filter (show all items, including weapons).
+    cr.RunClientScript("client_interface@_RepairSession", 0, item.Id, 0, null, null);
+    cr.StatBase[ST_VAR0] = item.Id;
+    cr.StatBase[ST_VAR1] = perkType;
+    cr.ShowScreen(SCREEN_BAG, 0, "_WpBpChooseWeaponCallback");
+    return true;
+}
+
+bool _ApplyWeaponPerkBlueprintOnWeapon(Item& blueprint, Critter& cr, Item@ weapon, int perkType)
+{
+    if(!valid(weapon))
+        return false;
+
+    if(weapon.GetType() != ITEM_TYPE_WEAPON || weapon.IsStackable())
+    {
+        cr.Say(SAY_NETMSG, "This blueprint can only be applied to a non-stackable weapon.");
+        return false;
+    }
+
+    if(weapon.Accessory != ACCESSORY_CRITTER || weapon.CritId != cr.Id)
+    {
+        cr.Say(SAY_NETMSG, "The target weapon must be in your inventory.");
+        return false;
+    }
+
+    if(blueprint.Accessory != ACCESSORY_CRITTER || blueprint.CritId != cr.Id)
+    {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+        return false;
+    }
+
+    if(!ApplyWeaponUpgradePerk(weapon, perkType))
+    {
+        cr.Say(SAY_NETMSG, "Cannot apply " + _WeaponPerkBlueprintName(perkType) + ". Not enough free upgrade slots.");
+        return false;
+    }
+
+    if(blueprint.GetCount() > 1)
+        blueprint.SetCount(blueprint.GetCount() - 1);
+    else
+        DeleteItem(blueprint);
+
+    cr.Say(SAY_NETMSG, _WeaponPerkBlueprintName(perkType) + " applied.");
+    return true;
+}
+
+void _WpBpChooseWeaponCallback(Critter& cr, uint n, string& s)
+{
+    Item@ blueprint = GetItem(cr.Stat[ST_VAR0]);
+    Item@ weapon = GetItem(n);
+    int perkType = cr.Stat[ST_VAR1];
+
+    cr.StatBase[ST_VAR0] = 0;
+    cr.StatBase[ST_VAR1] = 0;
+
+    if(!valid(blueprint) || !valid(weapon))
+        return;
+
+    _ApplyWeaponPerkBlueprintOnWeapon(blueprint, cr, weapon, perkType);
+}
+
+void _WpBpAccurateInit(Item& item, bool firstTime)          { item.SetEvent(ITEM_EVENT_USE, "_WpBpAccurateUse"); }
+void _WpBpPenetrateInit(Item& item, bool firstTime)         { item.SetEvent(ITEM_EVENT_USE, "_WpBpPenetrateUse"); }
+void _WpBpCommandoInit(Item& item, bool firstTime)          { item.SetEvent(ITEM_EVENT_USE, "_WpBpCommandoUse"); }
+void _WpBpFastReloadInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_WpBpFastReloadUse"); }
+void _WpBpDoubleMagazineInit(Item& item, bool firstTime)    { item.SetEvent(ITEM_EVENT_USE, "_WpBpDoubleMagazineUse"); }
+void _WpBpEnhancedDamageInit(Item& item, bool firstTime)    { item.SetEvent(ITEM_EVENT_USE, "_WpBpEnhancedDamageUse"); }
+void _WpBpApBoostInit(Item& item, bool firstTime)           { item.SetEvent(ITEM_EVENT_USE, "_WpBpApBoostUse"); }
+void _WpBpCriticalPowerInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_WpBpCriticalPowerUse"); }
+void _WpBpSilentHillMonsterInit(Item& item, bool firstTime) { item.SetEvent(ITEM_EVENT_USE, "_WpBpSilentHillMonsterUse"); }
+void _WpBpBlastInit(Item& item, bool firstTime)             { item.SetEvent(ITEM_EVENT_USE, "_WpBpBlastUse"); }
+void _WpBpPersistentInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_WpBpPersistentUse"); }
+void _WpBpMarkedShotInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_WpBpMarkedShotUse"); }
+void _WpBpIncreasedRangeInit(Item& item, bool firstTime)    { item.SetEvent(ITEM_EVENT_USE, "_WpBpIncreasedRangeUse"); }
+
+bool _WpBpAccurateUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)          { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_ACCURATE); }
+bool _WpBpPenetrateUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)         { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_PENETRATE); }
+bool _WpBpCommandoUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)          { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_COMMANDO); }
+bool _WpBpFastReloadUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_FAST_RELOAD); }
+bool _WpBpDoubleMagazineUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)    { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE); }
+bool _WpBpEnhancedDamageUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)    { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE); }
+bool _WpBpApBoostUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)           { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_AP_BOOST); }
+bool _WpBpCriticalPowerUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_CRITICAL_POWER); }
+bool _WpBpSilentHillMonsterUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery) { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER); }
+bool _WpBpBlastUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)             { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_BLAST); }
+bool _WpBpPersistentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_PERSISTENT); }
+bool _WpBpMarkedShotUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_MARKED_SHOT); }
+bool _WpBpIncreasedRangeUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)    { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_INCREASED_RANGE); }
 #endif // __ITEM_MISC__ //

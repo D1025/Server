@@ -152,6 +152,7 @@ import Critter@ AddNpc(Map@ map, uint16 pid, uint16 x, uint16 y, uint8 dir, arra
 import void     AddScore(Critter@ cr, uint score, uint points) from "utils";
 
 import bool  ReloadWeapon(Critter& cr) from "utils";
+import bool  ReloadWeapon(Critter& cr, Item@ weapon, Item@ ammo, bool playAction) from "utils";
 import Item@ GetRadio(Critter& cr) from "utils";
 import Item@ GetRepairTool(Critter& cr) from "utils";
 import Item@ GetEquippedItem(Critter& cr, uint Pid) from "utils";
