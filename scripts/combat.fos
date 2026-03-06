@@ -3624,10 +3624,14 @@ uint cte_PersistentDot(Critter& cr, int identifier, uint& rate)
     {
         cr.StatBase[ST_CURRENT_HP] -= tickDamage;
         int sourceAttackerId = cr.Stat[ST_PERSISTENT_DOT_LAST_ENEMY_ID];
-        if(sourceAttackerId > 0 && sourceAttackerId != cr.Id)
+        if(sourceAttackerId > 0)
         {
-            Critter@ sourceAttacker = GetCritter(sourceAttackerId);
-            ApplyVampirismLifeSteal(sourceAttacker, cr, tickDamage);
+            uint sourceAttackerUid = uint(sourceAttackerId);
+            if(sourceAttackerUid != cr.Id)
+            {
+                Critter@ sourceAttacker = GetCritter(sourceAttackerUid);
+                ApplyVampirismLifeSteal(sourceAttacker, cr, tickDamage);
+            }
         }
         if(cr.Trait[TRAIT_DEAD_MAN_WALKING] > 0 && cr.Stat[ST_CURRENT_HP] < 0)
             _SetTimeout(cr, TO_HEALING, REAL_SECOND(3));
