@@ -645,6 +645,7 @@
 #define ST_IMPLANTS_COUNT           (190) // Counter for implants
 #define ST_COMBAT_IMPLANTS_COUNT    (191) // Counter for combat implants
 #define ST_PERSISTENT_DOT           (192) // Persistent damage-over-time pool
+#define ST_PERSISTENT_DOT_LAST_ENEMY_ID (193) // Last critter id that applied persistent damage-over-time
 
 /// Skills
 #define SKILL_BEGIN                              (__SkillBegin)

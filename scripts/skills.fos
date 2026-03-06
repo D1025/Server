@@ -131,31 +131,29 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
 
-	heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL]*4/10,0,100)))) / 100;
+    heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL]*4/10,0,100)))) / 100;
     int curHp = targetCr.Stat[ST_CURRENT_HP];
-    int maxHp = GetActualMaxHp(targetCr);
     targetCr.StatBase[ST_HP_HEAD] += heal / 4;
     targetCr.StatBase[ST_HP_LA] += heal / 4;
     targetCr.StatBase[ST_HP_RA] += heal / 4;
     targetCr.StatBase[ST_HP_LL] += heal / 4;
     targetCr.StatBase[ST_HP_RL] += heal / 4;
-    if(curHp + heal > maxHp)
-        heal = maxHp - curHp;
     targetCr.StatBase[ST_CURRENT_HP] += heal;
 
+    int realHeal = MAX(0, targetCr.Stat[ST_CURRENT_HP] - curHp);
 
     if(is_self)
         VerboseAction(cr, "patches wounds");
     else
         VerboseAction(cr, targetCr, "treats wounds of TARGET");
-    cr.Say(SAY_NETMSG, "Hit Points +" + heal);
+    cr.Say(SAY_NETMSG, "Hit Points +" + realHeal);
     if(!is_self)
-        targetCr.Say(SAY_NETMSG, "Hit Points +" + heal);
+        targetCr.Say(SAY_NETMSG, "Hit Points +" + realHeal);
 
     uint firstAidCooldown = REAL_SECOND((100-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) );
     _SetTimeout(cr, TO_SK_FIRST_AID, ApplyHealingPowderCooldownBonus(cr, firstAidCooldown));
 
-    cr.StatBase[ST_EXPERIENCE] += heal * 3*(GetGvar(GVAR_experience_multipler));
+    cr.StatBase[ST_EXPERIENCE] += realHeal * 3*(GetGvar(GVAR_experience_multipler));
     if(_IsTrueNpc(targetCr) && cr.Id != targetCr.Id && IsHumanoid(targetCr) && !IsCurrentEnemy(targetCr, cr.Id))
     {
         if(_ValidReputationIndex(targetCr.Stat[ST_TEAM_ID]))
@@ -166,7 +164,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 
     if(cr.IsPlayer())
     {
-        LogExperience(cr, heal * 3*(GetGvar(GVAR_experience_multipler)), SK_FIRST_AID, targetCr.GetProtoId());
+        LogExperience(cr, realHeal * 3*(GetGvar(GVAR_experience_multipler)), SK_FIRST_AID, targetCr.GetProtoId());
         AddScore(cr, SCORE_DOCTOR, 1);
     }
 

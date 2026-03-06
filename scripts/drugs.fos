@@ -626,7 +626,9 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
             else if(stat == ST_CURRENT_HP)
             {
                 amount = ApplyPoisonHealingReduction(cr, drugPid, amount);
-                cr.StatBase[ST_CURRENT_HP] = CLAMP(statVal + amount, -9999,  GetActualMaxHp(cr));
+                // Don't pre-cap healing to max HP here.
+                // Vampirism reduction should be applied first in changedParam_Hp, and only then capped.
+                cr.StatBase[ST_CURRENT_HP] = MAX(statVal + amount, -9999);
                 if(amount < 0 && cr.Stat[ST_CURRENT_HP] < 0)
                     cr.ToDead(Random(0, 1) == 0 ? ANIM2_DEAD_FRONT : ANIM2_DEAD_BACK, null);
             }
