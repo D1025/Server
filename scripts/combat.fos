@@ -114,10 +114,8 @@ int SelectArmorBonus(Item@ armor, int Int_Val_ArmorBonus)
 float CalculateDamageReduction(Item@ weapon) {
     if (valid(weapon) && weapon.IsDeteriorable()) {
         int deterioration = weapon.Deterioration;
-        // 0 = best condition, higher values = more wear.
-        // Apply penalty only for heavily worn weapons.
-        if (deterioration > 50) {
-            return 1.0 - (0.01 * (deterioration - 50));
+        if (deterioration < 50) {
+            return 1.0 - (0.01 * (50 - deterioration));
         }
     }
     return 1.0;
@@ -3626,9 +3624,9 @@ uint cte_PersistentDot(Critter& cr, int identifier, uint& rate)
     {
         cr.StatBase[ST_CURRENT_HP] -= tickDamage;
         int sourceAttackerId = cr.Stat[ST_PERSISTENT_DOT_LAST_ENEMY_ID];
-        if(sourceAttackerId > 0 && sourceAttackerId != int(cr.Id))
+        if(sourceAttackerId > 0 && sourceAttackerId != cr.Id)
         {
-            Critter@ sourceAttacker = GetCritter(uint(sourceAttackerId));
+            Critter@ sourceAttacker = GetCritter(sourceAttackerId);
             ApplyVampirismLifeSteal(sourceAttacker, cr, tickDamage);
         }
         if(cr.Trait[TRAIT_DEAD_MAN_WALKING] > 0 && cr.Stat[ST_CURRENT_HP] < 0)
