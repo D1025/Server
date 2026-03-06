@@ -1899,7 +1899,7 @@
 {104262}{}{You are able to reload your weapon very quickly. It only takes you 1 AP.}
 # PE_SPRAY_AND_PRAY           (427)
 {104271}{}{Spray and Pray}
-{104272}{}{You cover your target in bullets... one of them is bound to find a hole. You ignore armour’s Critical Modifier.}
+{104272}{}{You cover your target in bullets... one of them is bound to find a hole. Let's your burst weapons do more damage. Not working on Shotguns and LSW}
 # PE_MORE_RANGED_DAMAGE       (428)
 {104281}{}{More Ranged Damage}
 {104282}{}{Your advanced training in firearms and other ranged weapons has made you even more deadly in ranged combat than those with a basic training. You do +3 points of damage with ranged weapons}
