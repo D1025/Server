@@ -10,6 +10,7 @@
 #include "MsgStr.h"
 #include "utils_h.fos"
 #include "_vals.fos"
+#include "item_upgrades_shared.fos"
 
 import bool ConsumedBlueprintForPid(Critter& player, uint pid) from "blueprints";
 import void CloneWear(Item& to, Item& from) from "repair";
@@ -56,6 +57,76 @@ import bool IsMovableLocker(uint16 pid) from "lockers";
 #define LUCK_TO                (Random(6, 60) / (5 + player.Stat[ST_LUCK]))
 
 #define CUMULATIVE_TIMEOUT     int(REAL_MINUTE(360))
+
+int ScienceUpgradeBlueprintChance(Critter& cr)
+{
+    // Base 5%, scaling with Science skill.
+    return CLAMP(5 + cr.Skill[SK_SCIENCE] / 20, 5, 35);
+}
+
+uint16 WeaponUpgradeBlueprintPidByPerk(int perkType)
+{
+    switch(perkType)
+    {
+    case UPGRADE_WEAPON_PERK_ACCURATE:
+        return PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE;
+    case UPGRADE_WEAPON_PERK_PENETRATE:
+        return PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE;
+    case UPGRADE_WEAPON_PERK_COMMANDO:
+        return PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO;
+    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
+        return PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD;
+    case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+        return PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE;
+    case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+        return PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE;
+    case UPGRADE_WEAPON_PERK_AP_BOOST:
+        return PID_BLUEPRINT_ADV_WPN_PERK_AP_BOOST;
+    case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+        return PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER;
+    case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+        return PID_BLUEPRINT_ADV_WPN_PERK_SILENT_HILL_MONSTER;
+    case UPGRADE_WEAPON_PERK_BLAST:
+        return PID_BLUEPRINT_ADV_WPN_PERK_BLAST;
+    case UPGRADE_WEAPON_PERK_PERSISTENT:
+        return PID_BLUEPRINT_ADV_WPN_PERK_PERSISTENT;
+    case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+        return PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+void CollectScienceUpgradeBlueprintCandidates(Item& item, array<uint16>& candidates)
+{
+    if(item.GetType() != ITEM_TYPE_WEAPON || item.IsStackable())
+        return;
+
+    for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
+    {
+        uint16 bpPid = WeaponUpgradeBlueprintPidByPerk(UpgradeSlotType(item, i));
+        if(bpPid != 0)
+            candidates.insertLast(bpPid);
+    }
+}
+
+void TryGiveScienceUpgradeBlueprint(Critter& cr, array<uint16>& candidates, bool isMassScience)
+{
+    if(isMassScience || candidates.length() == 0)
+        return;
+
+    if(Random(1, 100) > ScienceUpgradeBlueprintChance(cr))
+        return;
+
+    uint16 blueprintPid = candidates[Random(0, candidates.length() - 1)];
+    if(blueprintPid == 0)
+        return;
+
+    cr.AddItem(blueprintPid, 1);
+    cr.Say(SAY_NETMSG, "You discovered an upgrade blueprint.");
+}
 
 //
 // Crafting recipes
@@ -660,15 +731,29 @@ bool ReverseAllItems(Critter& cr, array<Item@>& items, uint cnt, uint max)   //e
 
 bool ReverseItem(Critter& cr, Item& item, bool isMassScience) 
 {
+    array<uint16> scienceBpCandidates;
+    if(!isMassScience)
+        CollectScienceUpgradeBlueprintCandidates(item, scienceBpCandidates);
+
     if(ReverseItemCustom(cr, item, isMassScience))
+    {
+        TryGiveScienceUpgradeBlueprint(cr, scienceBpCandidates, isMassScience);
         return true;
+    }
     if(item.GetType() != ITEM_TYPE_WEAPON && item.GetType() != ITEM_TYPE_ARMOR && item.GetType() != ITEM_TYPE_CONTAINER && item.GetProtoId() != PID_RADIO)
         return false;
     if(item.Proto.Stackable)
         return false;
     if(ReverseItemCrafted(cr, item, isMassScience))
+    {
+        TryGiveScienceUpgradeBlueprint(cr, scienceBpCandidates, isMassScience);
         return true;
-    return ReverseItemGeneric(cr, item, isMassScience);
+    }
+
+    bool reversed = ReverseItemGeneric(cr, item, isMassScience);
+    if(reversed)
+        TryGiveScienceUpgradeBlueprint(cr, scienceBpCandidates, isMassScience);
+    return reversed;
 }
 
 bool ReverseItem(Critter& cr, Item& item)   // export

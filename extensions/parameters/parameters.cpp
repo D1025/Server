@@ -44,6 +44,10 @@
 #define BONUS_ARMOR_LUCK						(121)
 #define BONUS_ARMOR_CARRY_WEIGHT				(122)
 #define BONUS_ARMOR_HEALING_RATE				(123)
+#define BONUS_ARMOR_ALL_DR						(124)
+#ifndef UPGRADE_WEAPON_PERK_FAST_RELOAD
+#define UPGRADE_WEAPON_PERK_FAST_RELOAD         (1003)
+#endif
 
 // Slot/parameters allowing
 EXPORT bool allowSlot_Hand1(uint8, Item&, Critter&, Critter& toCr);
@@ -286,12 +290,49 @@ int checkBonus(const Item* it, int bonusType)
 	return 0;
 }
 
+static int getUpgradePerkStacks(Item& it, int perkType)
+{
+	if(perkType == 0)
+		return 0;
+
+	const int slotEmpty = 9000;
+	const int slotUsed = 9001;
+	const int slotPackBase = 2000000;
+	const int slotPackStep = 1000;
+
+	bool legacyLayout = false;
+	for(int i = 0; i < 5; i++)
+	{
+		int raw = it.Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+		if(raw >= slotPackBase)
+			continue;
+		legacyLayout = true;
+		break;
+	}
+
+	int maxSlots = legacyLayout ? 5 : 7;
+	int count = 0;
+	for(int i = 0; i < maxSlots; i++)
+	{
+		int raw = it.Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+
+		int type = (raw >= slotPackBase ? (raw - slotPackBase) / slotPackStep : raw);
+		if(type == perkType)
+			count++;
+	}
+	return count;
+}
+
 EXPORT int getParam_Strength(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_STRENGTH] + cr.Params[ST_STRENGTH_EXT];
 
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_STRENGTH)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_STRENGTH);
 
 	return CLAMP(val, 1, 30);
 }
@@ -305,7 +346,7 @@ EXPORT int getParam_Perception(CritterMutual& cr, uint)
 		val=1;
 
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_PERCEPTION)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_PERCEPTION);
 
 	return CLAMP(val, 1, 30);
 }
@@ -315,7 +356,7 @@ EXPORT int getParam_Endurance(CritterMutual& cr, uint)
 	int val = cr.Params[ST_ENDURANCE] + cr.Params[ST_ENDURANCE_EXT];
 
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_ENDURANCE)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_ENDURANCE);
 
 	return CLAMP(val, 1, 30);
 }
@@ -325,7 +366,7 @@ EXPORT int getParam_Charisma(CritterMutual& cr, uint)
 	int val = cr.Params[ST_CHARISMA] + cr.Params[ST_CHARISMA_EXT];
 
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_CHARISMA)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_CHARISMA);
 
 	return CLAMP(val, 1, 30);
 }
@@ -339,7 +380,7 @@ EXPORT int getParam_Intellegence(CritterMutual& cr, uint)
 		val=1;
 
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_INTELLIGENCE)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_INTELLIGENCE);
 
 	return CLAMP(val, 1, 30);
 }
@@ -349,7 +390,7 @@ EXPORT int getParam_Agility(CritterMutual& cr, uint)
 	int val = cr.Params[ST_AGILITY] + cr.Params[ST_AGILITY_EXT];
 
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_AGILITY)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_AGILITY);
 
 	return CLAMP(val,1,30);
 }
@@ -359,7 +400,7 @@ EXPORT int getParam_Luck(CritterMutual& cr, uint)
 	int val = cr.Params[ST_LUCK] + cr.Params[ST_LUCK_EXT];
 
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_LUCK)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_LUCK);
 
 	return CLAMP(val, 1, 30);
 }
@@ -406,10 +447,10 @@ EXPORT int getParam_MaxAp(CritterMutual& cr, uint)
 	int val = cr.Params[ST_ACTION_POINTS] + cr.Params[ST_ACTION_POINTS_EXT];
 	
 	const Item* armor=cr.ItemSlotArmor;
-	if(checkBonus(armor, BONUS_ARMOR_MAX_AP)!=0) val++;
+	val += checkBonus(armor, BONUS_ARMOR_MAX_AP);
 
 	const Item* weapon = cr.ItemSlotMain;
-	if (checkBonus(weapon, BONUS_WEAPON_MAX_AP)!=0) val++;
+	val += checkBonus(weapon, BONUS_WEAPON_MAX_AP);
 
 	if (cr.Params[TRAIT_BERSERKER] && ((getParam_Hp(cr, 0)*100)/getParam_MaxLife(cr,0)) <= 50)
 		val+=2;
@@ -478,8 +519,7 @@ EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 
 	if(cr.Params[TRAIT_FAST_METABOLISM]) val += 10;
 
-	const Item* armor=cr.ItemSlotArmor;
-	val+=checkBonus(armor, BONUS_ARMOR_HEALING_RATE);
+	// Legacy armor healing-rate upgrade disabled.
 
 	return CLAMP(val, 0, 9999);
 }
@@ -769,8 +809,14 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		else
 			//apCost = FOnline->RtApCostReloadWeapon;
 			apCost = item.Proto->Weapon_ReloadAp;
-		if(cr.Params[PE_QUICK_POCKETS]) return CLAMP(apCost-3, 0, 10);
-		//if(item.IsWeapon() && item.Proto->Weapon_Perk == WEAPON_PERK_FAST_RELOAD) apCost/2; // That one is deleted
+
+		if(cr.Params[PE_QUICK_POCKETS])
+			return 1;
+
+		int reloadReduction = getUpgradePerkStacks(item, UPGRADE_WEAPON_PERK_FAST_RELOAD);
+		if(item.IsWeapon() && item.Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
+			reloadReduction++;
+		apCost -= reloadReduction;
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{
@@ -933,16 +979,17 @@ int GetArmoredDR(CritterMutual& cr, int dmgType, const Item* armor)
 { 
 	int val = 0;
 	int drVal = 0;
+	int allDrBonus = checkBonus(armor, BONUS_ARMOR_ALL_DR);
 
 	switch(dmgType)
 	{
-	case DAMAGE_NORMAL:   val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRNormal + checkBonus(armor, BONUS_ARMOR_NORMAL_DR);  break;
-	case DAMAGE_LASER:    val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRLaser + checkBonus(armor, BONUS_ARMOR_LASER_DR);   break;
-	case DAMAGE_FIRE:     val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRFire + checkBonus(armor, BONUS_ARMOR_FIRE_DR);    break;
-	case DAMAGE_PLASMA:   val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRPlasma + checkBonus(armor, BONUS_ARMOR_PLASMA_DR);  break;
-	case DAMAGE_ELECTR:   val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRElectr;  break;
-	case DAMAGE_EMP:      val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DREmp;     break;
-	case DAMAGE_EXPLODE:  val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRExplode + checkBonus(armor, BONUS_ARMOR_EXPLODE_DR); break;
+	case DAMAGE_NORMAL:   val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRNormal + checkBonus(armor, BONUS_ARMOR_NORMAL_DR) + allDrBonus;  break;
+	case DAMAGE_LASER:    val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRLaser + checkBonus(armor, BONUS_ARMOR_LASER_DR) + allDrBonus;   break;
+	case DAMAGE_FIRE:     val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRFire + checkBonus(armor, BONUS_ARMOR_FIRE_DR) + allDrBonus;    break;
+	case DAMAGE_PLASMA:   val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRPlasma + checkBonus(armor, BONUS_ARMOR_PLASMA_DR) + allDrBonus;  break;
+	case DAMAGE_ELECTR:   val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRElectr + allDrBonus;  break;
+	case DAMAGE_EMP:      val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DREmp + allDrBonus;     break;
+	case DAMAGE_EXPLODE:  val = GetRawDR(cr,dmgType); drVal = armor->Proto->Armor_DRExplode + checkBonus(armor, BONUS_ARMOR_EXPLODE_DR) + allDrBonus; break;
 	case DAMAGE_UNCALLED:
 	default: break;
 	}
@@ -1000,15 +1047,16 @@ int GetArmorDR(CritterMutual& cr, int dmgType, const Item* armor)
 {
 	int val = 0;
 	int drVal = 0;
+	int allDrBonus = checkBonus(armor, BONUS_ARMOR_ALL_DR);
 	switch(dmgType)
 	{
-	case DAMAGE_NORMAL:   drVal = armor->Proto->Armor_DRNormal + checkBonus(armor, BONUS_ARMOR_NORMAL_DR);  break;
-	case DAMAGE_LASER:    drVal = armor->Proto->Armor_DRLaser + checkBonus(armor, BONUS_ARMOR_LASER_DR);   break;
-	case DAMAGE_FIRE:     drVal = armor->Proto->Armor_DRFire + checkBonus(armor, BONUS_ARMOR_FIRE_DR);    break;
-	case DAMAGE_PLASMA:   drVal = armor->Proto->Armor_DRPlasma + checkBonus(armor, BONUS_ARMOR_PLASMA_DR);  break;
-	case DAMAGE_ELECTR:   drVal = armor->Proto->Armor_DRElectr;  break;
-	case DAMAGE_EMP:      drVal = armor->Proto->Armor_DREmp;     break;
-	case DAMAGE_EXPLODE:  drVal = armor->Proto->Armor_DRExplode + checkBonus(armor, BONUS_ARMOR_EXPLODE_DR); break;
+	case DAMAGE_NORMAL:   drVal = armor->Proto->Armor_DRNormal + checkBonus(armor, BONUS_ARMOR_NORMAL_DR) + allDrBonus;  break;
+	case DAMAGE_LASER:    drVal = armor->Proto->Armor_DRLaser + checkBonus(armor, BONUS_ARMOR_LASER_DR) + allDrBonus;   break;
+	case DAMAGE_FIRE:     drVal = armor->Proto->Armor_DRFire + checkBonus(armor, BONUS_ARMOR_FIRE_DR) + allDrBonus;    break;
+	case DAMAGE_PLASMA:   drVal = armor->Proto->Armor_DRPlasma + checkBonus(armor, BONUS_ARMOR_PLASMA_DR) + allDrBonus;  break;
+	case DAMAGE_ELECTR:   drVal = armor->Proto->Armor_DRElectr + allDrBonus;  break;
+	case DAMAGE_EMP:      drVal = armor->Proto->Armor_DREmp + allDrBonus;     break;
+	case DAMAGE_EXPLODE:  drVal = armor->Proto->Armor_DRExplode + checkBonus(armor, BONUS_ARMOR_EXPLODE_DR) + allDrBonus; break;
 	case DAMAGE_UNCALLED:
 	default: break;
 	}

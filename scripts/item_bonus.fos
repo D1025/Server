@@ -76,51 +76,8 @@ void SetSlotRaw(Item@ it, uint slot, int raw)
     }
 }
 
-void ClearLegacySlotValue(Item@ it, uint slot)
-{
-    switch(slot)
-    {
-    case 0:
-        if(it.Val5 < UPGRADE_SLOT_PACK_BASE)
-            it.Val5 = 0;
-        return;
-    case 1:
-        if(it.Val6 < UPGRADE_SLOT_PACK_BASE)
-            it.Val6 = 0;
-        return;
-    default:
-        return;
-    }
-}
-
-void EnsureLegacyOverflowSlots(Item@ it)
-{
-    if(!valid(it) || !UpgradeIsLegacyLayout(it))
-        return;
-
-    int extra = UpgradeExtraSlotsFromProto(it.Proto);
-    if(extra <= 0)
-        return;
-
-    int baseSlots = 0;
-    if(it.Val0 != 0) baseSlots++;
-    if(it.Val1 != 0) baseSlots++;
-    if(it.Val2 != 0) baseSlots++;
-    if(it.Val3 != 0) baseSlots++;
-    if(it.Val4 != 0) baseSlots++;
-
-    int totalSlots = CLAMP(baseSlots + extra, 0, UPGRADE_MAX_SLOTS);
-    if(totalSlots > 5 && it.Val5 == 0)
-        it.Val5 = UPGRADE_SLOT_EMPTY;
-    if(totalSlots > 6 && it.Val6 == 0)
-        it.Val6 = UPGRADE_SLOT_EMPTY;
-}
-
 void SetSlotType(Item@ it, uint slot, int value)
 {
-    bool wasLegacy = UpgradeIsLegacyLayout(it);
-    if(wasLegacy && slot >= 5)
-        EnsureLegacyOverflowSlots(it);
     int raw = value;
     if(value != 0 && !UpgradeIsSlotMarker(value))
     {
@@ -128,23 +85,15 @@ void SetSlotType(Item@ it, uint slot, int value)
         raw = UpgradePackSlotData(value, currentValue);
     }
     SetSlotRaw(it, slot, raw);
-    if(slot < 5 && wasLegacy)
-        ClearLegacySlotValue(it, slot);
 }
 
 void SetSlotValue(Item@ it, uint slot, int value)
 {
-    bool wasLegacy = UpgradeIsLegacyLayout(it);
-    if(wasLegacy && slot >= 5)
-        EnsureLegacyOverflowSlots(it);
     int currentType = SlotsToType(it, slot);
     if(currentType == 0 || UpgradeIsSlotMarker(currentType))
         SetSlotRaw(it, slot, currentType);
     else
         SetSlotRaw(it, slot, UpgradePackSlotData(currentType, value));
-
-    if(slot < 5 && wasLegacy)
-        ClearLegacySlotValue(it, slot);
 }
 
 void ResetUpgradeSlots(Item@ it, uint slotsCount)
@@ -204,6 +153,16 @@ uint QualityByRoll_Crafted(int roll)
     return q;
 }
 
+uint CraftedPerksByRoll(int roll)
+{
+    if(roll < 35) return 0;
+    if(roll < 60) return 1;
+    if(roll < 70) return 2;
+    if(roll < 80) return 3;
+    if(roll < 90) return 4;
+    return 5;
+}
+
 uint EnsureWeaponBaseQuality(uint quality)
 {
     if(quality < BASE_WEAPON_PERKS)
@@ -213,14 +172,73 @@ uint EnsureWeaponBaseQuality(uint quality)
 
 bool IsArmorBonusType(int bonusType)
 {
-    return bonusType >= BONUS_ARMOR_NORMAL_DT && bonusType <= BONUS_ARMOR_HEALING_RATE;
+    switch(bonusType)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+    case BONUS_ARMOR_LASER_DT:
+    case BONUS_ARMOR_FIRE_DT:
+    case BONUS_ARMOR_PLASMA_DT:
+    case BONUS_ARMOR_EXPLODE_DT:
+    case BONUS_ARMOR_NORMAL_DR:
+    case BONUS_ARMOR_LASER_DR:
+    case BONUS_ARMOR_FIRE_DR:
+    case BONUS_ARMOR_PLASMA_DR:
+    case BONUS_ARMOR_EXPLODE_DR:
+    case BONUS_ARMOR_CRIT_CHANCE:
+    case BONUS_ARMOR_CRIT_POWER:
+    case BONUS_ARMOR_MAX_AP:
+    case BONUS_ARMOR_RAD_RES:
+    case BONUS_ARMOR_POISON_RES:
+    case BONUS_ARMOR_ALL_DR:
+    case BONUS_ARMOR_STRENGTH:
+    case BONUS_ARMOR_PERCEPTION:
+    case BONUS_ARMOR_ENDURANCE:
+    case BONUS_ARMOR_CHARISMA:
+    case BONUS_ARMOR_INTELLIGENCE:
+    case BONUS_ARMOR_AGILITY:
+    case BONUS_ARMOR_LUCK:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
 }
 
 uint ArmorPerkCost(int bonusType)
 {
-    // Keep old armor bonus family, all with base slot cost 1 for now.
-    if(IsArmorBonusType(bonusType))
+    switch(bonusType)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+    case BONUS_ARMOR_LASER_DT:
+    case BONUS_ARMOR_FIRE_DT:
+    case BONUS_ARMOR_PLASMA_DT:
+    case BONUS_ARMOR_EXPLODE_DT:
+    case BONUS_ARMOR_NORMAL_DR:
+    case BONUS_ARMOR_LASER_DR:
+    case BONUS_ARMOR_FIRE_DR:
+    case BONUS_ARMOR_PLASMA_DR:
+    case BONUS_ARMOR_EXPLODE_DR:
+    case BONUS_ARMOR_RAD_RES:
+    case BONUS_ARMOR_POISON_RES:
+    case BONUS_ARMOR_ALL_DR:
         return 1;
+    case BONUS_ARMOR_STRENGTH:
+    case BONUS_ARMOR_PERCEPTION:
+    case BONUS_ARMOR_ENDURANCE:
+    case BONUS_ARMOR_CHARISMA:
+    case BONUS_ARMOR_INTELLIGENCE:
+    case BONUS_ARMOR_AGILITY:
+    case BONUS_ARMOR_LUCK:
+    case BONUS_ARMOR_CRIT_CHANCE:
+    case BONUS_ARMOR_CRIT_POWER:
+        return 2;
+    case BONUS_ARMOR_MAX_AP:
+        return 3;
+    default:
+        return 0;
+    }
+
     return 0;
 }
 
@@ -240,10 +258,6 @@ bool TryApplyPerk(Item@ it, int perkType, int perkValue, uint slotCost)
         return false;
 
     bool isWeaponUpgrade = IsWeaponUpgradePerk(perkType);
-
-    // Armor bonuses stay unique; weapon upgrade perks may stack.
-    if(!isWeaponUpgrade && HasBonusAlready(it, perkType))
-        return false;
 
     // Keep 3-perk cap for armor family only.
     if(!isWeaponUpgrade && UpgradePerksCount(it) >= UPGRADE_MAX_PERKS)
@@ -283,9 +297,6 @@ bool TryApplyPerk(Item@ it, int perkType, int perkValue, uint slotCost)
 
 int RollArmorBonusValue(int bonusType)
 {
-    int minRoll = 1;
-    int maxRoll = 1;
-
     switch(bonusType)
     {
     case BONUS_ARMOR_NORMAL_DT:
@@ -293,57 +304,104 @@ int RollArmorBonusValue(int bonusType)
     case BONUS_ARMOR_FIRE_DT:
     case BONUS_ARMOR_PLASMA_DT:
     case BONUS_ARMOR_EXPLODE_DT:
-        maxRoll = 5;
-        break;
+        return 2;
     case BONUS_ARMOR_NORMAL_DR:
     case BONUS_ARMOR_LASER_DR:
     case BONUS_ARMOR_FIRE_DR:
     case BONUS_ARMOR_PLASMA_DR:
     case BONUS_ARMOR_EXPLODE_DR:
-        maxRoll = 10;
-        break;
-    case BONUS_ARMOR_CRIT_CHANCE:
-    case BONUS_ARMOR_CRIT_POWER:
-        minRoll = -7;
-        maxRoll = -1;
-        break;
+        return 3;
+    case BONUS_ARMOR_ALL_DR:
+        return 1;
     case BONUS_ARMOR_RAD_RES:
     case BONUS_ARMOR_POISON_RES:
-        minRoll = 10;
-        maxRoll = 30;
-        break;
-    case BONUS_ARMOR_CARRY_WEIGHT:
-        minRoll = 5;
-        maxRoll = 20;
-        break;
-    case BONUS_ARMOR_HEALING_RATE:
-        minRoll = 1;
-        maxRoll = 5;
-        break;
+        return 10;
+    case BONUS_ARMOR_CRIT_CHANCE:
+    case BONUS_ARMOR_CRIT_POWER:
+        return -10;
+    case BONUS_ARMOR_MAX_AP:
+    case BONUS_ARMOR_STRENGTH:
+    case BONUS_ARMOR_PERCEPTION:
+    case BONUS_ARMOR_ENDURANCE:
+    case BONUS_ARMOR_CHARISMA:
+    case BONUS_ARMOR_INTELLIGENCE:
+    case BONUS_ARMOR_AGILITY:
+    case BONUS_ARMOR_LUCK:
+        return 1;
     default:
-        break;
+        return 0;
     }
 
-    return Random(minRoll, maxRoll);
+    return 0;
 }
+
+int[] ArmorPerkPool =
+{
+    BONUS_ARMOR_NORMAL_DT,
+    BONUS_ARMOR_LASER_DT,
+    BONUS_ARMOR_FIRE_DT,
+    BONUS_ARMOR_PLASMA_DT,
+    BONUS_ARMOR_EXPLODE_DT,
+    BONUS_ARMOR_NORMAL_DR,
+    BONUS_ARMOR_LASER_DR,
+    BONUS_ARMOR_FIRE_DR,
+    BONUS_ARMOR_PLASMA_DR,
+    BONUS_ARMOR_EXPLODE_DR,
+    BONUS_ARMOR_ALL_DR,
+    BONUS_ARMOR_RAD_RES,
+    BONUS_ARMOR_POISON_RES,
+    BONUS_ARMOR_CRIT_CHANCE,
+    BONUS_ARMOR_CRIT_POWER,
+    BONUS_ARMOR_MAX_AP,
+    BONUS_ARMOR_STRENGTH,
+    BONUS_ARMOR_PERCEPTION,
+    BONUS_ARMOR_ENDURANCE,
+    BONUS_ARMOR_CHARISMA,
+    BONUS_ARMOR_INTELLIGENCE,
+    BONUS_ARMOR_AGILITY,
+    BONUS_ARMOR_LUCK
+};
+
+int[] HelmetPerkPool =
+{
+    BONUS_ARMOR_NORMAL_DT,
+    BONUS_ARMOR_LASER_DT,
+    BONUS_ARMOR_FIRE_DT,
+    BONUS_ARMOR_PLASMA_DT,
+    BONUS_ARMOR_EXPLODE_DT,
+    BONUS_ARMOR_NORMAL_DR,
+    BONUS_ARMOR_LASER_DR,
+    BONUS_ARMOR_FIRE_DR,
+    BONUS_ARMOR_PLASMA_DR,
+    BONUS_ARMOR_EXPLODE_DR,
+    BONUS_ARMOR_ALL_DR,
+    BONUS_ARMOR_CRIT_CHANCE,
+    BONUS_ARMOR_CRIT_POWER
+};
 
 int PickArmorPerkType(Item@ it)
 {
-    uint maxBonusType = BONUS_ARMOR_HEALING_RATE;
-    // Helmets: keep legacy restricted pool.
+    int[]@ pool = @ArmorPerkPool;
     if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
-        maxBonusType = BONUS_ARMOR_CRIT_POWER;
+        @pool = @HelmetPerkPool;
 
-    int bonusType = 0;
+    if(pool.length() == 0)
+        return 0;
+
+    int freeSlots = UpgradeFreeSlots(it);
+    if(freeSlots <= 0)
+        return 0;
+
     uint safety = 0;
-    do
+    while(safety < 200)
     {
-        bonusType = Random(BONUS_ARMOR_NORMAL_DT, maxBonusType);
+        int bonusType = pool[Random(0, pool.length() - 1)];
+        if(int(ArmorPerkCost(bonusType)) <= freeSlots)
+            return bonusType;
         safety++;
     }
-    while(HasBonusAlready(it, bonusType) && safety < 200);
 
-    return bonusType;
+    return 0;
 }
 
 bool TryApplyRandomArmorPerk(Item@ it)
@@ -360,6 +418,109 @@ bool TryApplyRandomArmorPerk(Item@ it)
     return TryApplyPerk(it, perkType, value, cost);
 }
 
+int PickUniformArmorPerkType(Item@ it)
+{
+    int[]@ pool = @ArmorPerkPool;
+    if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
+        @pool = @HelmetPerkPool;
+
+    if(pool.length() == 0)
+        return 0;
+
+    int freeSlots = UpgradeFreeSlots(it);
+    if(freeSlots <= 0)
+        return 0;
+
+    int[] candidates;
+    for(uint i = 0; i < pool.length(); i++)
+    {
+        int bonusType = pool[i];
+        uint cost = ArmorPerkCost(bonusType);
+        if(cost == 0 || int(cost) > freeSlots)
+            continue;
+
+        candidates.insertLast(bonusType);
+    }
+
+    if(candidates.length() == 0)
+        return 0;
+
+    return candidates[Random(0, candidates.length() - 1)];
+}
+
+bool TryApplyRandomArmorPerkUniform(Item@ it)
+{
+    int perkType = PickUniformArmorPerkType(it);
+    if(perkType == 0)
+        return false;
+
+    uint cost = ArmorPerkCost(perkType);
+    if(cost == 0)
+        return false;
+
+    return TryApplyPerk(it, perkType, RollArmorBonusValue(perkType), cost);
+}
+
+uint NormalizePerkMask(uint mask, uint count)
+{
+    if(count == 0)
+        return 0;
+    if(count >= 32)
+        return mask;
+    return mask & ((uint(1) << int(count)) - uint(1));
+}
+
+int PickUniformArmorPerkTypeFromMask(Item@ it, uint mask)
+{
+    int[]@ pool = @ArmorPerkPool;
+    if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
+        @pool = @HelmetPerkPool;
+
+    if(pool.length() == 0)
+        return 0;
+
+    int freeSlots = UpgradeFreeSlots(it);
+    if(freeSlots <= 0)
+        return 0;
+
+    uint normalizedMask = NormalizePerkMask(mask, pool.length());
+    if(normalizedMask == 0)
+        return 0;
+
+    int[] candidates;
+    for(uint i = 0; i < pool.length(); i++)
+    {
+        uint bit = (uint(1) << int(i));
+        if((normalizedMask & bit) == 0)
+            continue;
+
+        int bonusType = pool[i];
+        uint cost = ArmorPerkCost(bonusType);
+        if(cost == 0 || int(cost) > freeSlots)
+            continue;
+
+        candidates.insertLast(bonusType);
+    }
+
+    if(candidates.length() == 0)
+        return 0;
+
+    return candidates[Random(0, candidates.length() - 1)];
+}
+
+bool TryApplyRandomArmorPerkUniformFromMask(Item@ it, uint mask)
+{
+    int perkType = PickUniformArmorPerkTypeFromMask(it, mask);
+    if(perkType == 0)
+        return false;
+
+    uint cost = ArmorPerkCost(perkType);
+    if(cost == 0)
+        return false;
+
+    return TryApplyPerk(it, perkType, RollArmorBonusValue(perkType), cost);
+}
+
 int[] WeaponPerkPool =
 {
     UPGRADE_WEAPON_PERK_ACCURATE,
@@ -373,7 +534,6 @@ int[] WeaponPerkPool =
     UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER,
     UPGRADE_WEAPON_PERK_BLAST,
     UPGRADE_WEAPON_PERK_PERSISTENT,
-    UPGRADE_WEAPON_PERK_MARKED_SHOT,
     UPGRADE_WEAPON_PERK_INCREASED_RANGE
 };
 
@@ -395,6 +555,92 @@ bool TryApplyRandomWeaponPerk(Item@ it, bool isCrafting = false, uint forcedSlot
         attempts++;
     }
     return false;
+}
+
+int PickUniformWeaponPerkType(Item@ it, uint forcedSlotCost = 0)
+{
+    if(!valid(it) || WeaponPerkPool.length() == 0)
+        return 0;
+
+    int freeSlots = UpgradeFreeSlots(it);
+    if(freeSlots <= 0)
+        return 0;
+
+    int[] candidates;
+    for(uint i = 0; i < WeaponPerkPool.length(); i++)
+    {
+        int perkType = WeaponPerkPool[i];
+        uint cost = (forcedSlotCost > 0 ? forcedSlotCost : WeaponUpgradePerkCost(perkType));
+        if(cost == 0 || int(cost) > freeSlots)
+            continue;
+
+        candidates.insertLast(perkType);
+    }
+
+    if(candidates.length() == 0)
+        return 0;
+
+    return candidates[Random(0, candidates.length() - 1)];
+}
+
+bool TryApplyRandomWeaponPerkUniform(Item@ it, bool isCrafting = false, uint forcedSlotCost = 0)
+{
+    int perkType = PickUniformWeaponPerkType(it, forcedSlotCost);
+    if(perkType == 0)
+        return false;
+
+    uint cost = (forcedSlotCost > 0 ? forcedSlotCost : WeaponUpgradePerkCost(perkType));
+    if(cost == 0)
+        return false;
+
+    return TryApplyPerk(it, perkType, WeaponUpgradePerkBaseValue(perkType), cost);
+}
+
+int PickUniformWeaponPerkTypeFromMask(Item@ it, uint mask, uint forcedSlotCost = 0)
+{
+    if(!valid(it) || WeaponPerkPool.length() == 0)
+        return 0;
+
+    int freeSlots = UpgradeFreeSlots(it);
+    if(freeSlots <= 0)
+        return 0;
+
+    uint normalizedMask = NormalizePerkMask(mask, WeaponPerkPool.length());
+    if(normalizedMask == 0)
+        return 0;
+
+    int[] candidates;
+    for(uint i = 0; i < WeaponPerkPool.length(); i++)
+    {
+        uint bit = (uint(1) << int(i));
+        if((normalizedMask & bit) == 0)
+            continue;
+
+        int perkType = WeaponPerkPool[i];
+        uint cost = (forcedSlotCost > 0 ? forcedSlotCost : WeaponUpgradePerkCost(perkType));
+        if(cost == 0 || int(cost) > freeSlots)
+            continue;
+
+        candidates.insertLast(perkType);
+    }
+
+    if(candidates.length() == 0)
+        return 0;
+
+    return candidates[Random(0, candidates.length() - 1)];
+}
+
+bool TryApplyRandomWeaponPerkUniformFromMask(Item@ it, uint mask, bool isCrafting = false, uint forcedSlotCost = 0)
+{
+    int perkType = PickUniformWeaponPerkTypeFromMask(it, mask, forcedSlotCost);
+    if(perkType == 0)
+        return false;
+
+    uint cost = (forcedSlotCost > 0 ? forcedSlotCost : WeaponUpgradePerkCost(perkType));
+    if(cost == 0)
+        return false;
+
+    return TryApplyPerk(it, perkType, WeaponUpgradePerkBaseValue(perkType), cost);
 }
 
 void TryRollPerksToCap(Item@ it, bool weapon, bool isCrafting = false, bool forceSingleSlotWeaponPerks = true)
@@ -422,6 +668,22 @@ void TryRollPerksToCap(Item@ it, bool weapon, bool isCrafting = false, bool forc
                 break;
             safety++;
         }
+    }
+}
+
+void TryRollPerksToCount(Item@ it, bool weapon, uint targetPerks, bool isCrafting = false)
+{
+    if(!valid(it))
+        return;
+
+    targetPerks = MIN(targetPerks, UPGRADE_MAX_SLOTS);
+    uint safety = 0;
+    while(UpgradePerksCount(it) < int(targetPerks) && safety < 300)
+    {
+        bool applied = weapon ? TryApplyRandomWeaponPerk(it, isCrafting) : TryApplyRandomArmorPerk(it);
+        if(!applied)
+            break;
+        safety++;
     }
 }
 
@@ -501,19 +763,26 @@ void AddBonuses(Item@ it, string@ crafter)
         uint quality = QualityByRoll_Crafted(Random(0, 99));
         quality = EnsureWeaponBaseQuality(quality);
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, true, true);
+        uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
+        TryRollPerksToCount(it, true, craftedPerks, true);
         SetLexem(it, "$crafter", crafter);
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
     {
         uint quality = QualityByRoll_Crafted(Random(0, 99));
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, false);
+        uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
+        TryRollPerksToCount(it, false, craftedPerks);
         SetLexem(it, "$crafter", crafter);
     }
 }
 
 void AddBonusHinkley(Item@ it)
+{
+    AddBonusHinkley(it, 0, 0);
+}
+
+void AddBonusHinkley(Item@ it, int preferredWeaponPerk, int preferredArmorPerk)
 {
     if(!valid(it))
         return;
@@ -523,13 +792,85 @@ void AddBonusHinkley(Item@ it)
         uint quality = MIN(4, QualityByRoll_LowSpecial(Random(0, 99)));
         quality = EnsureWeaponBaseQuality(quality);
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, true);
+
+        int targetPerks = MIN(int(BASE_WEAPON_PERKS), UpgradeQualitySlots(it));
+        bool preferredApplied = false;
+        if(preferredWeaponPerk != 0 && IsWeaponUpgradePerk(preferredWeaponPerk))
+            preferredApplied = TryApplyPerk(it, preferredWeaponPerk, WeaponUpgradePerkBaseValue(preferredWeaponPerk), 1);
+
+        uint safety = 0;
+        while(UpgradePerksCount(it) < targetPerks && safety < 200)
+        {
+            if(!TryApplyRandomWeaponPerkUniform(it, false, 1))
+                break;
+            safety++;
+        }
+
+        if(!preferredApplied && preferredWeaponPerk != 0 && IsWeaponUpgradePerk(preferredWeaponPerk) && UpgradePerksCount(it) == 0)
+            TryApplyPerk(it, preferredWeaponPerk, WeaponUpgradePerkBaseValue(preferredWeaponPerk), 1);
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
     {
         uint quality = MIN(4, QualityByRoll_LowSpecial(Random(0, 99)));
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, false);
+
+        if(preferredArmorPerk != 0 && IsArmorBonusType(preferredArmorPerk))
+            TryApplyPerk(it, preferredArmorPerk, RollArmorBonusValue(preferredArmorPerk), ArmorPerkCost(preferredArmorPerk));
+
+        int targetPerks = MIN(UPGRADE_MAX_PERKS, UpgradeQualitySlots(it));
+        uint safety = 0;
+        while(UpgradePerksCount(it) < targetPerks && safety < 100)
+        {
+            if(!TryApplyRandomArmorPerkUniform(it))
+                break;
+            safety++;
+        }
+    }
+}
+
+void AddBonusHinkleySelected(Item@ it, uint weaponMask, uint armorMask)
+{
+    if(!valid(it))
+        return;
+
+    if(it.GetType() == ITEM_TYPE_WEAPON && !it.IsStackable())
+    {
+        uint quality = MIN(4, QualityByRoll_LowSpecial(Random(0, 99)));
+        quality = EnsureWeaponBaseQuality(quality);
+        ResetUpgradeSlots(it, quality);
+
+        int targetPerks = MIN(int(BASE_WEAPON_PERKS), UpgradeQualitySlots(it));
+        uint safety = 0;
+        while(UpgradePerksCount(it) < targetPerks && safety < 200)
+        {
+            bool applied = false;
+            if(weaponMask != 0)
+                applied = TryApplyRandomWeaponPerkUniformFromMask(it, weaponMask, false, 1);
+            if(!applied)
+                applied = TryApplyRandomWeaponPerkUniform(it, false, 1);
+            if(!applied)
+                break;
+            safety++;
+        }
+    }
+    else if(it.GetType() == ITEM_TYPE_ARMOR)
+    {
+        uint quality = MIN(4, QualityByRoll_LowSpecial(Random(0, 99)));
+        ResetUpgradeSlots(it, quality);
+
+        int targetPerks = MIN(UPGRADE_MAX_PERKS, UpgradeQualitySlots(it));
+        uint safety = 0;
+        while(UpgradePerksCount(it) < targetPerks && safety < 100)
+        {
+            bool applied = false;
+            if(armorMask != 0)
+                applied = TryApplyRandomArmorPerkUniformFromMask(it, armorMask);
+            if(!applied)
+                applied = TryApplyRandomArmorPerkUniform(it);
+            if(!applied)
+                break;
+            safety++;
+        }
     }
 }
 
@@ -586,7 +927,7 @@ int checkBonus(Item@ it, int bonusType)
     if(it.GetType() == ITEM_TYPE_WEAPON)
         return UpgradeWeaponBonus(it, bonusType);
 
-    return UpgradeLegacyBonus(it, bonusType);
+    return UpgradeBonusValue(it, bonusType);
 }
 
 // Explicit helpers for future UI/workbench implementation.

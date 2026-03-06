@@ -1432,6 +1432,14 @@ void ItemSpawnInit() // export
 
                     //AddItem(PID_BLUEPRINT_WEAPON_1, 5).
                     AddItem((Random(1, 2) == 1 ? PID_BLUEPRINT_WEAPON_1 : PID_BLUEPRINT_ARMOR_1), 5).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES, 1).
 
                     AddItem(PID_BIG_BOOK_OF_SCIENCE, 20).
 					AddItem(PID_FIRST_AID_BOOK, 13).
@@ -1445,6 +1453,32 @@ void ItemSpawnInit() // export
 
                     //AddItem(PID_BLUEPRINT_WEAPON_2, 5).
                     AddItem((Random(1, 2) == 1 ? PID_BLUEPRINT_WEAPON_2 : PID_BLUEPRINT_ARMOR_2), 5).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_STRENGTH, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PERCEPTION, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 1).
 
                     AddItem(PID_BIG_BOOK_OF_SCIENCE, 20).
 					AddItem(PID_FIRST_AID_BOOK, 13).
@@ -1459,6 +1493,41 @@ void ItemSpawnInit() // export
 
                     //AddItem(PID_BLUEPRINT_WEAPON_3, 5).
                     AddItem((Random(1, 2) == 1 ? PID_BLUEPRINT_WEAPON_3 : PID_BLUEPRINT_ARMOR_3), 5).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_AP_BOOST, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_SILENT_HILL_MONSTER, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_BLAST, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_PERSISTENT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CRIT_CHANCE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_MAX_AP, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_STRENGTH, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PERCEPTION, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CHARISMA, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_INTELLIGENCE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 2).
 
                     AddItem(PID_BIG_BOOK_OF_SCIENCE, 20).
 					AddItem(PID_FIRST_AID_BOOK, 13).
@@ -1523,7 +1592,42 @@ void ItemSpawnInit() // export
                     AddItem(PID_BLUEPRINT_ARMOR_2, 2).
 
                     AddItem(PID_BLUEPRINT_WEAPON_3, 1).
-                    AddItem(PID_BLUEPRINT_ARMOR_3, 1)
+                    AddItem(PID_BLUEPRINT_ARMOR_3, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_AP_BOOST, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_SILENT_HILL_MONSTER, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_BLAST, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_PERSISTENT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DT, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CRIT_CHANCE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_MAX_AP, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_STRENGTH, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PERCEPTION, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CHARISMA, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_INTELLIGENCE, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 1)
 
                     /*AddItem(PID_BIG_BOOK_OF_SCIENCE, 20).
 					AddItem(PID_BARTER_BOOK, 20).

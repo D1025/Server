@@ -9,6 +9,7 @@
 #include "economy_h.fos"
 #include "entire.fos"
 #include "town_h.fos"
+#include "item_upgrades_shared.fos"
 #include "utils_h.fos"
 
 #define TRANSFER_RADIUS    (500)
@@ -222,19 +223,19 @@ void _CritterIn(Map& map, Critter& cr)
 			switch (Random(1,4))
 			{
 				case 1: {
-							it.Val0=BONUS_WEAPON_CRITICAL_ROLL; it.Val5=Random(1,15); Log("Bonus: Critical roll, Pid: " +pids[i]); break;
+							it.Val0 = UpgradePackSlotData(UPGRADE_WEAPON_PERK_CRITICAL_POWER, Random(1,15)); Log("Upgrade: Critical Power, Pid: " +pids[i]); break;
 						}
 				case 2: {
-							it.Val0=BONUS_WEAPON_CRITICAL_CHANCE; it.Val5=Random(1,15); Log("Bonus: Critical chance, Pid: " +pids[i]); break;
+							it.Val0 = UpgradePackSlotData(UPGRADE_WEAPON_PERK_ACCURATE, Random(1,15)); Log("Upgrade: Accurate, Pid: " +pids[i]); break;
 						}
 				case 3:
 						{
-							it.Val0=BONUS_WEAPON_DAMAGE; it.Val5=Random(1,30);
-							Log("Bonus: Damage, Pid: " +pids[i]);
+							it.Val0 = UpgradePackSlotData(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE, Random(1,30));
+							Log("Upgrade: Enhanced Damage, Pid: " +pids[i]);
 							break;
 						}
 				case 4: {
-							it.Val0=BONUS_WEAPON_ACCURACY; it.Val5=Random(1,25); Log("Bonus: Accuracy, Pid: " +pids[i]); break;
+							it.Val0 = UpgradePackSlotData(UPGRADE_WEAPON_PERK_PENETRATE, Random(1,12)); Log("Upgrade: Penetrate, Pid: " +pids[i]); break;
 						}
 			}
 			}
@@ -245,14 +246,14 @@ void _CritterIn(Map& map, Critter& cr)
 			switch (Random(1,3))
 			{
 				case 1: {
-							it.Val0=BONUS_ARMOR_NORMAL_DT; it.Val5=Random(1,11); break;
+							it.Val0 = UpgradePackSlotData(BONUS_ARMOR_NORMAL_DT, Random(1,11)); break;
 						}
 				case 2: {
-							it.Val0=BONUS_ARMOR_CRIT_CHANCE; it.Val5=Random(-7,-1); break;
+							it.Val0 = UpgradePackSlotData(BONUS_ARMOR_CRIT_CHANCE, Random(-7,-1)); break;
 						}
 				case 3:
 						{
-							it.Val0=BONUS_ARMOR_CRIT_POWER; it.Val5=Random(-7,-1); break;
+							it.Val0 = UpgradePackSlotData(BONUS_ARMOR_CRIT_POWER, Random(-7,-1)); break;
 						}
 			}
 			}

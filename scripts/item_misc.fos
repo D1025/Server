@@ -20,6 +20,7 @@
 #include "item_misc_h.fos"
 
 import bool ApplyWeaponUpgradePerk(Item@ it, int perkType) from "item_bonus";
+import bool ApplyArmorUpgradePerk(Item@ it, int perkType, int value) from "item_bonus";
 
 void _Waterpipe(Item& item, bool firstTime)
 {
@@ -221,8 +222,6 @@ string _WeaponPerkBlueprintName(int perkType)
         return "Blast";
     case UPGRADE_WEAPON_PERK_PERSISTENT:
         return "Persistent";
-    case UPGRADE_WEAPON_PERK_MARKED_SHOT:
-        return "Marked Shot";
     case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
         return "Increased Range";
     default:
@@ -230,6 +229,181 @@ string _WeaponPerkBlueprintName(int perkType)
     }
 
     return "Unknown";
+}
+
+int _ArmorPerkBlueprintValue(int bonusType)
+{
+    switch(bonusType)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+    case BONUS_ARMOR_LASER_DT:
+    case BONUS_ARMOR_FIRE_DT:
+    case BONUS_ARMOR_PLASMA_DT:
+    case BONUS_ARMOR_EXPLODE_DT:
+        return 2;
+    case BONUS_ARMOR_NORMAL_DR:
+    case BONUS_ARMOR_LASER_DR:
+    case BONUS_ARMOR_FIRE_DR:
+    case BONUS_ARMOR_PLASMA_DR:
+    case BONUS_ARMOR_EXPLODE_DR:
+        return 3;
+    case BONUS_ARMOR_ALL_DR:
+        return 1;
+    case BONUS_ARMOR_RAD_RES:
+    case BONUS_ARMOR_POISON_RES:
+        return 10;
+    case BONUS_ARMOR_CRIT_CHANCE:
+    case BONUS_ARMOR_CRIT_POWER:
+        return -10;
+    case BONUS_ARMOR_MAX_AP:
+    case BONUS_ARMOR_STRENGTH:
+    case BONUS_ARMOR_PERCEPTION:
+    case BONUS_ARMOR_ENDURANCE:
+    case BONUS_ARMOR_CHARISMA:
+    case BONUS_ARMOR_INTELLIGENCE:
+    case BONUS_ARMOR_AGILITY:
+    case BONUS_ARMOR_LUCK:
+        return 1;
+    default:
+        return 0;
+    }
+    return 0;
+}
+
+string _ArmorPerkBlueprintName(int bonusType)
+{
+    switch(bonusType)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+        return "Normal DT";
+    case BONUS_ARMOR_LASER_DT:
+        return "Laser DT";
+    case BONUS_ARMOR_FIRE_DT:
+        return "Fire DT";
+    case BONUS_ARMOR_PLASMA_DT:
+        return "Plasma DT";
+    case BONUS_ARMOR_EXPLODE_DT:
+        return "Explode DT";
+    case BONUS_ARMOR_NORMAL_DR:
+        return "Normal DR";
+    case BONUS_ARMOR_LASER_DR:
+        return "Laser DR";
+    case BONUS_ARMOR_FIRE_DR:
+        return "Fire DR";
+    case BONUS_ARMOR_PLASMA_DR:
+        return "Plasma DR";
+    case BONUS_ARMOR_EXPLODE_DR:
+        return "Explode DR";
+    case BONUS_ARMOR_CRIT_CHANCE:
+        return "Critical Resistance";
+    case BONUS_ARMOR_CRIT_POWER:
+        return "Critical Power Resistance";
+    case BONUS_ARMOR_MAX_AP:
+        return "Maximum AP";
+    case BONUS_ARMOR_RAD_RES:
+        return "Radiation Resistance";
+    case BONUS_ARMOR_POISON_RES:
+        return "Poison Resistance";
+    case BONUS_ARMOR_STRENGTH:
+        return "Strength";
+    case BONUS_ARMOR_PERCEPTION:
+        return "Perception";
+    case BONUS_ARMOR_ENDURANCE:
+        return "Endurance";
+    case BONUS_ARMOR_CHARISMA:
+        return "Charisma";
+    case BONUS_ARMOR_INTELLIGENCE:
+        return "Intelligence";
+    case BONUS_ARMOR_AGILITY:
+        return "Agility";
+    case BONUS_ARMOR_LUCK:
+        return "Luck";
+    case BONUS_ARMOR_ALL_DR:
+        return "All DR";
+    default:
+        return "Unknown";
+    }
+    return "Unknown";
+}
+
+bool _UseArmorPerkBlueprint(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery, int bonusType)
+{
+    if(valid(onCritter) || valid(onScenery))
+    {
+        cr.Say(SAY_NETMSG, "Use this blueprint on an armor in your inventory.");
+        return true;
+    }
+
+    if(item.Accessory != ACCESSORY_CRITTER || item.CritId != cr.Id)
+    {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+        return true;
+    }
+
+    if(valid(onItem))
+    {
+        _ApplyArmorPerkBlueprintOnArmor(item, cr, onItem, bonusType);
+        return true;
+    }
+
+    cr.RunClientScript("client_interface@_RepairSession", 0, item.Id, 0, null, null);
+    cr.StatBase[ST_VAR0] = item.Id;
+    cr.StatBase[ST_VAR1] = bonusType;
+    cr.ShowScreen(SCREEN_BAG, 0, "_AbpChooseArmorCallback");
+    return true;
+}
+
+bool _ApplyArmorPerkBlueprintOnArmor(Item& blueprint, Critter& cr, Item@ armor, int bonusType)
+{
+    if(!valid(armor))
+        return false;
+
+    if(armor.GetType() != ITEM_TYPE_ARMOR || armor.IsStackable())
+    {
+        cr.Say(SAY_NETMSG, "This blueprint can only be applied to a non-stackable armor.");
+        return false;
+    }
+
+    if(armor.Accessory != ACCESSORY_CRITTER || armor.CritId != cr.Id)
+    {
+        cr.Say(SAY_NETMSG, "The target armor must be in your inventory.");
+        return false;
+    }
+
+    if(blueprint.Accessory != ACCESSORY_CRITTER || blueprint.CritId != cr.Id)
+    {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+        return false;
+    }
+
+    if(!ApplyArmorUpgradePerk(armor, bonusType, _ArmorPerkBlueprintValue(bonusType)))
+    {
+        cr.Say(SAY_NETMSG, "Cannot apply " + _ArmorPerkBlueprintName(bonusType) + ". Not enough free upgrade slots.");
+        return false;
+    }
+
+    if(blueprint.GetCount() > 1)
+        blueprint.SetCount(blueprint.GetCount() - 1);
+    else
+        DeleteItem(blueprint);
+
+    cr.Say(SAY_NETMSG, _ArmorPerkBlueprintName(bonusType) + " applied.");
+    return true;
+}
+
+void _AbpChooseArmorCallback(Critter& cr, uint n, string& s)
+{
+    Item@ blueprint = GetItem(cr.Stat[ST_VAR0]);
+    Item@ armor = GetItem(n);
+    int bonusType = cr.Stat[ST_VAR1];
+
+    cr.StatBase[ST_VAR0] = 0;
+    cr.StatBase[ST_VAR1] = 0;
+
+    if(!valid(blueprint) || !valid(armor))
+        return;
+
+    _ApplyArmorPerkBlueprintOnArmor(blueprint, cr, armor, bonusType);
 }
 
 bool _UseWeaponPerkBlueprint(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery, int perkType)
@@ -324,7 +498,6 @@ void _WpBpCriticalPowerInit(Item& item, bool firstTime)     { item.SetEvent(ITEM
 void _WpBpSilentHillMonsterInit(Item& item, bool firstTime) { item.SetEvent(ITEM_EVENT_USE, "_WpBpSilentHillMonsterUse"); }
 void _WpBpBlastInit(Item& item, bool firstTime)             { item.SetEvent(ITEM_EVENT_USE, "_WpBpBlastUse"); }
 void _WpBpPersistentInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_WpBpPersistentUse"); }
-void _WpBpMarkedShotInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_WpBpMarkedShotUse"); }
 void _WpBpIncreasedRangeInit(Item& item, bool firstTime)    { item.SetEvent(ITEM_EVENT_USE, "_WpBpIncreasedRangeUse"); }
 
 bool _WpBpAccurateUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)          { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_ACCURATE); }
@@ -338,6 +511,53 @@ bool _WpBpCriticalPowerUse(Item& item, Critter& cr, Critter@ onCritter, Item@ on
 bool _WpBpSilentHillMonsterUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery) { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER); }
 bool _WpBpBlastUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)             { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_BLAST); }
 bool _WpBpPersistentUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_PERSISTENT); }
-bool _WpBpMarkedShotUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_MARKED_SHOT); }
 bool _WpBpIncreasedRangeUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)    { return _UseWeaponPerkBlueprint(item, cr, onCritter, onItem, onScenery, UPGRADE_WEAPON_PERK_INCREASED_RANGE); }
+
+void _AbpNormalDtInit(Item& item, bool firstTime)      { item.SetEvent(ITEM_EVENT_USE, "_AbpNormalDtUse"); }
+void _AbpLaserDtInit(Item& item, bool firstTime)       { item.SetEvent(ITEM_EVENT_USE, "_AbpLaserDtUse"); }
+void _AbpFireDtInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_AbpFireDtUse"); }
+void _AbpPlasmaDtInit(Item& item, bool firstTime)      { item.SetEvent(ITEM_EVENT_USE, "_AbpPlasmaDtUse"); }
+void _AbpExplodeDtInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_AbpExplodeDtUse"); }
+void _AbpNormalDrInit(Item& item, bool firstTime)      { item.SetEvent(ITEM_EVENT_USE, "_AbpNormalDrUse"); }
+void _AbpLaserDrInit(Item& item, bool firstTime)       { item.SetEvent(ITEM_EVENT_USE, "_AbpLaserDrUse"); }
+void _AbpFireDrInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_AbpFireDrUse"); }
+void _AbpPlasmaDrInit(Item& item, bool firstTime)      { item.SetEvent(ITEM_EVENT_USE, "_AbpPlasmaDrUse"); }
+void _AbpExplodeDrInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_AbpExplodeDrUse"); }
+void _AbpCritChanceInit(Item& item, bool firstTime)    { item.SetEvent(ITEM_EVENT_USE, "_AbpCritChanceUse"); }
+void _AbpCritPowerInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_AbpCritPowerUse"); }
+void _AbpMaxApInit(Item& item, bool firstTime)         { item.SetEvent(ITEM_EVENT_USE, "_AbpMaxApUse"); }
+void _AbpRadResInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_AbpRadResUse"); }
+void _AbpPoisonResInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_AbpPoisonResUse"); }
+void _AbpStrengthInit(Item& item, bool firstTime)      { item.SetEvent(ITEM_EVENT_USE, "_AbpStrengthUse"); }
+void _AbpPerceptionInit(Item& item, bool firstTime)    { item.SetEvent(ITEM_EVENT_USE, "_AbpPerceptionUse"); }
+void _AbpEnduranceInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_AbpEnduranceUse"); }
+void _AbpCharismaInit(Item& item, bool firstTime)      { item.SetEvent(ITEM_EVENT_USE, "_AbpCharismaUse"); }
+void _AbpIntelligenceInit(Item& item, bool firstTime)  { item.SetEvent(ITEM_EVENT_USE, "_AbpIntelligenceUse"); }
+void _AbpAgilityInit(Item& item, bool firstTime)       { item.SetEvent(ITEM_EVENT_USE, "_AbpAgilityUse"); }
+void _AbpLuckInit(Item& item, bool firstTime)          { item.SetEvent(ITEM_EVENT_USE, "_AbpLuckUse"); }
+void _AbpAllDrInit(Item& item, bool firstTime)         { item.SetEvent(ITEM_EVENT_USE, "_AbpAllDrUse"); }
+
+bool _AbpNormalDtUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_NORMAL_DT); }
+bool _AbpLaserDtUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)       { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_LASER_DT); }
+bool _AbpFireDtUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_FIRE_DT); }
+bool _AbpPlasmaDtUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_PLASMA_DT); }
+bool _AbpExplodeDtUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_EXPLODE_DT); }
+bool _AbpNormalDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_NORMAL_DR); }
+bool _AbpLaserDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)       { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_LASER_DR); }
+bool _AbpFireDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_FIRE_DR); }
+bool _AbpPlasmaDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_PLASMA_DR); }
+bool _AbpExplodeDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_EXPLODE_DR); }
+bool _AbpCritChanceUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)    { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_CRIT_CHANCE); }
+bool _AbpCritPowerUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_CRIT_POWER); }
+bool _AbpMaxApUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)         { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_MAX_AP); }
+bool _AbpRadResUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_RAD_RES); }
+bool _AbpPoisonResUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_POISON_RES); }
+bool _AbpStrengthUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_STRENGTH); }
+bool _AbpPerceptionUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)    { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_PERCEPTION); }
+bool _AbpEnduranceUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_ENDURANCE); }
+bool _AbpCharismaUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_CHARISMA); }
+bool _AbpIntelligenceUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)  { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_INTELLIGENCE); }
+bool _AbpAgilityUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)       { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_AGILITY); }
+bool _AbpLuckUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)          { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_LUCK); }
+bool _AbpAllDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)         { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_ALL_DR); }
 #endif // __ITEM_MISC__ //

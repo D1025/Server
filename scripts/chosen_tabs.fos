@@ -139,6 +139,14 @@ void DrawChosenTabs() // Export
         DrawTab(GetMsgStr(TEXTMSG_GAME, STR_POISONED_TITLE), color, ex);
     }
 
+    if(chosen.Stat[ST_PERSISTENT_DOT] > 0)
+    {
+        uint   pool = uint(chosen.Stat[ST_PERSISTENT_DOT]);
+        uint   color = COLOR_DRED;
+        string ex = "Persistent DoT: " + pool;
+        DrawTab(GetMsgStr(TEXTMSG_GAME, STR_WEAPON_PERK(WEAPON_PERK_PERSISTENT)), color, ex);
+    }
+
     if(chosen.Damage[DAMAGE_RADIATED] != 0)
     {
         string ex = "";

@@ -9891,8 +9891,6 @@ a58ew64v}
 {2555701}{}{Technical sketch for applying the Blast perk to a weapon. Use it on a weapon in your inventory.}
 {2555800}{}{Advanced Weapon Blueprint: Persistent}
 {2555801}{}{Technical sketch for applying the Persistent perk to a weapon. Use it on a weapon in your inventory.}
-{2555900}{}{Advanced Weapon Blueprint: Marked Shot}
-{2555901}{}{Technical sketch for applying the Marked Shot perk to a weapon. Use it on a weapon in your inventory.}
 {2556000}{}{Advanced Weapon Blueprint: Increased Range}
 {2556001}{}{Technical sketch for applying the Increased Range perk to a weapon. Use it on a weapon in your inventory.}
 {2999000}{}{Cocaine Brick}

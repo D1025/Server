@@ -1754,8 +1754,6 @@ string GetWeaponUpgradePerkText(int type)
         return "Blast";
     case UPGRADE_WEAPON_PERK_PERSISTENT:
         return "Persistent";
-    case UPGRADE_WEAPON_PERK_MARKED_SHOT:
-        return "Marked Shot";
     case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
         return "Increased Range";
     default:
@@ -1818,6 +1816,7 @@ if(it.GetType() == ITEM_TYPE_ARMOR)
 		case 121: {result="\nLuck +" + value + "";break;}
 		case 122: {result="\nCarry Weight +" + value + "";break;}
 		case 123: {result="\nHealing Rate +" + value + "";break;}
+		case 124: {result="\nAll DR +" + value + "%";break;}
 		default: break;
 		}
 }
@@ -1843,7 +1842,6 @@ else if(it.GetType() == ITEM_TYPE_WEAPON)
 		case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
 		case UPGRADE_WEAPON_PERK_BLAST:
 		case UPGRADE_WEAPON_PERK_PERSISTENT:
-		case UPGRADE_WEAPON_PERK_MARKED_SHOT:
 		case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
 		{
 			string txt = GetWeaponUpgradePerkText(type);

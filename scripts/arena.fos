@@ -23,6 +23,7 @@
 #include "economy_h.fos"
 #include "entire.fos"
 #include "factions_h.fos"
+#include "item_upgrades_shared.fos"
 #include "minigames_h.fos"
 #include "polygon_h.fos"
 #include "reputations_h.fos"
@@ -81,7 +82,6 @@ import void SetMinWear(Item& item, int wearProcent) from "repair";
 import void CompleteRepair(Item& item) from "repair";
 import void SpawnArena(Map@ map, uint16 size_x, uint16 size_y, uint16 hx, uint16 hy, uint min_room_x, uint min_room_y, uint min_path) from "arena_generator";
 import void DropDrugsEffectsHinkley(Critter& cr) from "drugs";
-import void AddBonusHinkley(Item@ it) from "item_bonus";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
 //import void RemoveBonus(Item@ it) from "item_bonus";
 
@@ -262,6 +262,394 @@ uint             ArenasLen = 0;
 
 array<Entire> DoorIn(2);
 array<Entire> DoorOut(2);
+
+const int ARENA_UPGRADE_SLOT_COUNT = 5;
+
+int ArenaUpgradeStorageLvar(int slotType, int slotIndex)
+{
+    if(slotIndex < 0 || slotIndex >= ARENA_UPGRADE_SLOT_COUNT)
+        return 0;
+
+    if(slotType == 1)
+        return LVAR_arena_weapon1_upgrade_slot0 + slotIndex;
+    if(slotType == 2)
+        return LVAR_arena_weapon2_upgrade_slot0 + slotIndex;
+    if(slotType == 3)
+        return LVAR_arena_armor_upgrade_slot0 + slotIndex;
+
+    return 0;
+}
+
+int GetArenaUpgradeStoredRaw(Critter& player, int slotType, int slotIndex)
+{
+    int lvar = ArenaUpgradeStorageLvar(slotType, slotIndex);
+    if(lvar == 0)
+        return 0;
+
+    GameVar@ value = GetLocalVar(lvar, player.Id);
+    if(!valid(value))
+        return 0;
+
+    return value.GetValue();
+}
+
+void SetArenaUpgradeStoredRaw(Critter& player, int slotType, int slotIndex, int raw)
+{
+    int lvar = ArenaUpgradeStorageLvar(slotType, slotIndex);
+    if(lvar == 0)
+        return;
+
+    GameVar@ value = GetLocalVar(lvar, player.Id);
+    if(!valid(value))
+        return;
+
+    value = raw;
+}
+
+int ArenaRawPerkType(int raw)
+{
+    if(raw == 0 || raw == UPGRADE_SLOT_EMPTY || raw == UPGRADE_SLOT_USED)
+        return 0;
+
+    int unpacked = UpgradeUnpackSlotType(raw);
+    if(unpacked <= 0)
+        return raw;
+    return unpacked;
+}
+
+bool ArenaIsArmorBonusType(int bonusType)
+{
+    switch(bonusType)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+    case BONUS_ARMOR_LASER_DT:
+    case BONUS_ARMOR_FIRE_DT:
+    case BONUS_ARMOR_PLASMA_DT:
+    case BONUS_ARMOR_EXPLODE_DT:
+    case BONUS_ARMOR_NORMAL_DR:
+    case BONUS_ARMOR_LASER_DR:
+    case BONUS_ARMOR_FIRE_DR:
+    case BONUS_ARMOR_PLASMA_DR:
+    case BONUS_ARMOR_EXPLODE_DR:
+    case BONUS_ARMOR_CRIT_CHANCE:
+    case BONUS_ARMOR_CRIT_POWER:
+    case BONUS_ARMOR_MAX_AP:
+    case BONUS_ARMOR_RAD_RES:
+    case BONUS_ARMOR_POISON_RES:
+    case BONUS_ARMOR_ALL_DR:
+    case BONUS_ARMOR_STRENGTH:
+    case BONUS_ARMOR_PERCEPTION:
+    case BONUS_ARMOR_ENDURANCE:
+    case BONUS_ARMOR_CHARISMA:
+    case BONUS_ARMOR_INTELLIGENCE:
+    case BONUS_ARMOR_AGILITY:
+    case BONUS_ARMOR_LUCK:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
+}
+
+bool ArenaPerkTypeValidForSlotType(int slotType, int perkType)
+{
+    if(slotType == 1 || slotType == 2)
+        return IsWeaponUpgradePerk(perkType);
+    if(slotType == 3)
+        return ArenaIsArmorBonusType(perkType);
+    return false;
+}
+
+int ArenaArmorUpgradeDefaultValue(int perkType)
+{
+    switch(perkType)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+    case BONUS_ARMOR_LASER_DT:
+    case BONUS_ARMOR_FIRE_DT:
+    case BONUS_ARMOR_PLASMA_DT:
+    case BONUS_ARMOR_EXPLODE_DT:
+        return 2;
+    case BONUS_ARMOR_NORMAL_DR:
+    case BONUS_ARMOR_LASER_DR:
+    case BONUS_ARMOR_FIRE_DR:
+    case BONUS_ARMOR_PLASMA_DR:
+    case BONUS_ARMOR_EXPLODE_DR:
+        return 3;
+    case BONUS_ARMOR_ALL_DR:
+        return 1;
+    case BONUS_ARMOR_RAD_RES:
+    case BONUS_ARMOR_POISON_RES:
+        return 10;
+    case BONUS_ARMOR_CRIT_CHANCE:
+    case BONUS_ARMOR_CRIT_POWER:
+        return -10;
+    case BONUS_ARMOR_MAX_AP:
+    case BONUS_ARMOR_STRENGTH:
+    case BONUS_ARMOR_PERCEPTION:
+    case BONUS_ARMOR_ENDURANCE:
+    case BONUS_ARMOR_CHARISMA:
+    case BONUS_ARMOR_INTELLIGENCE:
+    case BONUS_ARMOR_AGILITY:
+    case BONUS_ARMOR_LUCK:
+        return 1;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+int ArenaUpgradeDefaultValue(int perkType)
+{
+    if(IsWeaponUpgradePerk(perkType))
+        return WeaponUpgradePerkBaseValue(perkType);
+    if(ArenaIsArmorBonusType(perkType))
+        return ArenaArmorUpgradeDefaultValue(perkType);
+    return 0;
+}
+
+uint ArenaArmorUpgradeCost(int perkType)
+{
+    switch(perkType)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+    case BONUS_ARMOR_LASER_DT:
+    case BONUS_ARMOR_FIRE_DT:
+    case BONUS_ARMOR_PLASMA_DT:
+    case BONUS_ARMOR_EXPLODE_DT:
+    case BONUS_ARMOR_NORMAL_DR:
+    case BONUS_ARMOR_LASER_DR:
+    case BONUS_ARMOR_FIRE_DR:
+    case BONUS_ARMOR_PLASMA_DR:
+    case BONUS_ARMOR_EXPLODE_DR:
+    case BONUS_ARMOR_RAD_RES:
+    case BONUS_ARMOR_POISON_RES:
+    case BONUS_ARMOR_ALL_DR:
+        return 1;
+    case BONUS_ARMOR_STRENGTH:
+    case BONUS_ARMOR_PERCEPTION:
+    case BONUS_ARMOR_ENDURANCE:
+    case BONUS_ARMOR_CHARISMA:
+    case BONUS_ARMOR_INTELLIGENCE:
+    case BONUS_ARMOR_AGILITY:
+    case BONUS_ARMOR_LUCK:
+    case BONUS_ARMOR_CRIT_CHANCE:
+    case BONUS_ARMOR_CRIT_POWER:
+        return 2;
+    case BONUS_ARMOR_MAX_AP:
+        return 3;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+uint ArenaUpgradePerkCost(int slotType, int perkType)
+{
+    if(slotType == 1 || slotType == 2)
+        return IsWeaponUpgradePerk(perkType) ? WeaponUpgradePerkCost(perkType) : 0;
+    if(slotType == 3)
+        return ArenaIsArmorBonusType(perkType) ? ArenaArmorUpgradeCost(perkType) : 0;
+    return 0;
+}
+
+int ArenaPackPerkRaw(int perkType)
+{
+    if(perkType == 0)
+        return 0;
+    return UpgradePackSlotData(perkType, ArenaUpgradeDefaultValue(perkType));
+}
+
+void ClearArenaUpgradeStorage(Critter& player, int slotType)
+{
+    for(int i = 0; i < ARENA_UPGRADE_SLOT_COUNT; i++)
+        SetArenaUpgradeStoredRaw(player, slotType, i, 0);
+}
+
+void ResetArenaUpgradeStorage(Critter& player)
+{
+    ClearArenaUpgradeStorage(player, 1);
+    ClearArenaUpgradeStorage(player, 2);
+    ClearArenaUpgradeStorage(player, 3);
+}
+
+void ArenaCollectStoredPerks(Critter& player, int slotType, array<int>@ perks)
+{
+    perks.resize(0);
+    for(int i = 0; i < ARENA_UPGRADE_SLOT_COUNT; i++)
+    {
+        int raw = GetArenaUpgradeStoredRaw(player, slotType, i);
+        int perkType = ArenaRawPerkType(raw);
+        if(raw == 0 || !ArenaPerkTypeValidForSlotType(slotType, perkType))
+            continue;
+
+        perks.insertLast(perkType);
+        uint cost = ArenaUpgradePerkCost(slotType, perkType);
+        if(cost > 1)
+            i += int(cost) - 1;
+    }
+}
+
+void ArenaRebuildStoredPerks(Critter& player, int slotType, array<int>@ perks)
+{
+    ClearArenaUpgradeStorage(player, slotType);
+
+    int cursor = 0;
+    for(uint i = 0; i < perks.length(); i++)
+    {
+        int perkType = perks[i];
+        uint cost = ArenaUpgradePerkCost(slotType, perkType);
+        if(cost == 0)
+            continue;
+        if(cursor + int(cost) > ARENA_UPGRADE_SLOT_COUNT)
+            break;
+
+        SetArenaUpgradeStoredRaw(player, slotType, cursor, ArenaPackPerkRaw(perkType));
+        cursor++;
+        for(uint k = 1; k < cost; k++)
+        {
+            SetArenaUpgradeStoredRaw(player, slotType, cursor, UPGRADE_SLOT_USED);
+            cursor++;
+        }
+    }
+}
+
+uint ArenaStoredUsedSlots(Critter& player, int slotType)
+{
+    uint used = 0;
+    for(int i = 0; i < ARENA_UPGRADE_SLOT_COUNT; i++)
+    {
+        if(GetArenaUpgradeStoredRaw(player, slotType, i) != 0)
+            used++;
+    }
+    return used;
+}
+
+void CompactArenaUpgradeStorage(Critter& player, int slotType)
+{
+    array<int> perks;
+    ArenaCollectStoredPerks(player, slotType, perks);
+    ArenaRebuildStoredPerks(player, slotType, perks);
+}
+
+bool ArenaHasStoredPerk(Critter& player, int slotType, int perkType)
+{
+    array<int> perks;
+    ArenaCollectStoredPerks(player, slotType, perks);
+    for(uint i = 0; i < perks.length(); i++)
+    {
+        if(perks[i] == perkType)
+            return true;
+    }
+    return false;
+}
+
+bool ArenaAddStoredPerk(Critter& player, int slotType, int perkType)
+{
+    if(!ArenaPerkTypeValidForSlotType(slotType, perkType))
+        return false;
+
+    uint cost = ArenaUpgradePerkCost(slotType, perkType);
+    if(cost == 0)
+        return false;
+
+    CompactArenaUpgradeStorage(player, slotType);
+
+    uint usedSlots = ArenaStoredUsedSlots(player, slotType);
+    if(usedSlots + cost > uint(ARENA_UPGRADE_SLOT_COUNT))
+        return false;
+
+    array<int> perks;
+    ArenaCollectStoredPerks(player, slotType, perks);
+    perks.insertLast(perkType);
+    ArenaRebuildStoredPerks(player, slotType, perks);
+    return true;
+
+}
+
+void ArenaRemoveStoredPerkAt(Critter& player, int slotType, int slotIndex)
+{
+    if(slotIndex < 0 || slotIndex >= ARENA_UPGRADE_SLOT_COUNT)
+        return;
+
+    CompactArenaUpgradeStorage(player, slotType);
+
+    array<int> perks;
+    array<int> starts;
+    for(int i = 0; i < ARENA_UPGRADE_SLOT_COUNT; i++)
+    {
+        int raw = GetArenaUpgradeStoredRaw(player, slotType, i);
+        int perkType = ArenaRawPerkType(raw);
+        if(raw == 0 || !ArenaPerkTypeValidForSlotType(slotType, perkType))
+            continue;
+
+        perks.insertLast(perkType);
+        starts.insertLast(i);
+
+        uint cost = ArenaUpgradePerkCost(slotType, perkType);
+        if(cost > 1)
+            i += int(cost) - 1;
+    }
+
+    int removeIdx = -1;
+    for(uint i = 0; i < perks.length(); i++)
+    {
+        int start = starts[i];
+        int end = start + int(ArenaUpgradePerkCost(slotType, perks[i])) - 1;
+        if(slotIndex >= start && slotIndex <= end)
+        {
+            removeIdx = int(i);
+            break;
+        }
+    }
+
+    if(removeIdx < 0)
+        return;
+
+    perks.removeAt(uint(removeIdx));
+    ArenaRebuildStoredPerks(player, slotType, perks);
+}
+
+bool IsArenaEquippedWeapon(Item@ item)
+{
+    return valid(item) && (item.CritSlot == SLOT_HAND1 || item.CritSlot == SLOT_HAND2);
+}
+
+bool IsArenaEquippedArmor(Item@ item)
+{
+    return valid(item) && (item.CritSlot == SLOT_ARMOR || item.CritSlot == SLOT_HEAD);
+}
+
+void ApplyArenaItemUpgrades(Critter& cr, Item@ item)
+{
+    if(!valid(item))
+        return;
+
+    int slotType = 0;
+    if(item.GetType() == ITEM_TYPE_WEAPON)
+    {
+        if(item.CritSlot == SLOT_HAND1)
+            slotType = 1;
+        else if(item.CritSlot == SLOT_HAND2)
+            slotType = 2;
+    }
+    else if(item.GetType() == ITEM_TYPE_ARMOR && IsArenaEquippedArmor(item))
+        slotType = 3;
+
+    if(slotType == 0)
+        return;
+
+    CompactArenaUpgradeStorage(cr, slotType);
+    ClearArenaUpgradeData(item);
+    item.Val0 = GetArenaUpgradeStoredRaw(cr, slotType, 0);
+    item.Val1 = GetArenaUpgradeStoredRaw(cr, slotType, 1);
+    item.Val2 = GetArenaUpgradeStoredRaw(cr, slotType, 2);
+    item.Val3 = GetArenaUpgradeStoredRaw(cr, slotType, 3);
+    item.Val4 = GetArenaUpgradeStoredRaw(cr, slotType, 4);
+}
 
 // Here we initialize all arena related data
 void InitArenas(Map& map)   // export
@@ -782,6 +1170,22 @@ void RemoveArenaItems(Item& item)
 }
 
 // Destroy weapons and armor, remove ammo, 08/04/2017 remove bonus from weapons
+void ClearArenaUpgradeData(Item@ item)
+{
+    if(!valid(item))
+        return;
+
+    item.Val0 = 0;
+    item.Val1 = 0;
+    item.Val2 = 0;
+    item.Val3 = 0;
+    item.Val4 = 0;
+    item.Val5 = 0;
+    item.Val6 = 0;
+    item.Val7 = 0;
+    item.Val8 = 0;
+}
+
 void MakeItemsUseless(Critter& cr)
 {
     array<Item@> items;
@@ -795,14 +1199,7 @@ void MakeItemsUseless(Critter& cr)
         {
             SetMinWear(item, 100);
         }
-		item.Val0 = 0;
-		item.Val1 = 0;
-		item.Val2 = 0;
-		item.Val3 = 0;
-		item.Val5 = 0;
-		item.Val6 = 0;
-		item.Val7 = 0;
-		item.Val8 = 0;
+        ClearArenaUpgradeData(item);
         item.AmmoCount = 0;
         item.Update();
     }
@@ -812,19 +1209,13 @@ void MakeItemsUseless(Critter& cr)
     for(uint i = 0; i < n; i++)
     {
         Item@ item = items[i];
-        if(item.Val9 != SPECIAL_ITEM_ARENA || !item.IsDeteriorable())
+        if(item.Val9 != SPECIAL_ITEM_ARENA)
             continue;
-		item.Val0 = 0;
-		item.Val1 = 0;
-		item.Val2 = 0;
-		item.Val3 = 0;
-		item.Val5 = 0;
-		item.Val6 = 0;
-		item.Val7 = 0;
-		item.Val8 = 0;
+        ClearArenaUpgradeData(item);
         if(item.GetProtoId() == PID_TESLA_ARMOR)
             item.Charge = 0;
-        SetMinWear(item, 100);
+        if(item.IsDeteriorable())
+            SetMinWear(item, 100);
         item.Update();
     }
     items.resize(0);
@@ -845,14 +1236,11 @@ void MakeItemsUseful(Critter& cr)
         if(item.Val9 != SPECIAL_ITEM_ARENA)
             continue;
         if(item.IsDeteriorable())
-            {
-			CompleteRepair(item);
-			SetMinWear(item, Random(1,45));
-			}
-		/*if(item.CritSlot == SLOT_HAND1 || item.CritSlot == SLOT_HAND2)
-		{
-		AddBonusHinkley(item); // for now disabled
-		}*/
+        {
+            CompleteRepair(item);
+            SetMinWear(item, Random(1,45));
+        }
+        ApplyArenaItemUpgrades(cr, item);
         uint rounds = MAX(item.Proto.Weapon_Round_0, item.Proto.Weapon_Round_1);
         item.AmmoCount = item.Proto.Weapon_MaxAmmoCount;
         switch(item.Proto.Weapon_DefaultAmmoPid)
@@ -928,7 +1316,7 @@ void MakeItemsUseful(Critter& cr)
     for(uint i = 0; i < n; i++)
     {
         Item@ item = items[i];
-        if(item.Val9 != SPECIAL_ITEM_ARENA || !item.IsDeteriorable())
+        if(item.Val9 != SPECIAL_ITEM_ARENA)
             continue;
 
         if(item.GetProtoId() == PID_TESLA_ARMOR)
@@ -937,12 +1325,13 @@ void MakeItemsUseful(Critter& cr)
             Item@ teslaAmmo = cr.AddItem(PID_MFC, Random(50,120));
             teslaAmmo.Val9 = SPECIAL_ITEM_ARENA;
         }
-        CompleteRepair(item);
-		SetMinWear(item, Random(1,45));
-		/*if(item.CritSlot == SLOT_ARMOR || item.CritSlot == SLOT_HEAD )
-		{
-		AddBonusHinkley(item);
-		}*/
+        if(item.IsDeteriorable())
+        {
+            CompleteRepair(item);
+            SetMinWear(item, Random(1,45));
+        }
+        ApplyArenaItemUpgrades(cr, item);
+        item.Update();
     }
 }
 
@@ -1390,7 +1779,6 @@ void r_DoorTransport(Critter& player, Critter@ npc, int inside)
     }
 }
 
-// formatters
 void dlg_ArenaName(Critter& player, Critter@ npc, string@ text)
 {
     if(!IS_DIALOG_GENERATED(text))

@@ -45,6 +45,10 @@ import void MolotovBlast( Map& map, uint16 hexX, uint16 hexY, uint16 firePid, ui
 #define MAX_BURN_STACK           (2) //for adjust, default 12
 #define MAX_BURN_DURATION      (4) //for adjust, default 3
 #define ADD_BURN_STACK         (2) //for adjust, default 4
+#define PERSISTENT_DOT_TICK_DAMAGE   (10)
+#define PERSISTENT_DOT_TICK_PERIOD   (REAL_SECOND(1))
+#define SILENT_HILL_LOW_LIFE_THRESHOLD_PERCENT (35)
+#define SILENT_HILL_PROTO_BONUS_PERCENT        (50)
 	
 class AttackStruct
 {
@@ -102,7 +106,7 @@ class AttackStruct
 
 int SelectArmorBonus(Item@ armor, int Int_Val_ArmorBonus)
 {
-	return UpgradeLegacyBonus(armor, Int_Val_ArmorBonus);
+	return UpgradeBonusValue(armor, Int_Val_ArmorBonus);
 }
 
 
@@ -419,6 +423,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     bool             perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
     bool             perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
     bool             perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);
+    bool             perkSwipe = WeaponHasProtoPerk(weapon, WEAPON_PERK_SWIPE);
     bool             crIsPlayer = cr.IsPlayer();
     bool             isHit = false;
     bool             isCritical = false;
@@ -791,7 +796,46 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     {
         if(isHit)
         {
-			ApplyDamage(attack, realTarget, 1, criticalHit, true, results, 0);
+            bool useSwipe = (weaponSubtype == WS_MELEE) && perkSwipe;
+            if(useSwipe)
+            {
+                array<Critter@> swipeTargets;
+                uint16          ex = hx;
+                uint16          ey = hy;
+                map.MoveHexByDir(ex, ey, cr.Dir, wpnMaxDist);
+                map.GetCrittersPath(hx, hy, ex, ey, 0.0f, wpnMaxDist, FIND_LIFE_AND_KO, swipeTargets);
+                FilterOutAttacker(swipeTargets, cr);
+
+                if(swipeTargets.length() == 0)
+                {
+                    ApplyDamage(attack, realTarget, 1, criticalHit, true, results, 0);
+                }
+                else
+                {
+                    bool primaryHitApplied = false;
+                    array<Critter@> appliedTargets;
+                    for(uint i = 0, len = swipeTargets.length(); i < len; i++)
+                    {
+                        Critter@ swipeTarget = swipeTargets[i];
+                        if(FindCritterInArray(appliedTargets, swipeTarget) != -1)
+                            continue;
+                        appliedTargets.insertLast(swipeTarget);
+
+                        bool     isPrimaryTarget = (swipeTarget.Id == realTarget.Id);
+                        if(isPrimaryTarget)
+                            primaryHitApplied = true;
+
+                        ApplyDamage(attack, swipeTarget, 1, isPrimaryTarget && criticalHit, true, results, 0);
+                    }
+
+                    if(!primaryHitApplied)
+                        ApplyDamage(attack, realTarget, 1, criticalHit, true, results, 0);
+                }
+            }
+            else
+            {
+                ApplyDamage(attack, realTarget, 1, criticalHit, true, results, 0);
+            }
         }
         else
         {
@@ -1458,6 +1502,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     quick = target.Perk[PE_QUICK_RECOVERY] > 0;
 
 	bool     isWeaponBluedgeoning = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_BLUDGEONING) : (weaponPerk == WEAPON_PERK_BLUDGEONING);
+    bool     hasWeaponPersistent = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_PERSISTENT) : (weaponPerk == WEAPON_PERK_PERSISTENT);
+    int      upgradePersistentStacks = UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_PERSISTENT);
+    int      protoSilentHillStacks = valid(realWeapon) ? WeaponProtoPerkStacks(realWeapon.Proto, WEAPON_PERK_SILENT_HILL_MONSTER) : (weaponPerk == WEAPON_PERK_SILENT_HILL_MONSTER ? 1 : 0);
+    int      upgradeSilentHillStacks = UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER);
 
 
     int realrounds = rounds;
@@ -1853,6 +1901,41 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
     if (isWeaponBluedgeoning == true)
         totalDmg = 2 * attack.Attacker.Param[ST_MELEE_DAMAGE];
+
+    if(totalDmg > 0)
+    {
+        int targetMaxHp = GetActualMaxHp(target);
+        bool targetLowLife = targetMaxHp > 0 &&
+            (target.Stat[ST_CURRENT_HP] * 100 < targetMaxHp * SILENT_HILL_LOW_LIFE_THRESHOLD_PERCENT);
+        if(targetLowLife)
+        {
+            int bonusPercent = protoSilentHillStacks * SILENT_HILL_PROTO_BONUS_PERCENT;
+            bonusPercent += upgradeSilentHillStacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER);
+            if(bonusPercent > 0)
+                totalDmg += (totalDmg * bonusPercent) / 100;
+        }
+    }
+
+    if(totalDmg > 0 && target.Mode[MODE_INVULNERABLE] == 0)
+    {
+        int postResistDamage = totalDmg;
+        int persistentDotDamage = 0;
+
+        if(hasWeaponPersistent)
+        {
+            persistentDotDamage += postResistDamage;
+            totalDmg = 0;
+        }
+
+        if(upgradePersistentStacks > 0)
+        {
+            int dotPercent = WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_PERSISTENT) * upgradePersistentStacks;
+            persistentDotDamage += (postResistDamage * dotPercent) / 100;
+        }
+
+        if(persistentDotDamage > 0)
+            AddPersistentDot(target, persistentDotDamage);
+    }
 	
     // 0x00000001 - knockout
     // 0x00000002 - knockdown
@@ -3471,6 +3554,68 @@ uint GetBurnDuration(Critter& cr)
     duration=count*MAX_BURN_DURATION;
     if(duration<=0) cr.EraseTimeEvents(CTE_BURN);;
     return duration;
+}
+
+void AddPersistentDot(Critter& cr, int value)
+{
+    if(value <= 0 || cr.IsDead())
+        return;
+
+    int pool = cr.Stat[ST_PERSISTENT_DOT];
+    int nextPool = pool + value;
+    if(nextPool < pool) // overflow guard
+        nextPool = int(0x7FFFFFFF);
+    cr.StatBase[ST_PERSISTENT_DOT] = nextPool;
+
+    array<uint> dotEventIndexes;
+    uint dotEvents = cr.GetTimeEvents(CTE_PERSISTENT_DOT, dotEventIndexes, null, null);
+    if(dotEvents == 0)
+        cr.AddTimeEvent("cte_PersistentDot", PERSISTENT_DOT_TICK_PERIOD, CTE_PERSISTENT_DOT);
+    else if(dotEvents > 1)
+    {
+        // Safety net: keep exactly one DoT ticker even if duplicates were created.
+        cr.EraseTimeEvents(CTE_PERSISTENT_DOT);
+        cr.AddTimeEvent("cte_PersistentDot", PERSISTENT_DOT_TICK_PERIOD, CTE_PERSISTENT_DOT);
+    }
+}
+
+uint cte_PersistentDot(Critter& cr, int identifier, uint& rate)
+{
+    if(cr.IsDead())
+    {
+        cr.StatBase[ST_PERSISTENT_DOT] = 0;
+        return 0;
+    }
+
+    int pool = cr.Stat[ST_PERSISTENT_DOT];
+    if(pool <= 0)
+    {
+        cr.StatBase[ST_PERSISTENT_DOT] = 0;
+        return 0;
+    }
+
+    int tickDamage = MIN(PERSISTENT_DOT_TICK_DAMAGE, pool);
+    pool -= tickDamage;
+    cr.StatBase[ST_PERSISTENT_DOT] = pool;
+
+    if(cr.Mode[MODE_INVULNERABLE] == 0 && tickDamage > 0)
+    {
+        cr.StatBase[ST_CURRENT_HP] -= tickDamage;
+        if(cr.Trait[TRAIT_DEAD_MAN_WALKING] > 0 && cr.Stat[ST_CURRENT_HP] < 0)
+            _SetTimeout(cr, TO_HEALING, REAL_SECOND(3));
+
+        if(cr.Stat[ST_CURRENT_HP] <= 0 && !cr.IsDead())
+        {
+            cr.ToDead(Random(0, 1) == 0 ? ANIM2_DEAD_FRONT : ANIM2_DEAD_BACK, null);
+            cr.StatBase[ST_PERSISTENT_DOT] = 0;
+            return 0;
+        }
+    }
+
+    if(cr.Stat[ST_PERSISTENT_DOT] <= 0)
+        return 0;
+
+    return PERSISTENT_DOT_TICK_PERIOD;
 }
 
 void FilterOutAttacker(array<Critter@> &inout targets, Critter@ attacker)

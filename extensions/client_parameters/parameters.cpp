@@ -5,6 +5,10 @@
 #define TRAIT_VAMPIRISM (560)
 #endif
 
+#ifndef UPGRADE_WEAPON_PERK_FAST_RELOAD
+#define UPGRADE_WEAPON_PERK_FAST_RELOAD (1003)
+#endif
+
 #ifndef __SERVER
 #ifndef __CLIENT
 #pragma error ("PANIC: no defines in server/client parameters")
@@ -93,6 +97,43 @@ static bool IsHealingItemWithExtraApCost(const Item& item)
 	default:
 		return false;
 	}
+}
+
+static int getUpgradePerkStacks(Item& it, int perkType)
+{
+	if(perkType == 0)
+		return 0;
+
+	const int slotEmpty = 9000;
+	const int slotUsed = 9001;
+	const int slotPackBase = 2000000;
+	const int slotPackStep = 1000;
+
+	bool legacyLayout = false;
+	for(int i = 0; i < 5; i++)
+	{
+		int raw = it.Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+		if(raw >= slotPackBase)
+			continue;
+		legacyLayout = true;
+		break;
+	}
+
+	int maxSlots = legacyLayout ? 5 : 7;
+	int count = 0;
+	for(int i = 0; i < maxSlots; i++)
+	{
+		int raw = it.Data.ScriptValues[i];
+		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
+			continue;
+
+		int type = (raw >= slotPackBase ? (raw - slotPackBase) / slotPackStep : raw);
+		if(type == perkType)
+			count++;
+	}
+	return count;
 }
 
 /************************************************************************/
@@ -535,13 +576,20 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 	}
 	else if(use == USE_RELOAD)
 	{
-		if(cr.Params[PE_FAST_RELOAD]) return 1;
+		if (!item.Proto->Weapon_ReloadAp)
+			apCost = 3;
 		if(TB_BATTLE_TIMEOUT_CHECK(getParam_Timeout(cr, TO_BATTLE)))
 			apCost = Game->TbApCostReloadWeapon;
 		else
-			apCost = Game->RtApCostReloadWeapon;
+			apCost = item.Proto->Weapon_ReloadAp;
 
-		if(item.IsWeapon() && item.Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD)) apCost--;
+		if(cr.Params[PE_QUICK_POCKETS])
+			return 1;
+
+		int reloadReduction = getUpgradePerkStacks(item, UPGRADE_WEAPON_PERK_FAST_RELOAD);
+		if(item.IsWeapon() && item.Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
+			reloadReduction++;
+		apCost -= reloadReduction;
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{
