@@ -2078,6 +2078,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 int vampirismHeal = totalDmg / 2;
                 if(vampirismHeal > 0)
                     attacker.StatBase[ST_CURRENT_HP] += vampirismHeal;
+                int vampirismHealLimb = vampirismHeal / 2;
+                if(vampirismHealLimb > 0) {
+                    attacker.StatBase[ST_HP_LA] += vampirismHealLimb;
+                    attacker.StatBase[ST_HP_RA] += vampirismHealLimb;
+                    attacker.StatBase[ST_HP_LL] += vampirismHealLimb;
+                    attacker.StatBase[ST_HP_RL] += vampirismHealLimb;
+                } 
             }
             if(dmgType == DAMAGE_EXPLODE)
             {
