@@ -584,7 +584,7 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 			apCost = item.Proto->Weapon_ReloadAp;
 
 		if(cr.Params[PE_QUICK_POCKETS])
-			return 1;
+			apCost -= 3;
 
 		int reloadReduction = getUpgradePerkStacks(item, UPGRADE_WEAPON_PERK_FAST_RELOAD);
 		if(item.IsWeapon() && item.Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
