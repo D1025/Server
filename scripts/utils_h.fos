@@ -150,6 +150,7 @@ import Critter@ AddNpc(Map@ map, uint16 pid, uint16 x, uint16 y, uint8 dir, uint
 import Critter@ AddNpc(Map@ map, uint16 pid, uint16 x, uint16 y, uint8 dir, array<int> params, uint dialogId, string& script, uint aiPack, uint bagId, uint teamId, bool isMob, uint level) from "utils";
 import Critter@ AddNpc(Map@ map, uint16 pid, uint16 x, uint16 y, uint8 dir, array<int> params, uint dialogId, string& script, uint aiPack, uint bagId, uint teamId, uint factionRank, uint factionMode, bool isMob, uint level) from "utils";
 import void     AddScore(Critter@ cr, uint score, uint points) from "utils";
+import int      ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal) from "utils";
 
 import bool  ReloadWeapon(Critter& cr) from "utils";
 import bool  ReloadWeapon(Critter& cr, Item@ weapon, Item@ ammo, bool playAction) from "utils";

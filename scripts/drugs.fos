@@ -17,6 +17,7 @@ import void AffectPoison(Critter& cr, int value) from "poison";
 import void AffectRadiation(Critter& cr, int value) from "radiation";
 import void DropRadiation(Critter& cr) from "radiation";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
+import int  ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal) from "utils";
 
 /*
    #define DRUG_EFFECT_DIV2_WITHDRAWAL    (1)
@@ -25,6 +26,7 @@ import int  GetActualMaxHp(Critter@ cr) from "utils";
 */
 #define DRUG_EFFECT_DIV2_DURATION         (8)
 #define DRUG_EFFECT_MUL2_DURATION         (16)
+#define DRUG_EFFECT_SELF_APPLIED          (32)
 #define RATE_TO_STAGE                     # (rate)          ((rate) & 0xFFFFFF)
 #define RATE_TO_FLAGS                     # (rate)          ((rate) >> 24)
 #define FORM_RATE                         # (stage, flags)((((flags) & 0xFF) << 24) | ((stage) & 0xFFFFFF))
@@ -75,7 +77,7 @@ uint ApplyHealingPowderCooldownBonus(Critter& cr, uint cooldown)
 void SetDrugCooldown(Critter& cr, uint pid)
 {
     if(pid == PID_STIMPAK)
-        _SetTimeout(cr, TO_STIMPAK, ApplyHealingPowderCooldownBonus(cr, REAL_SECOND(10)));
+        _SetTimeout(cr, TO_STIMPAK, ApplyHealingPowderCooldownBonus(cr, REAL_SECOND(15)));
     else if(IsLowPureHealingDrug(uint16(pid)))
         _SetTimeout(cr, TO_MINOR_HEAL, ApplyHealingPowderCooldownBonus(cr, REAL_SECOND(5)));
     else if(pid == PID_ANTIDOTE)
@@ -256,7 +258,7 @@ void UseDrug(Critter& cr, Item& drug)   // Export
         ApplyHealingPowderApPenalty(cr, uint16(pid));
         return;
     } else {
-        SetDrug(cr, pid);
+        SetDrug(cr, pid, true);
         SetDrugCooldown(cr, pid);
         _SubItem(drug, 1);
         ApplyHealingPowderApPenalty(cr, uint16(pid));
@@ -460,7 +462,7 @@ void UseDrugOn(Critter& cr, Critter& onCr, Item& drug)   // Export
     }
 
     onCr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_USE_ON_SUCC);
-    SetDrug(onCr, pid);
+    SetDrug(onCr, pid, false);
     _SubItem(drug, 1);
     ApplyHealingPowderApPenalty(cr, uint16(pid));
 
@@ -530,17 +532,17 @@ void DropDrugEffects(Critter& cr, bool dropAddictions)
             cr.AddictionBase[i] = 0;
 }
 
-void SetDrug(Critter& cr, uint16 drugPid)
+void SetDrug(Critter& cr, uint16 drugPid, bool selfApplied)
 {
     if (drugPid == PID_SUPER_STIMPAK) {
         if (cr.Trait[TRAIT_BERSERKER] == 0) {
-            ApplySuperStimHealing(cr, drugPid);
+            ApplySuperStimHealing(cr, selfApplied);
             return;
         } else {
             if (cr.Param[ST_CURRENT_HP]*100/cr.Param[ST_MAX_LIFE] <= 50) {
                 return;
             }
-            ApplySuperStimHealing(cr, drugPid);
+            ApplySuperStimHealing(cr, selfApplied);
             return;
         }
     }
@@ -560,7 +562,7 @@ void SetDrug(Critter& cr, uint16 drugPid)
     }
 
     // Chem flags
-    uint flags = 0;
+    uint flags = (selfApplied ? DRUG_EFFECT_SELF_APPLIED : 0);
 
     // Make Healing Powder bonus available immediately after use.
     if(drugPid == PID_HEALING_POWDER)
@@ -626,8 +628,9 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
             else if(stat == ST_CURRENT_HP)
             {
                 amount = ApplyPoisonHealingReduction(cr, drugPid, amount);
-                // Don't pre-cap healing to max HP here.
-                // Vampirism reduction should be applied first in changedParam_Hp, and only then capped.
+                if(FLAG(flags, DRUG_EFFECT_SELF_APPLIED))
+                    amount = ApplyVampirismSelfHealingPenalty(cr, amount);
+                // Keep the full intermediate value here and let changedParam_Hp clamp to max HP.
                 cr.StatBase[ST_CURRENT_HP] = MAX(statVal + amount, -9999);
                 if(amount < 0 && cr.Stat[ST_CURRENT_HP] < 0)
                     cr.ToDead(Random(0, 1) == 0 ? ANIM2_DEAD_FRONT : ANIM2_DEAD_BACK, null);
@@ -811,23 +814,28 @@ bool RefreshDrug(Critter& cr, uint16 drugPid, uint& rate)
     return false;
 }
 
-void ApplySuperStimHealing(Critter& cr, uint16 drugPid) {
+void ApplySuperStimHealing(Critter& cr, bool selfApplied) {
     if(cr.IsDead() || cr.Timeout[TO_SUPER_STIMPAK] > 0)
         return;
     _SetTimeout(cr, TO_SUPER_STIMPAK, ApplyHealingPowderCooldownBonus(cr, REAL_SECOND(45)));
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(0), CTE_SUPERSTIMHEALING);
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(2), CTE_SUPERSTIMHEALING);
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(4), CTE_SUPERSTIMHEALING);
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(6), CTE_SUPERSTIMHEALING);
-    cr.AddTimeEvent("cte_SuperStimHealing",GAME_MINUTE(8), CTE_SUPERSTIMHEALING);
+    uint flags = (selfApplied ? DRUG_EFFECT_SELF_APPLIED : 0);
+    cr.AddTimeEvent("cte_SuperStimHealing", GAME_MINUTE(0), CTE_SUPERSTIMHEALING, flags);
+    cr.AddTimeEvent("cte_SuperStimHealing", GAME_MINUTE(2), CTE_SUPERSTIMHEALING, flags);
+    cr.AddTimeEvent("cte_SuperStimHealing", GAME_MINUTE(4), CTE_SUPERSTIMHEALING, flags);
+    cr.AddTimeEvent("cte_SuperStimHealing", GAME_MINUTE(6), CTE_SUPERSTIMHEALING, flags);
+    cr.AddTimeEvent("cte_SuperStimHealing", GAME_MINUTE(8), CTE_SUPERSTIMHEALING, flags);
     return;
 }
 
 uint cte_SuperStimHealing(Critter& cr, int identifier, uint& rate) {
     if(cr.IsDead())
         return 0;
-    int heal = (cr.Stat[ST_HEALING_RATE] * (100 - CLAMP(cr.Stat[ST_POISONING_LEVEL]*4/10, 0, 100))) / 100;
-    int maxHp = GetActualMaxHp(cr);
+    int effectiveHealingRate = (cr.Stat[ST_HEALING_RATE] * (100 - CLAMP(cr.Stat[ST_POISONING_LEVEL]*4/10, 0, 100))) / 100;
+    int heal = 15 + MAX(effectiveHealingRate, 0) / 4;
+    if(FLAG(rate, DRUG_EFFECT_SELF_APPLIED))
+        heal = ApplyVampirismSelfHealingPenalty(cr, heal);
+    if(heal <= 0)
+        return 0;
     cr.StatBase[ST_CURRENT_HP] += heal;
     cr.StatBase[ST_HP_HEAD] += heal;
     cr.StatBase[ST_HP_LA] += heal;

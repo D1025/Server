@@ -1273,15 +1273,32 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         // Aplikacja obrażeń do trafionych celów
         for (int i = 0; i < len_; i++)
         {
-            ApplyDamage(
-                attack,
-                critsHit[i],
-                critsHitBullets[i],
-                (realTarget.Id == critsHit[i].Id) && criticalHit,
-                (!_IsTrueNpc(cr) && !changedTarget) || (_IsTrueNpc(cr) && critsHit[i].Id == target.Id),
-                results,
-                CriticalChance
-            );
+            bool isPrimaryTarget = (realTarget.Id == critsHit[i].Id);
+            bool intentionally = ((!_IsTrueNpc(cr) && !changedTarget) || (_IsTrueNpc(cr) && critsHit[i].Id == target.Id));
+            bool burstCritical = isPrimaryTarget && criticalHit;
+
+            if(hasBlastArea)
+            {
+                uint16 originalHx = attack.Hx;
+                uint16 originalHy = attack.Hy;
+                CommenceExplosion(attack, map, critsHit[i].HexX, critsHit[i].HexY, critsHit[i], weapPid, burstCritical, critsHit[i].Id, false, results, isExplodeRocket);
+                attack.Hx = originalHx;
+                attack.Hy = originalHy;
+                if(critsHitBullets[i] > 1)
+                    ApplyDamage(attack, critsHit[i], critsHitBullets[i] - 1, false, intentionally, results, CriticalChance);
+            }
+            else
+            {
+                ApplyDamage(
+                    attack,
+                    critsHit[i],
+                    critsHitBullets[i],
+                    burstCritical,
+                    intentionally,
+                    results,
+                    CriticalChance
+                );
+            }
         }
 
         if (!changedTarget && !attack.TargetHit)
@@ -3557,9 +3574,7 @@ void ApplyVampirismLifeSteal(Critter@ attacker, Critter@ target, int dealtDamage
     if(attacker.Id == target.Id || !attacker.IsLife() || attacker.Trait[TRAIT_VAMPIRISM] == 0)
         return;
 
-    // changedParam_Hp applies global 50% heal reduction for vampirism,
-    // so apply 50% raw to get effective 25% life steal from final damage dealt.
-    int vampirismHeal = dealtDamage / 2;
+    int vampirismHeal = ApplyVampirismSelfHealingPenalty(attacker, dealtDamage);
     if(vampirismHeal <= 0)
         return;
 

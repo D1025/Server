@@ -242,8 +242,12 @@ uint WeaponReloadCount(Item@ weapon)
         return 0;
 
     uint reloadCount = weapon.Proto.Weapon_ReloadCount;
+    uint protoMaxAmmo = weapon.Proto.Weapon_MaxAmmoCount;
     if(reloadCount == 0)
-        reloadCount = weapon.Proto.Weapon_MaxAmmoCount;
+        reloadCount = protoMaxAmmo;
+    // Weapon_ReloadCount is bound as uint8, so large magazines wrap in script.
+    else if(protoMaxAmmo > 255 && reloadCount != protoMaxAmmo)
+        reloadCount = protoMaxAmmo;
 
     uint maxAmmo = UpgradeWeaponMaxAmmo(weapon);
     if(reloadCount > maxAmmo)
@@ -3768,7 +3772,13 @@ void SetDeterioration(Item& item)
 
 int GetActualMaxHp(Critter@ cr) {
     int maxHp = cr.StatBase[ST_MAX_LIFE] + cr.StatBase[ST_MAX_LIFE_EXT] + CLAMP(cr.StatBase[ST_LEVEL], 0, 30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2;
-    if(valid(cr) && cr.Trait[TRAIT_VAMPIRISM] != 0)
-        maxHp = (maxHp * 75) / 100;
     return MAX(maxHp, 1);
+}
+
+int ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal)
+{
+    if(heal <= 0 || !valid(cr) || cr.Trait[TRAIT_VAMPIRISM] == 0)
+        return heal;
+
+    return (heal * 20) / 100;
 }

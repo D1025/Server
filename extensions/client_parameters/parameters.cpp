@@ -1,10 +1,6 @@
 #define INCLUDE_GLOBAL_VARIABLES
 #include "../fonline2238.h"
 
-#ifndef TRAIT_VAMPIRISM
-#define TRAIT_VAMPIRISM (560)
-#endif
-
 #ifndef UPGRADE_WEAPON_PERK_FAST_RELOAD
 #define UPGRADE_WEAPON_PERK_FAST_RELOAD (1003)
 #endif
@@ -242,7 +238,6 @@ EXPORT int getParam_Hp(CritterMutual& cr, uint)
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_MAX_LIFE] + cr.Params[ST_MAX_LIFE_EXT] + cr.Params[ST_STRENGTH] + cr.Params[ST_ENDURANCE] * 2;
-	if(cr.Params[TRAIT_VAMPIRISM]) val = val * 75 / 100;
 	return CLAMP(val, 1, 9999);
 }
 

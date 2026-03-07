@@ -15,6 +15,7 @@
 
 import bool TryRepairItem(Critter& cr, Item& item) from "repair";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
+import int  ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal) from "utils";
 
 const uint SKILL_WEARINESS_MESSAGE_COOLDOWN = 1000;
 dictionary SkillWearinessMessageTick;
@@ -132,6 +133,8 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
 
     heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL]*4/10,0,100)))) / 100;
+    if(is_self)
+        heal = ApplyVampirismSelfHealingPenalty(targetCr, heal);
     int curHp = targetCr.Stat[ST_CURRENT_HP];
     targetCr.StatBase[ST_HP_HEAD] += heal / 4;
     targetCr.StatBase[ST_HP_LA] += heal / 4;
@@ -150,7 +153,8 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self)
         targetCr.Say(SAY_NETMSG, "Hit Points +" + realHeal);
 
-    uint firstAidCooldown = REAL_SECOND((100-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) );
+    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 3 * intelligence : 0);
+    uint firstAidCooldown = REAL_SECOND(MAX(1, 100 - intelligence - medicBonus - (toolBonus > 0 ? 5 : 0)));
     _SetTimeout(cr, TO_SK_FIRST_AID, ApplyHealingPowderCooldownBonus(cr, firstAidCooldown));
 
     cr.StatBase[ST_EXPERIENCE] += realHeal * 3*(GetGvar(GVAR_experience_multipler));
@@ -226,6 +230,8 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
     heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL]*4/10,0,100)))) / 100;
+    if(is_self)
+        heal = ApplyVampirismSelfHealingPenalty(targetCr, heal);
 
     int uninjured = 0;
     int injured = 0;
@@ -255,7 +261,8 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
 	//druto
-    uint doctorCooldown = REAL_SECOND((90-intelligence)/(cr.Perk[PE_MEDIC] > 0 ? 2 : 1) - (toolBonus > 0 ? 5 : 0) );
+    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 3 * intelligence : 0);
+    uint doctorCooldown = REAL_SECOND(MAX(1, 90 - intelligence - medicBonus - (toolBonus > 0 ? 5 : 0)));
 	_SetTimeout(cr, TO_SK_DOCTOR, ApplyHealingPowderCooldownBonus(cr, doctorCooldown));
 
     if(uninjured > 0)

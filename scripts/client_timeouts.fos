@@ -32,7 +32,7 @@
 
 #define TO_SECTION         "Timeouts"
 #define TO_LIST_FIRST      (1)
-#define TO_LIST_LAST       (30)
+#define TO_LIST_LAST       (31)
 #define TO_LIST_SIZE       (TO_LIST_LAST + 1)
 
 // temp
@@ -577,6 +577,10 @@ void TimeoutsDraw() // client_main@render_iface
         if(z == 30 && critter.Timeout[TO_KILO_OF_COCAINE] > 0)
         {
             y = screen_timeouts_draw(critter, TO_KILO_OF_COCAINE, "Cocaine", x, y, z, TimeoutsCustom[z].CustomMode);
+        }
+        if(z == 31 && critter.Timeout[TO_ANTIDOTE] > 0)
+        {
+            y = screen_timeouts_draw(critter, TO_ANTIDOTE, "Antidote", x, y, z, TimeoutsCustom[z].CustomMode);
         }
     }
 }
