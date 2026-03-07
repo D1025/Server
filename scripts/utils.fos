@@ -3780,5 +3780,5 @@ int ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal)
     if(heal <= 0 || !valid(cr) || cr.Trait[TRAIT_VAMPIRISM] == 0)
         return heal;
 
-    return (heal * 20) / 100;
+    return (heal * 50) / 100;
 }

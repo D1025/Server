@@ -2170,7 +2170,7 @@
 {105592}{}{Below 50% HP, unleash a savage boost: +2 Action Points and 10% movement speed, but no Super Stimpaks. Above 50% HP, the rage fades, lowering Intelligence to 1. These shifts don’t impact perk selection. Embrace the fury, pay the price.}
 # TRAIT_VAMPIRISM
 {105601}{}{Vampirism}
-{105602}{}{Healing from all sources is reduced by 50%. Maximum Hit Points are reduced by 25%. You heal for 25% of final damage dealt.}
+{105602}{}{Your self-healing from any source is reduced to 50% effectiveness. Healing received from other characters is unaffected. You heal for 20% of final damage dealt.}
 # TRAIT_CHEM_RELIANT
 {105611}{}{Chem Reliant}
 {105612}{}{You don't care how much drugs use. You want even more of them!  If you also have Chem Resistant your drug limit is only 4.}
