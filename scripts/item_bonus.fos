@@ -100,6 +100,9 @@ void ResetUpgradeSlots(Item@ it, uint slotsCount)
 {
     if(valid(it))
     {
+        if(UpgradeItemIsHelmet(it))
+            slotsCount = 0;
+
         uint baseSlots = slotsCount;
         int extraSlots = UpgradeExtraSlotsFromProto(it.Proto);
         if(extraSlots > 0)
@@ -257,11 +260,10 @@ bool TryApplyPerk(Item@ it, int perkType, int perkValue, uint slotCost)
     if(!valid(it) || perkType == 0 || slotCost == 0)
         return false;
 
-    bool isWeaponUpgrade = IsWeaponUpgradePerk(perkType);
-
-    // Keep 3-perk cap for armor family only.
-    if(!isWeaponUpgrade && UpgradePerksCount(it) >= UPGRADE_MAX_PERKS)
+    if(UpgradeItemIsHelmet(it))
         return false;
+
+    bool isWeaponUpgrade = IsWeaponUpgradePerk(perkType);
 
     if(UpgradeFreeSlots(it) < int(slotCost))
         return false;
@@ -293,6 +295,46 @@ bool TryApplyPerk(Item@ it, int perkType, int perkValue, uint slotCost)
     SetSlotValue(it, uint(perkSlot), perkValue);
     it.Update();
     return true;
+}
+
+bool TryFillUpgradeSlotsRandomly(Item@ it, bool weapon, bool isCrafting = false)
+{
+    if(!valid(it))
+        return false;
+
+    bool appliedAny = false;
+    uint safety = 0;
+    while(UpgradeFreeSlots(it) > 0 && safety < 300)
+    {
+        bool applied = weapon ? TryApplyRandomWeaponPerkUniform(it, isCrafting) : TryApplyRandomArmorPerkUniform(it);
+        if(!applied)
+            break;
+
+        appliedAny = true;
+        safety++;
+    }
+
+    return appliedAny;
+}
+
+bool TryFillUpgradeSlotsWeighted(Item@ it, bool weapon, bool isCrafting = false)
+{
+    if(!valid(it))
+        return false;
+
+    bool appliedAny = false;
+    uint safety = 0;
+    while(UpgradeFreeSlots(it) > 0 && safety < 300)
+    {
+        bool applied = weapon ? TryApplyRandomWeaponPerkWeighted(it, isCrafting) : TryApplyRandomArmorPerkWeighted(it);
+        if(!applied)
+            break;
+
+        appliedAny = true;
+        safety++;
+    }
+
+    return appliedAny;
 }
 
 int RollArmorBonusValue(int bonusType)
@@ -418,6 +460,23 @@ bool TryApplyRandomArmorPerk(Item@ it)
     return TryApplyPerk(it, perkType, value, cost);
 }
 
+uint UpgradePerkRollWeight(uint cost)
+{
+    switch(cost)
+    {
+    case 1:
+        return 6;
+    case 2:
+        return 3;
+    case 3:
+        return 1;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
 int PickUniformArmorPerkType(Item@ it)
 {
     int[]@ pool = @ArmorPerkPool;
@@ -448,9 +507,67 @@ int PickUniformArmorPerkType(Item@ it)
     return candidates[Random(0, candidates.length() - 1)];
 }
 
+int PickWeightedArmorPerkType(Item@ it)
+{
+    int[]@ pool = @ArmorPerkPool;
+    if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
+        @pool = @HelmetPerkPool;
+
+    if(pool.length() == 0)
+        return 0;
+
+    int freeSlots = UpgradeFreeSlots(it);
+    if(freeSlots <= 0)
+        return 0;
+
+    int[] candidates;
+    uint totalWeight = 0;
+    for(uint i = 0; i < pool.length(); i++)
+    {
+        int bonusType = pool[i];
+        uint cost = ArmorPerkCost(bonusType);
+        if(cost == 0 || int(cost) > freeSlots)
+            continue;
+
+        uint weight = UpgradePerkRollWeight(cost);
+        if(weight == 0)
+            continue;
+
+        candidates.insertLast(bonusType);
+        totalWeight += weight;
+    }
+
+    if(candidates.length() == 0 || totalWeight == 0)
+        return 0;
+
+    uint roll = uint(Random(1, int(totalWeight)));
+    for(uint i = 0; i < candidates.length(); i++)
+    {
+        uint weight = UpgradePerkRollWeight(ArmorPerkCost(candidates[i]));
+        if(roll <= weight)
+            return candidates[i];
+        roll -= weight;
+    }
+
+    return candidates[candidates.length() - 1];
+}
+
 bool TryApplyRandomArmorPerkUniform(Item@ it)
 {
     int perkType = PickUniformArmorPerkType(it);
+    if(perkType == 0)
+        return false;
+
+    uint cost = ArmorPerkCost(perkType);
+    if(cost == 0)
+        return false;
+
+    return TryApplyPerk(it, perkType, RollArmorBonusValue(perkType), cost);
+}
+
+bool TryApplyRandomArmorPerkWeighted(Item@ it)
+{
+    int perkType = PickWeightedArmorPerkType(it);
     if(perkType == 0)
         return false;
 
@@ -583,9 +700,64 @@ int PickUniformWeaponPerkType(Item@ it, uint forcedSlotCost = 0)
     return candidates[Random(0, candidates.length() - 1)];
 }
 
+int PickWeightedWeaponPerkType(Item@ it, uint forcedSlotCost = 0)
+{
+    if(!valid(it) || WeaponPerkPool.length() == 0)
+        return 0;
+
+    int freeSlots = UpgradeFreeSlots(it);
+    if(freeSlots <= 0)
+        return 0;
+
+    int[] candidates;
+    uint totalWeight = 0;
+    for(uint i = 0; i < WeaponPerkPool.length(); i++)
+    {
+        int perkType = WeaponPerkPool[i];
+        uint cost = (forcedSlotCost > 0 ? forcedSlotCost : WeaponUpgradePerkCost(perkType));
+        if(cost == 0 || int(cost) > freeSlots)
+            continue;
+
+        uint weight = UpgradePerkRollWeight(cost);
+        if(weight == 0)
+            continue;
+
+        candidates.insertLast(perkType);
+        totalWeight += weight;
+    }
+
+    if(candidates.length() == 0 || totalWeight == 0)
+        return 0;
+
+    uint roll = uint(Random(1, int(totalWeight)));
+    for(uint i = 0; i < candidates.length(); i++)
+    {
+        uint cost = (forcedSlotCost > 0 ? forcedSlotCost : WeaponUpgradePerkCost(candidates[i]));
+        uint weight = UpgradePerkRollWeight(cost);
+        if(roll <= weight)
+            return candidates[i];
+        roll -= weight;
+    }
+
+    return candidates[candidates.length() - 1];
+}
+
 bool TryApplyRandomWeaponPerkUniform(Item@ it, bool isCrafting = false, uint forcedSlotCost = 0)
 {
     int perkType = PickUniformWeaponPerkType(it, forcedSlotCost);
+    if(perkType == 0)
+        return false;
+
+    uint cost = (forcedSlotCost > 0 ? forcedSlotCost : WeaponUpgradePerkCost(perkType));
+    if(cost == 0)
+        return false;
+
+    return TryApplyPerk(it, perkType, WeaponUpgradePerkBaseValue(perkType), cost);
+}
+
+bool TryApplyRandomWeaponPerkWeighted(Item@ it, bool isCrafting = false, uint forcedSlotCost = 0)
+{
+    int perkType = PickWeightedWeaponPerkType(it, forcedSlotCost);
     if(perkType == 0)
         return false;
 
@@ -653,7 +825,7 @@ void TryRollPerksToCap(Item@ it, bool weapon, bool isCrafting = false, bool forc
         uint forcedSlotCost = (forceSingleSlotWeaponPerks ? 1 : 0);
         while(UpgradePerksCount(it) < targetPerks && safety < 200)
         {
-            if(!TryApplyRandomWeaponPerk(it, isCrafting, forcedSlotCost))
+            if(!TryApplyRandomWeaponPerkUniform(it, isCrafting, forcedSlotCost))
                 break;
             safety++;
         }
@@ -664,7 +836,7 @@ void TryRollPerksToCap(Item@ it, bool weapon, bool isCrafting = false, bool forc
         int targetPerks = MIN(UPGRADE_MAX_PERKS, quality);
         while(UpgradePerksCount(it) < targetPerks && safety < 100)
         {
-            if(!TryApplyRandomArmorPerk(it))
+            if(!TryApplyRandomArmorPerkUniform(it))
                 break;
             safety++;
         }
@@ -680,7 +852,23 @@ void TryRollPerksToCount(Item@ it, bool weapon, uint targetPerks, bool isCraftin
     uint safety = 0;
     while(UpgradePerksCount(it) < int(targetPerks) && safety < 300)
     {
-        bool applied = weapon ? TryApplyRandomWeaponPerk(it, isCrafting) : TryApplyRandomArmorPerk(it);
+        bool applied = weapon ? TryApplyRandomWeaponPerkUniform(it, isCrafting) : TryApplyRandomArmorPerkUniform(it);
+        if(!applied)
+            break;
+        safety++;
+    }
+}
+
+void TryRollPerksToCountWeighted(Item@ it, bool weapon, uint targetPerks, bool isCrafting = false)
+{
+    if(!valid(it))
+        return;
+
+    targetPerks = MIN(targetPerks, UPGRADE_MAX_SLOTS);
+    uint safety = 0;
+    while(UpgradePerksCount(it) < int(targetPerks) && safety < 300)
+    {
+        bool applied = weapon ? TryApplyRandomWeaponPerkWeighted(it, isCrafting) : TryApplyRandomArmorPerkWeighted(it);
         if(!applied)
             break;
         safety++;
@@ -703,13 +891,33 @@ void AddBonusOrNot(Item@ it)
         uint quality = QualityByRoll_Default(Random(0, 99));
         quality = EnsureWeaponBaseQuality(quality);
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, true);
+        TryFillUpgradeSlotsRandomly(it, true);
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
     {
         uint quality = QualityByRoll_Default(Random(0, 99));
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, false);
+        TryFillUpgradeSlotsRandomly(it, false);
+    }
+}
+
+void AddBonusOrNotWeighted(Item@ it)
+{
+    if(!valid(it))
+        return;
+
+    if(it.GetType() == ITEM_TYPE_WEAPON && !it.IsStackable())
+    {
+        uint quality = QualityByRoll_Default(Random(0, 99));
+        quality = EnsureWeaponBaseQuality(quality);
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, true);
+    }
+    else if(it.GetType() == ITEM_TYPE_ARMOR)
+    {
+        uint quality = QualityByRoll_Default(Random(0, 99));
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, false);
     }
 }
 
@@ -723,13 +931,33 @@ void AddSpecialBonusLow(Item@ it)
         uint quality = QualityByRoll_LowSpecial(Random(0, 99));
         quality = EnsureWeaponBaseQuality(quality);
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, true);
+        TryFillUpgradeSlotsRandomly(it, true);
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
     {
         uint quality = QualityByRoll_LowSpecial(Random(0, 99));
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, false);
+        TryFillUpgradeSlotsRandomly(it, false);
+    }
+}
+
+void AddSpecialBonusLowWeighted(Item@ it)
+{
+    if(!valid(it))
+        return;
+
+    if(it.GetType() == ITEM_TYPE_WEAPON && !it.IsStackable())
+    {
+        uint quality = QualityByRoll_LowSpecial(Random(0, 99));
+        quality = EnsureWeaponBaseQuality(quality);
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, true);
+    }
+    else if(it.GetType() == ITEM_TYPE_ARMOR)
+    {
+        uint quality = QualityByRoll_LowSpecial(Random(0, 99));
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, false);
     }
 }
 
@@ -743,13 +971,33 @@ void AddSpecialBonus(Item@ it)
         uint quality = 4 + uint(Random(0, 1));
         quality = EnsureWeaponBaseQuality(quality);
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, true);
+        TryFillUpgradeSlotsRandomly(it, true);
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
     {
         uint quality = 4 + uint(Random(0, 1));
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, false);
+        TryFillUpgradeSlotsRandomly(it, false);
+    }
+}
+
+void AddSpecialBonusWeighted(Item@ it)
+{
+    if(!valid(it))
+        return;
+
+    if(it.GetType() == ITEM_TYPE_WEAPON && !it.IsStackable())
+    {
+        uint quality = 4 + uint(Random(0, 1));
+        quality = EnsureWeaponBaseQuality(quality);
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, true);
+    }
+    else if(it.GetType() == ITEM_TYPE_ARMOR)
+    {
+        uint quality = 4 + uint(Random(0, 1));
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, false);
     }
 }
 
@@ -764,7 +1012,7 @@ void AddBonuses(Item@ it, string@ crafter)
         quality = EnsureWeaponBaseQuality(quality);
         ResetUpgradeSlots(it, quality);
         uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
-        TryRollPerksToCount(it, true, craftedPerks, true);
+        TryRollPerksToCountWeighted(it, true, craftedPerks, true);
         SetLexem(it, "$crafter", crafter);
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
@@ -772,7 +1020,7 @@ void AddBonuses(Item@ it, string@ crafter)
         uint quality = QualityByRoll_Crafted(Random(0, 99));
         ResetUpgradeSlots(it, quality);
         uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
-        TryRollPerksToCount(it, false, craftedPerks);
+        TryRollPerksToCountWeighted(it, false, craftedPerks);
         SetLexem(it, "$crafter", crafter);
     }
 }
@@ -883,13 +1131,13 @@ void AddBonuses(Item@ it, int magic)
     if(it.GetType() == ITEM_TYPE_WEAPON && !it.IsStackable())
     {
         ResetUpgradeSlots(it, quality);
-        // For cheat-spawned items respect real perk slot costs (including 2/3-slot perks).
-        TryRollPerksToCap(it, true, true, false);
+        // Cheat-spawned items should consume the full slot budget and bias toward cheaper perks.
+        TryFillUpgradeSlotsWeighted(it, true, true);
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
     {
         ResetUpgradeSlots(it, quality);
-        TryRollPerksToCap(it, false);
+        TryFillUpgradeSlotsWeighted(it, false);
     }
 }
 
@@ -950,6 +1198,8 @@ bool ApplyWeaponUpgradePerk(Item@ it, int perkType)
 bool ApplyArmorUpgradePerk(Item@ it, int perkType, int value)
 {
     if(!valid(it) || it.GetType() != ITEM_TYPE_ARMOR)
+        return false;
+    if(UpgradeItemIsHelmet(it))
         return false;
     if(!IsArmorBonusType(perkType))
         return false;

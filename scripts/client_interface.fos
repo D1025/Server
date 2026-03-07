@@ -1784,6 +1784,87 @@ string GetArmorProtoPerkText(int perk)
     return "";
 }
 
+string GetArmorUpgradePerkText(int type)
+{
+    switch(type)
+    {
+    case BONUS_ARMOR_NORMAL_DT:
+        return "Normal DT";
+    case BONUS_ARMOR_LASER_DT:
+        return "Laser DT";
+    case BONUS_ARMOR_FIRE_DT:
+        return "Fire DT";
+    case BONUS_ARMOR_PLASMA_DT:
+        return "Plasma DT";
+    case BONUS_ARMOR_EXPLODE_DT:
+        return "Explode DT";
+    case BONUS_ARMOR_NORMAL_DR:
+        return "Normal DR";
+    case BONUS_ARMOR_LASER_DR:
+        return "Laser DR";
+    case BONUS_ARMOR_FIRE_DR:
+        return "Fire DR";
+    case BONUS_ARMOR_PLASMA_DR:
+        return "Plasma DR";
+    case BONUS_ARMOR_EXPLODE_DR:
+        return "Explode DR";
+    case BONUS_ARMOR_CRIT_CHANCE:
+        return "Crit Chance";
+    case BONUS_ARMOR_CRIT_POWER:
+        return "Crit Power";
+    case BONUS_ARMOR_MAX_AP:
+        return "Action Points";
+    case BONUS_ARMOR_RAD_RES:
+        return "Rad Resist";
+    case BONUS_ARMOR_POISON_RES:
+        return "Poison Resist";
+    case BONUS_ARMOR_STRENGTH:
+        return "Strength";
+    case BONUS_ARMOR_PERCEPTION:
+        return "Perception";
+    case BONUS_ARMOR_ENDURANCE:
+        return "Endurance";
+    case BONUS_ARMOR_CHARISMA:
+        return "Charisma";
+    case BONUS_ARMOR_INTELLIGENCE:
+        return "Intelligence";
+    case BONUS_ARMOR_AGILITY:
+        return "Agility";
+    case BONUS_ARMOR_LUCK:
+        return "Luck";
+    case BONUS_ARMOR_CARRY_WEIGHT:
+        return "Carry Weight";
+    case BONUS_ARMOR_HEALING_RATE:
+        return "Healing Rate";
+    case BONUS_ARMOR_ALL_DR:
+        return "All DR";
+    default:
+        return "";
+    }
+
+    return "";
+}
+
+string GetArmorUpgradePerkValueText(int type, int value)
+{
+    string signedValue = (value > 0 ? "+" : "") + value;
+
+    switch(type)
+    {
+    case BONUS_ARMOR_NORMAL_DR:
+    case BONUS_ARMOR_LASER_DR:
+    case BONUS_ARMOR_FIRE_DR:
+    case BONUS_ARMOR_PLASMA_DR:
+    case BONUS_ARMOR_EXPLODE_DR:
+    case BONUS_ARMOR_ALL_DR:
+        return " " + signedValue + "%";
+    default:
+        return " " + signedValue;
+    }
+
+    return "";
+}
+
 string showItemBonus(ItemCl& it, int type, int value, int stacks)
 {
 string result="";
@@ -1792,31 +1873,42 @@ if(it.GetType() == ITEM_TYPE_ARMOR)
 {
 	switch(type)
 	{
-		case 100: {result="\nNormal DT +" + value + "";break;}
-		case 101: {result="\nLaser DT +" + value + "";break;}
-		case 102: {result="\nFire DT +" + value + "";break;}
-		case 103: {result="\nPlasma DT +" + value + "";break;}
-		case 104: {result="\nExplode DT +" + value + "";break;}
-		case 105: {result="\nNormal DR +" + value + "%";break;}
-		case 106: {result="\nLaser DR +" + value + "%";break;}
-		case 107: {result="\nFire DR +" + value + "%";break;}
-		case 108: {result="\nPlasma DR +" + value + "%";break;}
-		case 109: {result="\nExplode DR +" + value + "%";break;}
-		case 110: {result="\nCrit Chance " + value + "";break;}
-		case 111: {result="\nCrit Power " + value + "";break;}
-		case 112: {result="\nAction Points +" + value + "";break;}
-		case 113: {result="\nRad Resist +" + value + "";break;}
-		case 114: {result="\nPoison Resist +" + value + "";break;}
-		case 115: {result="\nStrength +" + value + "";break;}
-		case 116: {result="\nPerception +" + value + "";break;}
-		case 117: {result="\nEndurance +" + value + "";break;}
-		case 118: {result="\nCharisma +" + value + "";break;}
-		case 119: {result="\nIntelligence +" + value + "";break;}
-		case 120: {result="\nAgility +" + value + "";break;}
-		case 121: {result="\nLuck +" + value + "";break;}
-		case 122: {result="\nCarry Weight +" + value + "";break;}
-		case 123: {result="\nHealing Rate +" + value + "";break;}
-		case 124: {result="\nAll DR +" + value + "%";break;}
+		case BONUS_ARMOR_NORMAL_DT:
+		case BONUS_ARMOR_LASER_DT:
+		case BONUS_ARMOR_FIRE_DT:
+		case BONUS_ARMOR_PLASMA_DT:
+		case BONUS_ARMOR_EXPLODE_DT:
+		case BONUS_ARMOR_NORMAL_DR:
+		case BONUS_ARMOR_LASER_DR:
+		case BONUS_ARMOR_FIRE_DR:
+		case BONUS_ARMOR_PLASMA_DR:
+		case BONUS_ARMOR_EXPLODE_DR:
+		case BONUS_ARMOR_CRIT_CHANCE:
+		case BONUS_ARMOR_CRIT_POWER:
+		case BONUS_ARMOR_MAX_AP:
+		case BONUS_ARMOR_RAD_RES:
+		case BONUS_ARMOR_POISON_RES:
+		case BONUS_ARMOR_STRENGTH:
+		case BONUS_ARMOR_PERCEPTION:
+		case BONUS_ARMOR_ENDURANCE:
+		case BONUS_ARMOR_CHARISMA:
+		case BONUS_ARMOR_INTELLIGENCE:
+		case BONUS_ARMOR_AGILITY:
+		case BONUS_ARMOR_LUCK:
+		case BONUS_ARMOR_CARRY_WEIGHT:
+		case BONUS_ARMOR_HEALING_RATE:
+		case BONUS_ARMOR_ALL_DR:
+		{
+			string txt = GetArmorUpgradePerkText(type);
+			if(txt.length() > 0)
+			{
+				result = "\n|" + AW_COLOR_WEAPON_PERK + " Perk: " + txt + GetArmorUpgradePerkValueText(type, value);
+				if(stacks > 1)
+					result += " x" + stacks;
+				result += "|" + COLOR_TEXT + " ";
+			}
+			break;
+		}
 		default: break;
 		}
 }
@@ -1862,6 +1954,9 @@ return result;
 
 string showItemBonusesStacked(ItemCl& it)
 {
+    if(UpgradeItemIsHelmet(it))
+        return "";
+
     int[] mergedTypes;
     int[] mergedValues;
     int[] mergedStacks;
@@ -1869,7 +1964,7 @@ string showItemBonusesStacked(ItemCl& it)
     for(uint i = 0; i < UPGRADE_MAX_SLOTS; i++)
     {
         int type = UpgradeSlotType(it, i);
-        if(type == 0)
+        if(type == 0 || UpgradeIsSlotMarker(type))
             continue;
         int value = UpgradeSlotValue(it, i);
 
@@ -1907,12 +2002,15 @@ string showPrefix(ItemCl@ it)
 		if(it.BrokenFlags == BI_ETERNAL)
 			result += "|" + COLOR_RED + " Broken " + "|" + COLOR_TEXT + " ";
 
-        int quality = UpgradeBaseQualitySlots(it);
-		if(quality >= 5)	result +="|" + COLOR_SAND + " Unique " + "|" + COLOR_TEXT + " ";
-		else if(quality == 4)	result +="|" + COLOR_GREEN_RED + " Advanced " + "|" + COLOR_TEXT + " ";
-		else if(quality == 3)	result +="|" + COLOR_WHITE + " Superior " + "|" + COLOR_TEXT + " ";
-		else if(quality == 2)	result +="|" + COLOR_LGRAY + " Improved " + "|" + COLOR_TEXT + " ";
-		else if(quality == 1) result +="|" + COLOR_GRAY + " Quality " + "|" + COLOR_TEXT + " ";
+        if(!UpgradeItemIsHelmet(it))
+        {
+            int quality = UpgradeBaseQualitySlots(it);
+		    if(quality >= 5)	result +="|" + COLOR_SAND + " Unique " + "|" + COLOR_TEXT + " ";
+		    else if(quality == 4)	result +="|" + COLOR_GREEN_RED + " Advanced " + "|" + COLOR_TEXT + " ";
+		    else if(quality == 3)	result +="|" + COLOR_WHITE + " Superior " + "|" + COLOR_TEXT + " ";
+		    else if(quality == 2)	result +="|" + COLOR_LGRAY + " Improved " + "|" + COLOR_TEXT + " ";
+		    else if(quality == 1) result +="|" + COLOR_GRAY + " Quality " + "|" + COLOR_TEXT + " ";
+        }
 	}
 	
 	return result;

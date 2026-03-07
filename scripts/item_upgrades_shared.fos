@@ -103,9 +103,19 @@ int UpgradeSlotValue(UpgradeItemMutual@ item, uint slot)
     return 0;
 }
 
+bool UpgradeProtoIsHelmet(const ProtoItem@ proto)
+{
+    return @proto != null && proto.Type == ITEM_TYPE_ARMOR && proto.Slot == SLOT_HEAD;
+}
+
+bool UpgradeItemIsHelmet(UpgradeItemMutual@ item)
+{
+    return @item != null && UpgradeProtoIsHelmet(item.Proto);
+}
+
 int UpgradeBonusValue(UpgradeItemMutual@ item, int bonusType)
 {
-    if(@item == null || bonusType == 0)
+    if(@item == null || bonusType == 0 || UpgradeItemIsHelmet(item))
         return 0;
 
     int bonus = 0;
@@ -177,6 +187,9 @@ int UpgradeExtraSlotsFromProto(const ProtoItem@ proto)
     if(@proto == null)
         return 0;
 
+    if(UpgradeProtoIsHelmet(proto))
+        return 0;
+
     if(proto.Type == ITEM_TYPE_WEAPON && WeaponHasProtoPerk(proto, WEAPON_PERK_EXTRA_UPGRADE_SLOTS))
         return 2;
 
@@ -188,7 +201,7 @@ int UpgradeExtraSlotsFromProto(const ProtoItem@ proto)
 
 int UpgradeQualitySlots(UpgradeItemMutual@ item)
 {
-    if(@item == null)
+    if(@item == null || UpgradeItemIsHelmet(item))
         return 0;
 
     int count = 0;
@@ -216,7 +229,7 @@ int UpgradeBaseQualitySlots(UpgradeItemMutual@ item)
 
 int UpgradeUsedSlots(UpgradeItemMutual@ item)
 {
-    if(@item == null)
+    if(@item == null || UpgradeItemIsHelmet(item))
         return 0;
 
     int count = 0;
@@ -237,7 +250,7 @@ int UpgradeFreeSlots(UpgradeItemMutual@ item)
 
 int UpgradePerksCount(UpgradeItemMutual@ item)
 {
-    if(@item == null)
+    if(@item == null || UpgradeItemIsHelmet(item))
         return 0;
 
     int count = 0;
@@ -252,7 +265,7 @@ int UpgradePerksCount(UpgradeItemMutual@ item)
 
 int UpgradePerkStacks(UpgradeItemMutual@ item, int perkType)
 {
-    if(@item == null || perkType == 0)
+    if(@item == null || perkType == 0 || UpgradeItemIsHelmet(item))
         return 0;
 
     int count = 0;

@@ -14,8 +14,6 @@
 #include "backend_h.fos"
 
 import bool TryRepairItem(Critter& cr, Item& item) from "repair";
-import int  GetActualMaxHp(Critter@ cr) from "utils";
-import int  ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal) from "utils";
 
 const uint SKILL_WEARINESS_MESSAGE_COOLDOWN = 1000;
 dictionary SkillWearinessMessageTick;

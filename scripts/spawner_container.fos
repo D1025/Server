@@ -16,9 +16,9 @@
 #define SPAWN_INTERVAL    # (_time)  REAL_MINUTE(_time)   // debug
 
 import bool LockerClose(Item& item) from "lockers";
-import void AddBonusOrNot(Item@ it) from "item_bonus";
-import void AddSpecialBonus(Item@ it) from "item_bonus";
-import void AddSpecialBonusLow(Item@ it) from "item_bonus";
+import void AddBonusOrNotWeighted(Item@ it) from "item_bonus";
+import void AddSpecialBonusWeighted(Item@ it) from "item_bonus";
+import void AddSpecialBonusLowWeighted(Item@ it) from "item_bonus";
 import void ClearContainer(Item@container) from "utils";
 import bool IsLockableContainer(uint pid) from "lockers";
 import void SetDeterioration(Item& item) from "utils";
@@ -195,13 +195,13 @@ class ItemSpawner : IItemSpawner
 				Item@ it = item.AddItem(spawnitem.Pid, Random(spawnitem.Min, spawnitem.Max), 0);
 			
 				if(Bonus)
-					AddSpecialBonus(it);
+					AddSpecialBonusWeighted(it);
 					
 				else if(BonusLow)
-					AddSpecialBonusLow(it);
+					AddSpecialBonusLowWeighted(it);
 					
 				else if(BonusOrNot)
-					AddBonusOrNot(it);
+					AddBonusOrNotWeighted(it);
 			
 				if(item.Val4 == FAT_TOWN_CONTAINER || item.Val4 == FAT_PROTECTED_TOWN_CONTAINER || item.Val4 == FAT_ENCOUNTER_STATIC_CONTAINER)
 					SetDeterioration(it);
@@ -218,13 +218,13 @@ class ItemSpawner : IItemSpawner
 						Item@ it = item.AddItem(spawnitem.Pid, Random(spawnitem.Min, spawnitem.Max), 0);
 					
 						if(Bonus)
-							AddSpecialBonus(it);
+							AddSpecialBonusWeighted(it);
 						else
 						if(BonusLow)
-							AddSpecialBonusLow(it);
+							AddSpecialBonusLowWeighted(it);
 						else
 						if(BonusOrNot)
-							AddBonusOrNot(it);
+							AddBonusOrNotWeighted(it);
 
 						if(item.Val4 == FAT_TOWN_CONTAINER || item.Val4 == FAT_PROTECTED_TOWN_CONTAINER || item.Val4 == FAT_ENCOUNTER_STATIC_CONTAINER)
 							SetDeterioration(it);

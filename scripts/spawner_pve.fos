@@ -13,7 +13,7 @@
 #include "npc_roles_h.fos"
 
 import bool LockerClose(Item& item) from "lockers";
-import void AddSpecialBonus(Item@ it) from "item_bonus";
+import void AddSpecialBonusWeighted(Item@ it) from "item_bonus";
 
 void init_high(Item& item, bool firstTime)
 {
@@ -398,7 +398,7 @@ uint e_SpawnLow(array<uint>@ values)
 void SpawnBuffItem(Item& container, uint16 pid)
 {
 	Item@ it = container.AddItem(pid, 1, 0);
-	AddSpecialBonus(it);
+	AddSpecialBonusWeighted(it);
 }
 
 void CritterShout(Critter& mob)

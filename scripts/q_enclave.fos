@@ -46,7 +46,7 @@ import bool LockerOpen(Item& item) from "lockers";
 import bool LockerClose(Item& item) from "lockers";
 import void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId) from "combat";
 import void FillMapByMobs(Map& map, uint8 reqNumMobs, uint8 kindof, uint8 subtype, uint8 weapgroup) from "mob_dynamic";
-import void AddSpecialBonus(Item@ it) from "item_bonus";
+import void AddSpecialBonusWeighted(Item@ it) from "item_bonus";
 
 void map_init(Map& map, bool firstTime)
 {
@@ -67,7 +67,7 @@ void map_init(Map& map, bool firstTime)
 void SpawnBuffItem(Item& container, uint16 pid)
 {
 	Item@ it = container.AddItem(pid, 1, 0);
-	AddSpecialBonus(it);
+	AddSpecialBonusWeighted(it);
 }
 
 void init_reward0(Item& item, bool firstTime)
@@ -1170,8 +1170,6 @@ uint e_waveboss(array<uint>@ values)
 
 }
 //I lrean a lot when making this, thanks for using it in Your project.
-
-
 
 
 

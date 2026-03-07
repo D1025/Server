@@ -18,9 +18,9 @@
 #include "mob_dynamic_h.fos"
 #define EVENT_TIME                (20)            // in real minutes
 
-import void AddBonusOrNot(Item@ it) from "item_bonus";
-import void AddSpecialBonusLow(Item@ it) from "item_bonus";
-import void AddSpecialBonus(Item@ it) from "item_bonus";
+import void AddBonusOrNotWeighted(Item@ it) from "item_bonus";
+import void AddSpecialBonusLowWeighted(Item@ it) from "item_bonus";
+import void AddSpecialBonusWeighted(Item@ it) from "item_bonus";
 import void FillMapByMobs(Map& map, uint8 reqNumMobs, uint8 kindof, uint8 subtype, uint8 weapgroup) from "mob_dynamic";
 import void ImmaAttack(Map& map, Critter& mob) from "mob_dynamic";
 import void SetWeapon(Critter& mob, uint8 weaponforgroup) from "mob_dynamic";
@@ -429,13 +429,13 @@ void FillContainers(Map& map)
 					if(losuj >= 1 && losuj <=5 )
 					{
 						Item@ it = lockers[k].AddItem( AddT3Item(), 1, 0);
-						AddSpecialBonusLow(it);
+						AddSpecialBonusLowWeighted(it);
 					}
 					
 					if(losuj >= 6 && losuj <= 9)
 					{
 						Item@ it = lockers[k].AddItem( AddT3Item(), 1, 0);
-						AddSpecialBonus(it);
+						AddSpecialBonusWeighted(it);
 					}
 					if(losuj == 10)
 						lockers[k].AddItem( AddT4Item(), 1, 0);
@@ -460,13 +460,13 @@ void FillContainers(Map& map)
 					if(losuj >= 1 && losuj <=12 )
 					{
 						Item@ it = lockers[k].AddItem( AddT3Item(), 1, 0);
-						AddSpecialBonus(it);
+						AddSpecialBonusWeighted(it);
 					}
 					
 					if(losuj >= 13 && losuj <= 18)
 					{
 						Item@ it = lockers[k].AddItem( AddT4Item(), 1, 0);
-						AddBonusOrNot(it);
+						AddBonusOrNotWeighted(it);
 					}
 					if(losuj == 19)
 						lockers[k].AddItem( AddT4BP(), 1, 0);
