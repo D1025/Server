@@ -142,9 +142,15 @@ void DrawChosenTabs() // Export
     if(chosen.Stat[ST_PERSISTENT_DOT] > 0)
     {
         uint   pool = uint(chosen.Stat[ST_PERSISTENT_DOT]);
+        int    maxHp = MAX(chosen.Stat[ST_MAX_LIFE], 1);
         uint   color = COLOR_DRED;
-        string ex = "Persistent DoT: " + pool;
-        DrawTab(GetMsgStr(TEXTMSG_GAME, STR_WEAPON_PERK(WEAPON_PERK_PERSISTENT)), color, ex);
+
+        if(int(pool) > maxHp)
+            color = COLOR_RED;
+        else
+            color = PercentColor(uint((pool * 99) / uint(maxHp)));
+
+        DrawTab("Persistant: " + pool, color);
     }
 
     if(chosen.Damage[DAMAGE_RADIATED] != 0)
