@@ -78,6 +78,15 @@ int checkBonus(ItemCl@ it, int bonusType)
 	return UpgradeWeaponBonus(it, bonusType);
 }
 
+string BuildPersistentCombatResult(string targetName, string hitLocation, int persistentApplied, bool isCritical, bool isAimed)
+{
+    string result = targetName + (isCritical ? " suffered a persistent critical hit" : " suffered a persistent hit");
+    if(isAimed)
+        result += " in " + hitLocation;
+    result += " for " + persistentApplied;
+    return result;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // To-hit chance.
 int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weaponMode)
@@ -306,9 +315,11 @@ void combat_result(array<uint>& data)
     while(current < datalen)
     {
         int        damage = -1;
+        int        persistentApplied = 0;
         uint       effect = 0;
         uint       loc = 0;
         int        message = -1;
+        string     hitLocationName = "";
 
         uint       mode = data[current++];
         uint       whoTarget = data[current++];
@@ -398,10 +409,18 @@ void combat_result(array<uint>& data)
         case CMSG_HIT:
         case CMSG_HIT_DEAD:
             damage = data[current++];
-            result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 7 : (damage != 0 ? 17 : 21)));
-            result = ReplaceText(result, "%s", name);
-            if(damage > 1)
-                result = ReplaceText(result, "%d", damage);
+            persistentApplied = data[current++];
+            if(damage < 1 && persistentApplied > 0)
+            {
+                result = BuildPersistentCombatResult(name, "", persistentApplied, false, false);
+            }
+            else
+            {
+                result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 7 : (damage != 0 ? 17 : 21)));
+                result = ReplaceText(result, "%s", name);
+                if(damage > 1)
+                    result = ReplaceText(result, "%d", damage);
+            }
             if(self) 
             {
                 if(mode == CMSG_HIT_DEAD)
@@ -427,13 +446,22 @@ void combat_result(array<uint>& data)
         case CMSG_AIMED_HIT_DEAD:
             loc = data[current++];
             damage = data[current++];
-            // Message("loc,damage"+loc+","+damage);
-            result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 6 : (damage != 0 ? 16 : 20)));
-            result = ReplaceText(result, "%s", name);
-            // Message("mess #"+(1000+crTarget.CrTypeAlias*10+loc-1)+"="+GetMsgStr(TEXTMSG_COMBAT,1000+crTarget.CrTypeAlias*10+loc-1));
-            result = ReplaceText(result, "%s", GetMsgStr(TEXTMSG_COMBAT, 1000 + crTarget.CrTypeAlias * 10 + loc - 1));
-            if(damage > 1)
-                result = ReplaceText(result, "%d", damage);
+            persistentApplied = data[current++];
+            hitLocationName = GetMsgStr(TEXTMSG_COMBAT, 1000 + crTarget.CrTypeAlias * 10 + loc - 1);
+            if(damage < 1 && persistentApplied > 0)
+            {
+                result = BuildPersistentCombatResult(name, hitLocationName, persistentApplied, false, true);
+            }
+            else
+            {
+                // Message("loc,damage"+loc+","+damage);
+                result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 6 : (damage != 0 ? 16 : 20)));
+                result = ReplaceText(result, "%s", name);
+                // Message("mess #"+(1000+crTarget.CrTypeAlias*10+loc-1)+"="+GetMsgStr(TEXTMSG_COMBAT,1000+crTarget.CrTypeAlias*10+loc-1));
+                result = ReplaceText(result, "%s", hitLocationName);
+                if(damage > 1)
+                    result = ReplaceText(result, "%d", damage);
+            }
             if(self) 
             {
                 if(mode == CMSG_AIMED_HIT_DEAD)
@@ -457,12 +485,20 @@ void combat_result(array<uint>& data)
             break;
         case CMSG_CRIT_HIT:
             damage = data[current++];
+            persistentApplied = data[current++];
             effect = data[current++];
             message = data[current++];
-            result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 14 : (damage != 0 ? 18 : 22)));
-            result = ReplaceText(result, "%s", name);
-            if(damage > 1)
-                result = ReplaceText(result, "%d", damage);
+            if(damage < 1 && persistentApplied > 0)
+            {
+                result = BuildPersistentCombatResult(name, "", persistentApplied, true, false);
+            }
+            else
+            {
+                result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 14 : (damage != 0 ? 18 : 22)));
+                result = ReplaceText(result, "%s", name);
+                if(damage > 1)
+                    result = ReplaceText(result, "%d", damage);
+            }
             if(self) 
             {
                 result = CombatLog.MsgDefCritColor + result;
@@ -480,13 +516,22 @@ void combat_result(array<uint>& data)
         case CMSG_CRIT_AIMED_HIT:
             loc = data[current++];
             damage = data[current++];
+            persistentApplied = data[current++];
             effect = data[current++];
             message = data[current++];
-            result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 5 : (damage != 0 ? 15 : 19)));
-            result = ReplaceText(result, "%s", name);
-            result = ReplaceText(result, "%s", GetMsgStr(TEXTMSG_COMBAT, 1000 + crTarget.CrTypeAlias * 10 + loc - 1));
-            if(damage > 1)
-                result = ReplaceText(result, "%d", damage);
+            hitLocationName = GetMsgStr(TEXTMSG_COMBAT, 1000 + crTarget.CrTypeAlias * 10 + loc - 1);
+            if(damage < 1 && persistentApplied > 0)
+            {
+                result = BuildPersistentCombatResult(name, hitLocationName, persistentApplied, true, true);
+            }
+            else
+            {
+                result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 5 : (damage != 0 ? 15 : 19)));
+                result = ReplaceText(result, "%s", name);
+                result = ReplaceText(result, "%s", hitLocationName);
+                if(damage > 1)
+                    result = ReplaceText(result, "%d", damage);
+            }
             if(self) 
             {
                 result = CombatLog.MsgDefCritColor + result;
@@ -503,12 +548,20 @@ void combat_result(array<uint>& data)
             break;
         case CMSG_CRIT_HIT_DEAD:
             damage = data[current++];
+            persistentApplied = data[current++];
             effect = data[current++] & HF_BYPASS_ARMOR;
             message = data[current++];
-            result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 14 : (damage != 0 ? 18 : 22)));
-            result = ReplaceText(result, "%s", name);
-            if(damage > 1)
-                result = ReplaceText(result, "%d", damage);
+            if(damage < 1 && persistentApplied > 0)
+            {
+                result = BuildPersistentCombatResult(name, "", persistentApplied, true, false);
+            }
+            else
+            {
+                result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 14 : (damage != 0 ? 18 : 22)));
+                result = ReplaceText(result, "%s", name);
+                if(damage > 1)
+                    result = ReplaceText(result, "%d", damage);
+            }
             if(self) 
             {
                 result = CombatLog.MsgDefKillColor + result;
@@ -526,15 +579,24 @@ void combat_result(array<uint>& data)
         case CMSG_CRIT_AIMED_HIT_DEAD:
             loc = data[current++];
             damage = data[current++];
+            persistentApplied = data[current++];
             effect = data[current++] & HF_BYPASS_ARMOR;
             message = data[current++];
-            result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 5 : (damage != 0 ? 15 : 19)));
-            // Message("loc,damage"+loc+","+damage);
-            // Message("mess #"+(1000+crTarget.CrTypeAlias*10+loc-1)+"="+GetMsgStr(TEXTMSG_COMBAT,1000+crTarget.CrTypeAlias*10+loc-1));
-            result = ReplaceText(result, "%s", name);
-            result = ReplaceText(result, "%s", GetMsgStr(TEXTMSG_COMBAT, 1000 + crTarget.CrTypeAlias * 10 + loc - 1));
-            if(damage > 1)
-                result = ReplaceText(result, "%d", damage);
+            hitLocationName = GetMsgStr(TEXTMSG_COMBAT, 1000 + crTarget.CrTypeAlias * 10 + loc - 1);
+            if(damage < 1 && persistentApplied > 0)
+            {
+                result = BuildPersistentCombatResult(name, hitLocationName, persistentApplied, true, true);
+            }
+            else
+            {
+                result = GetMsgStr(TEXTMSG_COMBAT, offset + (damage > 1 ? 5 : (damage != 0 ? 15 : 19)));
+                // Message("loc,damage"+loc+","+damage);
+                // Message("mess #"+(1000+crTarget.CrTypeAlias*10+loc-1)+"="+GetMsgStr(TEXTMSG_COMBAT,1000+crTarget.CrTypeAlias*10+loc-1));
+                result = ReplaceText(result, "%s", name);
+                result = ReplaceText(result, "%s", hitLocationName);
+                if(damage > 1)
+                    result = ReplaceText(result, "%d", damage);
+            }
             if(self) 
             {
                 result = CombatLog.MsgDefKillColor + result;

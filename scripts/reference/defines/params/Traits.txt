@@ -11,7 +11,7 @@
 #define TRAIT_SUPPRESSOR            (553)
 #define TRAIT_FINESSE               (554)
 #define TRAIT_KAMIKAZE              (555)
-#define TRAIT_HEAVY_HANDED          (556)
+#define TRAIT_GRAPPLER          (556)
 #define TRAIT_FAST_SHOT             (557) // Used in engine
 #define TRAIT_BLOODY_MESS           (558)
 #define TRAIT_BERSERKER                (559)

@@ -504,7 +504,7 @@ EXPORT int getParam_Sequence(CritterMutual& cr, uint)
 EXPORT int getParam_MeleeDmg(CritterMutual& cr, uint)
 {
 	int strength = getParam_Strength(cr, 0);
-	int val = cr.Params[ST_MELEE_DAMAGE] + cr.Params[ST_MELEE_DAMAGE_EXT] + (strength > 6 ? (cr.Params[TRAIT_BRUISER]?2*(strength - 5):(strength - 5)) : 1);
+	int val = cr.Params[ST_MELEE_DAMAGE] + cr.Params[ST_MELEE_DAMAGE_EXT] + (strength > 3 ? (cr.Params[TRAIT_BRUISER]?2*(strength - 3):(strength - 3)) : 1);
 	return CLAMP(val, 1, 9999);
 }
 
@@ -815,14 +815,12 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{
-		int skill = item.Proto->Weapon_Skill[use];
 		bool hthAttack = Item_Weapon_IsHtHAttack(item, mode);
 		bool rangedAttack = Item_Weapon_IsRangedAttack(item, mode);
 
 		apCost = item.Proto->Weapon_ApCost[use];
 		if(aim) apCost += GetAimApCost(aim);
 		if(cr.Params[PE_BONUS_RATE_OF_FIRE] !=0) apCost--;
-		if(cr.Params[TRAIT_HEAVY_HANDED] && hthAttack) apCost++;
 		//if(checkBonus(item, BONUS_WEAPON_AP_COST)!=0) apCost--;
 	}
 

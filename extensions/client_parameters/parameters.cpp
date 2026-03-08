@@ -282,7 +282,7 @@ EXPORT int getParam_Sequence(CritterMutual& cr, uint)
 EXPORT int getParam_MeleeDmg(CritterMutual& cr, uint)
 {
 	int strength = getParam_Strength(cr, 0);
-	int val = cr.Params[ST_MELEE_DAMAGE] + cr.Params[ST_MELEE_DAMAGE_EXT] + (strength > 6 ? strength - 5 : 1);
+	int val = cr.Params[ST_MELEE_DAMAGE] + cr.Params[ST_MELEE_DAMAGE_EXT] + (strength > 3 ? (cr.Params[TRAIT_BRUISER]?2*(strength - 3):(strength - 3)) : 1);
 	return CLAMP(val, 1, 9999);
 }
 
@@ -531,21 +531,21 @@ EXPORT bool Item_Weapon_IsHtHAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_CLOSE_COMBAT || skill == SK_RIFLES;
+	return skill == SK_CLOSE_COMBAT;
 }
 
 EXPORT bool Item_Weapon_IsGunAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_PISTOLS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS;
+	return skill == SK_PISTOLS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_RIFLES;
 }
 
 EXPORT bool Item_Weapon_IsRangedAttack(Item& item, uint8 mode)
 {
 	if(!item.IsWeapon() || !item.WeapIsUseAviable(mode & 7)) return false;
 	int skill = SKILL_OFFSET(item.Proto->Weapon_Skill[mode & 7]);
-	return skill == SK_PISTOLS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_THROWING;
+	return skill == SK_PISTOLS || skill == SK_BIG_GUNS || skill == SK_ENERGY_WEAPONS || skill == SK_THROWING || skill == SK_RIFLES;
 }
 
 /************************************************************************/
@@ -588,7 +588,6 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{
-		int skill = item.Proto->Weapon_Skill[use];
 		bool hthAttack = Item_Weapon_IsHtHAttack(item, mode);
 		bool rangedAttack = Item_Weapon_IsRangedAttack(item, mode);
 

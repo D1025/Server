@@ -1037,6 +1037,52 @@ void render_iface(uint layer)
 
 #define _DescHead    ((ELAPSED_TIME / REAL_SECOND(3)) % 2 == 1)
 
+bool IsClientSewingWeaponPid(uint16 pid)
+{
+    switch(pid)
+    {
+    case PID_KNIFE:
+    case PID_COMBAT_KNIFE:
+    case PID_SWITCHBLADE:
+    case PID_SHIV:
+    case PID_LIL_JESUS_WEAPON:
+    case PID_WAKIZASHI_BLADE:
+    case PID_RIPPER:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
+}
+
+bool IsClientSewingAttack(const ProtoItem@ weapon, uint8 use)
+{
+    return valid(weapon) && use == MODE_THIRD_ATTACK && IsClientSewingWeaponPid(weapon.ProtoId);
+}
+
+int GetChosenWeaponDisplayDamage(ItemCl@ weapon, CritterCl@ chosen, uint8 use)
+{
+    int weaponDmg = _WeaponDmg(weapon.Proto, use);
+    int meleeDamage = chosen.Stat[ST_MELEE_DAMAGE];
+    bool isMeleeAttack = _WeaponIsHtHAttack(weapon.Proto, use);
+    bool isMeleeWeaponAttack = isMeleeAttack && !weapon.Proto.Weapon_IsUnarmed;
+
+    if(WeaponHasProtoPerk(weapon.Proto, WEAPON_PERK_BLUDGEONING))
+        meleeDamage *= 2;
+
+    if(isMeleeAttack || _WeaponIsMeleeThrownAttack(weapon.Proto, use))
+        weaponDmg += meleeDamage;
+    else
+        weaponDmg += weaponDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
+
+    if(isMeleeWeaponAttack && chosen.Trait[TRAIT_GRAPPLER] > 0 && !IsClientSewingAttack(weapon.Proto, use))
+        weaponDmg = MAX(1, weaponDmg / 2);
+
+    weaponDmg += weaponDmg * SelectWeaponBonus(weapon, BONUS_WEAPON_DAMAGE) / 100;
+    return weaponDmg;
+}
+
 bool render_iface_screen(uint screen)
 {
     // placeholder
@@ -1082,17 +1128,7 @@ string generic_description(int descType, int& offsX, int& offsY)
             {
                 int nfix = 2;
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
-				int weaponDmg = _WeaponDmg(weaponMain.Proto, use);
-				int meleeDamage=chosen.Stat[ST_MELEE_DAMAGE];
-				if(WeaponHasProtoPerk(weaponMain.Proto, WEAPON_PERK_BLUDGEONING))
-				    meleeDamage*=2;
-                if(_WeaponIsHtHAttack(weaponMain.Proto, use) || _WeaponIsMeleeThrownAttack(weaponMain.Proto, use))
-				{
-					weaponDmg += meleeDamage;
-                } else {
-				    weaponDmg += weaponDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
-				}
-                weaponDmg += weaponDmg * SelectWeaponBonus(weaponMain, BONUS_WEAPON_DAMAGE) / 100;
+				int weaponDmg = GetChosenWeaponDisplayDamage(weaponMain, chosen, use);
                 result += weaponDmg;
 
                 if(_WeaponMaxDist(weaponMain.Proto, use) > 1)
@@ -1172,17 +1208,7 @@ string generic_description(int descType, int& offsX, int& offsY)
             {
                 int nfix = 2;
                 result += GetMsgStr(TEXTMSG_GAME, STR_INV_DMG) + " ";
-				int weaponDmg=_WeaponDmg(weaponExt.Proto,use);
-				int meleeDamage=chosen.Stat[ST_MELEE_DAMAGE];
-				if(WeaponHasProtoPerk(weaponExt.Proto, WEAPON_PERK_BLUDGEONING))
-				    meleeDamage*=2;
-				if(_WeaponIsHtHAttack(weaponExt.Proto, use) || _WeaponIsMeleeThrownAttack(weaponExt.Proto, use))
-				{		
-					weaponDmg += meleeDamage;
-				}  else {
-                  	weaponDmg += weaponDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
-                }
-                weaponDmg += weaponDmg * SelectWeaponBonus(weaponExt, BONUS_WEAPON_DAMAGE) / 100;
+				int weaponDmg = GetChosenWeaponDisplayDamage(weaponExt, chosen, use);
                 result += weaponDmg;
                 if(_WeaponMaxDist(weaponExt.Proto, use) > 1)
                 {

@@ -386,6 +386,7 @@
 #define WEAPON_PERK_SWIPE                        (16)
 #define WEAPON_PERK_PERSISTENT                   (17)
 #define WEAPON_PERK_SILENT_HILL_MONSTER          (18)
+#define WEAPON_PERK_CRITLESS                     (19)
 
 #define ARMOR_PERK_POWERED                       (1)    // +3 strength, +30 radiation resist
 #define ARMOR_PERK_COMBAT                        (2)    // +20 radiation resist
@@ -1001,7 +1002,7 @@
 #define TRAIT_SUPPRESSOR                         (553)
 #define TRAIT_FINESSE                            (554)
 #define TRAIT_KAMIKAZE                           (555)
-#define TRAIT_HEAVY_HANDED                       (556)
+#define TRAIT_GRAPPLER                       (556)
 #define TRAIT_GIFTED                             (557) // Used in engine
 #define TRAIT_BLOODY_MESS                        (558)
 #define TRAIT_BERSERKER                             (559)

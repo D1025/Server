@@ -894,6 +894,7 @@
 {10866}{}{Swipe}
 {10867}{}{Persistent}
 {10868}{}{Silent Hill Monster}
+{10869}{}{Critless}
 
 ####################################################################################################################################
 #
@@ -2156,9 +2157,9 @@
 # TRAIT_KAMIKAZE
 {105551}{}{Kamikaze}
 {105552}{}{By not paying attention to any threats, you can act a lot faster.  This lowers your damage resistance, but increases your damage output by 10%.}
-# TRAIT_HEAVY_HANDED
-{105561}{}{Heavy Handed}
-{105562}{}{You swing harder, not better.  Your attacks are very brutal, but lack finesse.  Your HtH attacks cost one more action point, but knock down the opponent if a successful Strength roll was made.}
+# TRAIT_GRAPPLER
+{105561}{}{Grappler}
+{105562}{}{You focus on control and takedowns instead of raw damage. Your melee weapon attacks, except Sawing strikes, deal 50% less damage, but a successful Strength roll can still knock the opponent down.}
 # TRAIT_GIFTED
 {105571}{}{Gifted}
 {105572}{}{You have more innate abilities than most, so you have not spent as much time honing your skills.  You gain 7 primary attributes points, but you lose one perk.}

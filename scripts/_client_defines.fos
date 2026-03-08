@@ -357,14 +357,14 @@
 #define CMSG_MISS                          (1)  // length 2: 1   WHO_ID
 #define CMSG_CRIT_MISS                     (2)  // length 3: 2   WHO_ID  EFF
 #define CMSG_CRIT_MISS_DAMAGE              (3)  // length 4: 3   WHO_ID  EFF     DAMAGE
-#define CMSG_HIT                           (4)  // length 3: 4   WHO_ID  DAMAGE
-#define CMSG_AIMED_HIT                     (5)  // length 4: 5   WHO_ID  LOC     DAMAGE
-#define CMSG_CRIT_HIT                      (6)  // length 5: 6   WHO_ID  DAMAGE  EFF     MESSAGE
-#define CMSG_CRIT_AIMED_HIT                (7)  // length 6: 7   WHO_ID  LOC     DAMAGE  EFF      MESSAGE
-#define CMSG_HIT_DEAD                      (8)  // length 3: 8   WHO_ID  DAMAGE
-#define CMSG_AIMED_HIT_DEAD                (9)  // length 4: 9   WHO_ID  LOC     DAMAGE
-#define CMSG_CRIT_HIT_DEAD                 (10) // length 4: 10  WHO_ID  DAMAGE  MESSAGE
-#define CMSG_CRIT_AIMED_HIT_DEAD           (11) // length 5: 11  WHO_ID  LOC     DAMAGE  MESSAGE
+#define CMSG_HIT                           (4)  // length 4: 4   WHO_ID  DAMAGE  PERSISTENT
+#define CMSG_AIMED_HIT                     (5)  // length 5: 5   WHO_ID  LOC     DAMAGE  PERSISTENT
+#define CMSG_CRIT_HIT                      (6)  // length 6: 6   WHO_ID  DAMAGE  PERSISTENT  EFF     MESSAGE
+#define CMSG_CRIT_AIMED_HIT                (7)  // length 7: 7   WHO_ID  LOC     DAMAGE  PERSISTENT  EFF      MESSAGE
+#define CMSG_HIT_DEAD                      (8)  // length 4: 8   WHO_ID  DAMAGE  PERSISTENT
+#define CMSG_AIMED_HIT_DEAD                (9)  // length 5: 9   WHO_ID  LOC     DAMAGE  PERSISTENT
+#define CMSG_CRIT_HIT_DEAD                 (10) // length 6: 10  WHO_ID  DAMAGE  PERSISTENT  MESSAGE
+#define CMSG_CRIT_AIMED_HIT_DEAD           (11) // length 7: 11  WHO_ID  LOC     DAMAGE  PERSISTENT  MESSAGE
 #define CMSG_OOPS                          (12) // length 3: 12  WH1_ID  WH2_ID
 #define CMSG_HIT_RANDOMLY                  (13) // length 2: 13  WHO_ID
 // HIT = 4, CRIT = 2, AIMED = 1

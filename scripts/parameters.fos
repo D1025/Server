@@ -442,7 +442,7 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
 
     _param_[ST_CRITICAL_POWER] += 3*_param_[ST_LUCK];
 
-    /*if (_param_[TRAIT_HEAVY_HANDED] != 0)
+    /*if (_param_[TRAIT_GRAPPLER] != 0)
         _param_[ST_CRITICAL_POWER] -= 20;*/
 
     if(_param_[TRAIT_BONEHEAD] != 0) {

@@ -183,6 +183,11 @@ void ApplySewingDamageScale(AttackStruct& attack)
     attack.Damage = MAX(1, attack.Damage * int(SEWING_DAMAGE_PERCENT) / 100);
 }
 
+bool IsProtoMeleeWeaponAttack(const ProtoItem@ weapon, uint8 use)
+{
+    return valid(weapon) && _WeaponIsHtHAttack(weapon, use) && !weapon.Weapon_IsUnarmed;
+}
+
 uint ComputeSewingTotalHits(ProtoItem& weapon)
 {
     uint hits = SEWING_TOTAL_HITS;
@@ -1540,9 +1545,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 	//#################################################
 	//### IMPLEMENTACJA melee attack swing i thrust ###
-	//#################################################
+    //#################################################
 	uint8 use=_WeaponModeUse(attack.weaponMode);
     bool isSewingAttack = IsSewingAttackByPidUse(weapPid, use);
+    const ProtoItem@ attackWeaponProto = valid(realWeapon) ? realWeapon.Proto : GetProtoItem(weapPid);
+    bool isMeleeWeaponAttack = IsProtoMeleeWeaponAttack(attackWeaponProto, use);
+    bool hasCritless = valid(attackWeaponProto) && WeaponHasProtoPerk(attackWeaponProto, WEAPON_PERK_CRITLESS);
 	bool isSwing=false;
 	bool isThrust=false;
     
@@ -1706,7 +1714,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			}
             int knockdownBonus = 0;
             if(FLAG(eff, HF_KNOCKOUT)) {
-			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5) + legKDKOMinus;
+                    int ciriticalBonusToKO=(critLevel-2) * -5;
+                    if (critLevel==4) {
+                        ciriticalBonusToKO=(critLevel-3) * -5;
+                    }
+			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + ciriticalBonusToKO) + legKDKOMinus;
 			        int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			        if (enemyStat > attackerStat) {
                         UNSETFLAG(eff, HF_KNOCKOUT);
@@ -1737,7 +1749,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 				UNSETFLAG(eff, HF_KNOCKDOWN);
 			else
 			if(FLAG(eff, HF_KNOCKDOWN)) {
-			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + (critLevel-2) * -5) + legKDKOMinus;
+                    int ciriticalBonusToKO=(critLevel-2) * -5;
+                    if (critLevel==4) {
+                        ciriticalBonusToKO=(critLevel-3) * -5;
+                    }
+			        int enemyStat = (target.Perk[PE_STONEWALL] * 5 + target.Stat[ST_ENDURANCE] + target.Stat[ST_ENDURANCE_EXT] + ciriticalBonusToKO) + legKDKOMinus;
                     int attackerStat = attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT] + knockdownBonus;
                     if (enemyStat > attackerStat) {
                         UNSETFLAG(eff, HF_KNOCKDOWN);
@@ -1747,10 +1763,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			switch(critLevel)
             {
                 case 2:
-                    limbDamageMultiplayer = 6;
+                    limbDamageMultiplayer = 7;
                     break;
                 case 3:
-                    limbDamageMultiplayer = 7;
+                    limbDamageMultiplayer = 8;
                     break;
                 case 4:
                     limbDamageMultiplayer = 8;
@@ -1788,9 +1804,15 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		}
 	}     
 	// isCritical end
+
+    if(hasCritless && aim != HIT_LOCATION_UNCALLED && aim != HIT_LOCATION_NONE)
+    {
+        for(uint i = 0; i < rounds; i++)
+            _dmgMul[i] = MAX(0, _dmgMul[i] - 1);
+    }
 	
-    // Heavy Handed Trait
-    if(validAttacker && attack.IsUnarmed && !isSewingAttack && attacker.Trait[TRAIT_HEAVY_HANDED] > 0)
+    // Grappler Trait knockdown
+    if(validAttacker && attack.IsUnarmed && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
     {
         int bonus = (valid(realWeaponTarget) && WeaponHasProtoPerk(realWeaponTarget.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0) - (valid(realWeapon) && WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0);
         if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + bonus < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
@@ -1851,12 +1873,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         else if(critLevel == 3)
         {
             targetDT = 0;
-            targetDR /= 2;
+            targetDR = 0;
         }
         else if(critLevel == 2)
         {
-            targetDT /= 2;
-            targetDR -= 10;
+            targetDT = 0;
+            targetDR /= 2;
         }
     }
     if(valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_PENETRATE) : (weaponPerk == WEAPON_PERK_PENETRATE))
@@ -1873,6 +1895,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 
     int damage = attack.Damage + attack.BonusDmg + attack.Damage * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
+    if(validAttacker && isMeleeWeaponAttack && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
+        damage = MAX(1, damage / 2);
     int rawDmg;
     int totalDmg = 0;
     //dmgMul *= attack.DMMod;
@@ -1933,10 +1957,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         }
     }
 
+    int persistentDotDamage = 0;
     if(totalDmg > 0 && target.Mode[MODE_INVULNERABLE] == 0)
     {
         int postResistDamage = totalDmg;
-        int persistentDotDamage = 0;
 
         if(hasWeaponPersistent)
         {
@@ -2585,7 +2609,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     bool isAimed = (aim != HIT_LOCATION_NONE) && (aim != HIT_LOCATION_TORSO) && (aim != HIT_LOCATION_UNCALLED);
 
     uint mainMsg = CMSG_HIT;
-    uint length = 4;
+    uint length = 5;
 
     if(isCritical)
     {
@@ -2616,6 +2640,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     }
 
     sendEff[now] = totalDmg;
+    now++;
+    sendEff[now] = persistentDotDamage;
     now++;
 
     if(isCritical)
