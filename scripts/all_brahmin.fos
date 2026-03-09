@@ -28,6 +28,8 @@ void _Domesticated(Critter& npc, bool firstTime)
 void _Wild(Critter& npc, bool firstTime)
 {
     npc.SetEvent(CRITTER_EVENT_IDLE, "_Idle");
+    if(npc.Stat[ST_ACTION_POINTS] < 10)
+        npc.StatBase[ST_ACTION_POINTS] = 10;
 }
 
 

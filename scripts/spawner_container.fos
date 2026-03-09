@@ -130,7 +130,52 @@ class ItemSpawner : IItemSpawner
     {
         ClearAtSpawn = clearSpawn;
         return this;
-    } 
+    }
+
+    IItemSpawner@ AddDungeonUpgradeBlueprintsLow()
+    {
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_AP_BOOST, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_SILENT_HILL_MONSTER, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_BLAST, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_PERSISTENT, 1);
+        AddItem(PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DT, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DT, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DT, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DT, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LASER_DR, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CRIT_CHANCE, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_MAX_AP, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_STRENGTH, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_PERCEPTION, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_CHARISMA, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_INTELLIGENCE, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 1);
+        return this;
+    }
+
+    IItemSpawner@ AddDungeonUpgradeBlueprintsHigh()
+    {
+        return AddDungeonUpgradeBlueprintsLow();
+    }
 	
     IItemSpawner@ Clear()
     {
@@ -300,6 +345,7 @@ array<ItemSpawner@> spawners;
 bool                Init = false;
 
 #define ADD_ITEMSPAWNER    # (_name, _prop) ItemSpawner@ _name = @ItemSpawner(); _name._prop; spawners.insertLast(_name)
+
 void ItemSpawnInit() // export
 {
     if(Init)
@@ -630,7 +676,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_METAL_HELMET                  , 20 )
 				);					
 				
-    ADD_ITEMSPAWNER(FAT_VAULT_LOCKER_4, SpawnTime(60, 120).Lock(0, 50).SetBonusOrNot(true). 			//Vault's entrances lockers (low)
+    ADD_ITEMSPAWNER(FAT_VAULT_LOCKER_4, SpawnTime(60, 120).Lock(0, 50).SetBonusOrNot(true).AddDungeonUpgradeBlueprintsLow(). 			//Vault's entrances lockers (low)
 				//Misc
 				AddItem(PID_RADIO									, 40).				
 				AddItem(PID_FLARE									, 35).
@@ -655,7 +701,7 @@ void ItemSpawnInit() // export
 				//helmets
 				);
 				
-    ADD_ITEMSPAWNER(FAT_BOOKCASE_5, SpawnTime(30, 60).Lock(100, 150).  			//bookcase abbey, wh
+    ADD_ITEMSPAWNER(FAT_BOOKCASE_5, SpawnTime(30, 60).Lock(100, 150).AddDungeonUpgradeBlueprintsLow().  			//bookcase abbey, wh
 				//Misc
 				AddItem(PID_BOTTLE_CAPS    , 10 , 54, 234 ).
 				AddItem(PID_TICKET			, 5).
@@ -684,7 +730,7 @@ void ItemSpawnInit() // export
 				//helmets
 				);
 				
-    ADD_ITEMSPAWNER(FAT_CRAFT_LOW_6, SpawnTime(30, 60).Lock(100, 150).		//low 
+    ADD_ITEMSPAWNER(FAT_CRAFT_LOW_6, SpawnTime(30, 60).Lock(100, 150).AddDungeonUpgradeBlueprintsLow().		//low 
 				//Misc
 				AddItem(PID_MULTI_TOOL					, 15).
 				AddItem(PID_JUNK						, 60, 5, 15).
@@ -723,7 +769,7 @@ void ItemSpawnInit() // export
 				//helmets
 				);
 				
-	ADD_ITEMSPAWNER(FAT_CRAFT_HIGH_7, SpawnTime(60, 120).Lock(150, 250).   		//high tier
+	ADD_ITEMSPAWNER(FAT_CRAFT_HIGH_7, SpawnTime(60, 120).Lock(150, 250).AddDungeonUpgradeBlueprintsHigh().   		//high tier
 				//Misc
 				//AddItem(PID_TENT						, 20).
 				AddItem(PID_MULTI_TOOL					, 30).
@@ -768,7 +814,7 @@ void ItemSpawnInit() // export
 				//helmets
 				);
 				
-    /*2*/ ADD_ITEMSPAWNER(FAT_MED_LOW_8, SpawnTime(90, 120).Lock(100, 150).					//Meds
+    /*2*/ ADD_ITEMSPAWNER(FAT_MED_LOW_8, SpawnTime(90, 120).Lock(100, 150).AddDungeonUpgradeBlueprintsLow().					//Meds
 				AddItem(PID_ANTIDOTE                      , 25 , 1 , 2 ).
 				AddItem(PID_NUKA_COLA                     , 55 , 1 , 3 ).
 				AddItem(PID_RADAWAY							 , 40 , 1 , 2 ).
@@ -781,7 +827,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_PARAMEDICS_BAG							  , 10)
 				);
 				
-    /*2*/ ADD_ITEMSPAWNER(FAT_MED_HIGH_9, SpawnTime(60, 120).Lock(175, 225).      			//meds(high) + Drugs 
+    /*2*/ ADD_ITEMSPAWNER(FAT_MED_HIGH_9, SpawnTime(60, 120).Lock(175, 225).AddDungeonUpgradeBlueprintsHigh().      			//meds(high) + Drugs 
 				AddItem(PID_DOCTORS_BAG                   , 40 ).	
 				AddItem(PID_RAD_X							 , 55 , 1 , 5 ).
 				AddItem(PID_JET                           , 70 , 1 , 5 ).
@@ -1153,7 +1199,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_SG_med_32,
-                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(125, 175).
+                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(125, 175).AddDungeonUpgradeBlueprintsHigh().
 
                     AddItem(PID_DESERT_EAGLE, 40).
                     AddItem(PID_44_MAGNUM_REVOLVER, 20).
@@ -1204,7 +1250,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_BG_med_34,
-                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(125, 150).
+                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(125, 150).AddDungeonUpgradeBlueprintsHigh().
 
                     AddItem(PID_FLAMER, 50).
                     AddItem(PID_ROCKET_LAUNCHER, 20).
@@ -1222,7 +1268,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_BG_high_35,
-                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(140, 250).
+                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(140, 250).AddDungeonUpgradeBlueprintsHigh().
 
                     AddItem(PID_LIGHT_SUPPORT_WEAPON, 30).
                     AddItem(PID_AVENGER_MINIGUN, 30).
@@ -1238,7 +1284,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_EW_med_36,
-                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(90, 130).
+                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(90, 130).AddDungeonUpgradeBlueprintsHigh().
 
                     AddItem(PID_LASER_PISTOL, 70, 1, 2).
                     AddItem(PID_LASER_RIFLE, 30).
@@ -1306,7 +1352,7 @@ void ItemSpawnInit() // export
 
 
     ADD_ITEMSPAWNER(once_container_Meds_low_42,
-                    SpawnTime(0, 0).SetSeparate(true).Lock(70, 90).
+                    SpawnTime(0, 0).SetSeparate(true).Lock(70, 90).AddDungeonUpgradeBlueprintsLow().
 
                     AddItem(PID_STIMPAK, 20, 1, 5).
                     AddItem(PID_ANTIDOTE, 60, 1, 5).
@@ -1316,7 +1362,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_Meds_med_43,
-                    SpawnTime(0, 0).Lock(125, 150).
+                    SpawnTime(0, 0).Lock(125, 150).AddDungeonUpgradeBlueprintsLow().
 
                     AddItem(PID_STIMPAK, 100, 1, 10).
                     AddItem(PID_RADAWAY, 30, 1, 5).
@@ -1325,7 +1371,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_Meds_high_44,
-                    SpawnTime(0, 0).Lock(140, 210).
+                    SpawnTime(0, 0).Lock(140, 210).AddDungeonUpgradeBlueprintsHigh().
 
                     AddItem(PID_BUFFOUT, 40, 1, 5).
                     AddItem(PID_PSYCHO, 40, 1, 5).
@@ -1372,7 +1418,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_Armor_med_47,
-                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(110, 150).
+                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(110, 150).AddDungeonUpgradeBlueprintsHigh().
 					//Armors
                     AddItem(PID_LEATHER_ARMOR_MK_II, 50).
                     AddItem(PID_METAL_ARMOR, 30).
@@ -1399,7 +1445,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(once_container_Armor_high_48,
-                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(140, 230).
+                    SpawnTime(0, 0).SetBonusOrNot(true).Lock(140, 230).AddDungeonUpgradeBlueprintsHigh().
 					//Armors
                     AddItem(PID_TESLA_ARMOR, 40).
                     AddItem(PID_COMBAT_ARMOR, 50).
@@ -1660,7 +1706,7 @@ void ItemSpawnInit() // export
 //////////////////////////////////////////////////// Tito continuation ///////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ADD_ITEMSPAWNER(FAT_BATTEL_LOCKER_57,											//ammo duze crate(weapons)	
-                    SpawnTime(60, 120).SetBonusLow(true).Lock(120, 150).
+                    SpawnTime(60, 120).SetBonusLow(true).Lock(120, 150).AddDungeonUpgradeBlueprintsHigh().
 					//Misc
 					//Drugs
 					//Ammo
@@ -1682,7 +1728,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_DESK_58,													//low shit biurka (bez armorow)
-                    SpawnTime(60, 180).SetBonusOrNot(true).Lock(120, 150).
+                    SpawnTime(60, 180).SetBonusOrNot(true).Lock(120, 150).AddDungeonUpgradeBlueprintsLow().
 					//Misc
 					AddItem(PID_BOTTLE_CAPS, 40, 10, 90).
 					AddItem(PID_JUNK, 45).
@@ -1719,7 +1765,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_FURNITURE_59,										//shity + armory
-                    SpawnTime(120, 240).SetBonusOrNot(true).Lock(120, 150).
+                    SpawnTime(120, 240).SetBonusOrNot(true).Lock(120, 150).AddDungeonUpgradeBlueprintsLow().
 					//Misc
 					AddItem(PID_BLUEPRINT_DRUG_1, 12).
                     AddItem(PID_BLUEPRINT_DRUG_2, 6).
@@ -1790,7 +1836,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_HTH_61,											//( Hth + random stuff)
-                    SpawnTime(60, 240).SetBonusOrNot(true).Lock(120, 150).
+                    SpawnTime(60, 240).SetBonusOrNot(true).Lock(120, 150).AddDungeonUpgradeBlueprintsLow().
 					//Misc
 					AddItem(PID_BOTTLE_CAPS, 100, 50, 400).
 					AddItem(PID_OIL_CAN						, 2).
@@ -1829,7 +1875,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_SG_62,																		//sg + shity
-                    SpawnTime(120, 320).SetBonusOrNot(true).Lock(120, 250).
+                    SpawnTime(120, 320).SetBonusOrNot(true).Lock(120, 250).AddDungeonUpgradeBlueprintsHigh().
 					//Misc
 					AddItem(PID_BOTTLE_CAPS, 30, 50, 400).
 					AddItem(PID_GEIGER_COUNTER, 1).
@@ -1882,7 +1928,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_BG_63,
-                    SpawnTime(180, 360).SetBonusOrNot(true).Lock(150, 250).
+                    SpawnTime(180, 360).SetBonusOrNot(true).Lock(150, 250).AddDungeonUpgradeBlueprintsHigh().
 					//Misc
 					AddItem(PID_BOTTLE_CAPS, 40, 50, 400).
 					AddItem(PID_GEIGER_COUNTER, 5).
@@ -1932,7 +1978,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_EW_64,
-                    SpawnTime(150, 200).SetBonusOrNot(true).Lock(175, 240).
+                    SpawnTime(150, 200).SetBonusOrNot(true).Lock(175, 240).AddDungeonUpgradeBlueprintsHigh().
 					//Misc
 					AddItem(PID_BOTTLE_CAPS, 100, 50, 400).
 					//Drugs
@@ -1977,7 +2023,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_DRUGS_65,
-                    SpawnTime(120, 240).SetBonusOrNot(true).Lock(150, 230).
+                    SpawnTime(120, 240).SetBonusOrNot(true).Lock(150, 230).AddDungeonUpgradeBlueprintsHigh().
 					//Misc
 					AddItem(PID_BOTTLE_CAPS, 100, 50, 400).
 					//Drugs
@@ -2019,7 +2065,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_ARMORS_66,
-                    SpawnTime(90, 240).SetBonusOrNot(true).Lock(150, 220).
+                    SpawnTime(90, 240).SetBonusOrNot(true).Lock(150, 220).AddDungeonUpgradeBlueprintsHigh().
 					//Misc
 					//Drugs
 					AddItem(PID_NUKA_COLA, 10, 1, 3).
@@ -2047,7 +2093,7 @@ void ItemSpawnInit() // export
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_AMMO_67,
-                    SpawnTime(120, 240).Lock(120,170).
+                    SpawnTime(120, 240).Lock(120,170).AddDungeonUpgradeBlueprintsHigh().
 					//Misc
 					//Drugs
 					//Ammo
@@ -2498,7 +2544,7 @@ void ItemSpawnInit() // export
 /////////////////////////POPRAWKI//////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////						
  ADD_ITEMSPAWNER(FAT_BATTEL_CRATE_92,
-					SpawnTime(90, 120).SetBonusLow(true).Lock(100, 150).	//Sierra, Mariposa surface (ammo, weapons boxes low)
+					SpawnTime(90, 120).SetBonusLow(true).Lock(100, 150).AddDungeonUpgradeBlueprintsHigh().	//Sierra, Mariposa surface (ammo, weapons boxes low)
 				//Misc
 				AddItem(PID_RADIO									, 50).				
 				AddItem(PID_FLARE									, 30).				
@@ -2689,6 +2735,99 @@ void ItemSpawnInit() // export
 				AddItem(PID_ALIEN_LASER_PISTOL , 50,1,4).
 				AddItem(PID_YK32_PULSE_PISTOL , 50,1,4)
 				//AddItem(PID_PK12_GAUSS_PISTOL , 50)
+				);
+	ADD_ITEMSPAWNER(FAT_RAIDERS_CAVE_CONTAINER_106,
+					SpawnTime(10080, 20160).SetBonusOrNot(true).Lock(150, 250).AddDungeonUpgradeBlueprintsLow().
+				//Misc
+				AddItem(PID_BOTTLE_CAPS						, 50, 100, 200).
+				AddItem(PID_ROPE									, 10).
+				AddItem(PID_IGUANA_ON_A_STICK						, 20).
+				//AddItem(PID_TENT									, 50).				
+				AddItem(PID_BIG_BOOK_OF_SCIENCE						, 3).
+				AddItem(PID_FIRST_AID_BOOK							, 3).
+				AddItem(PID_GUNS_AND_BULLETS						, 3).
+				AddItem(PID_BARTER_BOOK								, 3).
+				AddItem(PID_JUNK							, 15 , 1 , 2).
+				AddItem(PID_ELECTRONIC_PARTS				, 1 , 1 , 5 ).
+				AddItem(PID_ALLOYS							, 1 , 1 , 5 ).
+				AddItem(PID_BRAHMIN_HIDE					, 1 , 1 , 5 ).
+				AddItem(PID_METAL_PARTS						, 1 , 1 , 5 ).
+				AddItem(PID_FIBER							, 1 , 1 , 5 ).			
+				//Drugs
+				AddItem(PID_HEALING_POWDER							, 20 ).
+				AddItem(PID_FIRST_AID_KIT							, 6).
+				AddItem(PID_FIELD_MEDIC_KIT							, 6).
+				AddItem(PID_DOCTORS_BAG								, 6).
+				AddItem(PID_PARAMEDICS_BAG							, 6).
+				AddItem(PID_RADAWAY								, 10, 1, 2).
+				AddItem(PID_RAD_X								   , 1 ).
+				AddItem(PID_BEER									, 60 ).
+				AddItem(PID_JET_ANTIDOTE							, 5 ).
+				AddItem(PID_STIMPAK								, 20, 1, 3).		
+				AddItem(PID_HYPODERMIC_NEEDLE					, 35, 1, 5).
+				AddItem(PID_CHEMICALS							, 5, 1, 3).
+			    AddItem(PID_NUKA_COLA							, 45, 1, 3).	
+			    AddItem(PID_BOOZE								, 60, 1, 2).
+				AddItem(PID_CIGARETTES								, 20).
+				AddItem(PID_MENTATS									, 10).
+				AddItem(PID_BUFFOUT									, 10).
+				//Ammo
+				AddItem(PID_5MM_JHP                       , 60 , 1 , 20 ).
+				AddItem(PID_7_62MM_AMMO                   , 50 , 1 , 20 ).
+				AddItem(PID_9MM_AMMO                      , 70 , 1 , 20 ).
+				AddItem(PID_9MM_BALL                      , 70 , 1 , 20 ).
+				AddItem(PID_10MM_JHP                      , 60 , 1 , 20 ).
+				AddItem(PID_14MM_AP                       , 40 , 1 , 20 ).
+				AddItem(PID_44_MAGNUM_JHP                 , 60 , 1 , 20 ).
+				AddItem(PID_44_FMJ_MAGNUM                 , 60 , 1 , 20 ).
+				AddItem(PID_45_CALIBER_AMMO               , 60 , 1 , 20 ).
+				AddItem(PID_223_FMJ                       , 50 , 1 , 20 ).
+				AddItem(PID_SHOTGUN_SHELLS                , 40 , 1 , 20 ).
+				AddItem(PID_SHOTGUN_SHELLS_FLECHETTE      , 30 , 1 , 20 ).
+				AddItem(PID_SHOTGUN_SHELLS_SLUG           , 20 , 1 , 20 ).
+				AddItem(PID_40MM_GRENADE                  , 30 , 1 , 5 ).
+				AddItem(PID_EXPLOSIVE_ROCKET              , 15 ).
+				AddItem(PID_ROCKET_AP                     , 10 ).
+				AddItem(PID_FLAMETHROWER_FUEL             , 40 , 1 , 10 ).
+				AddItem(PID_SMALL_ENERGY_CELL             , 40 , 1 , 10 ).
+				AddItem(PID_MICRO_FUSION_CELL             , 30 , 1 , 10 ).
+				AddItem(PID_BBS                           , 80 , 1 , 10 ).
+				AddItem(PID_HN_NEEDLER_CARTRIDGE          , 40 , 1 , 10 ).
+				AddItem(PID_HN_AP_NEEDLER_CARTRIDGE       , 30 , 1 , 10 ).			
+				//Weapons
+				AddItem(PID_KNIFE                         , 70 ).
+				AddItem(PID_CLUB                          , 60 ).
+				AddItem(PID_SLEDGEHAMMER                  , 50 ).	
+				AddItem(PID_SPEAR			              , 70 ).				
+				AddItem(PID_MOLOTOV_COCKTAIL			  , 50 , 5 , 10 ).
+				AddItem(PID_FRAG_GRENADE				  , 40 , 5 , 10 ).				
+				AddItem(PID_WAKIZASHI_BLADE               , 10 ).
+				AddItem(PID_RIPPER                        , 20 ).
+				AddItem(PID_10MM_PISTOL                   , 40 ).
+				AddItem(PID_DESERT_EAGLE                  , 40 ).				
+				AddItem(PID_GREASE_GUN                    , 20 ).				
+				AddItem(PID_10MM_SMG                      , 10 ).
+				AddItem(PID_SHOTGUN                       , 25 ).
+				AddItem(PID_COMBAT_SHOTGUN                , 40 ).
+				AddItem(PID_HUNTING_RIFLE                 , 20 ).
+				AddItem(PID_9MM_MAUSER                    , 50 ).
+				AddItem(PID_ASSAULT_RIFLE				  , 40 ).
+				AddItem(PID_FN_FAL						  , 30 ).				
+				AddItem(PID_LASER_PISTOL                  , 40 ).
+				AddItem(PID_PLASMA_PISTOL                 , 5 ).				
+				AddItem(PID_FLAMER                        , 15 ).				
+				//Armors
+				AddItem(PID_LEATHER_JACKET                , 26 ).
+				AddItem(PID_CURED_LEATHER_ARMOR           , 23 ).				
+				AddItem(PID_LEATHER_ARMOR                 , 20 ).
+				AddItem(PID_LEATHER_ARMOR_MK_II           , 17 ).
+				AddItem(PID_METAL_ARMOR                   , 14 ).				
+				//helmets
+				AddItem(PID_LEATHER_JACKET_HELMET         , 40 ).	
+				AddItem(PID_COMBAT_LEATHER_JACKET_HELMET  , 35 ).
+				AddItem(PID_LEATHER_ARMOR_HELMET          , 30 ).
+				AddItem(PID_LEATHER_ARMOR_HELMET_MK2      , 25 ).
+				AddItem(PID_METAL_HELMET                  , 20 )		
 				);
 				
     #ifdef __DEBUG__

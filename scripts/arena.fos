@@ -264,18 +264,40 @@ array<Entire> DoorIn(2);
 array<Entire> DoorOut(2);
 
 const int ARENA_UPGRADE_SLOT_COUNT = 5;
+const int ARENA_UPGRADE_RAW_SLOT_COUNT = UPGRADE_MAX_SLOTS;
 
 int ArenaUpgradeStorageLvar(int slotType, int slotIndex)
 {
-    if(slotIndex < 0 || slotIndex >= ARENA_UPGRADE_SLOT_COUNT)
+    if(slotIndex < 0 || slotIndex >= ARENA_UPGRADE_RAW_SLOT_COUNT)
         return 0;
 
     if(slotType == 1)
-        return LVAR_arena_weapon1_upgrade_slot0 + slotIndex;
+    {
+        if(slotIndex < ARENA_UPGRADE_SLOT_COUNT)
+            return LVAR_arena_weapon1_upgrade_slot0 + slotIndex;
+        if(slotIndex == 5)
+            return LVAR_arena_weapon1_upgrade_slot5;
+        if(slotIndex == 6)
+            return LVAR_arena_weapon1_upgrade_slot6;
+    }
     if(slotType == 2)
-        return LVAR_arena_weapon2_upgrade_slot0 + slotIndex;
+    {
+        if(slotIndex < ARENA_UPGRADE_SLOT_COUNT)
+            return LVAR_arena_weapon2_upgrade_slot0 + slotIndex;
+        if(slotIndex == 5)
+            return LVAR_arena_weapon2_upgrade_slot5;
+        if(slotIndex == 6)
+            return LVAR_arena_weapon2_upgrade_slot6;
+    }
     if(slotType == 3)
-        return LVAR_arena_armor_upgrade_slot0 + slotIndex;
+    {
+        if(slotIndex < ARENA_UPGRADE_SLOT_COUNT)
+            return LVAR_arena_armor_upgrade_slot0 + slotIndex;
+        if(slotIndex == 5)
+            return LVAR_arena_armor_upgrade_slot5;
+        if(slotIndex == 6)
+            return LVAR_arena_armor_upgrade_slot6;
+    }
 
     return 0;
 }
@@ -469,11 +491,17 @@ void ClearArenaUpgradeStorage(Critter& player, int slotType)
         SetArenaUpgradeStoredRaw(player, slotType, i, 0);
 }
 
+void ClearArenaRawUpgradeStorage(Critter& player, int slotType)
+{
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT; i++)
+        SetArenaUpgradeStoredRaw(player, slotType, i, 0);
+}
+
 void ResetArenaUpgradeStorage(Critter& player)
 {
-    ClearArenaUpgradeStorage(player, 1);
-    ClearArenaUpgradeStorage(player, 2);
-    ClearArenaUpgradeStorage(player, 3);
+    ClearArenaRawUpgradeStorage(player, 1);
+    ClearArenaRawUpgradeStorage(player, 2);
+    ClearArenaRawUpgradeStorage(player, 3);
 }
 
 void ArenaCollectStoredPerks(Critter& player, int slotType, array<int>@ perks)
@@ -623,32 +651,137 @@ bool IsArenaEquippedArmor(Item@ item)
     return valid(item) && (item.CritSlot == SLOT_ARMOR || item.CritSlot == SLOT_HEAD);
 }
 
-void ApplyArenaItemUpgrades(Critter& cr, Item@ item)
+int ArenaItemUpgradeSlotType(Item@ item)
+{
+    if(!valid(item))
+        return 0;
+
+    if(item.GetType() == ITEM_TYPE_WEAPON)
+    {
+        if(item.CritSlot == SLOT_HAND1)
+            return 1;
+        if(item.CritSlot == SLOT_HAND2)
+            return 2;
+    }
+    else if(item.GetType() == ITEM_TYPE_ARMOR && IsArenaEquippedArmor(item))
+        return 3;
+
+    return 0;
+}
+
+void ArenaSetItemUpgradeRaw(Item@ item, int slotIndex, int raw)
 {
     if(!valid(item))
         return;
 
-    int slotType = 0;
-    if(item.GetType() == ITEM_TYPE_WEAPON)
+    switch(slotIndex)
     {
-        if(item.CritSlot == SLOT_HAND1)
-            slotType = 1;
-        else if(item.CritSlot == SLOT_HAND2)
-            slotType = 2;
+    case 0:
+        item.Val0 = raw;
+        return;
+    case 1:
+        item.Val1 = raw;
+        return;
+    case 2:
+        item.Val2 = raw;
+        return;
+    case 3:
+        item.Val3 = raw;
+        return;
+    case 4:
+        item.Val4 = raw;
+        return;
+    case 5:
+        item.Val5 = raw;
+        return;
+    case 6:
+        item.Val6 = raw;
+        return;
+    default:
+        return;
     }
-    else if(item.GetType() == ITEM_TYPE_ARMOR && IsArenaEquippedArmor(item))
-        slotType = 3;
+}
 
+bool ArenaItemHasUpgradeData(Item@ item)
+{
+    if(!valid(item))
+        return false;
+
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT; i++)
+        if(UpgradeSlotRaw(item, uint(i)) != 0)
+            return true;
+
+    return false;
+}
+
+bool ArenaHasStoredUpgradeData(Critter& cr, int slotType)
+{
+    if(slotType == 0)
+        return false;
+
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT; i++)
+        if(GetArenaUpgradeStoredRaw(cr, slotType, i) != 0)
+            return true;
+
+    return false;
+}
+
+void ArenaSnapshotItemUpgrades(Critter& cr, Item@ item)
+{
+    int slotType = ArenaItemUpgradeSlotType(item);
+    if(slotType == 0 || !ArenaItemHasUpgradeData(item))
+        return;
+
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT; i++)
+        SetArenaUpgradeStoredRaw(cr, slotType, i, UpgradeSlotRaw(item, uint(i)));
+}
+
+bool ArenaCanHaveUniqueQuality(Item@ item)
+{
+    if(!valid(item))
+        return false;
+
+    if(item.GetType() == ITEM_TYPE_WEAPON)
+        return !item.IsStackable();
+
+    return item.GetType() == ITEM_TYPE_ARMOR && !UpgradeItemIsHelmet(item);
+}
+
+void ArenaEnsureUniqueQuality(Item@ item)
+{
+    if(!ArenaCanHaveUniqueQuality(item))
+        return;
+
+    int desiredSlots = 5 + UpgradeExtraSlotsFromProto(item.Proto);
+    int currentSlots = UpgradeQualitySlots(item);
+    if(currentSlots >= desiredSlots)
+        return;
+
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT && currentSlots < desiredSlots; i++)
+    {
+        if(UpgradeSlotRaw(item, uint(i)) != 0)
+            continue;
+
+        ArenaSetItemUpgradeRaw(item, i, UPGRADE_SLOT_EMPTY);
+        currentSlots++;
+    }
+}
+
+void ApplyArenaItemUpgrades(Critter& cr, Item@ item)
+{
+    int slotType = ArenaItemUpgradeSlotType(item);
     if(slotType == 0)
         return;
 
-    CompactArenaUpgradeStorage(cr, slotType);
+    if(ArenaItemHasUpgradeData(item))
+        ArenaSnapshotItemUpgrades(cr, item);
+
+    if(!ArenaHasStoredUpgradeData(cr, slotType))
+        return;
+
     ClearArenaUpgradeData(item);
-    item.Val0 = GetArenaUpgradeStoredRaw(cr, slotType, 0);
-    item.Val1 = GetArenaUpgradeStoredRaw(cr, slotType, 1);
-    item.Val2 = GetArenaUpgradeStoredRaw(cr, slotType, 2);
-    item.Val3 = GetArenaUpgradeStoredRaw(cr, slotType, 3);
-    item.Val4 = GetArenaUpgradeStoredRaw(cr, slotType, 4);
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT; i++)
+        ArenaSetItemUpgradeRaw(item, i, GetArenaUpgradeStoredRaw(cr, slotType, i));
 }
 
 // Here we initialize all arena related data
@@ -1199,7 +1332,11 @@ void MakeItemsUseless(Critter& cr)
         {
             SetMinWear(item, 100);
         }
-        ClearArenaUpgradeData(item);
+        if(IsArenaEquippedWeapon(item))
+        {
+            ArenaSnapshotItemUpgrades(cr, item);
+            ClearArenaUpgradeData(item);
+        }
         item.AmmoCount = 0;
         item.Update();
     }
@@ -1211,7 +1348,11 @@ void MakeItemsUseless(Critter& cr)
         Item@ item = items[i];
         if(item.Val9 != SPECIAL_ITEM_ARENA)
             continue;
-        ClearArenaUpgradeData(item);
+        if(IsArenaEquippedArmor(item))
+        {
+            ArenaSnapshotItemUpgrades(cr, item);
+            ClearArenaUpgradeData(item);
+        }
         if(item.GetProtoId() == PID_TESLA_ARMOR)
             item.Charge = 0;
         if(item.IsDeteriorable())
@@ -1744,12 +1885,129 @@ void r_TransferItems(Critter& player, Critter@ npc)
     }
     MakeItemsUseless(npc);
     MoveItems(items, player);
+    for(uint i = 0; i < items.length(); i++)
+    {
+        if(!valid(items[i]))
+            continue;
+        ArenaEnsureUniqueQuality(items[i]);
+        items[i].Update();
+    }
 
+    ArenaTrackGearClaim(player);
+}
+
+void ArenaTrackGearClaim(Critter& player)
+{
     GameVar@ timeout = GetLocalVar(LVAR_arena_gear_timeout, player.Id);
     GameVar@ count = GetLocalVar(LVAR_arena_gear_count, player.Id);
-    if(count == 0)
+    if(count.GetValue() == 0)
         timeout = ELAPSED_TIME;
     count = count.GetValue() + 1;
+}
+
+void MarkArenaDialogItem(Item@ item)
+{
+    if(!valid(item))
+        return;
+
+    item.Val9 = SPECIAL_ITEM_ARENA;
+    item.SetScript("arena@_ArenaItemInit");
+}
+
+uint16 ArenaBlueprintPidByChoice(int choice)
+{
+    switch(choice)
+    {
+    case 1:
+        return PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE;
+    case 2:
+        return PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE;
+    case 3:
+        return PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO;
+    case 4:
+        return PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD;
+    case 5:
+        return PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE;
+    case 6:
+        return PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE;
+    case 7:
+        return PID_BLUEPRINT_ADV_WPN_PERK_AP_BOOST;
+    case 8:
+        return PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER;
+    case 9:
+        return PID_BLUEPRINT_ADV_WPN_PERK_SILENT_HILL_MONSTER;
+    case 10:
+        return PID_BLUEPRINT_ADV_WPN_PERK_BLAST;
+    case 11:
+        return PID_BLUEPRINT_ADV_WPN_PERK_PERSISTENT;
+    case 12:
+        return PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE;
+    case 101:
+        return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT;
+    case 102:
+        return PID_BLUEPRINT_ADV_ARM_PERK_LASER_DT;
+    case 103:
+        return PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DT;
+    case 104:
+        return PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DT;
+    case 105:
+        return PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DT;
+    case 106:
+        return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR;
+    case 107:
+        return PID_BLUEPRINT_ADV_ARM_PERK_LASER_DR;
+    case 108:
+        return PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR;
+    case 109:
+        return PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR;
+    case 110:
+        return PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR;
+    case 111:
+        return PID_BLUEPRINT_ADV_ARM_PERK_CRIT_CHANCE;
+    case 112:
+        return PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER;
+    case 113:
+        return PID_BLUEPRINT_ADV_ARM_PERK_MAX_AP;
+    case 114:
+        return PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES;
+    case 115:
+        return PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES;
+    case 116:
+        return PID_BLUEPRINT_ADV_ARM_PERK_STRENGTH;
+    case 117:
+        return PID_BLUEPRINT_ADV_ARM_PERK_PERCEPTION;
+    case 118:
+        return PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE;
+    case 119:
+        return PID_BLUEPRINT_ADV_ARM_PERK_CHARISMA;
+    case 120:
+        return PID_BLUEPRINT_ADV_ARM_PERK_INTELLIGENCE;
+    case 121:
+        return PID_BLUEPRINT_ADV_ARM_PERK_AGILITY;
+    case 122:
+        return PID_BLUEPRINT_ADV_ARM_PERK_LUCK;
+    case 123:
+        return PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+void r_GiveArenaBlueprint(Critter& player, Critter@ npc, int choice)
+{
+    uint16 pid = ArenaBlueprintPidByChoice(choice);
+    if(pid == 0)
+        return;
+
+    Item@ item = player.AddItem(pid, 1);
+    if(!valid(item))
+        return;
+
+    MarkArenaDialogItem(item);
+    item.Update();
+    ArenaTrackGearClaim(player);
 }
 
 void r_RestoreItems(Critter& player, Critter@ npc)

@@ -139,6 +139,13 @@ void item_init(Item& item, bool firstTime)
 		}
 		
 	}
+
+	uint locPid = map.GetLocation().GetProtoId();
+	if(item.Val4 == FAT_PROTECTED_TOWN_CONTAINER && (locPid == LOCATION_Raiders || locPid == LOCATION_RaidersCave))
+	{
+		Log("Message from item_spawner_container: Locker <" + item.Id + "> at MapId <" + map.Id + "> has been changed to raiders dungeon spawner with Val4 <" + FAT_RAIDERS_CAVE_CONTAINER + ">.");
+		item.Val4 = FAT_RAIDERS_CAVE_CONTAINER;
+	}
 		
 	MakeSpawnerContainer(item, item.Val4);
 }

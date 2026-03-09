@@ -78,8 +78,61 @@ lang=engl
 11 11000 None 0 #
 0 11010 @
 12 12000 None 0 #
-2 12010 #
-0 12020 &
+13 12010 #
+15 12020 #
+2 12030 #
+0 12040 @
+13 13000 None 0 #
+14 13010 R _script arena@r_GiveArenaBlueprint 1 1 #
+14 13020 R _script arena@r_GiveArenaBlueprint 1 2 #
+14 13030 R _script arena@r_GiveArenaBlueprint 1 3 #
+14 13040 R _script arena@r_GiveArenaBlueprint 1 4 #
+14 13050 R _script arena@r_GiveArenaBlueprint 1 5 #
+14 13060 R _script arena@r_GiveArenaBlueprint 1 6 #
+14 13070 R _script arena@r_GiveArenaBlueprint 1 7 #
+14 13080 R _script arena@r_GiveArenaBlueprint 1 8 #
+14 13090 R _script arena@r_GiveArenaBlueprint 1 9 #
+14 13100 R _script arena@r_GiveArenaBlueprint 1 10 #
+14 13110 R _script arena@r_GiveArenaBlueprint 1 11 #
+14 13120 R _script arena@r_GiveArenaBlueprint 1 12 #
+2 13140 #
+0 13150 @
+14 14000 None 0 #
+13 14010 #
+15 14020 #
+2 14030 #
+0 14040 @
+15 15000 None 0 #
+16 15010 R _script arena@r_GiveArenaBlueprint 1 101 #
+16 15020 R _script arena@r_GiveArenaBlueprint 1 102 #
+16 15030 R _script arena@r_GiveArenaBlueprint 1 103 #
+16 15040 R _script arena@r_GiveArenaBlueprint 1 104 #
+16 15050 R _script arena@r_GiveArenaBlueprint 1 105 #
+16 15060 R _script arena@r_GiveArenaBlueprint 1 106 #
+16 15070 R _script arena@r_GiveArenaBlueprint 1 107 #
+16 15080 R _script arena@r_GiveArenaBlueprint 1 108 #
+16 15090 R _script arena@r_GiveArenaBlueprint 1 109 #
+16 15100 R _script arena@r_GiveArenaBlueprint 1 110 #
+16 15110 R _script arena@r_GiveArenaBlueprint 1 111 #
+16 15120 R _script arena@r_GiveArenaBlueprint 1 112 #
+16 15130 R _script arena@r_GiveArenaBlueprint 1 113 #
+16 15140 R _script arena@r_GiveArenaBlueprint 1 114 #
+16 15150 R _script arena@r_GiveArenaBlueprint 1 115 #
+16 15160 R _script arena@r_GiveArenaBlueprint 1 116 #
+16 15170 R _script arena@r_GiveArenaBlueprint 1 117 #
+16 15180 R _script arena@r_GiveArenaBlueprint 1 118 #
+16 15190 R _script arena@r_GiveArenaBlueprint 1 119 #
+16 15200 R _script arena@r_GiveArenaBlueprint 1 120 #
+16 15210 R _script arena@r_GiveArenaBlueprint 1 121 #
+16 15220 R _script arena@r_GiveArenaBlueprint 1 122 #
+16 15230 R _script arena@r_GiveArenaBlueprint 1 123 #
+2 15250 #
+0 15260 @
+16 16000 None 0 #
+15 16010 #
+13 16020 #
+2 16040 #
+0 16050 &
 
 [engl]
 {100}{}{Outfitter}
@@ -93,7 +146,7 @@ lang=engl
 {2040}{}{Something to bash my opponents with!}
 {2050}{}{Something to throw, perhaps?}
 {2060}{}{A body armor.}
-{2070}{}{Is there.. you know, some way for me to get.. uhm.. "better" in the fight? You know, like popping the big B.. Taking a flight, psyching out and stuff, you know, the good shit.. ?}
+{2070}{}{Show me the upgrade blueprints.}
 {2080}{}{Nothing.}
 {3000}{}{Here you go.}
 {4000}{}{Slow down a bit, you've taken enough for now.}
@@ -154,7 +207,60 @@ lang=engl
 {10080}{}{A bath ro(p)e please.}
 {11000}{}{Sorry, no. Even if those are fake weapons, I don't believe they can be safely given to someone with your... condition. You can still watch the fights, while you are here.}
 {11010}{}{Uh?}
-{12000}{}{If I were you I would try my luck at the bar right over there... [points at the other end of the room]}
-{12010}{}{Ok, how about some basic gear?}
-{12020}{}{Gotcha!}
+{12000}{}{Which kind of blueprint do you need?}
+{12010}{}{Show me weapon upgrades.}
+{12020}{}{Show me armor upgrades.}
+{12030}{}{Back to the regular gear.}
+{12040}{}{That's all.}
+{13000}{}{Pick the weapon upgrade blueprint you want.}
+{13010}{}{Accurate.}
+{13020}{}{Penetrate.}
+{13030}{}{Commando.}
+{13040}{}{Fast Reload.}
+{13050}{}{Double Magazine.}
+{13060}{}{Enhanced Damage.}
+{13070}{}{AP Boost.}
+{13080}{}{Critical Power.}
+{13090}{}{Silent Hill Monster.}
+{13100}{}{Blast.}
+{13110}{}{Persistent.}
+{13120}{}{Increased Range.}
+{13140}{}{Back to the regular gear.}
+{13150}{}{That's all.}
+{14000}{}{Here you go. Need another weapon upgrade blueprint?}
+{14010}{}{Show me the weapon upgrades again.}
+{14020}{}{Show me armor upgrades instead.}
+{14030}{}{Back to the regular gear.}
+{14040}{}{That's all.}
+{15000}{}{Pick the armor upgrade blueprint you want.}
+{15010}{}{Normal DT.}
+{15020}{}{Laser DT.}
+{15030}{}{Fire DT.}
+{15040}{}{Plasma DT.}
+{15050}{}{Explode DT.}
+{15060}{}{Normal DR.}
+{15070}{}{Laser DR.}
+{15080}{}{Fire DR.}
+{15090}{}{Plasma DR.}
+{15100}{}{Explode DR.}
+{15110}{}{Crit Chance.}
+{15120}{}{Crit Power.}
+{15130}{}{Max AP.}
+{15140}{}{Radiation Resistance.}
+{15150}{}{Poison Resistance.}
+{15160}{}{Strength.}
+{15170}{}{Perception.}
+{15180}{}{Endurance.}
+{15190}{}{Charisma.}
+{15200}{}{Intelligence.}
+{15210}{}{Agility.}
+{15220}{}{Luck.}
+{15230}{}{All DR.}
+{15250}{}{Back to the regular gear.}
+{15260}{}{That's all.}
+{16000}{}{Here you go. Need another armor upgrade blueprint?}
+{16010}{}{Show me the armor upgrades again.}
+{16020}{}{Show me weapon upgrades instead.}
+{16040}{}{Back to the regular gear.}
+{16050}{}{That's all.}
 

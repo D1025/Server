@@ -144,10 +144,11 @@
 #define EOR_T4_unstatted					   (103)
 #define EOR_Hypos					   (104)
 #define EOR_T3_T4					   (105)
+#define FAT_RAIDERS_CAVE_CONTAINER		   (106)
 
 
 // Definiton for last container
-#define END_OF_CONTAINERS                      (EOR_T3_T4)
+#define END_OF_CONTAINERS                      (FAT_RAIDERS_CAVE_CONTAINER)
 
 shared interface IItemSpawner
 {
@@ -157,9 +158,11 @@ shared interface IItemSpawner
     IItemSpawner@ AddItem(uint16 pid, uint chance);
     IItemSpawner@ SetSeparate(bool separate);
 	IItemSpawner@ SetBonus(bool bonus);
-	IItemSpawner@ SetBonusLow(bool bonus);
+    IItemSpawner@ SetBonusLow(bool bonus);
 	IItemSpawner@ SetBonusOrNot(bool bonus);
 	IItemSpawner@ SetClearAtSpawn(bool clearSpawn);
+    IItemSpawner@ AddDungeonUpgradeBlueprintsLow();
+    IItemSpawner@ AddDungeonUpgradeBlueprintsHigh();
     IItemSpawner@ Clear();
 };
 

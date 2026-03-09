@@ -9893,6 +9893,52 @@ a58ew64v}
 {2555801}{}{Technical sketch for applying the Persistent perk to a weapon. Use it on a weapon in your inventory.}
 {2556000}{}{Advanced Weapon Blueprint: Increased Range}
 {2556001}{}{Technical sketch for applying the Increased Range perk to a weapon. Use it on a weapon in your inventory.}
+{2556100}{}{Advanced Armor Blueprint: Normal DT}
+{2556101}{}{Technical sketch for applying the Normal DT perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556200}{}{Advanced Armor Blueprint: Laser DT}
+{2556201}{}{Technical sketch for applying the Laser DT perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556300}{}{Advanced Armor Blueprint: Fire DT}
+{2556301}{}{Technical sketch for applying the Fire DT perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556400}{}{Advanced Armor Blueprint: Plasma DT}
+{2556401}{}{Technical sketch for applying the Plasma DT perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556500}{}{Advanced Armor Blueprint: Explode DT}
+{2556501}{}{Technical sketch for applying the Explode DT perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556600}{}{Advanced Armor Blueprint: Normal DR}
+{2556601}{}{Technical sketch for applying the Normal DR perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556700}{}{Advanced Armor Blueprint: Laser DR}
+{2556701}{}{Technical sketch for applying the Laser DR perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556800}{}{Advanced Armor Blueprint: Fire DR}
+{2556801}{}{Technical sketch for applying the Fire DR perk to a piece of armor. Use it on an armor item in your inventory.}
+{2556900}{}{Advanced Armor Blueprint: Plasma DR}
+{2556901}{}{Technical sketch for applying the Plasma DR perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557000}{}{Advanced Armor Blueprint: Explode DR}
+{2557001}{}{Technical sketch for applying the Explode DR perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557100}{}{Advanced Armor Blueprint: Critical Resistance}
+{2557101}{}{Technical sketch for applying the Critical Resistance perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557200}{}{Advanced Armor Blueprint: Critical Power Resistance}
+{2557201}{}{Technical sketch for applying the Critical Power Resistance perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557300}{}{Advanced Armor Blueprint: Maximum AP}
+{2557301}{}{Technical sketch for applying the Maximum AP perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557400}{}{Advanced Armor Blueprint: Radiation Resistance}
+{2557401}{}{Technical sketch for applying the Radiation Resistance perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557500}{}{Advanced Armor Blueprint: Poison Resistance}
+{2557501}{}{Technical sketch for applying the Poison Resistance perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557600}{}{Advanced Armor Blueprint: Strength}
+{2557601}{}{Technical sketch for applying the Strength perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557700}{}{Advanced Armor Blueprint: Perception}
+{2557701}{}{Technical sketch for applying the Perception perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557800}{}{Advanced Armor Blueprint: Endurance}
+{2557801}{}{Technical sketch for applying the Endurance perk to a piece of armor. Use it on an armor item in your inventory.}
+{2557900}{}{Advanced Armor Blueprint: Charisma}
+{2557901}{}{Technical sketch for applying the Charisma perk to a piece of armor. Use it on an armor item in your inventory.}
+{2558000}{}{Advanced Armor Blueprint: Intelligence}
+{2558001}{}{Technical sketch for applying the Intelligence perk to a piece of armor. Use it on an armor item in your inventory.}
+{2558100}{}{Advanced Armor Blueprint: Agility}
+{2558101}{}{Technical sketch for applying the Agility perk to a piece of armor. Use it on an armor item in your inventory.}
+{2558200}{}{Advanced Armor Blueprint: Luck}
+{2558201}{}{Technical sketch for applying the Luck perk to a piece of armor. Use it on an armor item in your inventory.}
+{2558300}{}{Advanced Armor Blueprint: All DR}
+{2558301}{}{Technical sketch for applying the All DR perk to a piece of armor. Use it on an armor item in your inventory.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 #====================
