@@ -151,7 +151,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self)
         targetCr.Say(SAY_NETMSG, "Hit Points +" + realHeal);
 
-    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 3 * intelligence : 0);
+    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 2 * intelligence : 0);
     uint firstAidCooldown = REAL_SECOND(MAX(1, 100 - intelligence - medicBonus - (toolBonus > 0 ? 5 : 0)));
     _SetTimeout(cr, TO_SK_FIRST_AID, ApplyHealingPowderCooldownBonus(cr, firstAidCooldown));
 
@@ -259,7 +259,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
 	//druto
-    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 3 * intelligence : 0);
+    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 2 * intelligence : 0);
     uint doctorCooldown = REAL_SECOND(MAX(1, 90 - intelligence - medicBonus - (toolBonus > 0 ? 5 : 0)));
 	_SetTimeout(cr, TO_SK_DOCTOR, ApplyHealingPowderCooldownBonus(cr, doctorCooldown));
 
