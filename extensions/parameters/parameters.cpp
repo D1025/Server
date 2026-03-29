@@ -221,6 +221,7 @@ int checkBonus(Item& it, int bonusType)
 	}
 
 	int maxSlots = legacyLayout ? 5 : 7;
+	int totalBonus = 0;
 	for(int i = 0; i < maxSlots; i++)
 	{
 		int raw = it.Data.ScriptValues[i];
@@ -232,14 +233,16 @@ int checkBonus(Item& it, int bonusType)
 			continue;
 
 		if(raw >= slotPackBase)
-			return (raw - slotPackBase) % slotPackStep - slotPackBias;
+		{
+			totalBonus += (raw - slotPackBase) % slotPackStep - slotPackBias;
+			continue;
+		}
 
 		// Backward compatibility for old format: value in ScriptValues[5..9].
 		if(i < 5)
-			return it.Data.ScriptValues[5 + i];
-		return 0;
+			totalBonus += it.Data.ScriptValues[5 + i];
 	}
-	return 0;
+	return totalBonus;
 }
 
 int checkBonus(const Item* it, int bonusType)
@@ -265,6 +268,7 @@ int checkBonus(const Item* it, int bonusType)
 	}
 
 	int maxSlots = legacyLayout ? 5 : 7;
+	int totalBonus = 0;
 	for(int i = 0; i < maxSlots; i++)
 	{
 		int raw = it->Data.ScriptValues[i];
@@ -276,17 +280,19 @@ int checkBonus(const Item* it, int bonusType)
 			continue;
 
 		if(raw >= slotPackBase)
-			return (raw - slotPackBase) % slotPackStep - slotPackBias;
+		{
+			totalBonus += (raw - slotPackBase) % slotPackStep - slotPackBias;
+			continue;
+		}
 
 		// Backward compatibility for old format: value in ScriptValues[5..9].
 		if(i < 5)
-			return it->Data.ScriptValues[5 + i];
-		return 0;
+			totalBonus += it->Data.ScriptValues[5 + i];
 	}
-	return 0;
+	return totalBonus;
 }
 
-static int getUpgradePerkStacks(Item& it, int perkType)
+static int getUpgradePerkStacks(const Item& it, int perkType)
 {
 	if(perkType == 0)
 		return 0;
@@ -797,19 +803,24 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 	}
 	else if(use == USE_RELOAD)
 	{
-		if (!item.Proto->Weapon_ReloadAp)
+		const Item* reloadWeapon = item.IsWeapon() ? &item : cr.ItemSlotMain;
+		if((reloadWeapon == nullptr || !reloadWeapon->IsWeapon()) && cr.ItemSlotExt != nullptr && cr.ItemSlotExt->IsWeapon())
+			reloadWeapon = cr.ItemSlotExt;
+
+		if (reloadWeapon != nullptr && !reloadWeapon->Proto->Weapon_ReloadAp)
 			apCost = 3;
 		if(TB_BATTLE_TIMEOUT_CHECK(getParam_Timeout(cr, TO_BATTLE)))
 			apCost = FOnline->TbApCostReloadWeapon;
 		else
 			//apCost = FOnline->RtApCostReloadWeapon;
-			apCost = item.Proto->Weapon_ReloadAp;
+			apCost = (reloadWeapon != nullptr ? reloadWeapon->Proto->Weapon_ReloadAp : item.Proto->Weapon_ReloadAp);
 
 		if(cr.Params[PE_QUICK_POCKETS])
 			apCost -= 3;
 
-		int reloadReduction = getUpgradePerkStacks(item, UPGRADE_WEAPON_PERK_FAST_RELOAD);
-		if(item.IsWeapon() && item.Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
+		const Item* perkSource = (reloadWeapon != nullptr ? reloadWeapon : &item);
+		int reloadReduction = getUpgradePerkStacks(*perkSource, UPGRADE_WEAPON_PERK_FAST_RELOAD);
+		if(perkSource->IsWeapon() && perkSource->Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
 			reloadReduction++;
 		apCost -= reloadReduction;
 	}

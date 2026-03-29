@@ -1815,55 +1815,55 @@ string GetArmorUpgradePerkText(int type)
     switch(type)
     {
     case BONUS_ARMOR_NORMAL_DT:
-        return "Normal DT";
+        return "Kinetic Buffer";
     case BONUS_ARMOR_LASER_DT:
-        return "Laser DT";
+        return "Laser Buffer";
     case BONUS_ARMOR_FIRE_DT:
-        return "Fire DT";
+        return "Thermal Buffer";
     case BONUS_ARMOR_PLASMA_DT:
-        return "Plasma DT";
+        return "Plasma Buffer";
     case BONUS_ARMOR_EXPLODE_DT:
-        return "Explode DT";
+        return "Blast Buffer";
     case BONUS_ARMOR_NORMAL_DR:
-        return "Normal DR";
+        return "Ballistic Weave";
     case BONUS_ARMOR_LASER_DR:
-        return "Laser DR";
+        return "Laser Weave";
     case BONUS_ARMOR_FIRE_DR:
-        return "Fire DR";
+        return "Thermal Weave";
     case BONUS_ARMOR_PLASMA_DR:
-        return "Plasma DR";
+        return "Plasma Weave";
     case BONUS_ARMOR_EXPLODE_DR:
-        return "Explode DR";
+        return "Blast Weave";
     case BONUS_ARMOR_CRIT_CHANCE:
-        return "Crit Chance";
+        return "Steady Frame";
     case BONUS_ARMOR_CRIT_POWER:
-        return "Crit Power";
+        return "Trauma Dampening";
     case BONUS_ARMOR_MAX_AP:
-        return "Action Points";
+        return "Mobility Core";
     case BONUS_ARMOR_RAD_RES:
-        return "Rad Resist";
+        return "Rad Shielding";
     case BONUS_ARMOR_POISON_RES:
-        return "Poison Resist";
+        return "Toxin Shielding";
     case BONUS_ARMOR_STRENGTH:
-        return "Strength";
+        return "Gain Strength";
     case BONUS_ARMOR_PERCEPTION:
-        return "Perception";
+        return "Gain Perception";
     case BONUS_ARMOR_ENDURANCE:
-        return "Endurance";
+        return "Gain Endurance";
     case BONUS_ARMOR_CHARISMA:
-        return "Charisma";
+        return "Gain Charisma";
     case BONUS_ARMOR_INTELLIGENCE:
-        return "Intelligence";
+        return "Gain Intelligence";
     case BONUS_ARMOR_AGILITY:
-        return "Agility";
+        return "Gain Agility";
     case BONUS_ARMOR_LUCK:
-        return "Luck";
+        return "Gain Luck";
     case BONUS_ARMOR_CARRY_WEIGHT:
-        return "Carry Weight";
+        return "Load Bearing";
     case BONUS_ARMOR_HEALING_RATE:
-        return "Healing Rate";
+        return "Field Recovery";
     case BONUS_ARMOR_ALL_DR:
-        return "All DR";
+        return "Adaptive Plating";
     default:
         return "";
     }

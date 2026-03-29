@@ -95,7 +95,7 @@ static bool IsHealingItemWithExtraApCost(const Item& item)
 	}
 }
 
-static int getUpgradePerkStacks(Item& it, int perkType)
+static int getUpgradePerkStacks(const Item& it, int perkType)
 {
 	if(perkType == 0)
 		return 0;
@@ -571,18 +571,23 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 	}
 	else if(use == USE_RELOAD)
 	{
-		if (!item.Proto->Weapon_ReloadAp)
+		const Item* reloadWeapon = item.IsWeapon() ? &item : cr.ItemSlotMain;
+		if((reloadWeapon == nullptr || !reloadWeapon->IsWeapon()) && cr.ItemSlotExt != nullptr && cr.ItemSlotExt->IsWeapon())
+			reloadWeapon = cr.ItemSlotExt;
+
+		if (reloadWeapon != nullptr && !reloadWeapon->Proto->Weapon_ReloadAp)
 			apCost = 3;
 		if(TB_BATTLE_TIMEOUT_CHECK(getParam_Timeout(cr, TO_BATTLE)))
 			apCost = Game->TbApCostReloadWeapon;
 		else
-			apCost = item.Proto->Weapon_ReloadAp;
+			apCost = (reloadWeapon != nullptr ? reloadWeapon->Proto->Weapon_ReloadAp : item.Proto->Weapon_ReloadAp);
 
 		if(cr.Params[PE_QUICK_POCKETS])
 			apCost -= 3;
 
-		int reloadReduction = getUpgradePerkStacks(item, UPGRADE_WEAPON_PERK_FAST_RELOAD);
-		if(item.IsWeapon() && item.Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
+		const Item* perkSource = (reloadWeapon != nullptr ? reloadWeapon : &item);
+		int reloadReduction = getUpgradePerkStacks(*perkSource, UPGRADE_WEAPON_PERK_FAST_RELOAD);
+		if(perkSource->IsWeapon() && perkSource->Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
 			reloadReduction++;
 		apCost -= reloadReduction;
 	}

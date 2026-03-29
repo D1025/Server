@@ -1921,11 +1921,6 @@ void critter_reload_weapon(Critter& cr, Item& weapon, Item@ ammo)
         }
     }
 
-    // TODO: remove, apply to extensions/parameters.cpp
-    // Fast reload upgrade: effectively reduce reload AP cost by 1.
-    if(UpgradeReloadApMod(weapon) < 0 && cr.Stat[ST_CURRENT_AP] < cr.Stat[ST_ACTION_POINTS])
-        cr.StatBase[ST_CURRENT_AP] = MIN(cr.Stat[ST_ACTION_POINTS], cr.Stat[ST_CURRENT_AP] + uint(-UpgradeReloadApMod(weapon)));
-
     weapon.Update();
 }
 

@@ -126,7 +126,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 			cr.Say(SAY_NETMSG, "You ran out of medical supplies after healing yourself.");		// First Aid Kit broke
 		}
     }
-    int intelligence = cr.Stat[ST_INTELLECT]+cr.Stat[ST_INTELLECT_EXT];
+    int intelligence = cr.Stat[ST_INTELLECT];
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
 
@@ -224,7 +224,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
             cr.DeleteItem(item.GetProtoId(), 1);
     }
     sk += toolBonus;
-    int intelligence = cr.Stat[ST_INTELLECT]+cr.Stat[ST_INTELLECT_EXT];
+    int intelligence = cr.Stat[ST_INTELLECT];
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
     heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL]*4/10,0,100)))) / 100;
