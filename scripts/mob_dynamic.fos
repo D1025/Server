@@ -107,7 +107,7 @@ void InitializeDynamicMob(Map& map, bool withBoss, int8 howmanybosses)
 		//LABX7
 		case MAP_Labx7_sur : reqNumMobs = 15; break;
 		case MAP_Labx7_lvl1 : reqNumMobs = 50; break;
-		//case MAP_Labx7_lvl2 : reqNumMobs = 15; break;
+		case MAP_Labx7_lvl2 : reqNumMobs = 25; break;
 		case MAP_Stfarm1 : reqNumMobs = 8; break;
 		case MAP_Stfarm2 : reqNumMobs = 15; break;
 		//Mariposa
@@ -1456,6 +1456,7 @@ uint e_TrySpawnMob(array<uint>@ mobdata)
 			break;
 		case MAP_Labx7_sur :
 		case MAP_Labx7_lvl1 :
+		case MAP_Labx7_lvl2 :
 			entireNumbers.resize(entireTypicalent.length());
 			for(uint i = 0; i < entireNumbers.length(); i++)
 				entireNumbers[i] = entireTypicalent[i];	
@@ -4152,10 +4153,10 @@ uint16 GenerateWeapon(uint8 weapontype = 0, uint8 weaponlevel = 2)
 					fromweaponry.resize(6);
 					fromweaponry[0] = PID_10MM_PISTOL;
 					fromweaponry[1] = PID_9MM_MAUSER;
-					fromweaponry[2] = PID_ZIP_GUN;
+					fromweaponry[2] = PID_10MM_PISTOL;
 					fromweaponry[3] = PID_44_MAGNUM_REVOLVER;
-					fromweaponry[4] = PID_44_MAGNUM_SPEEDLOADER;
-					fromweaponry[5] = PID_DESERT_EAGLE_EXT_MAG;
+					fromweaponry[4] = PID_44_MAGNUM_REVOLVER;
+					fromweaponry[5] = PID_DESERT_EAGLE;
 					break;
 				case 2 :
 					fromweaponry.resize(4);
@@ -4185,7 +4186,7 @@ uint16 GenerateWeapon(uint8 weapontype = 0, uint8 weaponlevel = 2)
 					fromweaponry[0] = PID_ASSAULT_RIFLE;
 					fromweaponry[1] = PID_SNIPER_RIFLE;
 					fromweaponry[2] = PID_FN_FAL;
-					fromweaponry[3] = PID_ASSAULT_RIFLE_EXT_MAG;
+					fromweaponry[3] = PID_ASSAULT_RIFLE;
 					fromweaponry[4] = PID_GRENADE_LAUNCHER;
 					break;
 				case 3 :
@@ -4193,7 +4194,7 @@ uint16 GenerateWeapon(uint8 weapontype = 0, uint8 weaponlevel = 2)
 					fromweaponry[0] = PID_SNIPER_RIFLE;
 					fromweaponry[1] = PID_INDEPENDENT;
 					fromweaponry[2] = PID_M72_GAUSS_RIFLE;
-					fromweaponry[3] = PID_FN_FAL_NIGHT_SCOPE;
+					fromweaponry[3] = PID_FN_FAL;
 					fromweaponry[4] = PID_FN_FAL_HPFA;
 					break;
 			}
@@ -4283,7 +4284,7 @@ uint16 GenerateWeapon(uint8 weapontype = 0, uint8 weaponlevel = 2)
 					fromweaponry.resize(3);
 					fromweaponry[0] = PID_MAGNETO_LASER_PISTOL;
 					fromweaponry[1] = PID_PLASMA_PISTOL;
-					fromweaponry[2] = PID_PLASMA_PISTOL_EXT_CART;
+					fromweaponry[2] = PID_PLASMA_PISTOL;
 					break;
 				case 3 :
 					fromweaponry.resize(3);
@@ -4303,13 +4304,13 @@ uint16 GenerateWeapon(uint8 weapontype = 0, uint8 weaponlevel = 2)
 				case 2 :
 					fromweaponry.resize(2);
 					fromweaponry[0] = PID_PLASMA_RIFLE;
-					fromweaponry[1] = PID_LASER_RIFLE_EXT_CAP;
+					fromweaponry[1] = PID_LASER_RIFLE;
 					break;
 				case 3 :
 					fromweaponry.resize(3);
 					fromweaponry[0] = PID_YK42B_PULSE_RIFLE;
 					fromweaponry[1] = PID_TURBO_PLASMA_RIFLE;
-					fromweaponry[2] = PID_LASER_RIFLE_EXT_CAP;
+					fromweaponry[2] = PID_LASER_RIFLE;
 					break;
 			}
 			break;
@@ -5055,7 +5056,6 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 				case PID_10MM_PISTOL :
 				case PID_SPRINGER_RIFLE :
 				case PID_HK_P90C :
-				case PID_ZIP_GUN :
 				case PID_10MM_SMG :
 					switch(Random(1,2))
 					{
@@ -5076,8 +5076,6 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 					break;
 				
 				case PID_44_MAGNUM_REVOLVER :
-				case PID_44_MAGNUM_SPEEDLOADER :
-				case PID_DESERT_EAGLE_EXT_MAG :
 					switch(Random(1,2))
 					{
 						case 1 : mob.AddItem(PID_44_MAGNUM_FMJ, Random(100, 500)); break;
@@ -5128,7 +5126,6 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 				case PID_FN_FAL :
 				case PID_M60 :
 				case PID_FN_FAL_HPFA :
-				case PID_FN_FAL_NIGHT_SCOPE :
 					mob.AddItem(PID_7_62MM_AMMO, Random(300, 500)); break;
 				
 				case PID_TOMMY_GUN :
@@ -5146,7 +5143,6 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 				
 				case PID_INDEPENDENT :
 				case PID_ASSAULT_RIFLE :
-				case PID_ASSAULT_RIFLE_EXT_MAG :
 				case PID_MINIGUN :
 				case PID_AVENGER_MINIGUN :
 					switch(Random(1,2))
@@ -5172,7 +5168,6 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 				
 				case PID_GATLING_LASER :
 				case PID_LASER_RIFLE :
-				case PID_LASER_RIFLE_EXT_CAP :
 				case PID_DUAL_LASER_CANNON :
 				case PID_PLASMA_RIFLE :
 				case PID_TURBO_PLASMA_RIFLE :
@@ -5185,7 +5180,6 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 				case PID_ALIEN_LASER_PISTOL :
 				case PID_MAGNETO_LASER_PISTOL :
 				case PID_PLASMA_PISTOL :
-				case PID_PLASMA_PISTOL_EXT_CART :
 				case PID_YK32_PULSE_PISTOL :
 				case PID_RIPPER :
 				case PID_CATTLE_PROD :

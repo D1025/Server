@@ -139,109 +139,28 @@ uint e_SpawnHigh(array<uint>@ values)
 
 	if(Random(0,99)<50)
 		{
-		switch (Random(1,8))
+		switch (Random(1,6))
 			{			
-			case 1: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR_MK_II); break;}
-			case 2: 	{SpawnBuffItem(item, PID_COMBAT_HELMET_MK_II); break;}
-			case 3: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
-			case 4: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
-			case 5: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}			
-			case 6: 	{item.AddItem(PID_MOTION_SENSOR, 1, 0); break;}
-			case 7: 	{item.AddItem(PID_STEALTH_BOY, 1, 0); break;}
-			case 8: 	{item.AddItem(PID_PULSE_GRENADE, 1, 0); break;}			
+			case 1: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
+			case 2: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
+			case 3: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}			
+			case 4: 	{item.AddItem(PID_MOTION_SENSOR, 1, 0); break;}
+			case 5: 	{item.AddItem(PID_STEALTH_BOY, 1, 0); break;}
+			case 6: 	{item.AddItem(PID_PULSE_GRENADE, 1, 0); break;}			
 			}
 		}
 		
 	if(Random(0,99) == 0)
 		{
-		switch (Random(1,6))
+		switch (Random(1,3))
 			{
-			case 1: 	{SpawnBuffItem(item, PID_DESERT_COMBAT_ARMOR); break;}
-			case 2: 	{SpawnBuffItem(item, PID_DESERT_COMBAT_HELMET); break;}				
-			case 3: 	{SpawnBuffItem(item, PID_ENCLAVE_COMBAT_ARMOR); break;}		
-			case 4: 	{SpawnBuffItem(item, PID_ENCLAVE_COMBAT_HELMET); break;}
-			case 5: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
-			case 6: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}			
+			case 1: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
+			case 2: 	{item.AddItem(PID_LABORATORY_KEYCARD, 1, 0); break;}
+			case 3: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}			
 			}
 		}
 		
-	if(Random(0,99)<2)
-		{
-		switch (Random(1,13))
-			{			
-			case 1: 	{item.AddItem(PID_ABSORBER, 1, 0); break;}
-			case 2: 	{item.AddItem(PID_ADVANCED_SHELL, 1, 0); break;}
-			case 3: 	{item.AddItem(PID_CARBON_POLYMER, 1, 0); break;}
-			case 4: 	{item.AddItem(PID_CYLINDRICAL_LOCK, 1, 0); break;}
-			case 5: 	{item.AddItem(PID_ELECTRIC_AMPLIFIER, 1, 0); break;}
-			case 6: 	{item.AddItem(PID_ELECTROMAGNETIC, 1, 0); break;}
-			case 7: 	{item.AddItem(PID_HIFLO, 1, 0); break;}
-			case 8: 	{item.AddItem(PID_PA_FUEL, 1, 0); break;}
-			case 9: 	{item.AddItem(PID_PLASMA_ACCELERATOR, 1, 0); break;}
-			case 10: 	{item.AddItem(PID_PLASMA_PARTS, 1, 0); break;}
-			case 11: 	{item.AddItem(PID_ROTARY_CHAMBER, 1, 0); break;}
-			case 12: 	{item.AddItem(PID_SERVOMOTORS, 1, 0); break;}
-			case 13: 	{item.AddItem(PID_PA_SHELL, 1, 0); break;}			
-			}
-		}
-	
-	if(Random(0,1000)<2)
-		{
-		switch (Random(1,41))
-			{
-			case 1: 	{item.AddItem(PID_BLUEPRINT_SOLAR_SCORCHER, 1, 0); break;}
-			case 2: 	{item.AddItem(PID_BLUEPRINT_SHOTGUN_DRAGON_BREATH_SHELLS, 1, 0); break;}
-			case 3: 	{item.AddItem(PID_BLUEPRINT_4_7MM_CASELESS, 1, 0); break;}	
-			case 4: 	{item.AddItem(PID_BLUEPRINT_2MM_EC_AMMO, 1, 0); break;}
-			case 5: 	{item.AddItem(PID_BLUEPRINT_METAL_ARMOR_MK_III, 1, 0); break;}			
-			case 6: 	{item.AddItem(PID_BLUEPRINT_PULSE_GRENADE, 1, 0); break;}				
-			case 7: 	{item.AddItem(PID_BLUEPRINT_GATLING_LASER, 1, 0); break;}			
-			case 8: 	{item.AddItem(PID_BLUEPRINT_COMBAT_HELMET_MK_II, 1, 0); break;}		
-			case 9: 	{item.AddItem(PID_BLUEPRINT_PID_HYPO, 1, 0); break;}
-			case 10: 	{item.AddItem(PID_BLUEPRINT_JET_ANTIDOTE, 1, 0); break;}	
-			case 11: 	{item.AddItem(PID_BLUEPRINT_COMBAT_ARMOR_MK_II, 1, 0); break;}
-			case 12: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}			
-			case 13: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
-			case 14: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_ARMOR, 1, 0); break;}			
-			case 15: 	{item.AddItem(PID_BLUEPRINT_NCR_ARMOR, 1, 0); break;}			
-			case 16: 	{item.AddItem(PID_BLUEPRINT_POWERED_ARMOR, 1, 0); break;}
-			case 17: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 1, 0); break;}
-			case 18: 	{item.AddItem(PID_BLUEPRINT_TURBO_PLASMA_RIFLE, 1, 0); break;}
-			case 19: 	{item.AddItem(PID_BLUEPRINT_INDEPENDENT, 1, 0); break;}	
-			case 20: 	{item.AddItem(PID_BLUEPRINT_AVENGER_MINIGUN, 1, 0); break;}
-			case 21: 	{item.AddItem(PID_BLUEPRINT_BOZAR, 1, 0); break;}			
-			case 22: 	{item.AddItem(PID_BLUEPRINT_M203, 1, 0); break;}				
-			case 23: 	{item.AddItem(PID_BLUEPRINT_VINDICATOR_MINIGUN, 1, 0); break;}			
-			case 24: 	{item.AddItem(PID_BLUEPRINT_YK42B_PULSE_RIFLE, 1, 0); break;}
-			case 25: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_HELMET, 1, 0); break;}			
-			case 26: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET, 1, 0); break;}				
-			case 27: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II, 1, 0); break;}			
-			case 28: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_HELMET, 1, 0); break;}		
-			case 29: 	{item.AddItem(PID_BLUEPRINT_NCR_HELMET, 1, 0); break;}
-			case 30: 	{item.AddItem(PID_BLUEPRINT_POWER_HELMET, 1, 0); break;}	
-			case 31: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 1, 0); break;}
-			case 32: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET, 1, 0); break;}			
-			case 33: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2, 1, 0); break;}
-			case 34: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}			
-			case 35: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}			
-			case 36: 	{item.AddItem(PID_BLUEPRINT_HK_G11, 1, 0); break;}
-			case 37: 	{item.AddItem(PID_BLUEPRINT_HK_G11E, 1, 0); break;}
-			case 38: 	{item.AddItem(PID_BLUEPRINT_YK32_PULSE_PISTOL, 1, 0); break;}
-			case 39: 	{item.AddItem(PID_BLUEPRINT_FN_FAL_NIGHT_SCOPE, 1, 0); break;}	
-			case 40: 	{item.AddItem(PID_BLUEPRINT_PK12_GAUSS_PISTOL, 1, 0); break;}
-			case 41: 	{item.AddItem(PID_BLUEPRINT_M72_GAUSS_RIFLE, 1, 0); break;}
-			case 42: 	{item.AddItem(PID_IMPLANT_DERMAL, 1, 0); break;}			
-			case 43: 	{item.AddItem(PID_IMPLANT_PHOENIX, 1, 0); break;}
-			case 44: 	{item.AddItem(PID_IMPLANT_NEMEAN, 1, 0); break;}
-			case 45: 	{item.AddItem(PID_IMPLANT_STRENGTH, 1, 0); break;}
-			case 46: 	{item.AddItem(PID_IMPLANT_PERCEPTION, 1, 0); break;}	
-			case 47: 	{item.AddItem(PID_IMPLANT_ENDURANCE, 1, 0); break;}
-			case 48: 	{item.AddItem(PID_IMPLANT_CHARISMA, 1, 0); break;}			
-			case 49: 	{item.AddItem(PID_IMPLANT_INTELLIGENCE, 1, 0); break;}				
-			case 50: 	{item.AddItem(PID_IMPLANT_AGILITY, 1, 0); break;}			
-			case 51: 	{item.AddItem(PID_IMPLANT_LUCK, 1, 0); break;}
-			}
-		}
+    AddGuaranteedUpgradeBlueprint(item);
 
 	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
 
@@ -263,10 +182,10 @@ uint e_SpawnLow(array<uint>@ values)
 		{
 		switch (Random(1,4))
 			{
-			case 1: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR); break;}
-			case 2: 	{SpawnBuffItem(item, PID_COMBAT_HELMET); break;}			
-			case 3: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR_MK_II); break;}
-			case 4: 	{SpawnBuffItem(item, PID_COMBAT_HELMET_MK_II); break;}		
+			case 1: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
+			case 2: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}			
+			case 3: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 25, 0); break;}
+			case 4: 	{item.AddItem(PID_HYPO, 1, 3); break;}		
 			}
 		}
 	else
@@ -285,7 +204,7 @@ uint e_SpawnLow(array<uint>@ values)
 			case 10: 	{SpawnBuffItem(item, PID_SNIPER_RIFLE); break;}		
 			case 11: 	{SpawnBuffItem(item, PID_AVENGER_MINIGUN); break;}
 			case 12: 	{SpawnBuffItem(item, PID_IMPROVED_FLAMETHROWER); break;}
-			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE_EXT_CAP); break;}
+			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE); break;}
 			case 14: 	{SpawnBuffItem(item, PID_WAKIZASHI_BLADE); break;}
 			case 15: 	{SpawnBuffItem(item, PID_GRENADE_LAUNCHER); break;}
 			}
@@ -293,98 +212,18 @@ uint e_SpawnLow(array<uint>@ values)
 		
 	if(Random(0,99)==1)
 		{
-		switch (Random(1,10))
+		switch (Random(1,6))
 			{
-			case 1: 	{SpawnBuffItem(item, PID_BROTHERHOOD_COMBAT_ARMOR); break;}	
-			case 2: 	{SpawnBuffItem(item, PID_BROTHERHOOD_HELMET); break;}
-			case 3: 	{SpawnBuffItem(item, PID_NCR_ARMOR); break;}			
-			case 4: 	{SpawnBuffItem(item, PID_NCR_HELMET); break;}			
-			case 5: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
-			case 6: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
-			case 7: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}
-			case 8:		{item.AddItem(PID_HYPO, 1, 3); break;}
-			case 9: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
-			case 10: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}
+			case 1: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
+			case 2: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
+			case 3: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}
+			case 4:		{item.AddItem(PID_HYPO, 1, 3); break;}
+			case 5: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
+			case 6: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}
 			}
 		}
 
-	if(Random(0,99)<2)
-		{
-		switch (Random(1,23))
-			{			
-			/*case 1: 	{item.AddItem(PID_IMPLANT_DERMAL, 1, 0); break;}			
-			case 2: 	{item.AddItem(PID_IMPLANT_PHOENIX, 1, 0); break;}
-			case 3: 	{item.AddItem(PID_IMPLANT_NEMEAN, 1, 0); break;}
-			case 4: 	{item.AddItem(PID_IMPLANT_STRENGTH, 1, 0); break;}
-			case 5: 	{item.AddItem(PID_IMPLANT_PERCEPTION, 1, 0); break;}	
-			case 6: 	{item.AddItem(PID_IMPLANT_ENDURANCE, 1, 0); break;}
-			case 7: 	{item.AddItem(PID_IMPLANT_CHARISMA, 1, 0); break;}			
-			case 8: 	{item.AddItem(PID_IMPLANT_INTELLIGENCE, 1, 0); break;}				
-			case 9: 	{item.AddItem(PID_IMPLANT_AGILITY, 1, 0); break;}			
-			case 10: 	{item.AddItem(PID_IMPLANT_LUCK, 1, 0); break;}*/
-			case 1: 	{item.AddItem(PID_ABSORBER, 1, 0); break;}
-			case 2: 	{item.AddItem(PID_ADVANCED_SHELL, 1, 0); break;}
-			case 3: 	{item.AddItem(PID_CARBON_POLYMER, 1, 0); break;}
-			case 4: 	{item.AddItem(PID_CYLINDRICAL_LOCK, 1, 0); break;}
-			case 5: 	{item.AddItem(PID_ELECTRIC_AMPLIFIER, 1, 0); break;}
-			case 6: 	{item.AddItem(PID_ELECTROMAGNETIC, 1, 0); break;}
-			case 7: 	{item.AddItem(PID_HIFLO, 1, 0); break;}
-			case 8: 	{item.AddItem(PID_PA_FUEL, 1, 0); break;}
-			case 9: 	{item.AddItem(PID_PLASMA_ACCELERATOR, 1, 0); break;}
-			case 10: 	{item.AddItem(PID_PLASMA_PARTS, 1, 0); break;}
-			case 11: 	{item.AddItem(PID_ROTARY_CHAMBER, 1, 0); break;}
-			case 12: 	{item.AddItem(PID_SERVOMOTORS, 1, 0); break;}
-			case 13: 	{item.AddItem(PID_PA_SHELL, 1, 0); break;}			
-			}
-		}
-	
-	/*if(Random(0,99)<2)
-		{
-		switch (Random(1,41))
-			{
-			case 1: 	{item.AddItem(PID_BLUEPRINT_SOLAR_SCORCHER, 1, 0); break;}
-			case 2: 	{item.AddItem(PID_BLUEPRINT_SHOTGUN_DRAGON_BREATH_SHELLS, 1, 0); break;}
-			case 3: 	{item.AddItem(PID_BLUEPRINT_4_7MM_CASELESS, 1, 0); break;}	
-			case 4: 	{item.AddItem(PID_BLUEPRINT_2MM_EC_AMMO, 1, 0); break;}
-			case 5: 	{item.AddItem(PID_BLUEPRINT_METAL_ARMOR_MK_III, 1, 0); break;}			
-			case 6: 	{item.AddItem(PID_BLUEPRINT_PULSE_GRENADE, 1, 0); break;}				
-			case 7: 	{item.AddItem(PID_BLUEPRINT_GATLING_LASER, 1, 0); break;}			
-			case 8: 	{item.AddItem(PID_BLUEPRINT_COMBAT_HELMET_MK_II, 1, 0); break;}		
-			case 9: 	{item.AddItem(PID_BLUEPRINT_PID_HYPO, 1, 0); break;}
-			case 10: 	{item.AddItem(PID_BLUEPRINT_JET_ANTIDOTE, 1, 0); break;}	
-			case 11: 	{item.AddItem(PID_BLUEPRINT_COMBAT_ARMOR_MK_II, 1, 0); break;}
-			case 12: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}			
-			case 13: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
-			case 14: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_ARMOR, 1, 0); break;}			
-			case 15: 	{item.AddItem(PID_BLUEPRINT_NCR_ARMOR, 1, 0); break;}			
-			case 16: 	{item.AddItem(PID_BLUEPRINT_POWERED_ARMOR, 1, 0); break;}
-			case 17: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 1, 0); break;}
-			case 18: 	{item.AddItem(PID_BLUEPRINT_TURBO_PLASMA_RIFLE, 1, 0); break;}
-			case 19: 	{item.AddItem(PID_BLUEPRINT_INDEPENDENT, 1, 0); break;}	
-			case 20: 	{item.AddItem(PID_BLUEPRINT_AVENGER_MINIGUN, 1, 0); break;}
-			case 21: 	{item.AddItem(PID_BLUEPRINT_BOZAR, 1, 0); break;}			
-			case 22: 	{item.AddItem(PID_BLUEPRINT_M203, 1, 0); break;}				
-			case 23: 	{item.AddItem(PID_BLUEPRINT_VINDICATOR_MINIGUN, 1, 0); break;}			
-			case 24: 	{item.AddItem(PID_BLUEPRINT_YK42B_PULSE_RIFLE, 1, 0); break;}
-			case 25: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_HELMET, 1, 0); break;}			
-			case 26: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET, 1, 0); break;}				
-			case 27: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II, 1, 0); break;}			
-			case 28: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_HELMET, 1, 0); break;}		
-			case 29: 	{item.AddItem(PID_BLUEPRINT_NCR_HELMET, 1, 0); break;}
-			case 30: 	{item.AddItem(PID_BLUEPRINT_POWER_HELMET, 1, 0); break;}	
-			case 31: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 1, 0); break;}
-			case 32: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET, 1, 0); break;}			
-			case 33: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2, 1, 0); break;}
-			case 34: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}			
-			case 35: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}			
-			case 36: 	{item.AddItem(PID_BLUEPRINT_HK_G11, 1, 0); break;}
-			case 37: 	{item.AddItem(PID_BLUEPRINT_HK_G11E, 1, 0); break;}
-			case 38: 	{item.AddItem(PID_BLUEPRINT_YK32_PULSE_PISTOL, 1, 0); break;}
-			case 39: 	{item.AddItem(PID_BLUEPRINT_FN_FAL_NIGHT_SCOPE, 1, 0); break;}	
-			case 40: 	{item.AddItem(PID_BLUEPRINT_PK12_GAUSS_PISTOL, 1, 0); break;}
-			case 41: 	{item.AddItem(PID_BLUEPRINT_M72_GAUSS_RIFLE, 1, 0); break;}
-			}
-		}	*/	
+    AddGuaranteedUpgradeBlueprint(item);
 
 	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
 
@@ -399,6 +238,67 @@ void SpawnBuffItem(Item& container, uint16 pid)
 {
 	Item@ it = container.AddItem(pid, 1, 0);
 	AddSpecialBonusWeighted(it);
+}
+
+uint16 RandomWeaponUpgradeBlueprintPid()
+{
+	switch(Random(1,12))
+	{
+		case 1: return PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE;
+		case 2: return PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE;
+		case 3: return PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO;
+		case 4: return PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD;
+		case 5: return PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE;
+		case 6: return PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE;
+		case 7: return PID_BLUEPRINT_ADV_WPN_PERK_AP_BOOST;
+		case 8: return PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER;
+		case 9: return PID_BLUEPRINT_ADV_WPN_PERK_SILENT_HILL_MONSTER;
+		case 10: return PID_BLUEPRINT_ADV_WPN_PERK_BLAST;
+		case 11: return PID_BLUEPRINT_ADV_WPN_PERK_PERSISTENT;
+		case 12: return PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE;
+	}
+
+	return PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE;
+}
+
+uint16 RandomArmorUpgradeBlueprintPid()
+{
+	switch(Random(1,22))
+	{
+		case 1: return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT;
+		case 2: return PID_BLUEPRINT_ADV_ARM_PERK_LASER_DT;
+		case 3: return PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DT;
+		case 4: return PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DT;
+		case 5: return PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DT;
+		case 6: return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR;
+		case 7: return PID_BLUEPRINT_ADV_ARM_PERK_LASER_DR;
+		case 8: return PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR;
+		case 9: return PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR;
+		case 10: return PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR;
+		case 11: return PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER;
+		case 12: return PID_BLUEPRINT_ADV_ARM_PERK_MAX_AP;
+		case 13: return PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES;
+		case 14: return PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES;
+		case 15: return PID_BLUEPRINT_ADV_ARM_PERK_STRENGTH;
+		case 16: return PID_BLUEPRINT_ADV_ARM_PERK_PERCEPTION;
+		case 17: return PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE;
+		case 18: return PID_BLUEPRINT_ADV_ARM_PERK_CHARISMA;
+		case 19: return PID_BLUEPRINT_ADV_ARM_PERK_INTELLIGENCE;
+		case 20: return PID_BLUEPRINT_ADV_ARM_PERK_AGILITY;
+		case 21: return PID_BLUEPRINT_ADV_ARM_PERK_LUCK;
+		case 22: return PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR;
+	}
+
+	return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT;
+}
+
+void AddGuaranteedUpgradeBlueprint(Item& container)
+{
+	uint16 pid = RandomWeaponUpgradeBlueprintPid();
+	if(Random(0, 1) == 1)
+		pid = RandomArmorUpgradeBlueprintPid();
+
+	container.AddItem(pid, 1, 0);
 }
 
 void CritterShout(Critter& mob)

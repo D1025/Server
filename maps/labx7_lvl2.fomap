@@ -9006,11 +9006,15 @@ MapObjType           1
 ProtoId              188
 MapX                 105
 MapY                 68
+ScriptName           spawner_pve
+FuncName             init_low
 
 MapObjType           1
 ProtoId              188
 MapX                 103
 MapY                 68
+ScriptName           spawner_pve
+FuncName             init_low
 
 MapObjType           2
 ProtoId              2067
@@ -9026,11 +9030,15 @@ MapObjType           1
 ProtoId              188
 MapX                 81
 MapY                 68
+ScriptName           spawner_pve
+FuncName             init_low
 
 MapObjType           1
 ProtoId              188
 MapX                 83
 MapY                 68
+ScriptName           spawner_pve
+FuncName             init_low
 
 MapObjType           2
 ProtoId              2067
@@ -9046,6 +9054,8 @@ MapObjType           1
 ProtoId              184
 MapX                 70
 MapY                 102
+ScriptName           spawner_pve
+FuncName             init_low
 
 MapObjType           2
 ProtoId              2067
@@ -9211,6 +9221,8 @@ MapObjType           1
 ProtoId              131
 MapX                 93
 MapY                 142
+ScriptName           spawner_pve
+FuncName             init_high
 
 MapObjType           2
 ProtoId              2067
@@ -9765,4 +9777,9 @@ ProtoId              2067
 MapX                 91
 MapY                 141
 
-
+MapObjType           2
+ProtoId              3852
+MapX                 92
+MapY                 58
+ScriptName           map_labx7
+FuncName             t_Elevator

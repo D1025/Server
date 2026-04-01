@@ -252,7 +252,6 @@ int _ArmorPerkBlueprintValue(int bonusType)
     case BONUS_ARMOR_RAD_RES:
     case BONUS_ARMOR_POISON_RES:
         return 10;
-    case BONUS_ARMOR_CRIT_CHANCE:
     case BONUS_ARMOR_CRIT_POWER:
         return -10;
     case BONUS_ARMOR_MAX_AP:
@@ -294,8 +293,6 @@ string _ArmorPerkBlueprintName(int bonusType)
         return "Plasma Weave";
     case BONUS_ARMOR_EXPLODE_DR:
         return "Blast Weave";
-    case BONUS_ARMOR_CRIT_CHANCE:
-        return "Steady Frame";
     case BONUS_ARMOR_CRIT_POWER:
         return "Trauma Dampening";
     case BONUS_ARMOR_MAX_AP:
@@ -523,7 +520,6 @@ void _AbpLaserDrInit(Item& item, bool firstTime)       { item.SetEvent(ITEM_EVEN
 void _AbpFireDrInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_AbpFireDrUse"); }
 void _AbpPlasmaDrInit(Item& item, bool firstTime)      { item.SetEvent(ITEM_EVENT_USE, "_AbpPlasmaDrUse"); }
 void _AbpExplodeDrInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_AbpExplodeDrUse"); }
-void _AbpCritChanceInit(Item& item, bool firstTime)    { item.SetEvent(ITEM_EVENT_USE, "_AbpCritChanceUse"); }
 void _AbpCritPowerInit(Item& item, bool firstTime)     { item.SetEvent(ITEM_EVENT_USE, "_AbpCritPowerUse"); }
 void _AbpMaxApInit(Item& item, bool firstTime)         { item.SetEvent(ITEM_EVENT_USE, "_AbpMaxApUse"); }
 void _AbpRadResInit(Item& item, bool firstTime)        { item.SetEvent(ITEM_EVENT_USE, "_AbpRadResUse"); }
@@ -547,7 +543,6 @@ bool _AbpLaserDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, S
 bool _AbpFireDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_FIRE_DR); }
 bool _AbpPlasmaDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_PLASMA_DR); }
 bool _AbpExplodeDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_EXPLODE_DR); }
-bool _AbpCritChanceUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)    { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_CRIT_CHANCE); }
 bool _AbpCritPowerUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)     { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_CRIT_POWER); }
 bool _AbpMaxApUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)         { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_MAX_AP); }
 bool _AbpRadResUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)        { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_RAD_RES); }

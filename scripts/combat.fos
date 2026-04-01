@@ -11,7 +11,7 @@
 // 23-07-2013 Cubik:
 // poprawione obliczanie obrazen od bonusow crafconych broni
 // naprawiony bug z niewlasciwym wyliczaniem DT/DR armorow od bonusow (wyliczane sa w dll-ce Kilgora)
-// bonusy armorow przetwarzane w combat.fos: BONUS_ARMOR_CRIT_CHANCE, BONUS_ARMOR_CRIT_POWER	
+// bonusy armorow przetwarzane w combat.fos: BONUS_ARMOR_CRIT_POWER	
 // pozostałe bonusy armorow przetwarzane sa w dll-ce Kilgora
 
 
@@ -713,9 +713,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 }
 
                 chance += addchance;
-				//Log("*szansa na criticala przed dodaniem ujemnego bonusa z armora: " + chance);
-				chance += SelectArmorBonus(usedArmor, BONUS_ARMOR_CRIT_CHANCE);
-				//Log("*szansa na criticala po dodaniu ujemnego bonusa z armora: " + chance);
             }
             isCritical = (Random(1, 100) <= chance);
 			CriticalChance = chance;

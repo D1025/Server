@@ -3572,7 +3572,7 @@ uint16 AddT3Item()
 	switch(Random(1, 27))
 	{
 		case 1: itempid = PID_223_PISTOL; break;
-		case 2: itempid = PID_ASSAULT_RIFLE_EXT_MAG; break;
+		case 2: itempid = PID_ASSAULT_RIFLE; break;
 		case 3: itempid = PID_HK_CAWS; break;
 		case 4: itempid = PID_PANCOR_JACKHAMMER; break;
 		case 5: itempid = PID_HK_P90C; break;
@@ -3679,7 +3679,7 @@ uint16 AddT4BP()
 		case 8: itempid = PID_BLUEPRINT_HK_G11; break;
 		case 9: itempid = PID_BLUEPRINT_HK_G11E; break;
 		case 10: itempid = PID_BLUEPRINT_YK32_PULSE_PISTOL; break;
-		case 11: itempid = PID_BLUEPRINT_FN_FAL_NIGHT_SCOPE; break;
+		case 11: itempid = PID_BLUEPRINT_FN_FAL; break;
 		case 12: itempid = PID_BLUEPRINT_PK12_GAUSS_PISTOL; break;
 		case 13: itempid = PID_BLUEPRINT_M72_GAUSS_RIFLE; break;
 		case 14: itempid = PID_BLUEPRINT_SOLAR_SCORCHER; break;

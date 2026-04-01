@@ -767,6 +767,7 @@
 #define PID_VAULT_13_SHACK_KEY              (414)
 #define PID_PRES_ACCESS_KEY                 (495)
 #define PID_TANKER_FOB                      (492)
+#define PID_LABORATORY_KEYCARD              (29991)
 
 //Holodisks
 #define PID_BROTHERHOOD_TAPE                (164)
@@ -1371,7 +1372,6 @@
 #define PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR             (25568)
 #define PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR           (25569)
 #define PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR          (25570)
-#define PID_BLUEPRINT_ADV_ARM_PERK_CRIT_CHANCE         (25571)
 #define PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER          (25572)
 #define PID_BLUEPRINT_ADV_ARM_PERK_MAX_AP              (25573)
 #define PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES             (25574)

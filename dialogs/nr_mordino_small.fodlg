@@ -163,8 +163,8 @@ lang=engl
 0 46010 R _param p ST_EXPERIENCE + 3000 R _item p PID_GREASE_GUN + 1 R _item p PID_45_CALIBER_AMMO + 100 R _var p q_mordinos_joining_quest = 4 R _param p REPUTATION_MORDINOS + 400 R _item p PID_JET + 8 #
 0 46020 R _param p ST_EXPERIENCE + 3000 R _item p PID_GREASE_GUN + 1 R _item p PID_45_CALIBER_AMMO + 100 R _var p q_mordinos_joining_quest = 4 R _param p REPUTATION_MORDINOS + 400 R _item p PID_JET + 8 @
 57 47000 None 0 #
-0 47010 R _param p ST_EXPERIENCE + 4500 R _item p PID_44_MAGNUM_SPEEDLOADER + 1 R _item p PID_44_MAGNUM_JHP + 100 R _var p q_mordinos_joining_quest = 4 R _param p REPUTATION_MORDINOS + 500 R _item p PID_M60 + 1 R _item p PID_7_62MM_AMMO + 30 R _item p PID_JET + 12 #
-0 47020 R _param p ST_EXPERIENCE + 4500 R _item p PID_LIGHT_SUPPORT_WEAPON + 1 R _item p PID_223_FMJ + 100 R _item p PID_44_MAGNUM_SPEEDLOADER + 1 R _item p PID_44_MAGNUM_JHP + 100 R _var p q_mordinos_joining_quest = 4 R _param p REPUTATION_MORDINOS + 500 R _item p PID_JET + 12 @
+0 47010 R _param p ST_EXPERIENCE + 4500 R _item p PID_44_MAGNUM_REVOLVER + 1 R _item p PID_44_MAGNUM_JHP + 100 R _var p q_mordinos_joining_quest = 4 R _param p REPUTATION_MORDINOS + 500 R _item p PID_M60 + 1 R _item p PID_7_62MM_AMMO + 30 R _item p PID_JET + 12 #
+0 47020 R _param p ST_EXPERIENCE + 4500 R _item p PID_LIGHT_SUPPORT_WEAPON + 1 R _item p PID_223_FMJ + 100 R _item p PID_44_MAGNUM_REVOLVER + 1 R _item p PID_44_MAGNUM_JHP + 100 R _var p q_mordinos_joining_quest = 4 R _param p REPUTATION_MORDINOS + 500 R _item p PID_JET + 12 @
 58 48000 None 0 #
 4 48010 #
 0 48020 &

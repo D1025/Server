@@ -353,7 +353,6 @@ bool ArenaIsArmorBonusType(int bonusType)
     case BONUS_ARMOR_FIRE_DR:
     case BONUS_ARMOR_PLASMA_DR:
     case BONUS_ARMOR_EXPLODE_DR:
-    case BONUS_ARMOR_CRIT_CHANCE:
     case BONUS_ARMOR_CRIT_POWER:
     case BONUS_ARMOR_MAX_AP:
     case BONUS_ARMOR_RAD_RES:
@@ -404,7 +403,6 @@ int ArenaArmorUpgradeDefaultValue(int perkType)
     case BONUS_ARMOR_RAD_RES:
     case BONUS_ARMOR_POISON_RES:
         return 10;
-    case BONUS_ARMOR_CRIT_CHANCE:
     case BONUS_ARMOR_CRIT_POWER:
         return -10;
     case BONUS_ARMOR_MAX_AP:
@@ -457,7 +455,6 @@ uint ArenaArmorUpgradeCost(int perkType)
     case BONUS_ARMOR_INTELLIGENCE:
     case BONUS_ARMOR_AGILITY:
     case BONUS_ARMOR_LUCK:
-    case BONUS_ARMOR_CRIT_CHANCE:
     case BONUS_ARMOR_CRIT_POWER:
         return 2;
     case BONUS_ARMOR_MAX_AP:
@@ -1962,8 +1959,6 @@ uint16 ArenaBlueprintPidByChoice(int choice)
         return PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR;
     case 110:
         return PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR;
-    case 111:
-        return PID_BLUEPRINT_ADV_ARM_PERK_CRIT_CHANCE;
     case 112:
         return PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER;
     case 113:

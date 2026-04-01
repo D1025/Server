@@ -726,6 +726,7 @@ enum MiscKey
     #define PID_TEMPLE_KEY             (438)
     #define PID_JAIL_KEY               (456)      // PID_CELL_DOOR_KEY
 	#define PID_V13_KEY                (25444)    // Key to Vault 13
+    #define PID_LABORATORY_KEYCARD     (29991)
 };
 
 enum MiscMoney

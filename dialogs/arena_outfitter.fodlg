@@ -24,7 +24,7 @@ lang=engl
 3 5010 R _item n PID_14MM_PISTOL + 1 R _script arena@r_TransferItems 0  #
 3 5020 R _item n PID_223_PISTOL + 1 R _script arena@r_TransferItems 0  #
 3 5030 R _item n PID_FN_FAL_HPFA + 1 R _script arena@r_TransferItems 0  #
-3 5040 R _item n PID_ASSAULT_RIFLE_EXT_MAG + 1 R _script arena@r_TransferItems 0  #
+3 5040 R _item n PID_ASSAULT_RIFLE + 1 R _script arena@r_TransferItems 0  #
 3 5050 R _item n PID_HK_P90C + 1 R _script arena@r_TransferItems 0  #
 3 5060 R _item n PID_PANCOR_JACKHAMMER + 1 R _script arena@r_TransferItems 0  #
 3 5070 R _item n PID_HK_CAWS + 1 R _script arena@r_TransferItems 0  #
@@ -46,13 +46,13 @@ lang=engl
 3 6070 R _item n PID_ROCKET_LAUNCHER + 1 R _script arena@r_TransferItems 0  @
 7 7000 None 0 #
 3 7010 R _item n PID_LASER_RIFLE + 1 R _script arena@r_TransferItems 0  #
-3 7020 R _item n PID_LASER_RIFLE_EXT_CAP + 1 R _script arena@r_TransferItems 0  #
+3 7020 R _item n PID_LASER_RIFLE + 1 R _script arena@r_TransferItems 0  #
 3 7030 R _item n PID_PLASMA_RIFLE + 1 R _script arena@r_TransferItems 0  #
 3 7040 R _item n PID_GATLING_LASER + 1 R _script arena@r_TransferItems 0  #
 3 7050 R _item n PID_LASER_PISTOL + 1 R _script arena@r_TransferItems 0  #
 3 7060 R _item n PID_PLASMA_PISTOL + 1 R _script arena@r_TransferItems 0  #
 3 7070 R _item n PID_MAGNETO_LASER_PISTOL + 1 R _script arena@r_TransferItems 0  #
-3 7080 R _item n PID_PLASMA_PISTOL_EXT_CART + 1 R _script arena@r_TransferItems 0  @
+3 7080 R _item n PID_PLASMA_PISTOL + 1 R _script arena@r_TransferItems 0  @
 8 8000 None 0 #
 3 8010 R _item n PID_SUPER_CATTLE_PROD + 1 R _script arena@r_TransferItems 0  #
 3 8020 R _item n PID_MEGA_POWER_FIST + 1 R _script arena@r_TransferItems 0  #
@@ -113,7 +113,6 @@ lang=engl
 16 15080 R _script arena@r_GiveArenaBlueprint 1 108 #
 16 15090 R _script arena@r_GiveArenaBlueprint 1 109 #
 16 15100 R _script arena@r_GiveArenaBlueprint 1 110 #
-16 15110 R _script arena@r_GiveArenaBlueprint 1 111 #
 16 15120 R _script arena@r_GiveArenaBlueprint 1 112 #
 16 15130 R _script arena@r_GiveArenaBlueprint 1 113 #
 16 15140 R _script arena@r_GiveArenaBlueprint 1 114 #
@@ -154,7 +153,7 @@ lang=engl
 {5010}{}{A 14mm Pistol.}
 {5020}{}{A .223 pistol.}
 {5030}{}{FN FAL HPFA  should be good.}
-{5040}{}{Some upgraded Assault Rifle would actually be nice.}
+{5040}{}{An Assault Rifle would actually be nice.}
 {5050}{}{A P90 submachinegun.}
 {5060}{}{A Pancor Jackhammer combat shotgun.}
 {5070}{}{A CAWS Shotgun.}
@@ -176,13 +175,13 @@ lang=engl
 {6070}{}{A Rocket Launcher. The one with deluxe trigger.}
 {7000}{}{Take your pick.}
 {7010}{}{A Laser Rifle.}
-{7020}{}{A Laser Rifle (Ext. Cap.)}
+{7020}{}{A Laser Rifle}
 {7030}{}{A Plasma Rifle.}
 {7040}{}{Gatling Laser, please.}
 {7050}{}{A Laser Pistol.}
 {7060}{}{A Plasma Pistol.}
 {7070}{}{Give me a Magneto Laser Pistol.}
-{7080}{}{Some Plasma Pistol with extended magazine would be good.}
+{7080}{}{A Plasma Pistol would be good.}
 {8000}{}{By all means, suit yourself.}
 {8010}{}{What about some Super Cattle Prod?}
 {8020}{}{A Mega Power Fist!}
@@ -243,7 +242,6 @@ lang=engl
 {15080}{}{Fire DR.}
 {15090}{}{Plasma DR.}
 {15100}{}{Explode DR.}
-{15110}{}{Crit Chance.}
 {15120}{}{Crit Power.}
 {15130}{}{Max AP.}
 {15140}{}{Radiation Resistance.}

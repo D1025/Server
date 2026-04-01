@@ -122,7 +122,7 @@ lang=engl
 {3060}{}{Show me all possible outfits for all combat skills.}
 {4000}{}{Hello there. Choose your energy weapons outfit please.}
 {4010}{}{Soldier (Plasma Rifle + Metal Armor Mk2)}
-{4020}{}{Sniper (Laser Rifle Ext. Cap. + Metal Armor)}
+{4020}{}{Sniper (Laser Rifle + Metal Armor)}
 {4030}{}{Tank (Gatling Laser + Metal Armor Mk2)}
 {4040}{}{Pistoleer (Magneto Laser Pistol + Plasma Pistol + Combat Armor)}
 {4050}{}{Show me all possible outfits for all combat skills.}
@@ -150,7 +150,7 @@ lang=engl
 {8090}{}{BG Artillery (Rocket Launcher + Metal Armor)}
 {8100}{}{BG Pyromaniac (Incinerator + Combat Armor Mk2)}
 {8110}{}{EW Soldier (Plasma Rifle + Metal Armor Mk2)}
-{8120}{}{EW Sniper (Laser Rifle Ext. Cap. + Metal Armor)}
+{8120}{}{EW Sniper (Laser Rifle + Metal Armor)}
 {8130}{}{EW Tank (Gatling Laser + Metal Armor Mk2)}
 {8140}{}{EW Pistoleer (Magneto Laser Pistol + Plasma Pistol + Combat Armor)}
 {8150}{}{UNARMED Puncher (Mega Power Fist + Combat Armor Mk2)}

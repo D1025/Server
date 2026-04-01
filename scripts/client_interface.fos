@@ -1834,8 +1834,6 @@ string GetArmorUpgradePerkText(int type)
         return "Plasma Weave";
     case BONUS_ARMOR_EXPLODE_DR:
         return "Blast Weave";
-    case BONUS_ARMOR_CRIT_CHANCE:
-        return "Steady Frame";
     case BONUS_ARMOR_CRIT_POWER:
         return "Trauma Dampening";
     case BONUS_ARMOR_MAX_AP:
@@ -1909,7 +1907,6 @@ if(it.GetType() == ITEM_TYPE_ARMOR)
 		case BONUS_ARMOR_FIRE_DR:
 		case BONUS_ARMOR_PLASMA_DR:
 		case BONUS_ARMOR_EXPLODE_DR:
-		case BONUS_ARMOR_CRIT_CHANCE:
 		case BONUS_ARMOR_CRIT_POWER:
 		case BONUS_ARMOR_MAX_AP:
 		case BONUS_ARMOR_RAD_RES:

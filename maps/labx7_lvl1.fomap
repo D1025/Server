@@ -13163,4 +13163,10 @@ ProtoId              2067
 MapX                 58
 MapY                 109
 
+MapObjType           2
+ProtoId              3852
+MapX                 70
+MapY                 108
+ScriptName           map_labx7
+FuncName             t_Elevator
 

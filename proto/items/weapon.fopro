@@ -3498,7 +3498,6 @@ Weapon_ApCost_0=5
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=74
-CraftLevel=2
 
 [Proto]
 ProtoId=402
@@ -3584,7 +3583,6 @@ Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
 NeedBlueprint=9828
-CraftLevel=2
 
 [Proto]
 ProtoId=404
@@ -3667,7 +3665,6 @@ Weapon_ReloadAp=5
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-CraftLevel=2
 
 [Proto]
 ProtoId=406
@@ -3707,7 +3704,6 @@ Weapon_ApCost_0=6
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=70
-CraftLevel=2
 
 [Proto]
 ProtoId=407
@@ -5694,7 +5690,6 @@ Weapon_ApCost_0=5
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=71
-CraftLevel=1
 
 [Proto]
 ProtoId=25445

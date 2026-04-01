@@ -1299,7 +1299,7 @@ uint e_SpecialItemEvent(array<uint>@ values)
 				case 5: item = PID_AVENGER_MINIGUN; itemname = "Avenger Minigun"; break;
 				case 6: item = PID_LIGHT_SUPPORT_WEAPON; itemname = "Light Support Weapon"; break;
 				case 7: item = PID_LASER_RIFLE; itemname = "Laser Rifle"; break;
-				case 8: item = PID_LASER_RIFLE_EXT_CAP; itemname = "Laser Rifle (Ext. Cap.)"; break;
+				case 8: item = PID_LASER_RIFLE; itemname = "Laser Rifle"; break;
 				case 9: item = PID_PLASMA_RIFLE; itemname = "Plasma Rifle"; break;
 				case 10: item = PID_4_7MM_CASELESS; itemname = "4.7mm Caseless"; break;
 				case 11: item = PID_2MM_EC_AMMO; itemname = "2mm EC ammunition"; break;
@@ -1319,7 +1319,7 @@ uint e_SpecialItemEvent(array<uint>@ values)
 				case 7: item = PID_BLUEPRINT_HK_G11; itemname = "plans for H&K G11 submachine gun"; break;
 				case 8: item = PID_BLUEPRINT_HK_G11E; itemname = "plans for H&K G11E submachine gun"; break;
 				case 9: item = PID_BLUEPRINT_YK32_PULSE_PISTOL; itemname = "plans for YK32 Pulse Pistol"; break;
-				case 10: item = PID_BLUEPRINT_FN_FAL_NIGHT_SCOPE; itemname = "plans for FN FAL Night Scope"; break;
+				case 10: item = PID_BLUEPRINT_FN_FAL; itemname = "plans for FN FAL battle rifle"; break;
 				case 11: item = PID_BLUEPRINT_PK12_GAUSS_PISTOL; itemname = "plans for PK12 Gauss Pistol"; break;
 				case 12: item = PID_BLUEPRINT_M72_GAUSS_RIFLE; itemname = "plans for M72 Gauss Rifle"; break;
 				case 13: item = PID_BLUEPRINT_SOLAR_SCORCHER; itemname = "plans for Solar Scorcher"; break;

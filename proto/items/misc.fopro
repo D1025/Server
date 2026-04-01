@@ -58,7 +58,7 @@ Material=1
 Weapon_Anim1=6
 Weapon_Anim2_0=Anim2Swing1H
 Weapon_Anim2_1=Anim2Thrust1H
-NeedBlueprint=9769
+NeedBlueprint=0
 CraftLevel=2
 
 [Proto]
@@ -304,8 +304,7 @@ Volume=1
 SoundId=48
 Cost=3060
 Material=1
-NeedBlueprint=9770
-
+NeedBlueprint=0
 [Proto]
 ProtoId=86
 Type=5
@@ -3731,7 +3730,6 @@ Volume=1
 SoundId=48
 Cost=40
 Material=1
-CraftLevel=1
 
 [Proto]
 ProtoId=711
@@ -3834,7 +3832,6 @@ Volume=1
 SoundId=48
 Cost=50
 Material=1
-CraftLevel=1
 
 [Proto]
 ProtoId=718

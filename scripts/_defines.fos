@@ -237,7 +237,6 @@
 #define BONUS_ARMOR_FIRE_DR						(107)
 #define BONUS_ARMOR_PLASMA_DR					(108)
 #define BONUS_ARMOR_EXPLODE_DR					(109)
-#define BONUS_ARMOR_CRIT_CHANCE					(110)
 #define BONUS_ARMOR_CRIT_POWER					(111)
 #define BONUS_ARMOR_MAX_AP						(112)
 #define BONUS_ARMOR_RAD_RES						(113)

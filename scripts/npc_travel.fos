@@ -927,15 +927,14 @@ void critter_init(Critter& npc, bool firstTime)
         uint16[] weapon =
         {
             // pistol
-            PID_ZIP_GUN,             // :)
             PID_9MM_MAUSER,
             PID_10MM_PISTOL,
             PID_14MM_PISTOL,
             PID_DESERT_EAGLE,
-            PID_DESERT_EAGLE_EXT_MAG,
+            PID_DESERT_EAGLE,
             PID_223_PISTOL,
             PID_44_MAGNUM_REVOLVER,
-            PID_44_MAGNUM_SPEEDLOADER,
+            PID_44_MAGNUM_REVOLVER,
             // rifle
             PID_HUNTING_RIFLE,
             PID_SCOPED_HUNTING_RIFLE,

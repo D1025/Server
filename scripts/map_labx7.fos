@@ -1,7 +1,132 @@
+#include "_maps.fos"
+#include "_macros.fos"
+#include "elevators_h.fos"
+
+#define LABX7_EVENT_TIME_MINUTES      (30)
+#define LABX7_SCANNER_PID             (3161) // retscan1.frm
+#define LABX7_SCANNER_X               (73)
+#define LABX7_SCANNER_Y               (109)
+#define LABX7_DOOR_PID                (2470)
+#define LABX7_DOOR_X                  (70)
+#define LABX7_DOOR_Y                  (109)
+
+import bool LockerClose(Item& item) from "lockers";
+import void SwitchState(Item& locker) from "lockers";
 import void InitializeDynamicMob(Map& map) from "mob_dynamic";
+import void InitializeDynamicMob(Map& map, bool withBoss) from "mob_dynamic";
+
+CElevator Labx7Elevator(ELEVATOR_MILITARY_12);
+bool ElevatorsAdded = false;
 
 void map_init(Map& map, bool firstTime)
 {
-    //Dynamic mobs
-	if(firstTime) InitializeDynamicMob(map);
+    // Dynamic mobs.
+    if(firstTime)
+    {
+        if(map.GetProtoId() == MAP_Labx7_lvl2)
+            InitializeDynamicMob(map, true);
+        else
+            InitializeDynamicMob(map);
+    }
+
+    // Add elevator descriptor only once.
+    if(!ElevatorsAdded)
+    {
+        AddElevator(Labx7Elevator);
+        ElevatorsAdded = true;
+    }
+
+    uint16 x = 0, y = 0;
+
+    // Register both floors for one elevator and configure scanner on level 1.
+    switch(map.GetProtoId())
+    {
+    case MAP_Labx7_lvl1:
+        if(map.GetEntireCoords(1, 0, x, y))
+            Labx7Elevator.AddFloor(map.Id, 1);
+        ConfigureLabx7Scanner(map);
+        break;
+    case MAP_Labx7_lvl2:
+        if(map.GetEntireCoords(1, 0, x, y))
+            Labx7Elevator.AddFloor(map.Id, 1);
+        break;
+    default:
+    }
+}
+
+void t_Elevator(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
+{
+    HandleElevator(Labx7Elevator, critter, entered);
+}
+
+void ConfigureLabx7Scanner(Map& map)
+{
+    Item@ scanner = map.GetItem(LABX7_SCANNER_X, LABX7_SCANNER_Y, LABX7_SCANNER_PID);
+    if(!valid(scanner))
+        return;
+
+    scanner.SetEvent(ITEM_EVENT_SKILL, "_UseLabx7Scanner");
+    scanner.SetEvent(ITEM_EVENT_USE_ON_ME, "_UseLabx7ScannerWithItem");
+}
+
+bool _UseLabx7Scanner(Item& scanner, Critter& player, int skill)
+{
+    if((skill == -1) || (skill == SK_SCIENCE))
+    {
+        player.Animate(ANIM1_UNARMED, ANIM2_USE, scanner, true, true);
+        player.Say(SAY_NETMSG, "The scanner requires a valid laboratory keycard.");
+        return true;
+    }
+
+    return false;
+}
+
+bool _UseLabx7ScannerWithItem(Item& scanner, Critter& player, Item@ usedItem)
+{
+    if(!valid(usedItem))
+        return false;
+
+    if(usedItem.GetProtoId() != PID_LABORATORY_KEYCARD)
+    {
+        player.Say(SAY_NETMSG, "It doesn't fit into the scanner slot.");
+        return true;
+    }
+
+    Map@ map = GetMap(scanner.MapId);
+    if(!valid(map))
+        return true;
+
+    Item@ door = map.GetItem(LABX7_DOOR_X, LABX7_DOOR_Y, LABX7_DOOR_PID);
+    if(!valid(door))
+    {
+        player.Say(SAY_NETMSG, "The scanner reports: Door mechanism not found.");
+        return true;
+    }
+
+    player.Animate(ANIM1_UNARMED, ANIM2_USE, scanner, true, true);
+
+    if(FLAG(door.LockerCondition, LOCKER_ISOPEN))
+    {
+        player.Say(SAY_NETMSG, "Access door is already open.");
+        return true;
+    }
+
+    SwitchState(door);
+    DeleteItem(usedItem);
+    player.Say(SAY_NETMSG, "Access granted. Door unlocked for 30 minutes.");
+
+    CreateTimeEvent(AFTER(REAL_MINUTE(LABX7_EVENT_TIME_MINUTES)), "e_CloseLabx7Door", door.Id, false);
+    return true;
+}
+
+uint e_CloseLabx7Door(array<uint>@ values)
+{
+    Item@ door = GetItem(values[0]);
+    if(!valid(door))
+        return 0;
+
+    if(FLAG(door.LockerCondition, LOCKER_ISOPEN))
+        LockerClose(door);
+
+    return 0;
 }

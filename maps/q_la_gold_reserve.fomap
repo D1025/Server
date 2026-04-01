@@ -32778,7 +32778,7 @@ MapY                 133
 ContainerUID         14
 
 MapObjType           1
-ProtoId              405
+ProtoId              23
 MapX                 87
 MapY                 133
 ContainerUID         15
@@ -34695,5 +34695,4 @@ MapY                 77
 LightColor           99994000
 LightDistance        8
 LightIntensity       25
-
 

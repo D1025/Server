@@ -150,9 +150,9 @@ uint e_SpawnHigh(array<uint>@ values)
 			case 8: 	{SpawnBuffItem(item, PID_PANCOR_JACKHAMMER); break;}
 			case 9: 	{SpawnBuffItem(item, PID_LIGHT_SUPPORT_WEAPON); break;}
 			case 10: 	{SpawnBuffItem(item, PID_M60); break;}		
-			case 11: 	{SpawnBuffItem(item, PID_ASSAULT_RIFLE_EXT_MAG); break;}
+			case 11: 	{SpawnBuffItem(item, PID_ASSAULT_RIFLE); break;}
 			case 12: 	{SpawnBuffItem(item, PID_IMPROVED_FLAMETHROWER); break;}
-			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE_EXT_CAP); break;}
+			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE); break;}
 			case 14: 	{SpawnBuffItem(item, PID_WAKIZASHI_BLADE); break;}
 			case 15: 	{SpawnBuffItem(item, PID_GRENADE_LAUNCHER); break;}
 			}
@@ -233,7 +233,7 @@ uint e_SpawnHigh(array<uint>@ values)
 			case 36: 	{item.AddItem(PID_BLUEPRINT_HK_G11, 1, 0); break;}
 			case 37: 	{item.AddItem(PID_BLUEPRINT_HK_G11E, 1, 0); break;}
 			case 38: 	{item.AddItem(PID_BLUEPRINT_YK32_PULSE_PISTOL, 1, 0); break;}
-			case 39: 	{item.AddItem(PID_BLUEPRINT_FN_FAL_NIGHT_SCOPE, 1, 0); break;}	
+			case 39: 	{item.AddItem(PID_BLUEPRINT_FN_FAL, 1, 0); break;}	
 			case 40: 	{item.AddItem(PID_BLUEPRINT_PK12_GAUSS_PISTOL, 1, 0); break;}
 			case 41: 	{item.AddItem(PID_BLUEPRINT_M72_GAUSS_RIFLE, 1, 0); break;}
 			case 42: 	{item.AddItem(PID_IMPLANT_DERMAL, 1, 0); break;}			
@@ -303,7 +303,7 @@ uint e_SpawnLow(array<uint>@ values)
 			case 10: 	{SpawnBuffItem(item, PID_M60); break;}		
 			case 11: 	{SpawnBuffItem(item, PID_AVENGER_MINIGUN); break;}
 			case 12: 	{SpawnBuffItem(item, PID_IMPROVED_FLAMETHROWER); break;}
-			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE_EXT_CAP); break;}
+			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE); break;}
 			case 14: 	{SpawnBuffItem(item, PID_WAKIZASHI_BLADE); break;}
 			case 15: 	{SpawnBuffItem(item, PID_GRENADE_LAUNCHER); break;}
 			}

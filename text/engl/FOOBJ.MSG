@@ -9913,8 +9913,6 @@ a58ew64v}
 {2556901}{}{Technical sketch for applying the Plasma Weave perk to a piece of armor. Use it on an armor item in your inventory.}
 {2557000}{}{Advanced Armor Blueprint: Blast Weave}
 {2557001}{}{Technical sketch for applying the Blast Weave perk to a piece of armor. Use it on an armor item in your inventory.}
-{2557100}{}{Advanced Armor Blueprint: Steady Frame}
-{2557101}{}{Technical sketch for applying the Steady Frame perk to a piece of armor. Use it on an armor item in your inventory.}
 {2557200}{}{Advanced Armor Blueprint: Trauma Dampening}
 {2557201}{}{Technical sketch for applying the Trauma Dampening perk to a piece of armor. Use it on an armor item in your inventory.}
 {2557300}{}{Advanced Armor Blueprint: Mobility Core}
@@ -9941,6 +9939,8 @@ a58ew64v}
 {2558301}{}{Technical sketch for applying the Adaptive Plating perk to a piece of armor. Use it on an armor item in your inventory.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
+{2999100}{}{Laboratory Keycard}
+{2999101}{}{An electronic access card for Laboratory X7 security systems.}
 #====================
 # 11355 to 11405 are tiles! next proto can start at 11406!
 #====================

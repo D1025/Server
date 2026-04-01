@@ -11762,7 +11762,7 @@ MapX                 36
 MapY                 62
 
 MapObjType           1
-ProtoId              300
+ProtoId              8
 MapX                 36
 MapY                 62
 ContainerUID         1
@@ -11772,5 +11772,4 @@ ProtoId              59
 MapX                 36
 MapY                 62
 ContainerUID         1
-
 

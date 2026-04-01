@@ -140,3 +140,17 @@ SoundId=48
 Cost=40
 Material=2
 LightColor=-16777216
+
+[Proto]
+ProtoId=29991
+Type=7
+PicMap=art\items\misc\passkey1.fofrm
+PicInv=art\inven\passkey1.frm
+Flags=150994974
+DisableEgg=1
+Weight=453
+Volume=1
+SoundId=48
+Cost=25
+Material=2
+LightColor=-16777216

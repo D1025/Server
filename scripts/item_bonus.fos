@@ -187,7 +187,6 @@ bool IsArmorBonusType(int bonusType)
     case BONUS_ARMOR_FIRE_DR:
     case BONUS_ARMOR_PLASMA_DR:
     case BONUS_ARMOR_EXPLODE_DR:
-    case BONUS_ARMOR_CRIT_CHANCE:
     case BONUS_ARMOR_CRIT_POWER:
     case BONUS_ARMOR_MAX_AP:
     case BONUS_ARMOR_RAD_RES:
@@ -233,7 +232,6 @@ uint ArmorPerkCost(int bonusType)
     case BONUS_ARMOR_INTELLIGENCE:
     case BONUS_ARMOR_AGILITY:
     case BONUS_ARMOR_LUCK:
-    case BONUS_ARMOR_CRIT_CHANCE:
     case BONUS_ARMOR_CRIT_POWER:
         return 2;
     case BONUS_ARMOR_MAX_AP:
@@ -358,7 +356,6 @@ int RollArmorBonusValue(int bonusType)
     case BONUS_ARMOR_RAD_RES:
     case BONUS_ARMOR_POISON_RES:
         return 10;
-    case BONUS_ARMOR_CRIT_CHANCE:
     case BONUS_ARMOR_CRIT_POWER:
         return -10;
     case BONUS_ARMOR_MAX_AP:
@@ -392,7 +389,6 @@ int[] ArmorPerkPool =
     BONUS_ARMOR_ALL_DR,
     BONUS_ARMOR_RAD_RES,
     BONUS_ARMOR_POISON_RES,
-    BONUS_ARMOR_CRIT_CHANCE,
     BONUS_ARMOR_CRIT_POWER,
     BONUS_ARMOR_MAX_AP,
     BONUS_ARMOR_STRENGTH,
@@ -417,7 +413,6 @@ int[] HelmetPerkPool =
     BONUS_ARMOR_PLASMA_DR,
     BONUS_ARMOR_EXPLODE_DR,
     BONUS_ARMOR_ALL_DR,
-    BONUS_ARMOR_CRIT_CHANCE,
     BONUS_ARMOR_CRIT_POWER
 };
 
