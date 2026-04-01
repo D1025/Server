@@ -13,7 +13,7 @@
 #include "npc_roles_h.fos"
 
 import bool LockerClose(Item& item) from "lockers";
-import void AddSpecialBonusWeighted(Item@ it) from "item_bonus";
+import void AddBonuses(Item@ it, int magic) from "item_bonus";
 
 void init_high(Item& item, bool firstTime)
 {
@@ -137,30 +137,13 @@ uint e_SpawnHigh(array<uint>@ values)
         return 0;
 	ClearContainer(item);
 
-	if(Random(0,99)<50)
-		{
-		switch (Random(1,6))
-			{			
-			case 1: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
-			case 2: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
-			case 3: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}			
-			case 4: 	{item.AddItem(PID_MOTION_SENSOR, 1, 0); break;}
-			case 5: 	{item.AddItem(PID_STEALTH_BOY, 1, 0); break;}
-			case 6: 	{item.AddItem(PID_PULSE_GRENADE, 1, 0); break;}			
-			}
-		}
-		
-	if(Random(0,99) == 0)
-		{
-		switch (Random(1,3))
-			{
-			case 1: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
-			case 2: 	{item.AddItem(PID_LABORATORY_KEYCARD, 1, 0); break;}
-			case 3: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}			
-			}
-		}
-		
-    AddGuaranteedUpgradeBlueprint(item);
+    SpawnGuaranteedLoadout(item, true);
+    TryAddChems(item);
+    TryAddUtility(item);
+    TryAddNewEraHolotape(item, 10);
+    TryAddSpecialImplant(item);
+    TryAddCombatImplant(item);
+    TryAddHighKeyOrShell(item);
 
 	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
 
@@ -178,52 +161,11 @@ uint e_SpawnLow(array<uint>@ values)
         return 0;
 	ClearContainer(item);
 
-	if(Random(0,99)<50)
-		{
-		switch (Random(1,4))
-			{
-			case 1: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
-			case 2: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}			
-			case 3: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 25, 0); break;}
-			case 4: 	{item.AddItem(PID_HYPO, 1, 3); break;}		
-			}
-		}
-	else
-		{
-		switch (Random(1,15))
-			{
-			case 1: 	{SpawnBuffItem(item, PID_ROCKET_LAUNCHER); break;}
-			case 2: 	{SpawnBuffItem(item, PID_PLASMA_RIFLE); break;}
-			case 3: 	{SpawnBuffItem(item, PID_SUPER_CATTLE_PROD); break;}
-			case 4: 	{SpawnBuffItem(item, PID_SUPER_SLEDGE); break;}
-			case 5: 	{SpawnBuffItem(item, PID_SNIPER_RIFLE); break;}
-			case 6: 	{SpawnBuffItem(item, PID_223_PISTOL); break;}
-			case 7: 	{SpawnBuffItem(item, PID_HK_P90C); break;}	
-			case 8: 	{SpawnBuffItem(item, PID_HK_CAWS); break;}
-			case 9: 	{SpawnBuffItem(item, PID_LIGHT_SUPPORT_WEAPON); break;}
-			case 10: 	{SpawnBuffItem(item, PID_SNIPER_RIFLE); break;}		
-			case 11: 	{SpawnBuffItem(item, PID_AVENGER_MINIGUN); break;}
-			case 12: 	{SpawnBuffItem(item, PID_IMPROVED_FLAMETHROWER); break;}
-			case 13: 	{SpawnBuffItem(item, PID_LASER_RIFLE); break;}
-			case 14: 	{SpawnBuffItem(item, PID_WAKIZASHI_BLADE); break;}
-			case 15: 	{SpawnBuffItem(item, PID_GRENADE_LAUNCHER); break;}
-			}
-		}
-		
-	if(Random(0,99)==1)
-		{
-		switch (Random(1,6))
-			{
-			case 1: 	{item.AddItem(PID_2MM_EC_AMMO, 10, 0); break;}
-			case 2: 	{item.AddItem(PID_4_7MM_CASELESS, 25, 0); break;}
-			case 3: 	{item.AddItem(PID_SHOTGUN_DRAGON_BREATH_SHELLS, 50, 0); break;}
-			case 4:		{item.AddItem(PID_HYPO, 1, 3); break;}
-			case 5: 	{item.AddItem(PID_V13_KEY, 1, 0); break;}
-			case 6: 	{item.AddItem(PID_HOWITZER_SHELL, 1, 0); break;}
-			}
-		}
-
-    AddGuaranteedUpgradeBlueprint(item);
+    SpawnGuaranteedLoadout(item, false);
+    TryAddChems(item);
+    TryAddUtility(item);
+    TryAddNewEraHolotape(item, 5);
+    TryAddSpecialImplant(item);
 
 	if(FLAG(item.LockerCondition, LOCKER_ISOPEN)) LockerClose(item);
 
@@ -234,71 +176,246 @@ uint e_SpawnLow(array<uint>@ values)
 }
 
 
-void SpawnBuffItem(Item& container, uint16 pid)
+void SpawnGuaranteedLoadout(Item& container, bool highTier)
 {
-	Item@ it = container.AddItem(pid, 1, 0);
-	AddSpecialBonusWeighted(it);
+    uint16 weaponPid = RandomWeaponPidWithAmmo();
+    Item@ weapon = container.AddItem(weaponPid, 1, 0);
+    ApplyRewardQuality(weapon, highTier);
+
+    const ProtoItem@ weaponProto = valid(weapon) ? weapon.Proto : GetProtoItem(weaponPid);
+    if(valid(weaponProto) && weaponProto.Weapon_DefaultAmmoPid != 0 && weaponProto.Weapon_MaxAmmoCount > 0)
+    {
+        uint ammoStacks = highTier ? uint(Random(3, 5)) : uint(Random(2, 4));
+        uint ammoCount = MAX(uint(1), weaponProto.Weapon_MaxAmmoCount * ammoStacks);
+        container.AddItem(weaponProto.Weapon_DefaultAmmoPid, ammoCount, 0);
+    }
+
+    uint16 armorPid = RandomArmorPid();
+    Item@ armor = container.AddItem(armorPid, 1, 0);
+    ApplyRewardQuality(armor, highTier);
+
+    uint16 helmetPid = HelmetForArmor(armorPid);
+    Item@ helmet = container.AddItem(helmetPid, 1, 0);
+    ApplyRewardQuality(helmet, highTier);
 }
 
-uint16 RandomWeaponUpgradeBlueprintPid()
+void ApplyRewardQuality(Item@ it, bool highTier)
 {
-	switch(Random(1,12))
-	{
-		case 1: return PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE;
-		case 2: return PID_BLUEPRINT_ADV_WPN_PERK_PENETRATE;
-		case 3: return PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO;
-		case 4: return PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD;
-		case 5: return PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE;
-		case 6: return PID_BLUEPRINT_ADV_WPN_PERK_ENHANCED_DAMAGE;
-		case 7: return PID_BLUEPRINT_ADV_WPN_PERK_AP_BOOST;
-		case 8: return PID_BLUEPRINT_ADV_WPN_PERK_CRITICAL_POWER;
-		case 9: return PID_BLUEPRINT_ADV_WPN_PERK_SILENT_HILL_MONSTER;
-		case 10: return PID_BLUEPRINT_ADV_WPN_PERK_BLAST;
-		case 11: return PID_BLUEPRINT_ADV_WPN_PERK_PERSISTENT;
-		case 12: return PID_BLUEPRINT_ADV_WPN_PERK_INCREASED_RANGE;
-	}
+    if(!valid(it))
+        return;
 
-	return PID_BLUEPRINT_ADV_WPN_PERK_ACCURATE;
+    if(highTier)
+    {
+        AddBonuses(it, 5); // Unique
+        return;
+    }
+
+    AddBonuses(it, Random(3, 5)); // Superior+
 }
 
-uint16 RandomArmorUpgradeBlueprintPid()
+void TryAddChems(Item& container)
 {
-	switch(Random(1,22))
-	{
-		case 1: return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT;
-		case 2: return PID_BLUEPRINT_ADV_ARM_PERK_LASER_DT;
-		case 3: return PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DT;
-		case 4: return PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DT;
-		case 5: return PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DT;
-		case 6: return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DR;
-		case 7: return PID_BLUEPRINT_ADV_ARM_PERK_LASER_DR;
-		case 8: return PID_BLUEPRINT_ADV_ARM_PERK_FIRE_DR;
-		case 9: return PID_BLUEPRINT_ADV_ARM_PERK_PLASMA_DR;
-		case 10: return PID_BLUEPRINT_ADV_ARM_PERK_EXPLODE_DR;
-		case 11: return PID_BLUEPRINT_ADV_ARM_PERK_CRIT_POWER;
-		case 12: return PID_BLUEPRINT_ADV_ARM_PERK_MAX_AP;
-		case 13: return PID_BLUEPRINT_ADV_ARM_PERK_RAD_RES;
-		case 14: return PID_BLUEPRINT_ADV_ARM_PERK_POISON_RES;
-		case 15: return PID_BLUEPRINT_ADV_ARM_PERK_STRENGTH;
-		case 16: return PID_BLUEPRINT_ADV_ARM_PERK_PERCEPTION;
-		case 17: return PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE;
-		case 18: return PID_BLUEPRINT_ADV_ARM_PERK_CHARISMA;
-		case 19: return PID_BLUEPRINT_ADV_ARM_PERK_INTELLIGENCE;
-		case 20: return PID_BLUEPRINT_ADV_ARM_PERK_AGILITY;
-		case 21: return PID_BLUEPRINT_ADV_ARM_PERK_LUCK;
-		case 22: return PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR;
-	}
+    if(Random(1, 100) > 25)
+        return;
 
-	return PID_BLUEPRINT_ADV_ARM_PERK_NORMAL_DT;
+    uint16 pid = Random(0, 1) == 0 ? PID_STIMPAK : PID_SUPER_STIMPAK;
+    container.AddItem(pid, Random(5, 15), 0);
 }
 
-void AddGuaranteedUpgradeBlueprint(Item& container)
+void TryAddUtility(Item& container)
 {
-	uint16 pid = RandomWeaponUpgradeBlueprintPid();
-	if(Random(0, 1) == 1)
-		pid = RandomArmorUpgradeBlueprintPid();
+    if(Random(1, 100) > 5)
+        return;
 
-	container.AddItem(pid, 1, 0);
+    uint16 pid = Random(0, 1) == 0 ? PID_STEALTH_BOY : PID_MOTION_SENSOR;
+    container.AddItem(pid, 1, 0);
+}
+
+void TryAddNewEraHolotape(Item& container, int chancePercent)
+{
+    if(Random(1, 100) > chancePercent)
+        return;
+
+    container.AddItem(PID_NEW_ERA_HOLOTAPE, 1, 0);
+}
+
+void TryAddSpecialImplant(Item& container)
+{
+    if(Random(1, 100) > 1)
+        return;
+
+    container.AddItem(RandomSpecialImplantPid(), 1, 0);
+}
+
+void TryAddCombatImplant(Item& container)
+{
+    if(Random(1, 100) > 1)
+        return;
+
+    container.AddItem(RandomCombatImplantPid(), 1, 0);
+}
+
+void TryAddHighKeyOrShell(Item& container)
+{
+    if(Random(1, 100) > 2)
+        return;
+
+    container.AddItem(RandomHighTierUtilityPid(), 1, 0);
+}
+
+uint16 RandomWeaponPidFromList()
+{
+    switch(Random(1, 51))
+    {
+    case 1: return PID_9MM_MAUSER;
+    case 2: return PID_10MM_PISTOL;
+    case 3: return PID_14MM_PISTOL;
+    case 4: return PID_DESERT_EAGLE;
+    case 5: return PID_223_PISTOL;
+    case 6: return PID_44_MAGNUM_REVOLVER;
+    case 7: return PID_NEEDLER_PISTOL;
+    case 8: return PID_YK32_PULSE_PISTOL;
+    case 9: return PID_GRENADE_PISTOL;
+    case 10: return PID_HUNTING_RIFLE;
+    case 11: return PID_SCOPED_HUNTING_RIFLE;
+    case 12: return PID_SPRINGER_RIFLE;
+    case 13: return PID_ASSAULT_RIFLE;
+    case 14: return PID_SNIPER_RIFLE;
+    case 15: return PID_FN_FAL;
+    case 16: return PID_GRENADE_LAUNCHER;
+    case 17: return PID_SHOTGUN;
+    case 18: return PID_SAWED_OFF_SHOTGUN;
+    case 19: return PID_COMBAT_SHOTGUN;
+    case 20: return PID_HK_CAWS;
+    case 21: return PID_PANCOR_JACKHAMMER;
+    case 22: return PID_10MM_SMG;
+    case 23: return PID_HK_P90C;
+    case 24: return PID_TOMMY_GUN;
+    case 25: return PID_HK_G11;
+    case 26: return PID_GREASE_GUN;
+    case 27: return PID_FLAMER;
+    case 28: return PID_IMPROVED_FLAMETHROWER;
+    case 29: return PID_ROCKET_LAUNCHER;
+    case 30: return PID_MINIGUN;
+    case 31: return PID_AVENGER_MINIGUN;
+    case 32: return PID_LIGHT_SUPPORT_WEAPON;
+    case 33: return PID_M60;
+    case 34: return PID_LASER_PISTOL;
+    case 35: return PID_MAGNETO_LASER_PISTOL;
+    case 36: return PID_SOLAR_SCORCHER;
+    case 37: return PID_LASER_RIFLE;
+    case 38: return PID_GATLING_LASER;
+    case 39: return PID_PLASMA_PISTOL;
+    case 40: return PID_PLASMA_RIFLE;
+    case 41: return PID_SUPER_SLEDGE;
+    case 42: return PID_COMBAT_KNIFE;
+    case 43: return PID_SHIV;
+    case 44: return PID_SWITCHBLADE;
+    case 45: return PID_SHARP_SPEAR;
+    case 46: return PID_WAKIZASHI_BLADE;
+    case 47: return PID_SUPER_CATTLE_PROD;
+    case 48: return PID_RIPPER;
+    case 49: return PID_SPIKED_KNUCKLES;
+    case 50: return PID_MEGA_POWER_FIST;
+    case 51: return PID_RING_PLATED_BOXING_GLOVES;
+    }
+    return PID_10MM_PISTOL;
+}
+
+uint16 RandomWeaponPidWithAmmo()
+{
+    // Keep the "weapon + ammo" guarantee by rerolling until a valid ammo weapon is found.
+    for(uint i = 0; i < 25; i++)
+    {
+        uint16 pid = RandomWeaponPidFromList();
+        ProtoItem@ proto = GetProtoItem(pid);
+        if(valid(proto) && proto.Weapon_DefaultAmmoPid != 0 && proto.Weapon_MaxAmmoCount > 0)
+            return pid;
+    }
+    return PID_10MM_PISTOL;
+}
+
+uint16 RandomArmorPid()
+{
+    switch(Random(1, 15))
+    {
+    case 1: return PID_LEATHER_JACKET;
+    case 2: return PID_LEATHER_ARMOR_MK_II;
+    case 3: return PID_CURED_LEATHER_ARMOR;
+    case 4: return PID_METAL_ARMOR_MK_II;
+    case 5: return PID_TESLA_ARMOR;
+    case 6: return PID_COMBAT_ARMOR;
+    case 7: return PID_COMBAT_ARMOR_MK_II;
+    case 8: return PID_BROTHERHOOD_COMBAT_ARMOR;
+    case 9: return PID_NCR_ARMOR;
+    case 10: return PID_ENVIROMENTAL_ARMOR;
+    case 11: return PID_ENCLAVE_COMBAT_ARMOR;
+    case 12: return PID_VAULT_13_SUIT;
+    case 13: return PID_VAULT_SUIT;
+    case 14: return PID_SF_COMBAT_JACKET;
+    case 15: return PID_DESERT_COMBAT_ARMOR;
+    }
+    return PID_COMBAT_ARMOR;
+}
+
+uint16 HelmetForArmor(uint16 armorPid)
+{
+    switch(armorPid)
+    {
+    case PID_LEATHER_JACKET: return PID_LEATHER_JACKET_HELMET;
+    case PID_LEATHER_ARMOR_MK_II: return PID_LEATHER_ARMOR_HELMET_MK2;
+    case PID_CURED_LEATHER_ARMOR: return PID_LEATHER_ARMOR_HELMET;
+    case PID_METAL_ARMOR_MK_II: return PID_METAL_HELMET_MK2;
+    case PID_TESLA_ARMOR: return PID_TESLA_HELMET;
+    case PID_COMBAT_ARMOR: return PID_COMBAT_HELMET;
+    case PID_COMBAT_ARMOR_MK_II: return PID_COMBAT_HELMET_MK_II;
+    case PID_BROTHERHOOD_COMBAT_ARMOR: return PID_BROTHERHOOD_HELMET;
+    case PID_NCR_ARMOR: return PID_NCR_HELMET;
+    case PID_ENVIROMENTAL_ARMOR: return PID_METAL_HELMET;
+    case PID_ENCLAVE_COMBAT_ARMOR: return PID_ENCLAVE_COMBAT_HELMET;
+    case PID_VAULT_13_SUIT: return PID_MOTORCYCLE_HELMET;
+    case PID_VAULT_SUIT: return PID_MOTORCYCLE_HELMET;
+    case PID_SF_COMBAT_JACKET: return PID_COMBAT_LEATHER_JACKET_HELMET;
+    case PID_DESERT_COMBAT_ARMOR: return PID_DESERT_COMBAT_HELMET;
+    }
+    return PID_COMBAT_HELMET;
+}
+
+uint16 RandomSpecialImplantPid()
+{
+    switch(Random(1, 7))
+    {
+    case 1: return PID_IMPLANT_STRENGTH;
+    case 2: return PID_IMPLANT_PERCEPTION;
+    case 3: return PID_IMPLANT_ENDURANCE;
+    case 4: return PID_IMPLANT_CHARISMA;
+    case 5: return PID_IMPLANT_INTELLIGENCE;
+    case 6: return PID_IMPLANT_AGILITY;
+    case 7: return PID_IMPLANT_LUCK;
+    }
+    return PID_IMPLANT_LUCK;
+}
+
+uint16 RandomCombatImplantPid()
+{
+    switch(Random(1, 3))
+    {
+    case 1: return PID_IMPLANT_DERMAL;
+    case 2: return PID_IMPLANT_PHOENIX;
+    case 3: return PID_IMPLANT_NEMEAN;
+    }
+    return PID_IMPLANT_DERMAL;
+}
+
+uint16 RandomHighTierUtilityPid()
+{
+    switch(Random(1, 3))
+    {
+    case 1: return PID_V13_KEY;
+    case 2: return PID_LABORATORY_KEYCARD;
+    case 3: return PID_HOWITZER_SHELL;
+    }
+    return PID_V13_KEY;
 }
 
 void CritterShout(Critter& mob)

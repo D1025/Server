@@ -9941,6 +9941,8 @@ a58ew64v}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 {2999100}{}{Laboratory Keycard}
 {2999101}{}{An electronic access card for Laboratory X7 security systems.}
+{2999200}{}{New Era Holotape}
+{2999201}{}{No label, no manual, only a sticky note: "Do NOT feed to the Geiger counter." Rumor says some quartermaster trades top quality gear for these... when sober.}
 #====================
 # 11355 to 11405 are tiles! next proto can start at 11406!
 #====================

@@ -6268,3 +6268,17 @@ Volume=4
 SoundId=48
 Cost=100
 Material=7
+
+[Proto]
+ProtoId=29992
+Type=5
+PicMap=art\items\box2.frm
+PicInv=art\inven\newEraHolotape.png
+Flags=134217758
+DisableEgg=1
+Stackable=1
+Weight=500
+Volume=1
+SoundId=48
+Cost=1
+Material=1

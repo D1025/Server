@@ -768,6 +768,7 @@
 #define PID_PRES_ACCESS_KEY                 (495)
 #define PID_TANKER_FOB                      (492)
 #define PID_LABORATORY_KEYCARD              (29991)
+#define PID_NEW_ERA_HOLOTAPE                (29992)
 
 //Holodisks
 #define PID_BROTHERHOOD_TAPE                (164)

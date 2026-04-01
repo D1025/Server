@@ -738,6 +738,11 @@ enum MiscMoney
     #define PID_DOLLAR                 (9715)
 };
 
+enum MiscToken
+{
+    #define PID_NEW_ERA_HOLOTAPE       (29992)
+};
+
 #ifdef __SERVER // for now, client does not have required ASEngine-related functions
 # ifndef ITEMPID_SKIP_IMPORTS
 #  ifndef __ITEMPID__
