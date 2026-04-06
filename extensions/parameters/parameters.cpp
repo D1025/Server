@@ -737,6 +737,10 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 			apCost -= 1;
 		}
 	}
+	else if(use == USE_DEPLOY)
+	{
+		apCost = 5;
+	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{
 		bool hthAttack = Item_Weapon_IsHtHAttack(item, mode);
@@ -746,6 +750,9 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		if(aim) apCost += GetAimApCost(aim);
 		if(cr.Params[PE_BONUS_RATE_OF_FIRE] !=0) apCost--;
 		//if(checkBonus(item, BONUS_WEAPON_AP_COST)!=0) apCost--;
+
+		if(item.Proto->WeaponHasPerk(WEAPON_PERK_DEPLOY) && !cr.Params[MODE_WEAPON_DEPLOYED])
+			apCost = 1000;
 	}
 
 	if(use == USE_RELOAD)
