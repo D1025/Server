@@ -3771,7 +3771,13 @@ void SetDeterioration(Item& item)
 }
 
 int GetActualMaxHp(Critter@ cr) {
-    int maxHp = cr.StatBase[ST_MAX_LIFE] + cr.StatBase[ST_MAX_LIFE_EXT] + CLAMP(cr.StatBase[ST_LEVEL], 0, 30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2;
+    int armorEnduranceBonus = 0;
+    Item@ armor = _CritGetItemArmor(cr);
+    if(valid(armor))
+        armorEnduranceBonus = UpgradeBonusValue(armor, BONUS_ARMOR_ENDURANCE);
+
+    int endurance = cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT] + armorEnduranceBonus;
+    int maxHp = cr.StatBase[ST_MAX_LIFE] + cr.StatBase[ST_MAX_LIFE_EXT] + CLAMP(cr.StatBase[ST_LEVEL], 0, 30) * endurance / 2;
     return MAX(maxHp, 1);
 }
 

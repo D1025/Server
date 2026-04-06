@@ -1096,39 +1096,22 @@ struct Item
         if( !maxAmmo )
             return 0;
 
-        // Upgrade slots are stored in ScriptValues[0..6] as packed values, where 1004 is Double Magazine.
-        const int doubleMagazinePerkType = 1004;
+        // Upgrade slots are stored in ScriptValues[0..6] as packed values.
+        const int doubleMagazinePerkType = 204;
         const int slotEmpty = 9000;
         const int slotUsed = 9001;
         const int slotPackBase = 2000000;
         const int slotPackStep = 1000;
 
-        bool legacyLayout = false;
-        for( int i = 0; i < 5; i++ )
+        uint stacks = 0;
+        for( int i = 0; i < 7; i++ )
         {
             int raw = Data.ScriptValues[ i ];
-            if( raw == 0 || raw == slotEmpty || raw == slotUsed )
+            if( raw == 0 || raw == slotEmpty || raw == slotUsed || raw < slotPackBase )
                 continue;
-            if( raw >= slotPackBase )
-                continue;
-            legacyLayout = true;
-            break;
-        }
 
-        auto decodeSlotType = [slotEmpty, slotUsed, slotPackBase, slotPackStep]( int raw ) -> int
-        {
-            if( raw == 0 || raw == slotEmpty || raw == slotUsed )
-                return raw;
-            if( raw >= slotPackBase )
-                return ( raw - slotPackBase ) / slotPackStep;
-            return raw;
-        };
-
-        uint stacks = 0;
-        int maxSlots = legacyLayout ? 5 : 7;
-        for( int i = 0; i < maxSlots; i++ )
-        {
-            if( decodeSlotType( Data.ScriptValues[ i ] ) == doubleMagazinePerkType )
+            int type = ( raw - slotPackBase ) / slotPackStep;
+            if( type == doubleMagazinePerkType )
                 stacks++;
         }
 

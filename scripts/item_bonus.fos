@@ -199,6 +199,7 @@ bool IsArmorBonusType(int bonusType)
     case BONUS_ARMOR_INTELLIGENCE:
     case BONUS_ARMOR_AGILITY:
     case BONUS_ARMOR_LUCK:
+    case BONUS_ARMOR_FAST_RELOAD:
         return true;
     default:
         return false;
@@ -224,6 +225,7 @@ uint ArmorPerkCost(int bonusType)
     case BONUS_ARMOR_RAD_RES:
     case BONUS_ARMOR_POISON_RES:
     case BONUS_ARMOR_ALL_DR:
+    case BONUS_ARMOR_FAST_RELOAD:
         return 1;
     case BONUS_ARMOR_STRENGTH:
     case BONUS_ARMOR_PERCEPTION:
@@ -366,6 +368,7 @@ int RollArmorBonusValue(int bonusType)
     case BONUS_ARMOR_INTELLIGENCE:
     case BONUS_ARMOR_AGILITY:
     case BONUS_ARMOR_LUCK:
+    case BONUS_ARMOR_FAST_RELOAD:
         return 1;
     default:
         return 0;
@@ -397,7 +400,8 @@ int[] ArmorPerkPool =
     BONUS_ARMOR_CHARISMA,
     BONUS_ARMOR_INTELLIGENCE,
     BONUS_ARMOR_AGILITY,
-    BONUS_ARMOR_LUCK
+    BONUS_ARMOR_LUCK,
+    BONUS_ARMOR_FAST_RELOAD
 };
 
 int[] HelmetPerkPool =
@@ -638,7 +642,6 @@ int[] WeaponPerkPool =
     UPGRADE_WEAPON_PERK_ACCURATE,
     UPGRADE_WEAPON_PERK_PENETRATE,
     UPGRADE_WEAPON_PERK_COMMANDO,
-    UPGRADE_WEAPON_PERK_FAST_RELOAD,
     UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE,
     UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE,
     UPGRADE_WEAPON_PERK_AP_BOOST,

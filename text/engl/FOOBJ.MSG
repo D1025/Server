@@ -9875,8 +9875,8 @@ a58ew64v}
 {2554901}{}{Technical sketch for applying the Penetrate perk to a weapon. Use it on a weapon in your inventory.}
 {2555000}{}{Advanced Weapon Blueprint: Commando}
 {2555001}{}{Technical sketch for applying the Commando perk to a weapon. Use it on a weapon in your inventory.}
-{2555100}{}{Advanced Weapon Blueprint: Fast Reload}
-{2555101}{}{Technical sketch for applying the Fast Reload perk to a weapon. Use it on a weapon in your inventory.}
+{2555100}{}{Advanced Armor Blueprint: Fast Reload}
+{2555101}{}{Technical sketch for applying the Fast Reload perk to a piece of armor. Use it on an armor item in your inventory.}
 {2555200}{}{Advanced Weapon Blueprint: Double Magazine}
 {2555201}{}{Technical sketch for applying the Double Magazine perk to a weapon. Use it on a weapon in your inventory.}
 {2555300}{}{Advanced Weapon Blueprint: Enhanced Damage}

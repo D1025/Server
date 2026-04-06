@@ -213,18 +213,18 @@
 #define LEGENDARY_TARGET                        (1000)
 
 // Weapon upgrade perks (item-based, not ProtoItem::Weapon_Perk)
-#define UPGRADE_WEAPON_PERK_ACCURATE            (1000)
-#define UPGRADE_WEAPON_PERK_PENETRATE           (1001)
-#define UPGRADE_WEAPON_PERK_COMMANDO            (1002)
-#define UPGRADE_WEAPON_PERK_FAST_RELOAD         (1003)
-#define UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE     (1004)
-#define UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE     (1005)
-#define UPGRADE_WEAPON_PERK_AP_BOOST            (1006)
-#define UPGRADE_WEAPON_PERK_CRITICAL_POWER      (1007)
-#define UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER (1008)
-#define UPGRADE_WEAPON_PERK_BLAST               (1009)
-#define UPGRADE_WEAPON_PERK_PERSISTENT          (1010)
-#define UPGRADE_WEAPON_PERK_INCREASED_RANGE     (1012)
+#define UPGRADE_WEAPON_PERK_ACCURATE            (200)
+#define UPGRADE_WEAPON_PERK_PENETRATE           (201)
+#define UPGRADE_WEAPON_PERK_COMMANDO            (202)
+// 203 intentionally unused (Fast Reload moved to armor upgrades).
+#define UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE     (204)
+#define UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE     (205)
+#define UPGRADE_WEAPON_PERK_AP_BOOST            (206)
+#define UPGRADE_WEAPON_PERK_CRITICAL_POWER      (207)
+#define UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER (208)
+#define UPGRADE_WEAPON_PERK_BLAST               (209)
+#define UPGRADE_WEAPON_PERK_PERSISTENT          (210)
+#define UPGRADE_WEAPON_PERK_INCREASED_RANGE     (211)
 
 // Possible armor bonus
 #define BONUS_ARMOR_NORMAL_DT					(100)
@@ -251,6 +251,7 @@
 #define BONUS_ARMOR_CARRY_WEIGHT				(122)
 #define BONUS_ARMOR_HEALING_RATE				(123)
 #define BONUS_ARMOR_ALL_DR						(124)
+#define BONUS_ARMOR_FAST_RELOAD					(125)
 
 // Grid Types
 #define GRID_EXITGRID                            (1)
@@ -372,7 +373,7 @@
 #define WEAPON_PERK_PENETRATE                    (3)
 #define WEAPON_PERK_KNOCKBACK                    (4)
 #define WEAPON_PERK_SCOPE_RANGE                  (5)
-#define WEAPON_PERK_FAST_RELOAD                  (6)
+#define WEAPON_PERK_MARKED_SHOT                  (6)
 #define WEAPON_PERK_HAND_TO_HAND                 (7)
 #define WEAPON_PERK_BLUDGEONING                  (8)
 #define WEAPON_PERK_ENHANCED_KNOCKOUT            (9)

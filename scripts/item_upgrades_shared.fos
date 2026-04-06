@@ -284,7 +284,25 @@ bool UpgradeHasPerk(UpgradeItemMutual@ item, int perkType)
 
 bool IsWeaponUpgradePerk(int perkType)
 {
-    return perkType >= UPGRADE_WEAPON_PERK_ACCURATE && perkType <= UPGRADE_WEAPON_PERK_INCREASED_RANGE;
+    switch(perkType)
+    {
+    case UPGRADE_WEAPON_PERK_ACCURATE:
+    case UPGRADE_WEAPON_PERK_PENETRATE:
+    case UPGRADE_WEAPON_PERK_COMMANDO:
+    case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+    case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+    case UPGRADE_WEAPON_PERK_AP_BOOST:
+    case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+    case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+    case UPGRADE_WEAPON_PERK_BLAST:
+    case UPGRADE_WEAPON_PERK_PERSISTENT:
+    case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
 }
 
 uint WeaponUpgradePerkCost(int perkType)
@@ -297,8 +315,6 @@ uint WeaponUpgradePerkCost(int perkType)
         return 2;
     case UPGRADE_WEAPON_PERK_COMMANDO:
         return 2;
-    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
-        return 1;
     case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
         return 2;
     case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
@@ -331,8 +347,6 @@ int WeaponUpgradePerkBaseValue(int perkType)
         return 4;
     case UPGRADE_WEAPON_PERK_COMMANDO:
         return -30;
-    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
-        return -1;
     case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
         return 100;
     case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
@@ -398,12 +412,7 @@ int UpgradeWeaponRangeBonus(UpgradeItemMutual@ item, int baseRange)
 
 int UpgradeReloadApMod(UpgradeItemMutual@ item)
 {
-    if(@item != null)
-    {
-        int stacks = UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_FAST_RELOAD);
-        if(stacks > 0)
-            return stacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_FAST_RELOAD);
-    }
+    // Fast reload was moved to armor upgrades and is handled in parameters.cpp.
     return 0;
 }
 

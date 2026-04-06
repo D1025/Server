@@ -1764,8 +1764,6 @@ string GetWeaponUpgradePerkText(int type)
         return "Penetrate";
     case UPGRADE_WEAPON_PERK_COMMANDO:
         return "Commando";
-    case UPGRADE_WEAPON_PERK_FAST_RELOAD:
-        return "Fast Reload";
     case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
         return "Double Magazine";
     case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
@@ -1860,30 +1858,12 @@ string GetArmorUpgradePerkText(int type)
         return "Load Bearing";
     case BONUS_ARMOR_HEALING_RATE:
         return "Field Recovery";
+    case BONUS_ARMOR_FAST_RELOAD:
+        return "Fast Reload";
     case BONUS_ARMOR_ALL_DR:
         return "Adaptive Plating";
     default:
         return "";
-    }
-
-    return "";
-}
-
-string GetArmorUpgradePerkValueText(int type, int value)
-{
-    string signedValue = (value > 0 ? "+" : "") + value;
-
-    switch(type)
-    {
-    case BONUS_ARMOR_NORMAL_DR:
-    case BONUS_ARMOR_LASER_DR:
-    case BONUS_ARMOR_FIRE_DR:
-    case BONUS_ARMOR_PLASMA_DR:
-    case BONUS_ARMOR_EXPLODE_DR:
-    case BONUS_ARMOR_ALL_DR:
-        return " " + signedValue + "%";
-    default:
-        return " " + signedValue;
     }
 
     return "";
@@ -1920,14 +1900,13 @@ if(it.GetType() == ITEM_TYPE_ARMOR)
 		case BONUS_ARMOR_LUCK:
 		case BONUS_ARMOR_CARRY_WEIGHT:
 		case BONUS_ARMOR_HEALING_RATE:
+		case BONUS_ARMOR_FAST_RELOAD:
 		case BONUS_ARMOR_ALL_DR:
 		{
 			string txt = GetArmorUpgradePerkText(type);
 			if(txt.length() > 0)
 			{
-				result = "\n|" + AW_COLOR_WEAPON_PERK + " Perk: " + txt + GetArmorUpgradePerkValueText(type, value);
-				if(stacks > 1)
-					result += " x" + stacks;
+				result = "\n|" + AW_COLOR_WEAPON_PERK + " Perk: " + txt + " x" + stacks;
 				result += "|" + COLOR_TEXT + " ";
 			}
 			break;
@@ -1949,7 +1928,6 @@ else if(it.GetType() == ITEM_TYPE_WEAPON)
 		case UPGRADE_WEAPON_PERK_ACCURATE:
 		case UPGRADE_WEAPON_PERK_PENETRATE:
 		case UPGRADE_WEAPON_PERK_COMMANDO:
-		case UPGRADE_WEAPON_PERK_FAST_RELOAD:
 		case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
 		case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
 		case UPGRADE_WEAPON_PERK_AP_BOOST:

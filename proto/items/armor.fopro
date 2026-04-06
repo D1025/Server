@@ -1942,8 +1942,22 @@ Volume=1
 SoundId=48
 Cost=16000
 Material=1
-NeedBlueprint=9836
-CraftLevel=2
+
+[Proto]
+ProtoId=25551
+Type=5
+ScriptModule=item_misc
+ScriptFunc=_AbpFastReloadInit
+PicMap=art\items\craft\blueprint.fofrm
+PicInv=art\inven\planY.png
+Flags=150994974
+DisableEgg=1
+Stackable=1
+Weight=453
+Volume=1
+SoundId=48
+Cost=12000
+Material=1
 
 [Proto]
 ProtoId=25546

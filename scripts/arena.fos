@@ -1922,7 +1922,7 @@ uint16 ArenaBlueprintPidByChoice(int choice)
     case 3:
         return PID_BLUEPRINT_ADV_WPN_PERK_COMMANDO;
     case 4:
-        return PID_BLUEPRINT_ADV_WPN_PERK_FAST_RELOAD;
+        return PID_BLUEPRINT_ADV_ARM_PERK_FAST_RELOAD;
     case 5:
         return PID_BLUEPRINT_ADV_WPN_PERK_DOUBLE_MAGAZINE;
     case 6:
@@ -1983,6 +1983,8 @@ uint16 ArenaBlueprintPidByChoice(int choice)
         return PID_BLUEPRINT_ADV_ARM_PERK_LUCK;
     case 123:
         return PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR;
+    case 124:
+        return PID_BLUEPRINT_ADV_ARM_PERK_FAST_RELOAD;
     default:
         return 0;
     }

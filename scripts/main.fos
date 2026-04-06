@@ -2520,11 +2520,15 @@ void critter_finish(Critter& cr, bool toDelete)
 void critter_idle(Critter& cr)
 {
 	speedboost(cr);
+    int actualMaxHp = GetActualMaxHp(cr);
+    if(cr.Stat[ST_CURRENT_HP] > actualMaxHp)
+        cr.StatBase[ST_CURRENT_HP] = actualMaxHp;
+
     // Healing
     if(cr.Timeout[TO_HEALING] == 0)
     {
         //druto
-		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 && cr.Stat[ST_CURRENT_HP] < GetActualMaxHp(cr))
+		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 && cr.Stat[ST_CURRENT_HP] < actualMaxHp)
         {
             int hpFromHealingRate = 15;
 
@@ -2548,8 +2552,8 @@ void critter_idle(Critter& cr)
 			}
             else
                 cr.StatBase[ST_CURRENT_HP] += cr.Stat[ST_HEALING_RATE];
-            if(cr.StatBase[ST_CURRENT_HP] > GetActualMaxHp(cr))
-                cr.StatBase[ST_CURRENT_HP] = GetActualMaxHp(cr);
+            if(cr.StatBase[ST_CURRENT_HP] > actualMaxHp)
+                cr.StatBase[ST_CURRENT_HP] = actualMaxHp;
         }
 
         uint healingTimeout = HEALING_TIMEOUT(cr);

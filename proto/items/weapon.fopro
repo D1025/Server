@@ -3365,7 +3365,6 @@ Weapon_ReloadCount=6
 Weapon_Caliber=9
 Weapon_DefaultAmmoPid=31
 Weapon_MinStrength=4
-Weapon_Perk=6
 Weapon_ActiveUses=1
 Weapon_CriticalFailture=2
 Weapon_Skill_0=200
@@ -5821,22 +5820,6 @@ Weight=453
 Volume=1
 SoundId=48
 Cost=22000
-Material=1
-
-[Proto]
-ProtoId=25551
-Type=5
-ScriptModule=item_misc
-ScriptFunc=_WpBpFastReloadInit
-PicMap=art\items\craft\blueprint.fofrm
-PicInv=art\inven\planW.png
-Flags=150994974
-DisableEgg=1
-Stackable=1
-Weight=453
-Volume=1
-SoundId=48
-Cost=12000
 Material=1
 
 [Proto]

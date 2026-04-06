@@ -881,7 +881,7 @@
 {10853}{}{Penetrate}
 {10854}{}{Knockback}
 {10855}{}{Scope Range}
-{10856}{}{Fast Reload}
+{10856}{}{Marked Shot}
 {10857}{}{Hand to Hand}
 {10858}{}{Bludgeoning}
 {10859}{}{Enhanced Knockout}

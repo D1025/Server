@@ -41,8 +41,9 @@
 #define BONUS_ARMOR_CARRY_WEIGHT				(122)
 #define BONUS_ARMOR_HEALING_RATE				(123)
 #define BONUS_ARMOR_ALL_DR						(124)
-#ifndef UPGRADE_WEAPON_PERK_FAST_RELOAD
-#define UPGRADE_WEAPON_PERK_FAST_RELOAD         (1003)
+#define BONUS_ARMOR_FAST_RELOAD					(125)
+#ifndef UPGRADE_MAX_SLOTS
+#define UPGRADE_MAX_SLOTS                       (7)
 #endif
 
 // Slot/parameters allowing
@@ -201,51 +202,7 @@ EXPORT bool allowSlot_Hand1(uint8, Item&, Critter&, Critter& toCr)
 /* Parameters Get behaviors                                             */
 /************************************************************************/
 
-int checkBonus(Item& it, int bonusType)
-{
-	const int slotEmpty = 9000;
-	const int slotUsed = 9001;
-	const int slotPackBase = 2000000;
-	const int slotPackStep = 1000;
-	const int slotPackBias = 500;
-	bool legacyLayout = false;
-	for(int i = 0; i < 5; i++)
-	{
-		int raw = it.Data.ScriptValues[i];
-		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
-			continue;
-		if(raw >= slotPackBase)
-			continue;
-		legacyLayout = true;
-		break;
-	}
-
-	int maxSlots = legacyLayout ? 5 : 7;
-	int totalBonus = 0;
-	for(int i = 0; i < maxSlots; i++)
-	{
-		int raw = it.Data.ScriptValues[i];
-		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
-			continue;
-
-		int type = (raw >= slotPackBase ? (raw - slotPackBase) / slotPackStep : raw);
-		if(type != bonusType)
-			continue;
-
-		if(raw >= slotPackBase)
-		{
-			totalBonus += (raw - slotPackBase) % slotPackStep - slotPackBias;
-			continue;
-		}
-
-		// Backward compatibility for old format: value in ScriptValues[5..9].
-		if(i < 5)
-			totalBonus += it.Data.ScriptValues[5 + i];
-	}
-	return totalBonus;
-}
-
-int checkBonus(const Item* it, int bonusType)
+static int checkBonusImpl(const Item* it, int bonusType)
 {
 	if(!it)
 		return 0;
@@ -255,78 +212,34 @@ int checkBonus(const Item* it, int bonusType)
 	const int slotPackBase = 2000000;
 	const int slotPackStep = 1000;
 	const int slotPackBias = 500;
-	bool legacyLayout = false;
-	for(int i = 0; i < 5; i++)
-	{
-		int raw = it->Data.ScriptValues[i];
-		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
-			continue;
-		if(raw >= slotPackBase)
-			continue;
-		legacyLayout = true;
-		break;
-	}
-
-	int maxSlots = legacyLayout ? 5 : 7;
 	int totalBonus = 0;
-	for(int i = 0; i < maxSlots; i++)
+	for(int i = 0; i < UPGRADE_MAX_SLOTS; i++)
 	{
 		int raw = it->Data.ScriptValues[i];
 		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
 			continue;
+		if(raw < slotPackBase)
+			continue;
 
-		int type = (raw >= slotPackBase ? (raw - slotPackBase) / slotPackStep : raw);
+		int type = (raw - slotPackBase) / slotPackStep;
+		int value = (raw - slotPackBase) % slotPackStep - slotPackBias;
+
 		if(type != bonusType)
 			continue;
 
-		if(raw >= slotPackBase)
-		{
-			totalBonus += (raw - slotPackBase) % slotPackStep - slotPackBias;
-			continue;
-		}
-
-		// Backward compatibility for old format: value in ScriptValues[5..9].
-		if(i < 5)
-			totalBonus += it->Data.ScriptValues[5 + i];
+		totalBonus += value;
 	}
 	return totalBonus;
 }
 
-static int getUpgradePerkStacks(const Item& it, int perkType)
+int checkBonus(Item& it, int bonusType)
 {
-	if(perkType == 0)
-		return 0;
+	return checkBonusImpl(&it, bonusType);
+}
 
-	const int slotEmpty = 9000;
-	const int slotUsed = 9001;
-	const int slotPackBase = 2000000;
-	const int slotPackStep = 1000;
-
-	bool legacyLayout = false;
-	for(int i = 0; i < 5; i++)
-	{
-		int raw = it.Data.ScriptValues[i];
-		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
-			continue;
-		if(raw >= slotPackBase)
-			continue;
-		legacyLayout = true;
-		break;
-	}
-
-	int maxSlots = legacyLayout ? 5 : 7;
-	int count = 0;
-	for(int i = 0; i < maxSlots; i++)
-	{
-		int raw = it.Data.ScriptValues[i];
-		if(raw == 0 || raw == slotEmpty || raw == slotUsed)
-			continue;
-
-		int type = (raw >= slotPackBase ? (raw - slotPackBase) / slotPackStep : raw);
-		if(type == perkType)
-			count++;
-	}
-	return count;
+int checkBonus(const Item* it, int bonusType)
+{
+	return checkBonusImpl(it, bonusType);
 }
 
 EXPORT int getParam_Strength(CritterMutual& cr, uint)
@@ -812,17 +725,17 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		if(TB_BATTLE_TIMEOUT_CHECK(getParam_Timeout(cr, TO_BATTLE)))
 			apCost = FOnline->TbApCostReloadWeapon;
 		else
-			//apCost = FOnline->RtApCostReloadWeapon;
 			apCost = (reloadWeapon != nullptr ? reloadWeapon->Proto->Weapon_ReloadAp : item.Proto->Weapon_ReloadAp);
 
 		if(cr.Params[PE_QUICK_POCKETS])
 			apCost -= 3;
 
-		const Item* perkSource = (reloadWeapon != nullptr ? reloadWeapon : &item);
-		int reloadReduction = getUpgradePerkStacks(*perkSource, UPGRADE_WEAPON_PERK_FAST_RELOAD);
-		if(perkSource->IsWeapon() && perkSource->Proto->WeaponHasPerk(WEAPON_PERK_FAST_RELOAD))
-			reloadReduction++;
-		apCost -= reloadReduction;
+		const Item* armor=cr.ItemSlotArmor;
+		int reloadReduction = checkBonus(cr.ItemSlotArmor, BONUS_ARMOR_FAST_RELOAD);
+		for (int i = 0; i < reloadReduction; i++)
+		{
+			apCost -= 1;
+		}
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{
@@ -835,7 +748,13 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		//if(checkBonus(item, BONUS_WEAPON_AP_COST)!=0) apCost--;
 	}
 
-	if(apCost < 1) apCost = 1;
+	if(use == USE_RELOAD)
+	{
+		int minReloadAp = (cr.Params[PE_QUICK_POCKETS] ? 0 : 1);
+		if(apCost < minReloadAp) apCost = minReloadAp;
+	}
+	else if(apCost < 1)
+		apCost = 1;
 	return apCost;
 }
 
