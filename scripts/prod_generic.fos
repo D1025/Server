@@ -75,12 +75,12 @@ void _Chemicals2(Item& item, bool firstTime)
 }
 
 bool _SkillChemicals2(Item& item, Critter& cr, int skill)
-USE_SKILL(SK_SCIENCE, PID_CHEMICALS2, __Chemicals2Batch, TEXT_CHEMICALS2, TEXT_CHEMICALS2_HINT)
+USE_SKILL(SK_SCIENCE, PID_CHEMICALS, __Chemicals2Batch, TEXT_CHEMICALS2, TEXT_CHEMICALS2_HINT)
 
 void _FinishChemicals2(Item& item, bool)
 {
     Chemicals2Count--;
-    ReduceCounter(PID_CHEMICALS2, COUNTER(item));
+    ReduceCounter(PID_CHEMICALS, COUNTER(item));
 }
 
 uint e_RegenChemicals2(array<uint>@ values)
@@ -88,7 +88,7 @@ uint e_RegenChemicals2(array<uint>@ values)
     Item@ item = GetItem(values[0]);
     if(!valid(item))
         return 0;
-    Regenerate(item, PID_CHEMICALS2, __Chemicals2Capacity, __Chemicals2Regen, Chemicals2Count);
+    Regenerate(item, PID_CHEMICALS, __Chemicals2Capacity, __Chemicals2Regen, Chemicals2Count);
     return RegenerationInterval;
 }
 
@@ -130,12 +130,12 @@ void _Computer2(Item& item, bool firstTime)
     StartRegeneration(item, "e_RegenComputer2");
 }
 bool _SkillComputer2(Item& item, Critter& cr, int skill)
-USE_SKILL(SK_SCIENCE, PID_ELECTRONIC_PARTS2, __ElectronicParts2Batch, TEXT_COMPUTER2, TEXT_COMPUTER2_HINT)
+USE_SKILL(SK_SCIENCE, PID_ELECTRONIC_PARTS, __ElectronicParts2Batch, TEXT_COMPUTER2, TEXT_COMPUTER2_HINT)
 
 void _FinishComputer2(Item& item, bool)
 {
     Computer2Count--;
-    ReduceCounter(PID_ELECTRONIC_PARTS2, COUNTER(item));
+    ReduceCounter(PID_ELECTRONIC_PARTS, COUNTER(item));
 }
 
 uint e_RegenComputer2(array<uint>@ values)
@@ -143,7 +143,7 @@ uint e_RegenComputer2(array<uint>@ values)
     Item@ item = GetItem(values[0]);
     if(!valid(item))
         return 0;
-    // Regenerate(item, PID_ELECTRONIC_PARTS2, __ElectronicParts2Cap, __ElectronicParts2Regen, Computer2Count);
+    // Regenerate(item, PID_ELECTRONIC_PARTS, __ElectronicParts2Cap, __ElectronicParts2Regen, Computer2Count);
     if(item.Val1<25) item.Val1++;
 	return RegenerationInterval;
 }

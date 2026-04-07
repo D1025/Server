@@ -105,7 +105,6 @@ Armor_CrTypeMale2=30
 Armor_CrTypeFemale2=30
 Armor_CMCritChance=-15
 Armor_CMCritPower=-15
-NeedBlueprint=9788
 CraftLevel=2
 
 [Proto]
@@ -140,7 +139,6 @@ Armor_Perk=2
 Armor_DRElectr=45
 Armor_DTElectr=2
 Armor_CrTypeMale2=129
-NeedBlueprint=9782
 Armor_CMCritChance=-10
 Armor_CMCritPower=-10
 CraftLevel=2
@@ -237,7 +235,6 @@ Armor_CrTypeMale2=30
 Armor_CrTypeFemale2=30
 Armor_CMCritChance=-15
 Armor_CMCritPower=-15
-NeedBlueprint=9789
 CraftLevel=2
 
 [Proto]
@@ -274,7 +271,6 @@ Armor_DTElectr=6
 Armor_CrTypeMale2=129
 Armor_CMCritChance=-10
 Armor_CMCritPower=-10
-NeedBlueprint=9784
 CraftLevel=2
 
 [Proto]
@@ -312,7 +308,6 @@ Armor_CrTypeMale2=9
 Armor_CrTypeMale3=109
 Armor_CrTypeMale4=125
 Armor_CrTypeFemale2=35
-NeedBlueprint=9781
 Armor_CMCritChance=-5
 Armor_CMCritPower=-10
 CraftLevel=2
@@ -386,7 +381,6 @@ Armor_DRElectr=60
 Armor_DTElectr=15
 Armor_CMCritChance=-15
 Armor_CMCritPower=-15
-NeedBlueprint=9823
 CraftLevel=2
 
 [Proto]
@@ -422,7 +416,6 @@ Armor_DRElectr=65
 Armor_DTElectr=15
 Armor_CMCritChance=-15
 Armor_CMCritPower=-15
-NeedBlueprint=9824
 CraftLevel=2
 
 [Proto]
@@ -496,7 +489,6 @@ Armor_CrTypeMale2=9
 Armor_CrTypeMale3=109
 Armor_CrTypeMale4=125
 Armor_CrTypeFemale2=35
-NeedBlueprint=9780
 Armor_CMCritChance=-5
 Armor_CMCritPower=-10
 CraftLevel=2
@@ -534,7 +526,6 @@ Armor_DRElectr=50
 Armor_DTElectr=3
 Armor_CMCritChance=-10
 Armor_CMCritPower=-10
-NeedBlueprint=9783
 CraftLevel=2
 
 [Proto]
@@ -709,7 +700,6 @@ Armor_DRElectr=55
 Armor_DTElectr=5
 Armor_CMCritChance=-10
 Armor_CMCritPower=-10
-NeedBlueprint=9785
 CraftLevel=2
 
 [Proto]
@@ -1423,7 +1413,6 @@ Armor_DTElectr=2
 Armor_CrTypeMale2=129
 Armor_CMCritChance=-15
 Armor_CMCritPower=-15
-NeedBlueprint=9786
 CraftLevel=2
 
 [Proto]
@@ -1535,7 +1524,6 @@ Armor_DRElectr=50
 Armor_DTElectr=3
 Armor_CMCritChance=-10
 Armor_CMCritPower=-10
-NeedBlueprint=9787
 CraftLevel=2
 
 [Proto]

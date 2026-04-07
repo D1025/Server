@@ -1589,7 +1589,6 @@ void ItemSpawnInit() // export
 					AddItem(PID_BARTER_BOOK, 20).
                     AddItem(PID_HYPODERMIC_NEEDLE, 40, 1, 5).
                     AddItem(PID_CHEMICALS, 30, 1, 5).
-                    //AddItem(PID_CHEMICALS2, 20, 1, 3).
                     AddItem(PID_JUNK, 20, 1, 5)
                     );
 
@@ -1665,7 +1664,6 @@ void ItemSpawnInit() // export
 					AddItem(PID_GUNS_AND_BULLETS, 13).
                     AddItem(PID_HYPODERMIC_NEEDLE, 40, 1, 5).
                     AddItem(PID_CHEMICALS, 30, 1, 5)*/
-                    //AddItem(PID_CHEMICALS2, 20, 1, 3)
                     );
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

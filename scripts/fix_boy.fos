@@ -465,6 +465,32 @@ bool FilterItems(Critter& player, uint pid)
     return false;
 }
 
+bool HasCraftRequiredParams(Critter& player, CraftItem& craft)
+{
+    array<uint> needParams;
+    array<int> needValues;
+    array<bool> ors;
+    uint count = craft.GetNeedParams(needParams, needValues, ors);
+    if(count == 0)
+        return true;
+
+    bool branchOk = true;
+    for(uint i = 0; i < count; i++)
+    {
+        if(int(player.Param[needParams[i]]) < needValues[i])
+            branchOk = false;
+
+        if(i + 1 == count || ors[i])
+        {
+            if(branchOk)
+                return true;
+            branchOk = true;
+        }
+    }
+
+    return false;
+}
+
 bool CheckMultiplierResources(Critter& player, CraftItem& craft)
 {
     bool isFixAll = false;
@@ -548,6 +574,9 @@ int fix_Resource(Critter& player, int stage, CraftItem& craft)
 {
     if(stage == FIXBOY_LIST)
     {
+        if(!HasCraftRequiredParams(player, craft))
+            return FIX_FAIL;
+
         array<uint16> pids;
         for(uint i = 0, j = craft.GetOutItems(pids, null); i < j; i++)           // usually, only one item
         {
@@ -577,6 +606,9 @@ int fix_Generic(Critter& player, int stage, CraftItem& craft)
 {
     if(stage == FIXBOY_LIST)
     {
+        if(!HasCraftRequiredParams(player, craft))
+            return FIX_FAIL;
+
         array<uint16> pids;
         for(uint i = 0, j = craft.GetOutItems(pids, null); i < j; i++)           // usually, only one item
         {
@@ -616,6 +648,9 @@ int fix_Blueprint(Critter& player, int stage, CraftItem& craft)
 {
     if(stage == FIXBOY_LIST || stage == FIXBOY_BUTTON)
     {
+        if(!HasCraftRequiredParams(player, craft))
+            return FIX_FAIL;
+
         array<uint16> pids;
         for(uint i = 0, j = craft.GetOutItems(pids, null); i < j; i++)           // usually, only one item
         {
@@ -648,6 +683,9 @@ int fix_Lock(Critter& player, int stage, CraftItem& craft)
     {
         if(stage == FIXBOY_LIST)
         {
+            if(!HasCraftRequiredParams(player, craft))
+                return FIX_FAIL;
+
             array<uint16> pids;
             for(uint i = 0, j = craft.GetOutItems(pids, null); i < j; i++)           // usually, only one item
             {
@@ -657,7 +695,11 @@ int fix_Lock(Critter& player, int stage, CraftItem& craft)
             return FIX_SUCCESS;
         }
         if(stage == FIXBOY_BUTTON)
+        {
+            if(!HasCraftRequiredParams(player, craft))
+                return FIX_FAIL;
             return FIX_SUCCESS;
+        }
         if(stage == FIXBOY_CRAFT)
         {
             if(!CheckMultiplierResources(player, craft))

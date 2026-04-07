@@ -1,4 +1,4 @@
-﻿# 3.2.0
+# 3.2.0
 
 [Proto]
 ProtoId=4
@@ -356,7 +356,6 @@ Weapon_Round_0=25
 Weapon_ApCost_0=4
 Weapon_ReloadAp=10
 Weapon_SoundId_0=76
-NeedBlueprint=9767
 CraftLevel=2
 
 [Proto]
@@ -405,7 +404,6 @@ Weapon_ApCost_1=6
 Weapon_ReloadAp=6
 Weapon_SoundId_0=78
 Weapon_SoundId_1=78
-NeedBlueprint=9765
 CraftLevel=2
 
 [Proto]
@@ -447,7 +445,6 @@ Weapon_ApCost_0=8
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=75
-NeedBlueprint=9761
 CraftLevel=2
 
 [Proto]
@@ -664,7 +661,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=69
-NeedBlueprint=9750
 CraftLevel=2
 
 [Proto]
@@ -711,7 +707,6 @@ Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-NeedBlueprint=9753
 CraftLevel=2
 
 [Proto]
@@ -751,7 +746,6 @@ Weapon_ApCost_0=6
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=70
-NeedBlueprint=9759
 CraftLevel=2
 
 [Proto]
@@ -819,7 +813,6 @@ Weapon_Effect_0=4025
 Weapon_MaxDist_0=15
 Weapon_ApCost_0=6
 Weapon_SoundId_0=80
-NeedBlueprint=9768
 CraftLevel=2
 
 [Proto]
@@ -853,7 +846,6 @@ Weapon_Effect_0=4025
 Weapon_MaxDist_0=15
 Weapon_ApCost_0=4
 Weapon_SoundId_0=81
-NeedBlueprint=9837
 CraftLevel=2
 
 [Proto]
@@ -891,7 +883,6 @@ Weapon_Round_0=20
 Weapon_ApCost_0=4
 Weapon_ReloadAp=10
 Weapon_SoundId_0=77
-NeedBlueprint=9838
 CraftLevel=2
 
 [Proto]
@@ -1053,7 +1044,6 @@ Weapon_Aim_0=1
 Weapon_Aim_1=1
 Weapon_SoundId_0=55
 Weapon_SoundId_1=55
-NeedBlueprint=9771
 CraftLevel=1
 
 [Proto]
@@ -1108,7 +1098,6 @@ Weapon_Aim_2=0
 Weapon_SoundId_0=48
 Weapon_SoundId_1=48
 Weapon_SoundId_2=48
-NeedBlueprint=9764
 CraftLevel=2
 
 [Proto]
@@ -1148,7 +1137,6 @@ Weapon_ApCost_0=5
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=74
-NeedBlueprint=9760
 CraftLevel=2
 
 [Proto]
@@ -1266,7 +1254,6 @@ Weapon_ApCost_0=9
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=71
-NeedBlueprint=9755
 CraftLevel=2
 
 [Proto]
@@ -1491,7 +1478,6 @@ Weapon_ApCost_0=6
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=75
-NeedBlueprint=9778
 CraftLevel=2
 
 [Proto]
@@ -1642,7 +1628,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=69
-NeedBlueprint=9752
 CraftLevel=2
 
 [Proto]
@@ -1770,7 +1755,6 @@ Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=82
 Weapon_SoundId_1=82
-NeedBlueprint=9757
 CraftLevel=2
 
 [Proto]
@@ -2138,7 +2122,6 @@ Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-NeedBlueprint=9756
 CraftLevel=2
 
 [Proto]
@@ -2428,7 +2411,6 @@ Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=64
 Weapon_SoundId_1=64
-NeedBlueprint=9775
 CraftLevel=2
 
 [Proto]
@@ -2472,7 +2454,6 @@ Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-NeedBlueprint=9754
 CraftLevel=2
 
 [Proto]
@@ -2519,7 +2500,6 @@ Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-NeedBlueprint=9825
 CraftLevel=2
 
 [Proto]
@@ -2564,7 +2544,6 @@ Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-NeedBlueprint=9773
 CraftLevel=2
 
 [Proto]
@@ -2604,7 +2583,6 @@ Weapon_ApCost_0=5
 Weapon_ReloadAp=5
 Weapon_SoundId_0=82
 Weapon_SoundId_1=82
-NeedBlueprint=9758
 CraftLevel=2
 
 [Proto]
@@ -2651,7 +2629,6 @@ Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=64
 Weapon_SoundId_1=64
-NeedBlueprint=9766
 Weapon_NoRunning=0
 CraftLevel=2
 
@@ -2984,7 +2961,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=90
-NeedBlueprint=9751
 CraftLevel=2
 
 [Proto]
@@ -3023,7 +2999,6 @@ Weapon_Round_0=30
 Weapon_ApCost_0=3
 Weapon_ReloadAp=10
 Weapon_SoundId_0=76
-NeedBlueprint=9774
 CraftLevel=2
 
 [Proto]
@@ -3061,7 +3036,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=67
-NeedBlueprint=9831
 CraftLevel=2
 
 [Proto]
@@ -3108,7 +3082,6 @@ Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-NeedBlueprint=9826
 CraftLevel=2
 
 [Proto]
@@ -3148,7 +3121,6 @@ Weapon_ApCost_0=5
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=87
-NeedBlueprint=9830
 CraftLevel=2
 
 [Proto]
@@ -3226,7 +3198,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=89
-NeedBlueprint=9829
 CraftLevel=2
 
 [Proto]
@@ -3264,7 +3235,6 @@ Weapon_Round_0=25
 Weapon_ApCost_0=7
 Weapon_ReloadAp=10
 Weapon_SoundId_0=76
-NeedBlueprint=9777
 CraftLevel=2
 
 [Proto]
@@ -3303,7 +3273,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=35
-NeedBlueprint=9827
 CraftLevel=2
 
 [Proto]
@@ -3343,7 +3312,6 @@ Weapon_ApCost_0=5
 Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=88
-NeedBlueprint=9779
 CraftLevel=2
 
 [Proto]
@@ -3420,7 +3388,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=57
-NeedBlueprint=9763
 
 [Proto]
 ProtoId=400
@@ -3458,7 +3425,6 @@ Weapon_ApCost_0=6
 Weapon_ReloadAp=6
 Weapon_SoundId_0=73
 CraftLevel=2
-NeedBlueprint=9772
 
 [Proto]
 ProtoId=401
@@ -3581,7 +3547,6 @@ Weapon_ReloadAp=4
 Weapon_Aim_0=1
 Weapon_SoundId_0=72
 Weapon_SoundId_1=72
-NeedBlueprint=9828
 
 [Proto]
 ProtoId=404
@@ -3740,7 +3705,6 @@ Weapon_ApCost_0=4
 Weapon_ReloadAp=2
 Weapon_Aim_0=1
 Weapon_SoundId_0=49
-NeedBlueprint=9762
 
 [Proto]
 ProtoId=421
@@ -4540,7 +4504,6 @@ Weapon_Aim_0=1
 Weapon_Aim_1=1
 Weapon_SoundId_0=55
 Weapon_SoundId_1=55
-NeedBlueprint=9771
 CraftLevel=1
 
 [Proto]
@@ -4584,7 +4547,6 @@ Weapon_Aim_0=1
 Weapon_Aim_1=1
 Weapon_SoundId_0=56
 Weapon_SoundId_1=56
-NeedBlueprint=9771
 CraftLevel=1
 
 [Proto]
@@ -4626,7 +4588,6 @@ Weapon_Round_0=1
 Weapon_ApCost_0=5
 Weapon_SoundId_0=78
 Weapon_ReloadAp=4
-NeedBlueprint=0
 CraftLevel=1
 
 [Proto]
@@ -4668,7 +4629,6 @@ Weapon_Round_0=1
 Weapon_ApCost_0=6
 Weapon_ReloadAp=6
 Weapon_SoundId_0=78
-NeedBlueprint=0
 CraftLevel=2
 
 [Proto]
@@ -5649,7 +5609,6 @@ Weapon_ApCost_1=6
 Weapon_ReloadAp=4
 Weapon_SoundId_0=78
 Weapon_SoundId_1=78
-NeedBlueprint=9776
 CraftLevel=2
 
 [Proto]
@@ -5734,7 +5693,6 @@ Weapon_Aim_0=1
 Weapon_SoundId_0=82
 Weapon_SoundId_1=82
 CraftLevel=2
-NeedBlueprint=9776
 
 [Proto]
 ProtoId=25452

@@ -65,7 +65,7 @@ bool _SkillPileChemicals2(Item& item, Critter& cr, int skill)
     }
 
     cr.Say(SAY_NETMSG, "You have collected some High Quality Chemical Components.");
-    cr.AddItem(PID_CHEMICALS2, PILE_BATCH_CHEMICALS);
+    cr.AddItem(PID_CHEMICALS, PILE_BATCH_CHEMICALS);
 
     return true;
 }

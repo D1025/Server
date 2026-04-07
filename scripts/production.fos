@@ -36,10 +36,7 @@ void InitProduction()
     RegenCounters.set("" + PID_ELECTRONIC_PARTS, 0);
     RegenCounters.set("" + PID_TOBACCO, 0);
     RegenCounters.set("" + PID_URANIUM_ORE, 0);
-    RegenCounters.set("" + PID_CHEMICALS2, 0);
-    RegenCounters.set("" + PID_ELECTRONIC_PARTS2, 0);
     RegenCounters.set("" + PID_BARLEY, 0);
-	RegenCounters.set("" + PID_FIBRE2, 0);
 }
 
 /**

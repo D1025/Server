@@ -76,7 +76,7 @@ void InitMachines()
     machine.Require(INGREDIENT_TOBACCO, 2, 10800, 10801);
     @Machines[MACHINE_CIGARETTES] = @machine;
 
-    @machine = Machine(PID_FIBRE2, 1, 10, 60, 10900, 10901, 10902);
+    @machine = Machine(PID_FIBER, 1, 10, 60, 10900, 10901, 10902);
 /*
    #ifndef __DEBUG__ // scyp'
         machine.Require(PID_FIBER, 1, 10910, 10911);

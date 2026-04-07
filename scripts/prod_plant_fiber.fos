@@ -81,7 +81,7 @@ void item_init_hq(Item& item, bool firstTime)
 void _Finish_HQ(Item& item, bool)
 {
     TotalCountHQ--;
-    ReduceCounter(PID_FIBRE2, COUNTER(item));
+    ReduceCounter(PID_FIBER, COUNTER(item));
 }
 uint e_Regen_HQ(array<uint>@ values)
 {
@@ -108,6 +108,6 @@ bool _UseItemOnPlant_HQ(Item& item, Critter& cr, Item@ usedItem)
         return false;
     uint pid = usedItem.GetProtoId();
     if(pid == PID_KNIFE || pid == PID_COMBAT_KNIFE || pid == PID_LIL_JESUS_WEAPON || pid == PID_THROWING_KNIFE)
-        return Gather(item, cr, usedItem, PID_FIBRE2, __FibreBatch, TEXT, TEXT_EMPTY, null);
+        return Gather(item, cr, usedItem, PID_FIBER, __FibreBatch, TEXT, TEXT_EMPTY, null);
     return false;
 }
