@@ -137,13 +137,13 @@ int WeaponProtoPerkStacks(const ProtoItem@ proto, uint perkType)
     if(@proto == null || perkType == 0)
         return 0;
 
-    int perk = int(perkType);
+    uint perk = perkType;
     int count = 0;
-    if(proto.Weapon_Perk == perk)
+    if(uint(proto.Weapon_Perk) == perk)
         count++;
-    if(proto.Weapon_Perk_2 == perk)
+    if(uint(proto.Weapon_Perk_2) == perk)
         count++;
-    if(proto.Weapon_Perk_3 == perk)
+    if(uint(proto.Weapon_Perk_3) == perk)
         count++;
     return count;
 }
@@ -182,6 +182,41 @@ bool WeaponHasItemPerk(UpgradeItemMutual@ item, int perkType)
     return WeaponHasItemPerk(item, uint(perkType));
 }
 
+int ArmorProtoPerkStacks(const ProtoItem@ proto, uint perkType)
+{
+    if(@proto == null || perkType == 0)
+        return 0;
+
+    uint perk = perkType;
+    int count = 0;
+    if(uint(proto.Armor_Perk) == perk)
+        count++;
+    if(uint(proto.Armor_Perk_2) == perk)
+        count++;
+    if(uint(proto.Armor_Perk_3) == perk)
+        count++;
+    return count;
+}
+
+int ArmorProtoPerkStacks(const ProtoItem@ proto, int perkType)
+{
+    if(perkType <= 0)
+        return 0;
+    return ArmorProtoPerkStacks(proto, uint(perkType));
+}
+
+bool ArmorHasProtoPerk(const ProtoItem@ proto, uint perkType)
+{
+    return ArmorProtoPerkStacks(proto, perkType) > 0;
+}
+
+bool ArmorHasProtoPerk(const ProtoItem@ proto, int perkType)
+{
+    if(perkType <= 0)
+        return false;
+    return ArmorHasProtoPerk(proto, uint(perkType));
+}
+
 int UpgradeExtraSlotsFromProto(const ProtoItem@ proto)
 {
     if(@proto == null)
@@ -193,7 +228,7 @@ int UpgradeExtraSlotsFromProto(const ProtoItem@ proto)
     if(proto.Type == ITEM_TYPE_WEAPON && WeaponHasProtoPerk(proto, WEAPON_PERK_EXTRA_UPGRADE_SLOTS))
         return 2;
 
-    if(proto.Type == ITEM_TYPE_ARMOR && proto.Armor_Perk == ARMOR_PERK_EXTRA_UPGRADE_SLOTS)
+    if(proto.Type == ITEM_TYPE_ARMOR && ArmorHasProtoPerk(proto, ARMOR_PERK_EXTRA_UPGRADE_SLOTS))
         return 2;
 
     return 0;

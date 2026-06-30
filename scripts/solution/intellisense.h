@@ -529,8 +529,8 @@ class ProtoItem
 	const uint16 Weapon_DefaultAmmoPid;
 	const int Weapon_MinStrength;
 	const int Weapon_Perk;
-	const uint8 Weapon_Perk_2;
-	const uint8 Weapon_Perk_3;
+	const int Weapon_Perk_2;
+	const int Weapon_Perk_3;
 	const uint Weapon_ActiveUses;
 	const int Weapon_Skill_0;
 	const int Weapon_Skill_1;
@@ -582,7 +582,9 @@ class ProtoItem
 	const uint Armor_CrTypeMale;
 	const uint Armor_CrTypeFemale;
 	const int Armor_AC;
-	const uint Armor_Perk;
+	const int Armor_Perk;
+	const int Armor_Perk_2;
+	const int Armor_Perk_3;
 	const int Armor_DRNormal;
 	const int Armor_DRLaser;
 	const int Armor_DRFire;

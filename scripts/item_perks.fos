@@ -15,8 +15,6 @@
 
 // #include "item_perks_h.fos"
 
-#define Item_Perk    Armor_Perk // yea
-
 // helper
 uint ItemPerkTypeParam(uint8 type)
 {
@@ -35,13 +33,35 @@ uint ItemPerkTypeParam(uint8 type)
     return(0);
 }
 
+uint PackArmorProtoPerks(const ProtoItem@ proto)
+{
+    if(@proto == null)
+        return 0;
+
+    // Keep packed value small enough to fit safely into critter stats.
+    return (uint(proto.Armor_Perk) & 31) | ((uint(proto.Armor_Perk_2) & 31) << 5) | ((uint(proto.Armor_Perk_3) & 31) << 10);
+}
+
+void ApplyPackedArmorPerks(Critter& cr, uint packed, bool enable)
+{
+    if(packed == 0)
+        return;
+
+    ApplyItemPerk(cr, ITEM_PERK_ARMOR, packed & 31, enable);
+    ApplyItemPerk(cr, ITEM_PERK_ARMOR, (packed >> 5) & 31, enable);
+    ApplyItemPerk(cr, ITEM_PERK_ARMOR, (packed >> 10) & 31, enable);
+}
+
 void DisableItemPerk(Critter& cr, uint8 type)
 {
     uint param = ItemPerkTypeParam(type);
 
     if(param > 0)
     {
-        ApplyItemPerk(cr, type, cr.Stat[param], false);
+        if(type == ITEM_PERK_ARMOR)
+            ApplyPackedArmorPerks(cr, uint(cr.Stat[param]), false);
+        else
+            ApplyItemPerk(cr, type, cr.Stat[param], false);
         cr.StatBase[param] = 0;
     }
 }
@@ -50,7 +70,10 @@ void DisableItemPerk(Critter& cr, Item& item, uint8 type)
 {
     uint param = ItemPerkTypeParam(type);
 
-    ApplyItemPerk(cr, type, item.Proto.Item_Perk, false);
+    if(type == ITEM_PERK_ARMOR)
+        ApplyPackedArmorPerks(cr, PackArmorProtoPerks(item.Proto), false);
+    else
+        ApplyItemPerk(cr, type, item.Proto.Armor_Perk, false);
     if(param > 0)
         cr.StatBase[param] = 0;
 }
@@ -59,9 +82,19 @@ void EnableItemPerk(Critter& cr, Item& item, uint8 type)
 {
     uint param = ItemPerkTypeParam(type);
 
-    ApplyItemPerk(cr, type, item.Proto.Item_Perk, true);
-    if(param > 0)
-        cr.StatBase[param] = item.Proto.Item_Perk;
+    if(type == ITEM_PERK_ARMOR)
+    {
+        uint packedPerks = PackArmorProtoPerks(item.Proto);
+        ApplyPackedArmorPerks(cr, packedPerks, true);
+        if(param > 0)
+            cr.StatBase[param] = packedPerks;
+    }
+    else
+    {
+        ApplyItemPerk(cr, type, item.Proto.Armor_Perk, true);
+        if(param > 0)
+            cr.StatBase[param] = item.Proto.Armor_Perk;
+    }
 }
 
 void ApplyItemPerk(Critter& cr, uint8 type, uint perk, bool enable)
@@ -88,6 +121,16 @@ void ApplyItemPerk(Critter& cr, uint8 type, uint perk, bool enable)
         case ARMOR_PERK_ADVANCED_II:
             cr.StatBase[ST_STRENGTH_EXT] += 4 * sign;
             cr.StatBase[ST_RADIATION_RESISTANCE_EXT] += 75 * sign;
+            break;
+        case ARMOR_PERK_STEALTHY:
+            cr.StatBase[ST_EXT_SNEAK] += 25 * sign;
+            break;
+        case ARMOR_PERK_SMOOTH_OPERATOR:
+        case ARMOR_PERK_HAM_FISTED:
+        case ARMOR_PERK_REGENERATION_MESH:
+        case ARMOR_PERK_GRENADIER_RIG:
+        case ARMOR_PERK_FLAWLESS_DEFENSE:
+            // Applied conditionally by the relevant gameplay formula or idle processing.
             break;
         default:
             break;

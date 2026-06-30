@@ -393,6 +393,13 @@
 #define ARMOR_PERK_ADVANCED_I                    (3)    // +4 strength, +60 radiation resist
 #define ARMOR_PERK_ADVANCED_II                   (4)    // +4 strength, +75 radiation resist
 #define ARMOR_PERK_EXTRA_UPGRADE_SLOTS           (5)    // +2 upgrade slots for armor
+#define ARMOR_PERK_RATTLING                      (6)    // stealth cannot be used effectively
+#define ARMOR_PERK_STEALTHY                      (7)    // +25 sneak
+#define ARMOR_PERK_SMOOTH_OPERATOR               (8)    // -1 reload AP
+#define ARMOR_PERK_HAM_FISTED                    (9)    // +1 reload AP
+#define ARMOR_PERK_REGENERATION_MESH             (10)   // +10 HP per healing tick outside combat
+#define ARMOR_PERK_GRENADIER_RIG                 (11)   // +3 grenade throwing range
+#define ARMOR_PERK_FLAWLESS_DEFENSE              (12)   // +10 all DR while at full HP
 
 #define HELMET_PERK_CHARISMA                     (1)    // +1 charisma
 #define HELMET_PERK_PERCEPTION_GLASSES           (2)    // PE1:+3, PE2:+2, PE3:+1, PE4+:0
@@ -1873,7 +1880,6 @@
 # pragma bindfield "const uint   ProtoItem::Armor_CrTypeMale   -> 100"
 # pragma bindfield "const uint   ProtoItem::Armor_CrTypeFemale -> 104"
 # pragma bindfield "const int    ProtoItem::Armor_AC           -> 108"
-# pragma bindfield "const uint   ProtoItem::Armor_Perk         -> 112"
 # pragma bindfield "const int    ProtoItem::Armor_DRNormal     -> 116"
 # pragma bindfield "const int    ProtoItem::Armor_DRLaser      -> 120"
 # pragma bindfield "const int    ProtoItem::Armor_DRFire       -> 124"
@@ -1921,8 +1927,6 @@
 # pragma bindfield "const bool   ProtoItem::Weapon_UnarmedArmorPiercing -> 272"
 # pragma bindfield "const bool   ProtoItem::Weapon_NoRunning            -> 273"
 # pragma bindfield "const uint8  ProtoItem::Weapon_ReloadCount         -> 274"
-# pragma bindfield "const uint8  ProtoItem::Weapon_Perk_2              -> 275"
-# pragma bindfield "const uint8  ProtoItem::Weapon_Perk_3              -> 276"
 // Ammo
 # pragma bindfield "const int    ProtoItem::Ammo_AcMod   -> 300"
 # pragma bindfield "const int    ProtoItem::Ammo_DrMod   -> 304"

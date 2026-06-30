@@ -8,8 +8,8 @@
 
 {100}{}{Leather Armor}
 {101}{}{Your basic all leather apparel. Finely crafted from tanned gecko hide.}
-{200}{}{Metal Armor}
-{201}{}{Polished metal plates, crudely forming a suit of armor.}
+{200}{}{Ablative Metal Armor}
+{201}{}{Reflective metal plates designed to disperse laser energy, at the cost of mobility and flexibility.}
 {300}{}{Power Armor}
 {301}{}{A self-contained suit of advanced technology armor. Powered by a micro-fusion reactor, with enough fuel to last a hundred years.}
 {400}{}{Knife}
@@ -743,12 +743,12 @@
 {37701}{}{Miscellaneous computer parts with various functions. A computer geek's dream.}
 {37800}{}{Cookie}
 {37801}{}{A chocolate chip cookie. Yum!}
-{37900}{}{Leather Armor Mark II}
-{37901}{}{An enhanced version of the basic leather armor with extra layers of protection. Finely crafted from tanned brahmin hide.}
-{38000}{}{Metal Armor Mark II}
-{38001}{}{Polished metal plates, finely crafted into a suit of armor.}
-{38100}{}{Combat Armor Mark II}
-{38101}{}{High tech armor, made out of advanced defensive polymers.}
+{37900}{}{Studded Leather Armor}
+{37901}{}{Flexible brahmin leather reinforced with metal studs for broader protection without excessive weight.}
+{38000}{}{Modular Plate Armor}
+{38001}{}{A balanced suit of metal plates fitted with modular hardpoints for extensive customization.}
+{38100}{}{Tactical Combat Armor}
+{38101}{}{Adaptable combat armor that trades some raw protection for additional upgrade hardpoints.}
 {38200}{}{Flamethrower Fuel MKII}
 {38201}{}{This flamethrower fuel uses an advanced super-burn mix.}
 {38300}{}{Shiv}
@@ -7886,8 +7886,8 @@ a58ew64v}
 {2209301}{}{This advanced highly compressed plastic weave is good at stopping bullets as well as keeping you hot and moise in the wasteland. Bring lots of baby powder.}
 {2209400}{}{Steel Plate}
 {2209401}{}{A tough steel plate. Extremely heavy, yet also providing adequate increased protection against most firearms. The reflective properies also contribute to increased laser weapon resistance.}
-{2209500}{}{Metal Armor Mark 3}
-{2209501}{}{A heavily and professionally reinforced set of metal armor, this heavy duty piece of master craftmanship will provide adequate protection against most damage types and exceptional protection to most laser based attacks.}
+{2209500}{}{Ballistic Alloy Armor}
+{2209501}{}{Dense alloy plates provide exceptional protection against firearms and lasers, but remain cumbersome and poorly suited for stealth.}
 {2209600}{}{Armor Machinery}
 {2209601}{}{Advanced machinery. It can produce Power Armors.}
 {2209700}{}{Velocity valve}

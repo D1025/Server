@@ -715,7 +715,7 @@ struct ProtoItem
     const uint   Armor_CrTypeMale;
     const uint   Armor_CrTypeFemale;
     const int    Armor_AC;
-    const uint   Armor_Perk;
+    const uint   Armor_LegacyPerk;
     const int    Armor_DRNormal;
     const int    Armor_DRLaser;
     const int    Armor_DRFire;
@@ -752,6 +752,9 @@ struct ProtoItem
     const uint8  UnusedEnd[ 184 ];
 
     // Type specific data
+    const int    Armor_Perk;
+    const int    Armor_Perk_2;
+    const int    Armor_Perk_3;
     const bool   Weapon_IsUnarmed;
     const int    Weapon_UnarmedTree;
     const int    Weapon_UnarmedPriority;
@@ -764,6 +767,8 @@ struct ProtoItem
     const uint16 Weapon_DefaultAmmoPid;
     const int    Weapon_MinStrength;
     const int    Weapon_Perk;
+    const int    Weapon_Perk_2;
+    const int    Weapon_Perk_3;
     const uint   Weapon_ActiveUses;
     const int    Weapon_Skill[ MAX_USES ];
     const uint   Weapon_PicUse[ MAX_USES ];
@@ -801,7 +806,17 @@ struct ProtoItem
     bool IsArmor()     const { return Type == ITEM_TYPE_ARMOR; }
     bool IsDrug()      const { return Type == ITEM_TYPE_DRUG; }
     bool IsWeapon()    const { return Type == ITEM_TYPE_WEAPON; }
-    bool WeaponHasPerk( int perk ) const { return IsWeapon() && ( Weapon_Perk == perk || Weapon_Unused[ 2 ] == perk || Weapon_Unused[ 3 ] == perk ); }
+    bool WeaponHasPerk( int perk ) const { return perk > 0 && IsWeapon() && ( Weapon_Perk == perk || Weapon_Perk_2 == perk || Weapon_Perk_3 == perk ); }
+    bool ArmorHasPerk( int perk ) const { return CountArmorPerk( perk ) > 0; }
+    int CountArmorPerk( int perk ) const
+    {
+        if( perk <= 0 || !IsArmor() ) return 0;
+        int count = 0;
+        if( Armor_Perk == perk ) count++;
+        if( Armor_Perk_2 == perk ) count++;
+        if( Armor_Perk_3 == perk ) count++;
+        return count;
+    }
     bool IsAmmo()      const { return Type == ITEM_TYPE_AMMO; }
     bool IsMisc()      const { return Type == ITEM_TYPE_MISC; }
     bool IsKey()       const { return Type == ITEM_TYPE_KEY; }
@@ -1987,7 +2002,11 @@ inline void static_asserts()
     STATIC_ASSERT( sizeof( IntMap )       == 24   );
     STATIC_ASSERT( sizeof( IntSet )       == 24   );
     STATIC_ASSERT( sizeof( IntPair )      == 8    );
-    STATIC_ASSERT( sizeof( ProtoItem )    == 908  );
+    STATIC_ASSERT( sizeof( ProtoItem )    == 928  );
+    STATIC_ASSERT( offsetof( ProtoItem, Armor_Perk_2 ) == offsetof( ProtoItem, Armor_Perk ) + sizeof( int ) );
+    STATIC_ASSERT( offsetof( ProtoItem, Armor_Perk_3 ) == offsetof( ProtoItem, Armor_Perk_2 ) + sizeof( int ) );
+    STATIC_ASSERT( offsetof( ProtoItem, Weapon_Perk_2 ) == offsetof( ProtoItem, Weapon_Perk ) + sizeof( int ) );
+    STATIC_ASSERT( offsetof( ProtoItem, Weapon_Perk_3 ) == offsetof( ProtoItem, Weapon_Perk_2 ) + sizeof( int ) );
     STATIC_ASSERT( sizeof( Mutex )        == 44   );
     STATIC_ASSERT( sizeof( GameOptions )  == 1340 );
     STATIC_ASSERT( sizeof( SpriteInfo )   == 36   );

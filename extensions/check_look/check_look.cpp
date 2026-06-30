@@ -8,6 +8,10 @@
 
 using namespace std;
 
+#ifndef ARMOR_PERK_RATTLING
+#define ARMOR_PERK_RATTLING (6)
+#endif
+
 // TODO: multihex bonus to look distance (once multihex works properly)
 
 bool isCompiler=false;
@@ -199,7 +203,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 			if(dist > max_range) return false;
 		}
 
-		int sk = opponent.Params[SK_SNEAK];
+		int sk = opponent.Params[SK_SNEAK] + opponent.Params[ST_EXT_SNEAK];
 
 		// bonuses before clamp
 
@@ -214,7 +218,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 
 		// 3. stealth boy
 		if(opponent.Params[ST_SNEAK_FLAGS]&4) sk+=BONUS_STEALTH_BOY;
-		
+
 		// 4. night TODO?
 
 		// clamp
@@ -237,30 +241,11 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
                 sk -= (int)(FOnline->LookSneakDir[3]); // back
         }
 
-		// armor penalty, TODO: move values to protos?
-		switch(opponent.ItemSlotArmor->GetProtoId())
+		// armor penalty is data-driven through armor proto perks
+		if(opponent.ItemSlotArmor != nullptr && opponent.ItemSlotArmor->Proto != nullptr
+			&& opponent.ItemSlotArmor->Proto->ArmorHasPerk(ARMOR_PERK_RATTLING))
 		{
-			case PID_METAL_ARMOR:
-			case PID_METAL_ARMOR_MK_II:
-			case PID_TESLA_ARMOR:
-				sk=-10000;
-				break;
-			case PID_COMBAT_ARMOR:
-			case PID_COMBAT_ARMOR_MK_II:
-			case PID_BROTHERHOOD_COMBAT_ARMOR:
-			case PID_NCR_ARMOR:
-			case PID_ENCLAVE_COMBAT_ARMOR:
-			case PID_KEEPBRIGE_ROBE:
-			case PID_DESERT_COMBAT_ARMOR:
-				sk=-10000;
-				break;
-			case PID_POWERED_ARMOR :
-			case PID_HARDENED_POWER_ARMOR:
-			case PID_ADVANCED_POWER_ARMOR :
-			case PID_ADVANCED_POWER_ARMOR_MK2:
-				sk=-10000;
-				break;
-			default: ;
+			sk = -10000;
 		}
 
 		// weapons penalty

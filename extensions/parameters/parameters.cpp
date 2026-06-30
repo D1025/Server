@@ -242,6 +242,23 @@ int checkBonus(const Item* it, int bonusType)
 	return checkBonusImpl(it, bonusType);
 }
 
+static int getArmorPerkStacks(const Item* armor, int perk)
+{
+	if(armor == nullptr || armor->Proto == nullptr || !armor->IsArmor() || perk <= 0)
+		return 0;
+
+	return armor->Proto->CountArmorPerk(perk);
+}
+
+static bool IsGrenadeAttack(const Item& item, uint8 use)
+{
+	if(!item.IsWeapon() || use >= MAX_USES || item.Proto->Weapon_Skill[use] != SKILL_OFFSET(SK_THROWING))
+		return false;
+
+	int damageType = item.Proto->Weapon_DmgType[use];
+	return damageType == DAMAGE_PLASMA || damageType == DAMAGE_EMP || damageType == DAMAGE_EXPLODE;
+}
+
 EXPORT int getParam_Strength(CritterMutual& cr, uint)
 {
 	int val = cr.Params[ST_STRENGTH] + cr.Params[ST_STRENGTH_EXT];
@@ -731,11 +748,14 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 			apCost -= 3;
 
 		const Item* armor=cr.ItemSlotArmor;
-		int reloadReduction = checkBonus(cr.ItemSlotArmor, BONUS_ARMOR_FAST_RELOAD);
+		int reloadReduction = checkBonus(armor, BONUS_ARMOR_FAST_RELOAD);
 		for (int i = 0; i < reloadReduction; i++)
 		{
 			apCost -= 1;
 		}
+
+		apCost -= getArmorPerkStacks(armor, ARMOR_PERK_SMOOTH_OPERATOR);
+		apCost += getArmorPerkStacks(armor, ARMOR_PERK_HAM_FISTED);
 	}
 	else if(use >= USE_PRIMARY && use <= USE_THIRD && item.IsWeapon())
 	{
@@ -768,6 +788,8 @@ uint GetAttackDistantion(CritterMutual& cr, Item& item, uint8 mode)
 		dist = min(dist, 3 * min(10, strength));
 		//dist+=3*(cr.Params[PE_HEAVE_HO]+cr.Params[PE_HEAVE_HO_II]);
 		dist+=6*(cr.Params[PE_HEAVE_HO]+cr.Params[PE_HEAVE_HO_II]);
+		if(IsGrenadeAttack(item, use))
+			dist += 3 * getArmorPerkStacks(cr.ItemSlotArmor, ARMOR_PERK_GRENADIER_RIG);
 	}
 	if(Item_Weapon_IsHtHAttack(item, mode) && cr.Params[MODE_RANGE_HTH]) dist++;
 	dist += GetMultihex(cr);
@@ -903,6 +925,8 @@ int GetArmoredDR(CritterMutual& cr, int dmgType, const Item* armor)
 	int val = 0;
 	int drVal = 0;
 	int allDrBonus = checkBonus(armor, BONUS_ARMOR_ALL_DR);
+	if(cr.Params[ST_CURRENT_HP] >= getParam_MaxLife(cr, 0))
+		allDrBonus += 10 * getArmorPerkStacks(armor, ARMOR_PERK_FLAWLESS_DEFENSE);
 
 	switch(dmgType)
 	{
