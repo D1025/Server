@@ -2034,6 +2034,13 @@ string showPrefix(ItemCl@ it)
 		if(it.BrokenFlags == BI_ETERNAL)
 			result += "|" + COLOR_RED + " Broken " + "|" + COLOR_TEXT + " ";
 
+		// Masterwork: only "<Crafter>'s" is red; the base name (appended by the caller) keeps the default colour.
+		if(IsLexem(it, "$mw"))
+		{
+			result += "|" + COLOR_RED + " " + GetLexem(it, "$crafter") + "'s " + "|" + COLOR_TEXT + " ";
+			return result;
+		}
+
         if(!UpgradeItemIsHelmet(it))
         {
             int quality = UpgradeBaseQualitySlots(it);

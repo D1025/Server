@@ -147,12 +147,14 @@ uint QualityByRoll_LowSpecial(int roll)
 
 uint QualityByRoll_Crafted(int roll)
 {
+    // roll is 0..99. Each tier is rarer than the previous one:
+    // q0 Normal 40% | q1 Quality 25% | q2 Improved 15% | q3 Superior 9% | q4 Advanced 6% | q5 Unique 5%
     uint q = 0;
-    if(roll > 55) q++;
-    if(roll > 76) q++;
-    if(roll > 88) q++;
-    if(roll > 95) q++;
-    if(roll == 99) q++;
+    if(roll >= 40) q++;
+    if(roll >= 65) q++;
+    if(roll >= 80) q++;
+    if(roll >= 89) q++;
+    if(roll >= 95) q++;
     return q;
 }
 
@@ -999,6 +1001,18 @@ void AddSpecialBonusWeighted(Item@ it)
     }
 }
 
+// Force an item into the Masterwork state: Unique-tier (5) empty upgrade slots, marker + crafter name.
+void MakeMasterwork(Item@ it, const string& crafter)   // Export
+{
+    if(!valid(it))
+        return;
+    string crafterName = crafter;   // non-const copy for SetLexem
+    ResetUpgradeSlots(it, 5);
+    SetLexem(it, "$mw", "1");
+    SetLexem(it, "$crafter", crafterName);
+    it.Update();
+}
+
 void AddBonuses(Item@ it, string@ crafter)
 {
     if(!valid(it))
@@ -1009,17 +1023,32 @@ void AddBonuses(Item@ it, string@ crafter)
         uint quality = QualityByRoll_Crafted(Random(0, 99));
         quality = EnsureWeaponBaseQuality(quality);
         ResetUpgradeSlots(it, quality);
-        uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
-        TryRollPerksToCountWeighted(it, true, craftedPerks, true);
-        SetLexem(it, "$crafter", crafter);
+        // Masterwork: rare upgrade of a Unique-quality (5) craft; keeps every slot empty (no rolled perks).
+        if(quality >= 5 && Random(0, 99) < MASTERWORK_CHANCE)
+        {
+            MakeMasterwork(it, crafter);
+        }
+        else
+        {
+            uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
+            TryRollPerksToCountWeighted(it, true, craftedPerks, true);
+            SetLexem(it, "$crafter", crafter);
+        }
     }
     else if(it.GetType() == ITEM_TYPE_ARMOR)
     {
         uint quality = QualityByRoll_Crafted(Random(0, 99));
         ResetUpgradeSlots(it, quality);
-        uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
-        TryRollPerksToCountWeighted(it, false, craftedPerks);
-        SetLexem(it, "$crafter", crafter);
+        if(quality >= 5 && Random(0, 99) < MASTERWORK_CHANCE)
+        {
+            MakeMasterwork(it, crafter);
+        }
+        else
+        {
+            uint craftedPerks = CraftedPerksByRoll(Random(0, 99));
+            TryRollPerksToCountWeighted(it, false, craftedPerks);
+            SetLexem(it, "$crafter", crafter);
+        }
     }
 }
 

@@ -149,6 +149,7 @@ import bool IsReadableBook(uint16 pid) from "books";
 import void TryReadBook(Critter& cr, Item& book) from "books";
 import void AddBonuses(Item@ item, string@ crafter) from "item_bonus";
 import uint BonusNumber(Item@ item) from "item_bonus";
+import void ResetUpgradeSlots(Item@ it, uint slotsCount) from "item_bonus";
 
 import void UpdateDrugs(Critter& cr) from "drugs";
 
@@ -1614,6 +1615,21 @@ bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetIt
         if(valid(targetItem) && (!FLAG(targetItem.Flags, ITEM_CAN_PICKUP) || IsArenaItem(targetItem)))
         {
             cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+            return true;
+        }
+
+        // Masterwork: Science strips all upgrades (destroying them) instead of disassembling; it can never be scrapped.
+        if(valid(targetItem) && IsLexem(targetItem, "$mw"))
+        {
+            if(UpgradeUsedSlots(targetItem) > 0)
+            {
+                ResetUpgradeSlots(targetItem, uint(UpgradeBaseQualitySlots(targetItem)));
+                cr.Say(SAY_NETMSG, "You strip every upgrade from the masterwork.");
+            }
+            else
+            {
+                cr.Say(SAY_NETMSG, "This masterwork has no upgrades to remove.");
+            }
             return true;
         }
 

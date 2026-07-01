@@ -88,6 +88,7 @@ import int             stringReplaceText(string& s, string@ f, string@ t) from "
 import array<Critter@> WorldmapGetPlayers(uint zx, uint zy) from "worldmap_players";
 import int             WorldmapGetTotalValue() from "worldmap";
 import void 		   AddBonuses(Item@ it, int magic) from "item_bonus";
+import void 		   MakeMasterwork(Item@ it, const string& crafter) from "item_bonus";
 import void 		   SetMinWear(Item& item, int wearProcent) from "repair";
 
 import void AddBan(Critter& banner, int bannedid, int withip, int hours, string reasonwhy) from "main";
@@ -136,7 +137,7 @@ string[] commandlist =
     "findnpc", "flash", "foart",
     "gaintowncontrol", "gameinfo", "getclaim", "getclaimtime", "getcolor",
     "getitems", "getleader", "getleadertime", "getuvar", "getvar", "give",
-    "givelevelbook", "givekey", "goto", "gototeam",
+    "givemasterwork", "givelevelbook", "givekey", "goto", "gototeam",
     "heal", "healall", "help", "hideloc", "hidemap",
     "id2name", "iddqd", "idkfa", "inspect", "irradiate", "itemflags", "itemlight",
     "itemproto",
@@ -1109,6 +1110,43 @@ string GenderString(Critter& player, string male, string female, string it)
 //
 // give item_pid number_of_items
 //
+void ExecGiveMasterworkCommand(array<string@>@ command, Critter@ player, Critter@ target)
+{
+    if(command.length() < 3)
+    {
+        player.Say(SAY_NETMSG, "Usage: `givemasterwork <item pid or name>");
+        return;
+    }
+
+    int pid = 0;
+    if(!StrToInt(command[2], pid))
+    {
+        if(!GetItemPid(command[2], pid))
+        {
+            player.Say(SAY_NETMSG, "Item does not exist");
+            return;
+        }
+    }
+
+    ProtoItem@ proto = GetProtoItem(pid);
+    if(!valid(proto) || (proto.Type != ITEM_TYPE_WEAPON && proto.Type != ITEM_TYPE_ARMOR))
+    {
+        player.Say(SAY_NETMSG, "Masterwork only applies to weapons and armor.");
+        return;
+    }
+
+    Item@ item = target.AddItem(pid, 1);
+    if(!valid(item))
+    {
+        player.Say(SAY_NETMSG, "Failed to spawn item.");
+        return;
+    }
+
+    MakeMasterwork(item, player.Name);          // crafter = whoever runs the command
+    _SetSpawner(item, player);
+    player.Say(SAY_NETMSG, "Gave a masterwork item (pid " + pid + ") to " + target.Name + ".");
+}
+
 void ExecGiveCommand(array<string@>@ command, Critter@ player, Critter@ target)
 {
     bool legit = false;
@@ -10755,6 +10793,10 @@ bool ExecCommand(Critter& player, string@ commandString)
     else if(command[1] == "getvar")
     {
         ExecGetVarCommand(command, player, targetId);
+    }
+    else if(command[1] == "givemasterwork")
+    {
+        ExecGiveMasterworkCommand(command, player, target);
     }
     else if(command[1] == "give")
     {
