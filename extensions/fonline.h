@@ -752,9 +752,6 @@ struct ProtoItem
     const uint8  UnusedEnd[ 184 ];
 
     // Type specific data
-    const int    Armor_Perk;
-    const int    Armor_Perk_2;
-    const int    Armor_Perk_3;
     const bool   Weapon_IsUnarmed;
     const int    Weapon_UnarmedTree;
     const int    Weapon_UnarmedPriority;
@@ -767,8 +764,6 @@ struct ProtoItem
     const uint16 Weapon_DefaultAmmoPid;
     const int    Weapon_MinStrength;
     const int    Weapon_Perk;
-    const int    Weapon_Perk_2;
-    const int    Weapon_Perk_3;
     const uint   Weapon_ActiveUses;
     const int    Weapon_Skill[ MAX_USES ];
     const uint   Weapon_PicUse[ MAX_USES ];
@@ -796,6 +791,11 @@ struct ProtoItem
     const uint   Car_FuelConsumption;
     const uint   Car_Entrance;
     const uint   Car_MovementType;
+    const int    Weapon_Perk_2;
+    const int    Weapon_Perk_3;
+    const int    Armor_Perk;
+    const int    Armor_Perk_2;
+    const int    Armor_Perk_3;
 
     // Item scripting uses Weapon_Dmg_* as a single-damage alias.
     int GetWeaponDamage( uint8 use ) const { return use < 3 ? Weapon_Dmg[ use ] : 0; }
@@ -2003,10 +2003,6 @@ inline void static_asserts()
     STATIC_ASSERT( sizeof( IntSet )       == 24   );
     STATIC_ASSERT( sizeof( IntPair )      == 8    );
     STATIC_ASSERT( sizeof( ProtoItem )    == 928  );
-    STATIC_ASSERT( offsetof( ProtoItem, Armor_Perk_2 ) == offsetof( ProtoItem, Armor_Perk ) + sizeof( int ) );
-    STATIC_ASSERT( offsetof( ProtoItem, Armor_Perk_3 ) == offsetof( ProtoItem, Armor_Perk_2 ) + sizeof( int ) );
-    STATIC_ASSERT( offsetof( ProtoItem, Weapon_Perk_2 ) == offsetof( ProtoItem, Weapon_Perk ) + sizeof( int ) );
-    STATIC_ASSERT( offsetof( ProtoItem, Weapon_Perk_3 ) == offsetof( ProtoItem, Weapon_Perk_2 ) + sizeof( int ) );
     STATIC_ASSERT( sizeof( Mutex )        == 44   );
     STATIC_ASSERT( sizeof( GameOptions )  == 1340 );
     STATIC_ASSERT( sizeof( SpriteInfo )   == 36   );

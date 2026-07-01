@@ -87,6 +87,7 @@ void SetupFixboyAddons()
 
 void ExecuteSetFixCounter(uint8 cnt) 
 {
+	SetFixBoyPreview(cnt, false);
 	insectCntVal.SetCaption(FormatXX(cnt));
 	insectFixAll.SetState(false);
 	RunServerScriptUnsafe( "fix_boy@unsafe_counter", cnt, 0, 0, null, null );
@@ -94,6 +95,8 @@ void ExecuteSetFixCounter(uint8 cnt)
 
 void ExecuteSetFixAll(uint8 cnt) 
 {
+	SetFixBoyPreview(GetPlayerCounter(), cnt == 1);
+
 	if(cnt == 1)
 		insectCntVal.SetCaption(FormatXX(0));
 	else
@@ -152,6 +155,9 @@ class InjectCounterLabel : CLabel
 
     void Draw()
     {
+        CritterCl@ cr = GetChosen();
+        if(valid(cr))
+            SetCaption(FormatXX((cr.ParamBase[ST_FIXBOY_FIXALL] > 0) ? 0 : GetPlayerCounter()));
         CLabel::Draw();
     }
 };

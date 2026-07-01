@@ -550,8 +550,6 @@ class ProtoItem
 	const uint16 Weapon_DefaultAmmoPid;
 	const int Weapon_MinStrength;
 	const int Weapon_Perk;
-	const int Weapon_Perk_2;
-	const int Weapon_Perk_3;
 	const uint Weapon_ActiveUses;
 	const int Weapon_Skill_0;
 	const int Weapon_Skill_1;
@@ -603,9 +601,6 @@ class ProtoItem
 	const uint Armor_CrTypeMale;
 	const uint Armor_CrTypeFemale;
 	const int Armor_AC;
-	const int Armor_Perk;
-	const int Armor_Perk_2;
-	const int Armor_Perk_3;
 	const int Armor_DRNormal;
 	const int Armor_DRLaser;
 	const int Armor_DRFire;
@@ -664,6 +659,11 @@ class ProtoItem
 	const uint16 Ingredient_Returns_2;
 	const uint8 Ingredient_Type_3;
 	const uint16 Ingredient_Returns_3;
+	const int Weapon_Perk_2;
+	const int Weapon_Perk_3;
+	const int Armor_Perk;
+	const int Armor_Perk_2;
+	const int Armor_Perk_3;
 };
 
 class CritterCl
@@ -921,6 +921,7 @@ uint GetDayTime(uint dayPart);
 void GetDayColor(uint dayPart, uint8&inout r, uint8&inout g, uint8&inout b);
 void RunServerScript(string&inout funcName, int p0, int p1, int p2, string@ p3, array<int> @ p4);
 void RunServerScriptUnsafe(string&inout funcName, int p0, int p1, int p2, string@ p3, array<int> @ p4);
+void SetFixBoyPreview(uint count, bool fixAll);
 uint LoadSprite(string&inout name, int pathIndex);
 uint LoadSprite(uint nameHash, uint8 dir);
 int GetSpriteWidth(uint sprId, int sprIndex);

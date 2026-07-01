@@ -491,71 +491,33 @@ bool HasCraftRequiredParams(Critter& player, CraftItem& craft)
     return false;
 }
 
-bool CheckMultiplierResources(Critter& player, CraftItem& craft)
+uint MaxCraftableByMaterials(Critter& player, CraftItem& craft)
 {
-    bool isFixAll = false;
-    uint8 fixall = player.ParamBase[ST_FIXBOY_FIXALL];
-    if(fixall > 0)
-    {
-        isFixAll = true;
-        fixall = 100;
-    }
-
-    uint8 multiplier = player.ParamBase[ST_FIXBOY_COUNTER];
-    if(multiplier < 1 || multiplier > 99)
-    {
-        multiplier = CLAMP(multiplier, 1, 99);
-        player.ParamBase[ST_FIXBOY_COUNTER] = multiplier;
-    }
-    
     array<uint16> resources;
-    array<uint> r_cnt;
-    for(uint i = 0, j = craft.GetNeedItems(resources, r_cnt, null); i < j; i++)
-    {
-        Item@ res = player.GetItem(resources[i], -1);
-        if(valid(res))
-        {   
-            if(isFixAll)
-            {
-                if(res.IsStackable())
-                {
-                    fixall = MIN(fixall, (res.GetCount() / r_cnt[i]));
-                }
-                else
-                {
-                    fixall = MIN(fixall, (player.CountItem(resources[i]) / r_cnt[i]));
-                }
-            }
-            else 
-            {
-                if(res.IsStackable())
-                {
-                    if(res.GetCount() < r_cnt[i]*multiplier)
-                        return false;
-                }
-                else
-                {
-                    if(player.CountItem(resources[i]) < r_cnt[i]*multiplier)
-                        return false;
-                }
-            }
-        }
-        else
-            return false;
-    }
-    if(isFixAll)
-    {
-        switch(fixall)
-        {
-            case 0: return false;
-            case 1: player.Say(SAY_NETMSG, "Crafted "+fixall+" item."); break;
-            default: player.Say(SAY_NETMSG, "Crafted "+fixall+" items."); break;
-        }
-            
-        player.ParamBase[ST_FIXBOY_FIXALL] = fixall;
-    }
+    array<uint> counts;
+    array<bool> ors;
+    uint count = craft.GetNeedItems(resources, counts, ors);
+    if(count == 0)
+        return 100;
 
-    return true;
+    uint maximum = 100;
+    for(uint i = 0; i < count;)
+    {
+        uint groupEnd = i;
+        while(groupEnd + 1 < count && ors[groupEnd])
+            groupEnd++;
+
+        uint groupMaximum = 0;
+        for(uint k = i; k <= groupEnd; k++)
+        {
+            if(counts[k] > 0)
+                groupMaximum = MAX(groupMaximum, player.CountItem(resources[k]) / counts[k]);
+        }
+
+        maximum = MIN(maximum, groupMaximum);
+        i = groupEnd + 1;
+    }
+    return maximum;
 }
 
 uint GetItemRecipe(uint16 itemPid, array<uint16>& pids, array<uint>& cnt)
@@ -569,14 +531,25 @@ uint GetItemRecipe(uint16 itemPid, array<uint16>& pids, array<uint>& cnt)
     return craft.GetNeedItems(pids, cnt, null);
 }
 
+bool CheckMultiplierResources(Critter& player, CraftItem& craft)
+{
+    uint multiplier = CLAMP(player.ParamBase[ST_FIXBOY_COUNTER], 1, 99);
+    player.ParamBase[ST_FIXBOY_COUNTER] = multiplier;
+    uint maximum = MaxCraftableByMaterials(player, craft);
+    if(player.ParamBase[ST_FIXBOY_FIXALL] == 0)
+        return maximum >= multiplier;
+    if(maximum == 0)
+        return false;
+    player.ParamBase[ST_FIXBOY_FIXALL] = maximum;
+    player.Say(SAY_NETMSG, maximum == 1 ? "Crafted 1 item." : "Crafted "+maximum+" items.");
+    return true;
+}
+
 // no timeout for mid-resources, no timeout check too
 int fix_Resource(Critter& player, int stage, CraftItem& craft)
 {
     if(stage == FIXBOY_LIST)
     {
-        if(!HasCraftRequiredParams(player, craft))
-            return FIX_FAIL;
-
         array<uint16> pids;
         for(uint i = 0, j = craft.GetOutItems(pids, null); i < j; i++)           // usually, only one item
         {
@@ -593,9 +566,9 @@ int fix_Resource(Critter& player, int stage, CraftItem& craft)
         else
         {
             if(player.StatBase[ST_FIXBOY_FIXALL] > 0)
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1);
             else
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1);
             return FIX_TIMEOUT;
         }
     }
@@ -606,9 +579,6 @@ int fix_Generic(Critter& player, int stage, CraftItem& craft)
 {
     if(stage == FIXBOY_LIST)
     {
-        if(!HasCraftRequiredParams(player, craft))
-            return FIX_FAIL;
-
         array<uint16> pids;
         for(uint i = 0, j = craft.GetOutItems(pids, null); i < j; i++)           // usually, only one item
         {
@@ -635,9 +605,9 @@ int fix_Generic(Critter& player, int stage, CraftItem& craft)
         else
         {
             if(player.StatBase[ST_FIXBOY_FIXALL] > 0)
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1);
             else
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1);
             return TimeoutCheck(player);
         }
     }
@@ -648,7 +618,7 @@ int fix_Blueprint(Critter& player, int stage, CraftItem& craft)
 {
     if(stage == FIXBOY_LIST || stage == FIXBOY_BUTTON)
     {
-        if(!HasCraftRequiredParams(player, craft))
+        if(stage == FIXBOY_BUTTON && !HasCraftRequiredParams(player, craft))
             return FIX_FAIL;
 
         array<uint16> pids;
@@ -668,9 +638,9 @@ int fix_Blueprint(Critter& player, int stage, CraftItem& craft)
         else
         {
             if(player.StatBase[ST_FIXBOY_FIXALL] > 0)
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1);
             else
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1);
             return TimeoutCheck(player);
         }
     }
@@ -683,9 +653,6 @@ int fix_Lock(Critter& player, int stage, CraftItem& craft)
     {
         if(stage == FIXBOY_LIST)
         {
-            if(!HasCraftRequiredParams(player, craft))
-                return FIX_FAIL;
-
             array<uint16> pids;
             for(uint i = 0, j = craft.GetOutItems(pids, null); i < j; i++)           // usually, only one item
             {
@@ -706,9 +673,9 @@ int fix_Lock(Critter& player, int stage, CraftItem& craft)
                 return FIX_FAIL;
                 
             if(player.StatBase[ST_FIXBOY_FIXALL] > 0)
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_FIXALL]-1);
             else
-                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1)*(GetGvar(GVAR_experience_multipler));
+                player.StatBase[ST_EXPERIENCE] += craft.Experience * (player.StatBase[ST_FIXBOY_COUNTER]-1);
             
             Item@ lock = player.AddItem(PID_LOCK, 1);
 

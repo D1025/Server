@@ -3441,6 +3441,13 @@ void items_crafted(array<Item@>& items, array<uint>& itemsCount, array<Item@>& r
 
     array<uint16> recipePids;
     array<uint> recipeCnt;
+    array<uint16> consumedPids;
+
+    for(uint i = 0, j = resources.length(); i < j; i++)
+    {
+        if(valid(resources[i]))
+            consumedPids.insertLast(resources[i].GetProtoId());
+    }
 
     if(multiplier > 1)
     {
@@ -3561,6 +3568,18 @@ void items_crafted(array<Item@>& items, array<uint>& itemsCount, array<Item@>& r
         {    
             for(uint i = 0, j = recipePids.length(); i < j; i++)
             {
+                bool consumed = false;
+                for(uint c = 0, cLen = consumedPids.length(); c < cLen; c++)
+                {
+                    if(consumedPids[c] == recipePids[i])
+                    {
+                        consumed = true;
+                        break;
+                    }
+                }
+                if(!consumed)
+                    continue;
+
                 Item@ res = crafter.GetItem(recipePids[i], -1);
                 if(valid(res))
                 {
