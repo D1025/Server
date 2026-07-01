@@ -16,6 +16,8 @@
 import bool GodOfTheRealm(uint) from "cheats";
 import bool GuardNotLegit(Critter@ cr, Item@ item, bool deleteItem) from "cheats";
 import void GuardMultihexMove(Item& item, uint8 fromSlot, uint8 toSlot) from "multihex";
+import void ExitDeploy(Critter& cr) from "deploy";
+import bool IsDeployed(Critter& cr) from "deploy";
 
 dictionary SpeedboostLastState;
 
@@ -213,6 +215,12 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
     uint8 toSlot = item.CritSlot;
 
     GuardMultihexMove(item, fromSlot, toSlot);
+
+    // Any change of the active-hand weapon ends deploy immediately and for free.
+    #ifdef __SERVER
+    if((fromSlot == SLOT_HAND1 || toSlot == SLOT_HAND1) && IsDeployed(cr))
+        ExitDeploy(cr);
+    #endif
 
     // Armor changing
     if(item.GetType() == ITEM_TYPE_ARMOR && (fromSlot == SLOT_ARMOR || toSlot == SLOT_ARMOR))

@@ -262,6 +262,7 @@ EXPORT_UNINITIALIZED const char* (ScriptGetLibraryVersion) ( );
 #define USE_THIRD                    ( 2 )
 #define USE_RELOAD                   ( 3 )
 #define USE_USE                      ( 4 )
+#define USE_DEPLOY                   ( 5 )
 #define MAX_USES                     ( 3 )
 #define USE_NONE                     ( 15 )
 

@@ -37,6 +37,8 @@ import void PlaySound(Critter& cr, string& soundName) from "media";
 import void PostDamage(Critter& cr) from "main";
 import void QuakeScreen(Map& map) from "effects";
 import void WearItem(Critter& cr, Item& item, int wearCount) from "repair";
+import void ExitDeploy(Critter& cr) from "deploy";
+import bool IsDeployed(Critter& cr) from "deploy";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
 
 
@@ -2554,6 +2556,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     if(knockDown && !(targetWasKnockout && map.IsTurnBased()))
         targetAp -= quick ? 1 : 3;
 
+    // A knockout or knockdown ends deploy immediately and for free.
+    if((knockOut || knockDown) && IsDeployed(target))
+        ExitDeploy(target);
+
     if(targetAp < currentAp)
         target.StatBase[ST_CURRENT_AP] = 100 * targetAp;
 
@@ -3198,7 +3204,11 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
     }
 
     if(FLAG(eff, MF_KNOCKED_DOWN) && !cr.IsKnockout())
+    {
         cr.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(true), cr.Perk[PE_QUICK_RECOVERY] != 0 ? 1 : 3, cr.HexX, cr.HexY);
+        if(IsDeployed(cr))
+            ExitDeploy(cr);
+    }
 
 
     if(FLAG(eff, MF_WEAPON_EXPLODED))
@@ -3227,7 +3237,11 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         if(cr.Stat[ST_CURRENT_HP] > deadHitPoints && IsHumanoid(cr) && cr.Mode[MODE_NO_KNOCK] == 0)
         {
             if(!cr.IsKnockout())
+            {
                 cr.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(true), 0, cr.HexX, cr.HexY);
+                if(IsDeployed(cr))
+                    ExitDeploy(cr);
+            }
         }
         else
         {

@@ -1,0 +1,106 @@
+//
+// FOnline: AfterTimes
+//
+// deploy.fos
+//
+// Deploy (bipod) mechanic for heavy weapons carrying WEAPON_PERK_DEPLOY.
+//
+//   - Entering deploy costs DEPLOY_AP_COST action points; exiting is free and instant.
+//   - While deployed the critter cannot walk or run (engine MODE_NO_WALK / MODE_NO_RUN)
+//     and is flagged through ST_DEPLOYED, which is replicated to other clients
+//     (see main.fos: SetSendParameter(ST_DEPLOYED, ...)) so everyone sees the state.
+//   - A weapon with WEAPON_PERK_DEPLOY can only fire while its wielder is deployed
+//     (gate in main.fos::critter_attack).
+//   - Deploy never survives a session: CleanupDeploy() runs on critter_init / player_login.
+//   - Server authoritative. unsafe_ToggleDeploy is the single client entry point,
+//     used by the keybind (client_keybinds) and the native Deploy bar option.
+//
+
+#include "_macros.fos"
+#include "item_upgrades_shared.fos"
+
+#define DEPLOY_AP_COST    (5)
+
+bool IsDeployed(Critter& cr)   // Export
+{
+    return cr.Param[ST_DEPLOYED] != 0;
+}
+
+bool HasDeployWeaponInHand(Critter& cr)   // Export
+{
+    Item@ weapon = cr.GetItem(0, SLOT_HAND1);
+    if(!valid(weapon) || weapon.GetType() != ITEM_TYPE_WEAPON)
+        return false;
+    return WeaponHasProtoPerk(weapon.Proto, WEAPON_PERK_DEPLOY);
+}
+
+bool EnterDeploy(Critter& cr)   // Export
+{
+    if(IsDeployed(cr))
+        return true;
+    if(cr.IsDead() || cr.IsKnockout())
+        return false;
+    if(!HasDeployWeaponInHand(cr))
+    {
+        if(cr.IsPlayer())
+            cr.Say(SAY_NETMSG, "You need a deployable weapon in your hands.");
+        return false;
+    }
+    if(cr.Stat[ST_CURRENT_AP] < DEPLOY_AP_COST)
+    {
+        if(cr.IsPlayer())
+            cr.Say(SAY_NETMSG, "Not enough action points to deploy.");
+        return false;
+    }
+
+    cr.StatBase[ST_CURRENT_AP] = 100 * (cr.Stat[ST_CURRENT_AP] - DEPLOY_AP_COST);
+    cr.ParamBase[ST_DEPLOYED] = 1;
+    cr.ModeBase[MODE_NO_WALK] += 1;
+    cr.ModeBase[MODE_NO_RUN] += 1;
+    cr.Action(ACTION_REFRESH, DEPLOY_ANIM_ON, null); // tell clients to apply the deploy pose
+    if(cr.IsPlayer())
+        cr.Say(SAY_NETMSG, "Weapon deployed.");
+    return true;
+}
+
+void ExitDeploy(Critter& cr)   // Export - free and instant
+{
+    if(!IsDeployed(cr))
+        return;
+    cr.ParamBase[ST_DEPLOYED] = 0;
+    if(cr.ModeBase[MODE_NO_WALK] > 0)
+        cr.ModeBase[MODE_NO_WALK] -= 1;
+    if(cr.ModeBase[MODE_NO_RUN] > 0)
+        cr.ModeBase[MODE_NO_RUN] -= 1;
+    cr.Action(ACTION_REFRESH, DEPLOY_ANIM_OFF, null); // tell clients to remove the deploy pose
+    if(cr.IsPlayer())
+        cr.Say(SAY_NETMSG, "Weapon undeployed.");
+}
+
+void ToggleDeploy(Critter& cr)   // Export
+{
+    if(IsDeployed(cr))
+        ExitDeploy(cr);
+    else
+        EnterDeploy(cr);
+}
+
+// Runs on critter_init / player_login. Deploy is a transient state; if the flag
+// survived in a save, clear it and release the movement lock it added.
+void CleanupDeploy(Critter& cr)   // Export
+{
+    if(cr.Param[ST_DEPLOYED] == 0)
+        return;
+    cr.ParamBase[ST_DEPLOYED] = 0;
+    if(cr.ModeBase[MODE_NO_WALK] > 0)
+        cr.ModeBase[MODE_NO_WALK] -= 1;
+    if(cr.ModeBase[MODE_NO_RUN] > 0)
+        cr.ModeBase[MODE_NO_RUN] -= 1;
+}
+
+// Client -> server entry point (keybind and native Deploy bar option). The client is
+// never trusted: every precondition is validated in EnterDeploy/ExitDeploy.
+void unsafe_ToggleDeploy(Critter& player, int, int, int, string@, array<int>@)   // Export
+{
+    ToggleDeploy(player);
+}

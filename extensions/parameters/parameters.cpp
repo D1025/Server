@@ -773,6 +773,14 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		int minReloadAp = (cr.Params[PE_QUICK_POCKETS] ? 0 : 1);
 		if(apCost < minReloadAp) apCost = minReloadAp;
 	}
+
+	if(use == USE_DEPLOY) {
+		apCost = 5;
+		if (cr.Params[ST_DEPLOYED]) {
+			return 0;
+		}
+	}
+
 	else if(apCost < 1)
 		apCost = 1;
 	return apCost;

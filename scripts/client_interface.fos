@@ -2546,6 +2546,15 @@ void critter_in(CritterCl& cr)
 {
     CritterCl@ chosen = GetChosen();
 
+    // Re-apply the deploy pose if a deployed critter (re-)enters view.
+    if(cr.Param[ST_DEPLOYED] != 0)
+    {
+        uint8      dmode = 0;
+        ProtoItem@ dproto = cr.GetSlotProto(SLOT_HAND1, dmode);
+        if(valid(dproto))
+            cr.SetHoldFrame(0, dproto.Weapon_Anim2_0, DEPLOY_HOLD_FRAME);
+    }
+
     critter_description(cr, CRITTER_ONLY_NAME);
     if(valid(chosen))
     {

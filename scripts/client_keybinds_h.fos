@@ -179,6 +179,15 @@ class PickupBind : BaseBind
     }
 };
 
+class DeployBind : BaseBind
+{
+    void Exec()
+    {
+        // Toggle deploy on the wielded weapon; the server validates weapon/AP/state.
+        RunServerScriptUnsafe("deploy@unsafe_ToggleDeploy", 0, 0, 0, "", null);
+    }
+};
+
 class DropallBind : BaseBind
 {
     void Exec()

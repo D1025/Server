@@ -112,6 +112,7 @@ bool InitBinds() // export
     ret = ret && InitScienceAtHexBind();
     ret = ret && InitCenterChosenBind();
 	ret = ret && InitRepairAtHexBind();
+    ret = ret && InitDeployBind();
     return ret;
 }
 
@@ -243,6 +244,16 @@ bool InitReloadBind()
 {
     string@    s = GetConfigValue(CONFIG_FILE, "Bindings", "Reload");
     ReloadBind bnd;
+    return TryAddBind(s, bnd);
+}
+
+bool InitDeployBind()
+{
+    // User-configurable via [Bindings] Deploy=<key> in the client config; defaults to "Y".
+    string@    s = GetConfigValue(CONFIG_FILE, "Bindings", "Deploy");
+    DeployBind bnd;
+    if(!valid(s))
+        return TryAddBind("Y", bnd);
     return TryAddBind(s, bnd);
 }
 

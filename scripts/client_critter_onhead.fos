@@ -98,9 +98,13 @@ void DrawCritterOnHead()	//export
 			if(crs[i].Stat[ST_TEAM_ID] == chosen.Stat[ST_TEAM_ID] && crs[i].Id != chosen.Id && crs[i].Param[MODE_HIDE] != 0)
 				name = name + " (sneaked)";
 		}
-		else 
+		else
 			name = " ";
-			
+
+		// Deploy marker - shown to everyone, regardless of awareness settings.
+		if(crs[i].Param[ST_DEPLOYED] != 0)
+			name = name + "\n|" + COLOR_RGB(255, 160, 0) + " [Deployed]";
+
 		
 
 		if(crs[i].IsPlayer() && crs[i].Param[ST_NPC_BOSS] > 0)

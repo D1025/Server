@@ -83,6 +83,9 @@ import void   AddPlayerDeaths() from "cavelog";
 import void   ApplyTimeout(array<Item@>& items, array<uint>& itemsCount, array<Item@>& resources, Critter& crafter) from "fix_boy";
 import void   CheckBountyHunters(Critter& cr, Critter@ killer) from "bounties";
 import void   CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo) from "combat";
+import bool   IsDeployed(Critter& cr) from "deploy";
+import bool   EnterDeploy(Critter& cr) from "deploy";
+import void   CleanupDeploy(Critter& cr) from "deploy";
 import void   CritterGenerate(Critter& cr) from "parameters";
 import void   CritterDescription_Set(Critter& player, int& description1, int& description2) from "critter_description";
 import void   EditRadioSettings(Critter& player, Item& radio) from "radio";
@@ -257,6 +260,7 @@ bool start()
     SetSendParameter(ST_CURRENT_HP, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_CRITICAL_POWER, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_HEALTH_LEVEL, true);
+    SetSendParameter(ST_DEPLOYED, true); // Deploy state, so other clients can show the "[Deployed]" marker
     SetSendParameter(PE_BONUS_RATE_OF_FIRE, true);
     SetSendParameter(ST_TURN_BASED_AC, true);
     SetSendParameter(TRAIT_FAST_METABOLISM, true);
@@ -605,6 +609,20 @@ uint loop()
 void critter_attack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo)
 {
 	speedboost(cr);
+	// Deploy gate: a weapon carrying WEAPON_PERK_DEPLOY can only fire while its wielder is deployed.
+	if(WeaponHasProtoPerk(weapon, WEAPON_PERK_DEPLOY) && !IsDeployed(cr))
+	{
+		if(cr.IsPlayer())
+		{
+			// Players must deploy deliberately (native bar option or the Deploy keybind).
+			cr.Say(SAY_NETMSG, "You must deploy this weapon before firing.");
+			return;
+		}
+		// NPCs enter deploy automatically so they can use the weapon; if they can't
+		// (no AP / not in hand), the attack is skipped this turn.
+		if(!EnterDeploy(cr))
+			return;
+	}
 	if((target.Timeout[TO_GOD_MODE] <= 0) || (!target.IsPlayer()))
 	{
 		CombatAttack(cr, target, weapon, weaponMode, ammo);
@@ -1962,6 +1980,8 @@ void critter_init(Critter& cr, bool firstTime)
 {
 	speedboost(cr);
     cr.ClearExtEvents();
+    CleanupDeploy(cr); // Deploy must never persist across a session/login
+
     if(MustInitWalkProcessing)
     {
         MustInitWalkProcessing = false;
@@ -2702,7 +2722,8 @@ void critter_dead(Critter& cr, Critter@ killer)
 {
     //if(!valid(cr) || !valid(killer))
 		//return;
-	
+
+	CleanupDeploy(cr); // Clear deploy flag / movement lock on death
 	uint crGroup = _GroupIndex(cr);
     Map@ map = cr.GetMap();
     cr.ParamBase[TO_IMMUNITY_TIME] = MAX(uint(cr.Param[TO_IMMUNITY_TIME]), ELAPSED_TIME + SLEEPY_DEATH_IMMUNITY(cr));
