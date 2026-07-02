@@ -80,6 +80,7 @@ import bool            GetMapData(const string& in, int& out) from "main";
 import bool            GetVarId(const string& in, int& out) from "main";
 import void            InitPrices() from "economy";
 import void            InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId) from "combat";
+import void            ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, uint16 fromHy, uint16 knockHx, uint16 knockHy, int knockDist, int dmgPerHex, uint8 knockDir) from "combat";
 import bool            IsGrenade(Item& item) from "throwing";
 import uint            numDigits(int number) from "critter_description";
 import void            SetCritterEvents(Critter& cr) from "logging_critter";
@@ -9122,18 +9123,28 @@ uint cte_Aura(Critter& cr, int identifier, uint& value)
                 if(FLAG(flags, AURA_FLAG_KNOCKBACK) || FLAG(flags, AURA_FLAG_KNOCKBACK_SIMPLE) || FLAG(flags, AURA_FLAG_GRAVITY_PULL))
                 {
                     uint16 knockbackX = cr.HexX, knockbackY = cr.HexY;
-                    if(FLAG(flags, AURA_FLAG_GRAVITY_PULL))
-                        map.GetHexCoordWall(crits[c].HexX, crits[c].HexY, knockbackX, knockbackY, 0.0f, Random(radius, radius * 2) - (crits[c].Stat[ST_STRENGTH] / 4));
+                    uint16 slamFromHx = crits[c].HexX, slamFromHy = crits[c].HexY;
+                    bool   gravityPull = FLAG(flags, AURA_FLAG_GRAVITY_PULL);
+                    int    knockDist = Random(radius, radius * 2) - (crits[c].Stat[ST_STRENGTH] / 4);
+                    if(gravityPull)
+                        map.GetHexCoordWall(crits[c].HexX, crits[c].HexY, knockbackX, knockbackY, 0.0f, knockDist);
                     else
-                        map.GetHexCoordWall(crits[c].HexX, crits[c].HexY, knockbackX, knockbackY, (Random(180 - Random(0, 25), 180 + Random(0, 25))), Random(radius, radius * 2) - (crits[c].Stat[ST_STRENGTH] / 4));
+                        map.GetHexCoordWall(crits[c].HexX, crits[c].HexY, knockbackX, knockbackY, (Random(180 - Random(0, 25), 180 + Random(0, 25))), knockDist);
+
+                    // Wall-slam od odrzutu aury; killer=null => bez kredytu za killa (aura nadawana komenda).
+                    uint8 slamDir = gravityPull ? GetDirection(slamFromHx, slamFromHy, cr.HexX, cr.HexY) : GetDirection(cr.HexX, cr.HexY, slamFromHx, slamFromHy);
+                    ApplyWallSlam(map, crits[c], null, slamFromHx, slamFromHy, knockbackX, knockbackY, knockDist, WALL_SLAM_DMG_PER_HEX, slamDir);
 
                     map.PlaySound("was1xxx" + Random(1, 2), crits[c].HexX, crits[c].HexY, 5);
                     map.RunEffect(PID_EXPLODE_EMP, crits[c].HexX, crits[c].HexY, 0);
 
-                    if(FLAG(flags, AURA_FLAG_KNOCKBACK_SIMPLE))
-                        crits[c].ToKnockout(0, 0, 0, 0, knockbackX, knockbackY);
-                    else
-                        crits[c].ToKnockout(knock[Random(0, knock.length() - 1)], ANIM2_DEAD_PRONE_FRONT, ANIM2_STANDUP_FRONT, crits[c].Stat[ST_ACTION_POINTS] - Random(0, crits[c].Stat[ST_LUCK] / 2), knockbackX, knockbackY);
+                    if(!crits[c].IsDead())
+                    {
+                        if(FLAG(flags, AURA_FLAG_KNOCKBACK_SIMPLE))
+                            crits[c].ToKnockout(0, 0, 0, 0, knockbackX, knockbackY);
+                        else
+                            crits[c].ToKnockout(knock[Random(0, knock.length() - 1)], ANIM2_DEAD_PRONE_FRONT, ANIM2_STANDUP_FRONT, crits[c].Stat[ST_ACTION_POINTS] - Random(0, crits[c].Stat[ST_LUCK] / 2), knockbackX, knockbackY);
+                    }
                 }
 
 

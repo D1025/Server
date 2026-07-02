@@ -110,6 +110,7 @@ CBoss@ GetBoss(uint id)
 
 #include "traps_h.fos"
 import void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId) from "combat";
+import void ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, uint16 fromHy, uint16 knockHx, uint16 knockHy, int knockDist, int dmgPerHex, uint8 knockDir) from "combat";
 
 class DynamiteThrow : IAttack
 {
@@ -266,8 +267,11 @@ class ImbaPunch : IAttack
                         int    knockDist = 20;
                         uint16 knockHx = melch.HexX;
                         uint16 knockHy = melch.HexY;
+                        uint16 slamFromHx = crits[i].HexX, slamFromHy = crits[i].HexY;
                         map.GetHexCoordWall(crits[i].HexX, crits[i].HexY, knockHx, knockHy, 180.0f, knockDist);
-                        crits[i].ToKnockout(KNOCKOUT_ANIM2_DEFAULT(true), crits[i].Param[ST_ACTION_POINTS] * 4, knockHx, knockHy);
+                        ApplyWallSlam(map, crits[i], melch, slamFromHx, slamFromHy, knockHx, knockHy, knockDist, WALL_SLAM_DMG_PER_HEX, GetDirection(melch.HexX, melch.HexY, slamFromHx, slamFromHy));
+                        if(!crits[i].IsDead())
+                            crits[i].ToKnockout(KNOCKOUT_ANIM2_DEFAULT(true), crits[i].Param[ST_ACTION_POINTS] * 4, knockHx, knockHy);
 
                         if(Random(0, 3) == 0)
                             crits[i].DamageBase[DAMAGE_LEFT_LEG] = 1;

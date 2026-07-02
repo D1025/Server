@@ -187,7 +187,7 @@ void ApplySewingDamageScale(AttackStruct& attack)
 
 bool IsProtoMeleeWeaponAttack(const ProtoItem@ weapon, uint8 use)
 {
-    return valid(weapon) && _WeaponIsHtHAttack(weapon, use) && !weapon.Weapon_IsUnarmed;
+    return valid(weapon) && _WeaponIsHtHAttack(weapon, use) && !IsUnarmedStyleWeapon(weapon);
 }
 
 uint ComputeSewingTotalHits(ProtoItem& weapon)
@@ -288,7 +288,8 @@ bool PerformSewingFollowUpHit(Critter& attacker, Critter& target, uint16 weaponP
     attacker.SetDir(GetDirection(attacker.HexX, attacker.HexY, target.HexX, target.HexY));
 
     int skillNum = _WeaponSkill(protoWeapon, use);
-    uint8 weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_RIFLES) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
+    bool unarmedStyle = IsUnarmedStyleWeapon(protoWeapon);
+    uint8 weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_RIFLES) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : (unarmedStyle ? WS_UNARMED : WS_MELEE));
     bool isHthAttack = (weaponSubtype == WS_MELEE || weaponSubtype == WS_UNARMED);
 
     AttackStruct attack;
@@ -392,9 +393,9 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) skillVal = MAX(cr.Skill[SK_PISTOLS], cr.Skill[SK_DOCTOR]);  //25-07-2013 Cubik: podczas uzywania Needler pistola pod uwage bedzie brany max ze skilli SG i Doc do celnosci i psucia sie pistola
 	
 	
-    uint8  weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_RIFLES) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : WS_UNARMED);
+    bool   isUnarmed = IsUnarmedStyleWeapon(weapon);
+    uint8  weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS || skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR || skillNum == SK_RIFLES) ? WS_GUN : ((skillNum == SK_THROWING) ? WS_THROWING : (isUnarmed ? WS_UNARMED : WS_MELEE));
     bool   isRanged = (weaponSubtype == WS_THROWING || weaponSubtype == WS_GUN);
-    bool   isUnarmed = weapon.Weapon_IsUnarmed;
     bool   isHthAttack = (weaponSubtype == WS_MELEE || weaponSubtype == WS_UNARMED);
     uint16 ammoRound = _WeaponRound(weapon, use);
     bool   wpnIsRemoved = _WeaponRemove(weapon, use);
@@ -804,11 +805,20 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             if(useSwipe)
             {
                 array<Critter@> swipeTargets;
-                uint16          ex = hx;
-                uint16          ey = hy;
-                map.MoveHexByDir(ex, ey, cr.Dir, wpnMaxDist);
-                map.GetCrittersPath(hx, hy, ex, ey, 0.0f, wpnMaxDist, FIND_LIFE_AND_KO, swipeTargets);
+                map.GetCrittersHex(hx, hy, wpnMaxDist, FIND_LIFE_AND_KO, swipeTargets);
                 FilterOutAttacker(swipeTargets, cr);
+
+                // A wide forward swing covers the facing direction and both adjacent
+                // hex directions. Unlike the old implementation, it is an arc rather
+                // than a single straight line and contains no gaps at longer reach.
+                uint8 swipeDirLeft = (cr.Dir + 5) % 6;
+                uint8 swipeDirRight = (cr.Dir + 1) % 6;
+                for(int i = swipeTargets.length() - 1; i >= 0; i--)
+                {
+                    uint8 targetDir = GetDirection(hx, hy, swipeTargets[i].HexX, swipeTargets[i].HexY);
+                    if(targetDir != swipeDirLeft && targetDir != cr.Dir && targetDir != swipeDirRight)
+                        swipeTargets.removeAt(i);
+                }
 
                 if(swipeTargets.length() == 0)
                 {
@@ -1884,6 +1894,17 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     int damage = attack.Damage + attack.BonusDmg + attack.Damage * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
     if(validAttacker && isMeleeWeaponAttack && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
         damage = MAX(1, damage / 2);
+
+    // Bludgeoning is hybrid damage: weapon damage plus the first Melee Damage
+    // component is mitigated normally, while the second Melee Damage component
+    // is added after DT, DR and AC. Grappler still halves both portions.
+    int bludgeoningTrueDamage = 0;
+    if(isWeaponBluedgeoning && validAttacker)
+    {
+        bludgeoningTrueDamage = attacker.Stat[ST_MELEE_DAMAGE];
+        if(isMeleeWeaponAttack && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
+            bludgeoningTrueDamage /= 2;
+    }
     int rawDmg;
     int totalDmg = 0;
     //dmgMul *= attack.DMMod;
@@ -1926,9 +1947,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		if(rounds > 1 && attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] != 0 && attack.Dist > 15)
             totalDmg += totalDmg * attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] * 15/ 100;
     }
-
-    if (isWeaponBluedgeoning == true)
-        totalDmg = 2 * attack.Attacker.Param[ST_MELEE_DAMAGE];
 
     if(totalDmg > 0)
     {
@@ -2060,6 +2078,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         ac = CLAMP(ac, 0, 95);
         totalDmg = totalDmg * (100 - ac) / 100;
     }
+
+    // Pure Bludgeoning component: intentionally bypasses DT, DR and AC.
+    if(target.Mode[MODE_INVULNERABLE] == 0 && bludgeoningTrueDamage > 0)
+        totalDmg += bludgeoningTrueDamage;
 
     if(validAttacker && totalDmg > 0)
     {
@@ -2527,8 +2549,15 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 uint16 knockHy = attack.Hy;
                 if(knockDist > 2)
                 {
+                    uint16 slamFromHx = target.HexX, slamFromHy = target.HexY;
                     map.GetHexCoordWall(target.HexX, target.HexY, knockHx, knockHy, 180.0f, knockDist);
-                    target.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(attackFront), 0, knockHx, knockHy);
+
+                    // Wall-slam: obrazenia gdy przeszkoda zatrzymala odrzut wczesniej niz zamierzono (patrz ApplyWallSlam).
+                    uint8 slamDir = valid(attacker) ? GetDirection(attacker.HexX, attacker.HexY, slamFromHx, slamFromHy) : 0;
+                    ApplyWallSlam(map, target, attacker, slamFromHx, slamFromHy, knockHx, knockHy, knockDist, WALL_SLAM_DMG_PER_HEX, slamDir);
+
+                    if(!target.IsDead())
+                        target.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(attackFront), 0, knockHx, knockHy);
                 }
                 else
                     target.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(attackFront), 0, target.HexX, target.HexY);
@@ -3255,6 +3284,91 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
     FlushResults(results);
 }
 
+
+// === Wall-slam: obrazenia gdy przeszkoda zatrzymuje odrzut ===
+// Wywolywane TUZ PO map.GetHexCoordWall(), zanim ofiara zostanie przesunieta przez ToKnockout().
+//   fromHx/fromHy - pozycja ofiary PRZED odrzutem
+//   knockHx/knockHy - heks ladowania zwrocony przez GetHexCoordWall
+//   knockDist - zamierzony dystans odrzutu
+//   dmgPerHex - surowe obrazenia (przed resistami) za kazdy NIEPRZEBYTY heks odrzutu
+//   knockDir - kierunek odrzutu (fallback gdy ofiara wcale sie nie ruszyla)
+// Jesli heks za miejscem ladowania zajmuje zywa postac -> obrazenia dzielone na pol dla obojga.
+// Moze dobic (srodowiskowy kill); zabojstwo przypisywane 'killer' (reputacja/loot/eventy ida przez critter_dead).
+
+// Zadaje pojedynczej ofierze surowe obrazenia od uderzenia (redukcja fizycznymi DT/DR); przy zgonie przyznaje killa sprawcy.
+void WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
+{
+    // 'dmg' to obrazenia surowe (przed resistami). Redukcja odpornosciami fizycznymi
+    // (DT/DR z armora), tak jak blok obrazen z broni (~combat.fos:1922).
+    dmg -= victim.GetDT(DAMAGE_NORMAL, false);
+    if(dmg <= 0)
+        return;
+    dmg -= (dmg * CLAMP(victim.GetDR(DAMAGE_NORMAL, false), 0, 95)) / 100;
+    if(dmg <= 0)
+        return;
+
+    victim.StatBase[ST_CURRENT_HP] -= dmg;
+    if(victim.IsPlayer())
+        victim.Say(SAY_NETMSG, "Wall impact: " + dmg + " damage!");
+
+    // Prog smierci - lustro bloku obrazen (~combat.fos:2200).
+    int deadFloor = victim.Trait[TRAIT_DEAD_MAN_WALKING] > 0 ? __DeadHitPoints : __DeadHitPoints / 6;
+    if(victim.Stat[ST_CURRENT_HP] > deadFloor || victim.IsDead())
+        return;
+
+    // Srodowiskowy kill.
+    victim.ToDead(ANIM2_DEAD_FRONT, killer);
+
+    // Kredyt za zabojstwo dla sprawcy odrzutu (XP + liczniki, jak w bloku smierci ~combat.fos:2490).
+    if(valid(killer) && killer.IsPlayer() && killer.Id != victim.Id)
+    {
+        killer.StatBase[ST_EXPERIENCE] += victim.Stat[ST_KILL_EXPERIENCE]*(GetGvar(GVAR_experience_multipler_kill))*(GetGvar(GVAR_experience_multipler));
+        killer.KillBase[KILL_BEGIN + victim.Stat[ST_BODY_TYPE]]++;
+        if(victim.IsPlayer())
+            killer.ParamBase[KILL_BEGIN + BT_PLAYER]++;
+    }
+}
+
+// Zwraca zywa postac stojaca na danym heksie (pomijajac 'exclude'), albo null.
+Critter@ WallSlamBlocker(Map& map, uint16 hx, uint16 hy, Critter& exclude)
+{
+    array<Critter@> crits;
+    map.GetCrittersHex(hx, hy, 0, FIND_LIFE, crits);
+    for(uint i = 0; i < crits.length(); i++)
+        if(valid(crits[i]) && crits[i].Id != exclude.Id)
+            return crits[i];
+    return null;
+}
+
+void ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, uint16 fromHy, uint16 knockHx, uint16 knockHy, int knockDist, int dmgPerHex, uint8 knockDir)   // Export
+{
+    if(knockDist <= 0 || dmgPerHex <= 0)
+        return;
+
+    int actual   = int(GetDistantion(fromHx, fromHy, knockHx, knockHy));
+    int absorbed = knockDist - actual;              // nieprzebyte heksy odrzutu (zatrzymane przez przeszkode)
+    if(absorbed < 1)                                // odrzut poszedl na cala zamierzona odleglosc -> nic nie uderzylo
+        return;
+
+    int slamDmg = absorbed * dmgPerHex;             // surowe obrazenia (przed resistami): nieprzebyte heksy * dmg/hex
+    if(slamDmg <= 0)
+        return;
+
+    // Przeszkoda stoi jeden heks za miejscem ladowania, w kierunku lotu.
+    uint8  dir = (actual > 0) ? GetDirection(fromHx, fromHy, knockHx, knockHy) : knockDir;
+    uint16 blockHx = knockHx, blockHy = knockHy;
+    map.MoveHexByDir(blockHx, blockHy, dir, 1);
+    Critter@ slammed = WallSlamBlocker(map, blockHx, blockHy, target);
+
+    if(valid(slammed))
+    {
+        // Wpadniecie na inna postac - obrazenia na pol dla obojga.
+        WallSlamHurt(target,  slamDmg / 2, killer);
+        WallSlamHurt(slammed, slamDmg / 2, killer);
+    }
+    else
+        WallSlamHurt(target, slamDmg, killer);
+}
 
 void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId)   // Export
 {

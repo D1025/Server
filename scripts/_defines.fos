@@ -276,6 +276,9 @@
 #define DAMAGE_EMP                               (6)
 #define DAMAGE_EXPLODE                           (7)
 
+// Wall-slam: surowe obrazenia (przed resistami) za kazdy nieprzebyty heks odrzutu (patrz ApplyWallSlam w combat.fos)
+#define WALL_SLAM_DMG_PER_HEX                    (10)
+
 // Critter events, description see in templates.fos
 #define CRITTER_EVENT_IDLE                       (0)
 #define CRITTER_EVENT_FINISH                     (1)
@@ -388,6 +391,7 @@
 #define WEAPON_PERK_SILENT_HILL_MONSTER          (18)
 #define WEAPON_PERK_CRITLESS                     (19)
 #define WEAPON_PERK_DEPLOY                       (20) // Heavy weapon: must Deploy (bipod) before it can fire; blocks movement while deployed
+#define WEAPON_PERK_GUARDED_STANCE               (21) // +10 AC while this weapon is held in the active hand
 #define DEPLOY_HOLD_FRAME                        (2)  // Frame of the weapon shoot animation held while deployed (aiming pose)
 #define DEPLOY_ANIM_ON                           (1)  // critter_action actionExt: apply the deploy pose (client)
 #define DEPLOY_ANIM_OFF                          (2)  // critter_action actionExt: remove the deploy pose (client)

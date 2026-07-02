@@ -1066,10 +1066,8 @@ int GetChosenWeaponDisplayDamage(ItemCl@ weapon, CritterCl@ chosen, uint8 use)
     int weaponDmg = _WeaponDmg(weapon.Proto, use);
     int meleeDamage = chosen.Stat[ST_MELEE_DAMAGE];
     bool isMeleeAttack = _WeaponIsHtHAttack(weapon.Proto, use);
-    bool isMeleeWeaponAttack = isMeleeAttack && !weapon.Proto.Weapon_IsUnarmed;
-
-    if(WeaponHasProtoPerk(weapon.Proto, WEAPON_PERK_BLUDGEONING))
-        meleeDamage *= 2;
+    bool isMeleeWeaponAttack = isMeleeAttack && !IsUnarmedStyleWeapon(weapon.Proto);
+    bool isBludgeoning = WeaponHasProtoPerk(weapon.Proto, WEAPON_PERK_BLUDGEONING);
 
     if(isMeleeAttack || _WeaponIsMeleeThrownAttack(weapon.Proto, use))
         weaponDmg += meleeDamage;
@@ -1077,9 +1075,15 @@ int GetChosenWeaponDisplayDamage(ItemCl@ weapon, CritterCl@ chosen, uint8 use)
         weaponDmg += weaponDmg * chosen.Perk[PE_BONUS_RANGED_DAMAGE] * 10 /100;
 
     if(isMeleeWeaponAttack && chosen.Trait[TRAIT_GRAPPLER] > 0 && !IsClientSewingAttack(weapon.Proto, use))
+    {
         weaponDmg = MAX(1, weaponDmg / 2);
+        if(isBludgeoning)
+            meleeDamage /= 2;
+    }
 
     weaponDmg += weaponDmg * SelectWeaponBonus(weapon, BONUS_WEAPON_DAMAGE) / 100;
+    if(isBludgeoning)
+        weaponDmg += meleeDamage; // Pure post-resistance component on the server.
     return weaponDmg;
 }
 

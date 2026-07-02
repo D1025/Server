@@ -53,4 +53,31 @@
 #define MODE_SECONDARY_ATTACK               (1)
 #define MODE_THIRD_ATTACK                   (2)
 
+// Equipped fist weapons are mechanically unarmed attacks even though they are
+// regular inventory items (and powered variants can still consume ammo).
+bool IsUnarmedStyleWeaponPid(uint16 pid)
+{
+    switch(pid)
+    {
+    case PID_BOXING_GLOVES:
+    case PID_PLATED_BOXING_GLOVES:
+    case PID_RING_BOXING_GLOVES:
+    case PID_RING_PLATED_BOXING_GLOVES:
+    case PID_POWER_FIST:
+    case PID_BRASS_KNUCKLES:
+    case PID_SPIKED_KNUCKLES:
+    case PID_MEGA_POWER_FIST:
+        return true;
+    default:
+        return false;
+    }
+
+    return false;
+}
+
+bool IsUnarmedStyleWeapon(const ProtoItem@ weapon)
+{
+    return valid(weapon) && (weapon.Weapon_IsUnarmed || IsUnarmedStyleWeaponPid(weapon.ProtoId));
+}
+
 #endif // _COMBAT_H_
