@@ -1102,24 +1102,21 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         // Sprawdzenie, czy broń ma perk CASCADE
         bool hasCascade = WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE);
 
-        // Obliczenie liczby linii
-         uint numberOfLines = hasCascade ? 5 : 1;
+        // Cascade keeps a stronger central stream while spreading the rest over
+        // four side lines. Bullets assigned to an empty line are intentionally lost.
+        uint numberOfLines = hasCascade ? 5 : 1;
 
-        // Obliczenie rund na każdą linię (20% każda, jeśli CASCADE)
         array<uint> roundsPerEachLine;
         if (hasCascade)
         {
-            uint roundsPerLine = totalRounds / 5;
-            uint remainingRounds = totalRounds % 5;
+            uint centralRounds = (totalRounds * 40 + 99) / 100; // ceil(40%)
+            uint sideRounds = totalRounds - centralRounds;
+            uint sideRoundsPerLine = sideRounds / 4;
+            uint sideRemainder = sideRounds % 4;
 
-            // Inicjalizacja tablicy z rundami dla każdej z 5 linii
-            for (int i = 0; i < 5; i++)
-            {
-                roundsPerEachLine.insertLast(roundsPerLine);
-            }
-
-            // Dodanie pozostałych rund do centralnej linii (lub innej, według preferencji)
-            roundsPerEachLine[0] += remainingRounds; // Dodaj pozostałe rundy do centralnej linii
+            roundsPerEachLine.insertLast(centralRounds);
+            for (uint i = 0; i < 4; i++)
+                roundsPerEachLine.insertLast(sideRoundsPerLine + (i < sideRemainder ? 1 : 0));
         }
         else
         {
@@ -1210,6 +1207,15 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             {
                 Critter@ currentTarget = currentLine[i];
 
+                // The primary target belongs to the central stream only. A target
+                // already hit by another Cascade line cannot collect another quota.
+                if (hasCascade && lineCount > 0 && currentTarget.Id == realTarget.Id)
+                    continue;
+
+                int crIndex = FindCritterInArray(critsHit, currentTarget);
+                if (hasCascade && crIndex != -1)
+                    continue;
+
                 // Obliczenie toHit dla bieżącego celu
                 float toHitLocal = baseToHit - 10 * bl;
                 float dist = GetDistantion(hx, hy, currentTarget.HexX, currentTarget.HexY);
@@ -1234,24 +1240,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 {
                     if (Random(1, 100) <= toHitLocal)
                         curRounds++;
-                }
-
-                // Maksymalna liczba rund na cel (20% całkowitych rund)
-                uint maxPerTarget = uint(totalRounds * 0.2);
-                int crIndex = FindCritterInArray(critsHit, currentTarget);
-                uint alreadyAssigned = 0;
-                if (crIndex != -1)
-                    alreadyAssigned = critsHitBullets[crIndex];
-
-                // Obliczenie dozwolonych rund dla tego celu
-                uint allowedRounds = hasCascade ? ((maxPerTarget > alreadyAssigned) ? (maxPerTarget - alreadyAssigned) : 0) : curRounds;
-
-                // Jeśli liczba rund przekracza dozwolone, ograniczamy i przekazujemy nadmiar
-                if (hasCascade && curRounds > allowedRounds)
-                {
-                    uint excessRounds = curRounds - allowedRounds;
-                    curRounds = allowedRounds;
-                    volleyRounds += excessRounds; // Przekazanie nadmiaru do następnego celu
                 }
 
                 // Przypisanie rund do trafionego celu
