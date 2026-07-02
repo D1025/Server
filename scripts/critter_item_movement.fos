@@ -19,7 +19,6 @@ import void GuardMultihexMove(Item& item, uint8 fromSlot, uint8 toSlot) from "mu
 import void ExitDeploy(Critter& cr) from "deploy";
 import bool IsDeployed(Critter& cr) from "deploy";
 import void ExitPowerArmor(Critter& cr) from "power_armor";
-import bool IsPoweredArmorItem(Item@ item) from "power_armor";
 
 dictionary SpeedboostLastState;
 
@@ -33,6 +32,14 @@ void speedboost_forget(Critter& cr)
 # define Critter    CritterCl
 # define Item       ItemCl
 #endif
+
+// True for a body armor with the Powered perk (a wearable power suit). Client-safe (reads the proto
+// directly), so the same power-armor slot rules can run on both client and server.
+bool _IsPoweredBodyArmor(Item@ item)
+{
+    return valid(item) && item.GetType() == ITEM_TYPE_ARMOR && item.Proto.Slot == SLOT_ARMOR &&
+           (item.Proto.Armor_Perk == ARMOR_PERK_POWERED || item.Proto.Armor_Perk_2 == ARMOR_PERK_POWERED || item.Proto.Armor_Perk_3 == ARMOR_PERK_POWERED);
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Call on something critter want move item from one slot to another.
@@ -48,24 +55,34 @@ bool critter_check_move_item(Critter& cr, Item& item, uint8 toSlot, Item@ itemSw
         return true;
     #endif
 
-    // Power-armor stash slot: it only ever holds the body armor set aside while a power suit is worn.
-    // The player can't pull that armor out by hand (it comes back automatically on exit, to SLOT_ARMOR).
+    // --- Power-armor slot handling ---
+    // These checks run on client and server, so the client never sends a move the server would only
+    // reject (which used to spam the server log with "Can't move item" for the power suit).
+
+    // The hidden stash slot only ever holds the body armor set aside while a power suit is worn. Players
+    // can't pull it out by hand (it returns automatically on exit, to SLOT_ARMOR); armor is routed in when
+    // entering the suit or swapping the under-armor (an up-to-date client redirects such drops here).
     if(fromSlot == SLOT_POWER_STASH && toSlot != SLOT_ARMOR)
         return false;
-
-    // Power armor: can only be thrown to the ground (which ejects you); never moved into the inventory or swapped out.
-    #ifdef __SERVER
     if(toSlot == SLOT_POWER_STASH)
         return item.GetType() == ITEM_TYPE_ARMOR && item.Proto.Slot == SLOT_ARMOR;
-    if(fromSlot == SLOT_ARMOR && IsPoweredArmorItem(item))
+
+    // A worn power suit can never go into the inventory or another slot; only thrown to the ground (= exit).
+    if(fromSlot == SLOT_ARMOR && _IsPoweredBodyArmor(item))
     {
-        if(toSlot == SLOT_GROUND)
-            ExitPowerArmor(cr);
+        if(toSlot != SLOT_GROUND)
+            return false;
+        #ifdef __SERVER
+        ExitPowerArmor(cr);   // the ground drop ejects you; the raw move is cancelled here
         return false;
+        #endif
+        // client: fall through so the ground drop is still sent to the server (allowed by the generic ground rule)
     }
-    if(toSlot == SLOT_ARMOR && valid(itemSwap) && IsPoweredArmorItem(itemSwap))
+
+    // Never let a body armor displace the suit from the armor slot. On an up-to-date client such a drop is
+    // redirected to the stash slot before it reaches here; this guards any other case.
+    if(toSlot == SLOT_ARMOR && _IsPoweredBodyArmor(itemSwap))
         return false;
-    #endif
 
     // Drop
     if(toSlot == SLOT_GROUND)
