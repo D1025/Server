@@ -286,6 +286,10 @@ void InitializeGame()                  // Export
     // New slots
     AllowSlot(SLOT_HEAD, "InvHead");
 
+    // Power-armor stash slot: shows next to the armor slot and keeps the body armor
+    // you were wearing while a power suit is worn (both client and server must allow it).
+    AllowSlot(SLOT_POWER_STASH, "InvPowerStash");
+
     # ifdef __SERVER
     AllowSlot(SLOT_TROPHY, "InvTrophy");
     # endif

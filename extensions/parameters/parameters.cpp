@@ -991,6 +991,12 @@ int GetArmoredDT(CritterMutual& cr, int dmgType, const Item* armor)
 
 const Item* GetHeadArmor(CritterMutual& cr)
 {
+	// A power armor (ARMOR_PERK_POWERED == 1) protects the head too, ignoring any worn helmet.
+	const Item* body = cr.ItemSlotArmor;
+	if(body && body->Proto &&
+	   (body->Proto->Armor_Perk == 1 || body->Proto->Armor_Perk_2 == 1 || body->Proto->Armor_Perk_3 == 1))
+		return body;
+
 	for(ItemVecIt it=cr.InvItems.begin(),end=cr.InvItems.end();it!=end;++it)
 	{
 		if((*it)->AccCritter.Slot==SLOT_HEAD) return *it;

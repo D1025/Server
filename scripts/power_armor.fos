@@ -1,0 +1,95 @@
+//
+// FOnline: AfterTimes
+//
+// power_armor.fos
+//
+// "Powered" armor (ARMOR_PERK_POWERED). Instead of being picked up, a power armor lying on the
+// ground is worn like a power suit:
+//   - the power armor is genuinely equipped in SLOT_ARMOR, so its model, resists, perks and
+//     upgrades all apply automatically through the normal armor machinery (full stats),
+//   - the body armor you were wearing is set aside into the SLOT_POWER_STASH ghost slot (shown
+//     next to the armor slot) so it is kept, visible, and restored when you leave the suit,
+//   - the helmet stays in its own slot; the DLL (parameters.cpp GetHeadArmor) already routes head
+//     resists to the equipped power armor, so the helmet's protection is overridden while powered.
+// Leaving the suit (exit keybind / Traps on self / dropping it from the armor slot / death) drops
+// it on the ground and re-equips the stashed body armor. The suit can never be carried in the
+// inventory: picking it up always (re-)enters it instead.
+//
+
+#include "_macros.fos"
+#include "item_upgrades_shared.fos"
+
+bool IsPoweredArmorItem(Item@ item)   // Export
+{
+    // Only body armor (SLOT_ARMOR) counts as a wearable power suit; power helmets keep the perk but are normal head gear.
+    return valid(item) && item.GetType() == ITEM_TYPE_ARMOR && item.Proto.Slot == SLOT_ARMOR
+           && ArmorHasProtoPerk(item.Proto, ARMOR_PERK_POWERED);
+}
+
+bool IsInPowerArmor(Critter& cr)   // Export
+{
+    Item@ armor = cr.GetItem(0, SLOT_ARMOR);
+    return valid(armor) && ArmorHasProtoPerk(armor.Proto, ARMOR_PERK_POWERED);
+}
+
+// Climb into a power armor that lies on the ground.
+void EnterPowerArmor(Critter& cr, Item& groundArmor)   // Export
+{
+    if(!cr.IsLife())
+        return;
+    if(IsInPowerArmor(cr))
+    {
+        cr.Say(SAY_NETMSG, "You are already wearing a power armor.");
+        return;
+    }
+
+    // Take the suit off the ground into the inventory first.
+    uint paId = groundArmor.Id;
+    MoveItem(groundArmor, 0, cr);
+
+    // Set the currently worn body armor aside into the ghost slot (kept, visible, restored on exit).
+    Item@ worn = cr.GetItem(0, SLOT_ARMOR);
+    if(valid(worn))
+        cr.MoveItem(worn.Id, worn.GetCount(), SLOT_POWER_STASH);
+
+    // Wear the suit: equipping it in SLOT_ARMOR applies its model, perks, upgrades and resists automatically.
+    cr.MoveItem(paId, 1, SLOT_ARMOR);
+
+    cr.Say(SAY_NETMSG, "You climb into the power armor.");
+}
+
+// Leave the power armor. Drops the suit on the ground where the critter stands and re-equips the stashed armor.
+void ExitPowerArmor(Critter& cr)   // Export
+{
+    Item@ armor = cr.GetItem(0, SLOT_ARMOR);
+    if(!valid(armor) || !ArmorHasProtoPerk(armor.Proto, ARMOR_PERK_POWERED))
+        return;
+
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+        return;   // no local map (e.g. worldmap): can't drop the suit, stay powered
+
+    // Drop the suit on the ground. This reverts the model and disables the suit's perks
+    // automatically through the standard armor-move hook (critter_move_item).
+    MoveItem(armor, 0, map, cr.HexX, cr.HexY);
+
+    // Put the stashed body armor back on (alive: re-equip; dead corpse: keep it as ordinary loot).
+    Item@ stash = cr.GetItem(0, SLOT_POWER_STASH);
+    if(valid(stash))
+    {
+        if(cr.IsLife())
+            cr.MoveItem(stash.Id, stash.GetCount(), SLOT_ARMOR);
+        else
+            cr.MoveItem(stash.Id, stash.GetCount(), SLOT_INV);
+    }
+
+    if(cr.IsLife())
+        cr.Say(SAY_NETMSG, "You climb out of the power armor.");
+}
+
+// Client -> server entry point for the exit keybind.
+void unsafe_ExitPowerArmor(Critter& player, int, int, int, string@, array<int>@)   // Export
+{
+    if(IsInPowerArmor(player))
+        ExitPowerArmor(player);
+}

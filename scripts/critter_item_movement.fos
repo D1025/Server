@@ -18,6 +18,8 @@ import bool GuardNotLegit(Critter@ cr, Item@ item, bool deleteItem) from "cheats
 import void GuardMultihexMove(Item& item, uint8 fromSlot, uint8 toSlot) from "multihex";
 import void ExitDeploy(Critter& cr) from "deploy";
 import bool IsDeployed(Critter& cr) from "deploy";
+import void ExitPowerArmor(Critter& cr) from "power_armor";
+import bool IsPoweredArmorItem(Item@ item) from "power_armor";
 
 dictionary SpeedboostLastState;
 
@@ -44,6 +46,25 @@ bool critter_check_move_item(Critter& cr, Item& item, uint8 toSlot, Item@ itemSw
     #ifdef __SERVER
     if(GuardNotLegit(cr, item, true))
         return true;
+    #endif
+
+    // Power-armor stash slot: it only ever holds the body armor set aside while a power suit is worn.
+    // The player can't pull that armor out by hand (it comes back automatically on exit, to SLOT_ARMOR).
+    if(fromSlot == SLOT_POWER_STASH && toSlot != SLOT_ARMOR)
+        return false;
+
+    // Power armor: can only be thrown to the ground (which ejects you); never moved into the inventory or swapped out.
+    #ifdef __SERVER
+    if(toSlot == SLOT_POWER_STASH)
+        return item.GetType() == ITEM_TYPE_ARMOR && item.Proto.Slot == SLOT_ARMOR;
+    if(fromSlot == SLOT_ARMOR && IsPoweredArmorItem(item))
+    {
+        if(toSlot == SLOT_GROUND)
+            ExitPowerArmor(cr);
+        return false;
+    }
+    if(toSlot == SLOT_ARMOR && valid(itemSwap) && IsPoweredArmorItem(itemSwap))
+        return false;
     #endif
 
     // Drop

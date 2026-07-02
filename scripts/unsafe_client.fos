@@ -36,6 +36,7 @@ import void   SetAuthed(uint id, string name) from "cheats";
 import void   RemoveAuthed(uint id) from "cheats";
 
 import void PlayMusic(Critter& cr, string& musicName, uint pos, uint repeat) from "media";
+import bool IsPoweredArmorItem(Item@ item) from "power_armor";
 
 import void SetSpectator(Critter& cr, bool on) from "utils";
 
@@ -743,6 +744,7 @@ void unsafe_PickAll(Critter& target, int, int, int, string@, array<int>@)
                 for(uint i = 0, j = items.length(); i < j; i++)
                 {
                 if(!FLAG(items[i].Flags, ITEM_CAN_PICKUP)) @items[i] = null;
+                else if(IsPoweredArmorItem(items[i])) @items[i]=null; // power suits: worn by entering, never picked up
                 else if(items[i].GetProtoId()==1825) @items[i]=null; // Broc Plant
                 else if(items[i].GetProtoId()==1826) @items[i]=null; // Xander Plant
                 else if(items[i].GetProtoId()==1827) @items[i]=null; // Broc Plant

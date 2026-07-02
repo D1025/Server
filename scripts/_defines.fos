@@ -462,6 +462,7 @@
 #define SLOT_ARMOR                               (3)   // Armor slot
 #define SLOT_HEAD                                (4)   // Head slot
 #define SLOT_TROPHY                              (5)   // Animals skins, teeths, claws, etc.
+#define SLOT_POWER_STASH                         (6)   // Holds the body armor displaced while wearing a power armor
 #define SLOT_GROUND                              (255) // Ground slot, used when critter drop/pick item
 
 // Critter timeevents identifiers

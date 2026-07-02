@@ -86,6 +86,10 @@ import void   CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint
 import bool   IsDeployed(Critter& cr) from "deploy";
 import bool   EnterDeploy(Critter& cr) from "deploy";
 import void   CleanupDeploy(Critter& cr) from "deploy";
+import void   EnterPowerArmor(Critter& cr, Item& groundArmor) from "power_armor";
+import void   ExitPowerArmor(Critter& cr) from "power_armor";
+import bool   IsInPowerArmor(Critter& cr) from "power_armor";
+import bool   IsPoweredArmorItem(Item@ item) from "power_armor";
 import void   CritterGenerate(Critter& cr) from "parameters";
 import void   CritterDescription_Set(Critter& player, int& description1, int& description2) from "critter_description";
 import void   EditRadioSettings(Critter& player, Item& radio) from "radio";
@@ -1409,6 +1413,13 @@ bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetIt
         // Pick some item
         if(valid(targetItem))
         {
+            // Powered armor: climb into it like a power suit instead of picking it up.
+            if(IsPoweredArmorItem(targetItem))
+            {
+                EnterPowerArmor(cr, targetItem);
+                return true;
+            }
+
             if(targetItem.GetType() == ITEM_TYPE_CONTAINER) cr.StatBase[ST_LAST_LOOT] = int(targetItem.Id);
 			
 			if(valid(baseLoc))
@@ -1872,6 +1883,16 @@ bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetIt
     break;
     case SK_TRAPS:     /////////////////////////////////////////////////
     {
+        // Power armor: using Traps on someone in a power suit ejects it. "On yourself" arrives with no target.
+        Critter@ paTarget = targetCr;
+        if(!valid(paTarget))
+            @paTarget = cr;
+        if(!valid(targetItem) && IsInPowerArmor(paTarget))
+        {
+            ExitPowerArmor(paTarget);
+            return true;
+        }
+
         // Explosion
         if(valid(targetItem))
         {
@@ -2740,6 +2761,8 @@ void critter_dead(Critter& cr, Critter@ killer)
 		//return;
 
 	CleanupDeploy(cr); // Clear deploy flag / movement lock on death
+	if(IsInPowerArmor(cr)) // Eject a dead pilot's power suit onto the ground; stashed gear becomes corpse loot
+		ExitPowerArmor(cr);
 	uint crGroup = _GroupIndex(cr);
     Map@ map = cr.GetMap();
     cr.ParamBase[TO_IMMUNITY_TIME] = MAX(uint(cr.Param[TO_IMMUNITY_TIME]), ELAPSED_TIME + SLEEPY_DEATH_IMMUNITY(cr));
