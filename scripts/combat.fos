@@ -282,7 +282,7 @@ bool PerformSewingFollowUpHit(Critter& attacker, Critter& target, uint16 weaponP
     if(ammoRound > 0 && attacker.Mode[MODE_UNLIMITED_AMMO] == 0 && realWeapon.AmmoCount < ammoRound)
         return false;
 
-    if(GetDistantion(attacker.HexX, attacker.HexY, target.HexX, target.HexY) > _WeaponMaxDist(protoWeapon, use))
+    if(GetDistantion(attacker.HexX, attacker.HexY, target.HexX, target.HexY) > _WeaponMaxDist(protoWeapon, use) + attacker.Param[MODE_RANGE_HTH])
         return false;
 
     attacker.SetDir(GetDirection(attacker.HexX, attacker.HexY, target.HexX, target.HexY));

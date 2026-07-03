@@ -303,6 +303,15 @@
 #define LOCATION_Metro		                      (413)
 //tower defence
 #define LOCATION_TD								(414)
+// Worldmap boss event -- dedicated, named ("Wasteland Threat"), enterable arenas (see maps/Locations.cfg)
+#define LOCATION_EventBoss1                       (415)      // e_desert1
+#define LOCATION_EventBoss2                       (416)      // e_desert3
+#define LOCATION_EventBoss3                       (417)      // e_mountain1
+#define LOCATION_EventBoss4                       (418)      // e_mountain4
+#define LOCATION_EventBoss5                       (419)      // e_city1
+#define LOCATION_EventBoss6                       (420)      // e_city3
+#define LOCATION_EventBoss7                       (421)      // e_coast1
+#define LOCATION_EventBoss8                       (422)      // e_coast3
 // ************************************************************************/
 // *  336 Maps                                                            */
 // ************************************************************************/

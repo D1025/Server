@@ -804,7 +804,7 @@ uint GetAttackDistantion(CritterMutual& cr, Item& item, uint8 mode)
 		if(IsGrenadeAttack(item, use))
 			dist += 3 * getArmorPerkStacks(cr.ItemSlotArmor, ARMOR_PERK_GRENADIER_RIG);
 	}
-	if(Item_Weapon_IsHtHAttack(item, mode) && cr.Params[MODE_RANGE_HTH]) dist++;
+	if(cr.Params[MODE_RANGE_HTH]) dist += cr.Params[MODE_RANGE_HTH]; // reach for HtH weapons AND creature natural attacks (value-based; 1 = classic +1)
 	dist += GetMultihex(cr);
 	dist += checkBonus(item, BONUS_WEAPON_MAX_RANGE);
 	if(item.Proto->WeaponHasPerk(WEAPON_PERK_SCOPE_RANGE) && cr.Params[PE_SHARPSHOOTER])

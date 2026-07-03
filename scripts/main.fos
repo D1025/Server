@@ -113,6 +113,7 @@ import void   InitBlueprints() from "blueprints";
 import void   InitPerks() from "perks";
 import void   InitProduction() from "production";
 import void   InitShufflingSpawns() from "shuffling_spawner";
+import void   InitEventBossWM() from "eventboss";
 import bool   IsArenaItem(Item@ item) from "arena";
 import void   LogAction(Critter& cr, string& s) from "logging_critter";
 import void   NpcProcessLevel(Critter& cr) from "parameters";
@@ -433,6 +434,7 @@ bool start()
     InitReverseItem();
     InitProduction();
     InitShufflingSpawns();
+    InitEventBossWM();
     ProcessCrippling();
 	//CreateTimeEvent(AFTER(0), "base_control@e_Load", false);
 	LoadBaseData();
@@ -990,6 +992,66 @@ void critter_attacked(Critter& cr, Critter& attacker)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// AfterTimes tactic "heal other": when an NPC is wounded in combat, ask a nearby faction
+// ally to break off and patch it up. Reuses the existing PLANE_HEAL_CRITTER machinery
+// (see main_planes.fos UseSkillOn). One medic responds; no pile-on.
+void TryAllyHeal(Critter& wounded)
+{
+    if(!wounded.IsNpc() || wounded.Cond == COND_DEAD || !IsHumanoid(wounded))
+        return;
+    if(wounded.Timeout[TO_BATTLE] == 0)
+        return;                                                  // only mid-combat
+    int wMax = GetActualMaxHp(wounded);
+    if(wMax <= 0 || wounded.Stat[ST_CURRENT_HP] * 100 > wMax * 55)
+        return;                                                  // only when clearly hurt (<55%)
+    int wGroup = _GroupIndex(wounded);
+    if(wGroup <= 1)
+        return;                                                  // need a real faction to trust ally id
+    Map@ map = wounded.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> crits;
+    uint            n = map.GetCrittersHex(wounded.HexX, wounded.HexY, 10, FIND_LIFE | FIND_ONLY_NPC, crits);
+    Critter@        medic = null;
+    int             bestSkill = -1;
+    for(uint i = 0; i < n; i++)
+    {
+        Critter@ a = crits[i];
+        if(a.Id == wounded.Id || !IsHumanoid(a) || _GroupIndex(a) != wGroup)
+            continue;
+
+        array<NpcPlane@> planes;
+        a.GetPlanes(PLANE_HEAL_CRITTER, planes);
+        bool busy = false;
+        for(uint k = 0; k < planes.length(); k++)
+        {
+            if(planes[k].IdentifierExt == wounded.Id)
+                return;                                          // help already on the way
+            if(planes[k].IdentifierExt != a.Id)
+                busy = true;                                     // already healing someone else
+        }
+        if(busy || a.Stat[ST_INTELLECT] < 5 || a.Timeout[TO_SK_FIRST_AID] > 0)
+            continue;
+        if(a.Stat[ST_CURRENT_HP] * 3 < GetActualMaxHp(a))
+            continue;                                            // too hurt itself to play medic
+
+        int sk = a.Skill[SK_FIRST_AID];
+        if(sk > bestSkill)
+        {
+            bestSkill = sk;
+            @medic = a;
+        }
+    }
+    if(!valid(medic))
+        return;
+
+    AddHealCritterPlane(medic, valid(medic.GetCurPlane()) ? medic.GetCurPlane().Priority + 3 : 5, wounded, true);
+    if(Random(0, 2) == 0)
+        medic.Say(SAY_NORM_ON_HEAD, "Hold on, I've got you!");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Called after the critter gets any damage.
 void PostDamage(Critter& cr)
 {
@@ -997,6 +1059,8 @@ void PostDamage(Critter& cr)
         return;
     if(cr.IsPlayer() || !IsHumanoid(cr) || cr.Cond == COND_DEAD)
         return;
+
+    TryAllyHeal(cr);
     if(cr.IsInjured())
     {
         if(cr.Timeout[TO_SK_DOCTOR] <= 0)
@@ -2574,9 +2638,64 @@ void critter_finish(Critter& cr, bool toDelete)
 // Call every __CritterIdleTick time.
 #define REPUTATION_DECAY         (10.0f)        // 100 points per day
 #define REPUTATION_DECAY_TIME    (REAL_DAY(1) / REPUTATION_DECAY)
+// AfterTimes tactic: step out of a friendly *deployed* gunner's forward line. A deployed
+// cascade weapon (WEAPON_PERK_DEPLOY + WEAPON_PERK_CASCADE) is immobile and sprays a 5-line
+// cone; allies caught in it eat friendly fire or block the burst. Reaction is ~one idle tick
+// (config __CritterIdleTick); additive and self-limiting (won't stack a second dodge). If no
+// lateral step is free the NPC just keeps fighting. Tune the cone/range below to taste.
+void TryClearDeployLine(Critter& cr)
+{
+    if(!cr.IsNpc() || cr.IsDead() || cr.IsKnockout() || !cr.IsCanWalk())
+        return;
+    if(cr.Timeout[TO_BATTLE] == 0 || cr.Param[ST_DEPLOYED] != 0)
+        return;                                                  // only mid-combat, and not while deployed
+    int grp = _GroupIndex(cr);
+    if(grp <= 1)
+        return;                                                  // need a real faction to trust ally id
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+        return;
+
+    array<NpcPlane@> pending;                                    // don't stack a second dodge
+    cr.GetPlanes(PLANE_WANDER, pending);
+    if(pending.length() > 0)
+        return;
+
+    array<Critter@> crits;
+    uint            n = map.GetCrittersHex(cr.HexX, cr.HexY, 15, FIND_LIFE | FIND_ONLY_NPC, crits);
+    for(uint i = 0; i < n; i++)
+    {
+        Critter@ g = crits[i];
+        if(g.Id == cr.Id || g.Param[ST_DEPLOYED] == 0 || _GroupIndex(g) != grp)
+            continue;
+        int gd = g.Dir;
+        int d  = GetDirection(g.HexX, g.HexY, cr.HexX, cr.HexY);
+        if(d != gd && d != (gd + 1) % 6 && d != (gd + 5) % 6)    // in the forward cone (central +/- 1)?
+            continue;
+        int dist = GetDistantion(g.HexX, g.HexY, cr.HexX, cr.HexY);
+        if(dist < 1 || dist > 15)
+            continue;
+
+        for(int s = 0; s < 2; s++)                               // try both lateral directions
+        {
+            uint8  sd = uint8((gd + (s == 0 ? 2 : 4)) % 6);
+            uint16 hx = cr.HexX, hy = cr.HexY;
+            map.MoveHexByDir(hx, hy, sd, 3);
+            if(map.IsHexPassed(hx, hy))
+            {
+                AddWalkPlane(cr, AI_PLANE_ATTACK_PRIORITY + 5, PLANE_WANDER, 0, hx, hy, 6, true, 0);
+                if(Random(0, 3) == 0)
+                    cr.Say(SAY_NORM_ON_HEAD, "Out of the line!");
+                return;
+            }
+        }
+    }
+}
+
 void critter_idle(Critter& cr)
 {
 	speedboost(cr);
+    TryClearDeployLine(cr);
     int actualMaxHp = GetActualMaxHp(cr);
     if(cr.Stat[ST_CURRENT_HP] > actualMaxHp)
         cr.StatBase[ST_CURRENT_HP] = actualMaxHp;

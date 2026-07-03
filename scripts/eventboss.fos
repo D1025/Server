@@ -7,6 +7,11 @@
 
 #include "_macros.fos"
 #include "_animation.fos"
+#include "_colors.fos"
+#include "_npc_pids.fos"
+#include "npc_roles_h.fos"
+#include "broadcast_h.fos"
+#include "utils_h.fos"
 #include "combat_msg.fos"
 #include "eventboss_h.fos"
 #define HF_KNOCKOUT    (0x00000001)
@@ -16,6 +21,14 @@ import bool WrathOfTheGod(Critter& di) from "cheats";
 import bool AddAttackPlane(Critter& npc, uint priority, Critter& target, bool run) from "npc_planes";
 import bool AddMiscPlane(Critter& npc, uint priority, uint waitSecond, string@ funcName) from "npc_planes";
 import bool AddWalkPlane(Critter& npc, uint priority, int identifier, uint identifierExt, uint16 hexX, uint16 hexY, uint8 dir, bool run, uint cut) from "npc_planes";
+
+// Worldmap relief (0 == water); used to keep event maps on dry land.
+import uint GetGlobalMapRelief(uint x, uint y) from "worldmap";
+
+// Harbinger arena hazards.
+import void AffectRadiation(Critter& cr, int value) from "radiation";
+import void AffectPoison(Critter& cr, int value) from "poison";
+import void DropPoison(Critter& cr) from "poison";
 
 bool isMod(Critter& crit)
 {
@@ -722,3 +735,1081 @@ class PatternBoss : CBoss
     void bossFinish(Critter& cr, bool deleted)
     {}
 };
+
+
+// =====================================================================================
+//  FOnline: AfterTimes -- Worldmap Boss Event
+//
+//  Every EVENT_BOSS_INTERVAL a hidden event location is spawned at a random wilderness
+//  spot on the worldmap (never on water, never near a town/city). A single, extremely
+//  powerful boss (one of three variants, each with its own mechanics) guards it,
+//  backed by a swarm of weak minions. The boss drops exactly one item: a
+//  New Era Holotape.
+//
+//  Built on the existing CBoss / IAttack framework above (bosses[], AddBoss, GetBoss).
+// =====================================================================================
+
+#define EVENT_BOSS_TEAM             (17)               // shared team so boss & minions never fight each other
+#define EVENT_BOSS_AIPACKET         (131)              // AIPACKET_MEAN_DEATHCLAW (see _ai.fos) -- aggressive creature AI
+#define EVENT_BOSS_MINION_LEVEL     (10)               // weak fodder
+// Per-boss minion cap -- see _EventMinionMax(): Warlord 3, Abomination 18, Harbinger 40.
+#define EVENT_BOSS_RESPAWN_TIME     (REAL_MINUTE(2))   // minions top back up to their cap on this interval
+#define EVENT_BOSS_MINION_BAG_WARLORD (174)            // BAG_Navarro_EnclavePatrol_Male2 (Enclave Patrol w/ Plasma Pistol)
+#define EVENT_BOSS_TOWN_CLEAR       (170)              // world units that must be free of any town/city
+#define EVENT_BOSS_SPAWN_TRIES      (250)              // attempts to find a valid worldmap spot
+
+#define EVENT_BOSS_INTERVAL         (REAL_MINUTE(20))  // how often a new event spawns
+#define EVENT_BOSS_LOC_LIFETIME     (REAL_MINUTE(35))  // auto-cleanup of an untouched event location
+#define EVENT_BOSS_LOOT_GRACE       (REAL_MINUTE(3))   // time to loot after the boss dies before cleanup
+
+#define EVENT_BOSS_ANYDATA          "EventBossLocs"    // persistent list of live event location ids
+
+// Dedicated, named ("Wasteland Threat"), worldmap-enterable arenas (maps/Locations.cfg [Area 415-422]).
+// Each wraps one open outdoor map (desert/mountain/city/coast) so the worldmap shows a proper name
+// instead of a generic "City Encounter 2", and the location is enterable from the global map.
+array<uint16> EventBossArenas =
+{
+    LOCATION_EventBoss1, LOCATION_EventBoss2, LOCATION_EventBoss3, LOCATION_EventBoss4,
+    LOCATION_EventBoss5, LOCATION_EventBoss6, LOCATION_EventBoss7, LOCATION_EventBoss8
+};
+
+// Minion pools (weak creatures -- no gear needed).
+array<uint16> EventMinionsBehemoth  = { NPC_PID_Deathclaw3, NPC_PID_DeathclawSpawn, NPC_PID_Deathclaw2 };   // normal deathclaws (creatures)
+array<uint16> EventMinionsWarlord   = { NPC_PID_EnclaveGuard, NPC_PID_EnclaveGuard2 };                    // Enclave soldiers (bagged)
+array<uint16> EventMinionsHarbinger = { NPC_PID_GenericGhoul };
+
+
+// ---------------------------------------------------------------------------
+//  Shared targeting / aggression helpers (players & mercs are the enemies)
+// ---------------------------------------------------------------------------
+
+bool _IsEventEnemy(Critter& boss, Critter& c)
+{
+    return c.IsLife() && !isMod(c) && !isSameTeam(boss, c) && (c.IsPlayer() || isMerc(c));
+}
+
+// Like _IsEventEnemy, but still hits access-level mods (so admins testing get hit); only true god-mode is spared.
+bool _IsEventTarget(Critter& boss, Critter& c)
+{
+    return c.IsLife() && !isSameTeam(boss, c) && (c.IsPlayer() || isMerc(c)) && !WrathOfTheGod(c);
+}
+
+// One grenade's AoE: damage every player/merc within radius of the impact hex.
+void _EventGrenadeBlast(Map& map, Critter& boss, uint16 cx, uint16 cy, int radius, int dmg)
+{
+    array<Critter@> crits;
+    uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+    for(uint i = 0; i < n; i++)
+    {
+        if(!_IsEventTarget(boss, crits[i]))
+            continue;
+        if(GetDistantion(cx, cy, crits[i].HexX, crits[i].HexY) <= uint(radius))
+            InjureCritter(crits[i], Random(dmg, dmg * 2), DAMAGE_EXPLODE, Random(0, 5), boss.Id);
+    }
+}
+
+bool _EventMapHasEnemies(Critter@ boss)
+{
+    if(!valid(boss))
+        return false;
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return false;
+    array<Critter@> crits;
+    uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+    for(uint i = 0; i < n; i++)
+        if(_IsEventEnemy(boss, crits[i]))
+            return true;
+    return false;
+}
+
+void _EventBossAggroAll(Critter@ boss)
+{
+    if(!valid(boss))
+        return;
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return;
+    array<Critter@> crits;
+    uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+    for(uint i = 0; i < n; i++)
+    {
+        if(!_IsEventEnemy(boss, crits[i]))
+            continue;
+        boss.AddEnemyInStack(crits[i].Id);
+        AddAttackPlane(boss, 180, crits[i], true);
+    }
+}
+
+void _EventBossSee(Critter& cr, Critter& shownCr)
+{
+    if(!cr.CheckEnemyInStack(shownCr.Id) && _IsEventEnemy(cr, shownCr))
+    {
+        cr.AddEnemyInStack(shownCr.Id);
+        AddAttackPlane(cr, 180, shownCr, true);
+    }
+}
+
+// Rally every minion (same team as the boss) onto whoever the boss is fighting.
+void _EventFocusMinionsOnTarget(Critter& boss, Critter& target)
+{
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return;
+    array<Critter@> crits;
+    uint            n = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, crits);
+    for(uint i = 0; i < n; i++)
+    {
+        if(crits[i].Id == boss.Id || !isSameTeam(boss, crits[i]))
+            continue;
+        crits[i].AddEnemyInStack(target.Id);
+        AddAttackPlane(crits[i], 60, target, true);
+    }
+}
+
+// Harbinger radiation aura (map loop, ~5s): irradiate every living player, Glow-style.
+void _EventHarbingerAura(Map& map)
+{
+    array<Critter@> crits;
+    uint            n = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE, crits);
+    for(uint i = 0; i < n; i++)
+        AffectRadiation(crits[i], Random(25, 50));
+}
+
+// Telegraphed poison cast: the boss shouts "POISON!", and the hit lands 5s later (repeats every 30s).
+uint e_EventHarbingerPoisonCast(array<uint>@ vals)
+{
+    Critter@ boss = GetCritter(vals[0]);
+    if(!valid(boss) || boss.IsDead())
+        return 0;   // Harbinger dead/gone -> stop
+    boss.Say(SAY_SHOUT, "POISON!");
+    CreateTimeEvent(AFTER(REAL_SECOND(5)), "e_EventHarbingerPoisonHit", vals, false);
+    return REAL_SECOND(30);
+}
+
+// The poison hit: every living player takes ~50% of their max HP as poison damage.
+uint e_EventHarbingerPoisonHit(array<uint>@ vals)
+{
+    Critter@ boss = GetCritter(vals[0]);
+    if(!valid(boss) || boss.IsDead())
+        return 0;
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return 0;
+    array<Critter@> crits;
+    uint            n = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE, crits);
+    for(uint i = 0; i < n; i++)
+    {
+        DropPoison(crits[i]);                                      // clear residual for a clean 50%
+        AffectPoison(crits[i], crits[i].Stat[ST_MAX_LIFE] / 2 + 100);   // (+100 offsets the engine's -100 floor)
+        crits[i].Say(SAY_SHOUT_ON_HEAD, "*retches*");
+    }
+    return 0;
+}
+
+// Map-enter hook: the moment a live player walks into the arena, the boss and its whole horde aggro
+// (so the boss no longer waits to be attacked first).
+void _EventBossMapIn(Map& map, Critter& cr)
+{
+    if(!cr.IsPlayer() || !cr.IsLife())
+        return;
+    array<Critter@> npcs;
+    uint            n = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+    for(uint i = 0; i < n; i++)
+    {
+        if(npcs[i].Param[ST_TEAM_ID] != EVENT_BOSS_TEAM || npcs[i].CheckEnemyInStack(cr.Id))
+            continue;
+        npcs[i].AddEnemyInStack(cr.Id);
+        AddAttackPlane(npcs[i], 180, cr, true);
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+//  Boss attacks (reusable IAttack implementations)
+// ---------------------------------------------------------------------------
+
+// A telegraphed melee shockwave: heavy damage + wall slam to everyone nearby.
+class AtkGroundSmash : IAttack
+{
+    CBoss@ boss;
+    int    dmgMin;
+    int    dmgMax;
+    int    radius;
+    AtkGroundSmash(CBoss@ b, int dmin, int dmax, int r)
+    {
+        @this.boss = @b;
+        dmgMin = dmin;
+        dmgMax = dmax;
+        radius = r;
+    }
+    void AttackPrepareStart()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(valid(c) && _EventMapHasEnemies(c))
+            c.Say(SAY_SHOUT_ON_HEAD, "The ground trembles...");
+    }
+    void AttackCommence()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(!valid(c))
+            return;
+        Map@ map = c.GetMap();
+        if(!valid(map))
+            return;
+        // Grenade-style area blast covering the whole radius: a central explosion plus a ring at the edge,
+        // so the 3-hex area-of-effect is clearly visible (no humanoid punch anim -- the boss is a creature).
+        map.RunEffect(PID_EXPLODE_FIRE_BIG, c.HexX, c.HexY, radius);
+        for(uint d = 0; d < 6; d++)
+        {
+            uint16 bx = c.HexX, by = c.HexY;
+            map.MoveHexByDir(bx, by, d, radius);
+            map.RunEffect(PID_EXPLODE_FIRE_BIG, bx, by, 1);
+        }
+        map.PlaySound(Random(0, 1) == 0 ? "WHN1XXX1.ACM" : "WHN1XXX2.ACM");
+
+        // Team-safe area damage: every player/merc within the radius, with an explosion on each victim.
+        array<Critter@> crits;
+        uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+        for(uint i = 0; i < n; i++)
+        {
+            if(!_IsEventEnemy(c, crits[i]))
+                continue;
+            if(GetDistantion(c.HexX, c.HexY, crits[i].HexX, crits[i].HexY) <= uint(radius))
+            {
+                InjureCritter(crits[i], Random(dmgMin, dmgMax), DAMAGE_EXPLODE, GetDirection(c.HexX, c.HexY, crits[i].HexX, crits[i].HexY), c.Id);
+                map.RunEffect(PID_EXPLODE_FIRE_BIG, crits[i].HexX, crits[i].HexY, 0);
+            }
+        }
+    }
+    void AttackRecuperationEnd()
+    {}
+};
+
+// Artillery barrage: announced up front, then (after the prepare delay) ~40 grenades detonate at
+// random hexes within ~30 of the boss. Pure area bombardment -- ignores line of fire and its own mobs.
+class AtkFragBarrage : IAttack
+{
+    CBoss@ boss;
+    int    dmg;
+    AtkFragBarrage(CBoss@ b, int d)
+    {
+        @this.boss = @b;
+        dmg = d;
+    }
+    void AttackPrepareStart()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(valid(c) && _EventMapHasEnemies(c))
+            c.Say(SAY_SHOUT, "Barrage incoming -- take cover!");
+    }
+    void AttackCommence()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(!valid(c))
+            return;
+        Map@ map = c.GetMap();
+        if(!valid(map))
+            return;
+        for(uint g = 0; g < 40; g++)
+        {
+            uint16 gx = c.HexX, gy = c.HexY;
+            map.MoveHexByDir(gx, gy, Random(0, 5), Random(3, 30));
+            map.MoveHexByDir(gx, gy, Random(0, 5), Random(0, 10));   // scatter across the whole area
+            map.RunEffect(PID_EXPLODE_FIRE_BIG, gx, gy, 1);
+            _EventGrenadeBlast(map, c, gx, gy, 2, dmg);
+        }
+        map.PlaySound(Random(0, 1) == 0 ? "WHN1XXX1.ACM" : "WHN1XXX2.ACM");
+    }
+    void AttackRecuperationEnd()
+    {}
+};
+
+// Instant energy nova centered on the boss.
+class AtkEnergyNova : IAttack
+{
+    CBoss@ boss;
+    int    dmgMin;
+    int    dmgMax;
+    int    radius;
+    int    dmgType;
+    AtkEnergyNova(CBoss@ b, int dmin, int dmax, int r, int dt)
+    {
+        @this.boss = @b;
+        dmgMin = dmin;
+        dmgMax = dmax;
+        radius = r;
+        dmgType = dt;
+    }
+    void AttackPrepareStart()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(valid(c) && _EventMapHasEnemies(c))
+        {
+            c.Say(SAY_SHOUT_ON_HEAD, "Feel my power!");
+            Map@ map = c.GetMap();
+            if(valid(map))
+                map.RunEffect(PID_EXPLODE_FIRE_BIG, c.HexX, c.HexY, 1);
+        }
+    }
+    void AttackCommence()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(!valid(c))
+            return;
+        Map@ map = c.GetMap();
+        if(!valid(map))
+            return;
+        array<Critter@> crits;
+        uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+        bool            hit = false;
+        for(uint i = 0; i < n; i++)
+        {
+            if(!_IsEventEnemy(c, crits[i]))
+                continue;
+            if(GetDistantion(c.HexX, c.HexY, crits[i].HexX, crits[i].HexY) <= uint(radius))
+            {
+                hit = true;
+                InjureCritter(crits[i], Random(dmgMin, dmgMax), dmgType, GetDirection(c.HexX, c.HexY, crits[i].HexX, crits[i].HexY), c.Id);
+            }
+        }
+        if(hit)
+            map.RunEffect(PID_EXPLODE_FIRE_BIG, c.HexX, c.HexY, radius);
+    }
+    void AttackRecuperationEnd()
+    {}
+};
+
+// Low-damage suppressive fire that chips every visible enemy (ranged pressure).
+class AtkSuppression : IAttack
+{
+    CBoss@ boss;
+    int    dmgMin;
+    int    dmgMax;
+    AtkSuppression(CBoss@ b, int dmin, int dmax)
+    {
+        @this.boss = @b;
+        dmgMin = dmin;
+        dmgMax = dmax;
+    }
+    void AttackPrepareStart()
+    {}
+    void AttackCommence()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(!valid(c))
+            return;
+        Map@ map = c.GetMap();
+        if(!valid(map))
+            return;
+        array<Critter@> crits;
+        uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+        bool            hit = false;
+        for(uint i = 0; i < n; i++)
+        {
+            if(!_IsEventEnemy(c, crits[i]))
+                continue;
+            hit = true;
+            InjureCritter(crits[i], Random(dmgMin, dmgMax), DAMAGE_NORMAL, GetDirection(c.HexX, c.HexY, crits[i].HexX, crits[i].HexY), c.Id);
+        }
+        if(hit)
+            c.Say(SAY_SHOUT, "Suppressing fire!");
+    }
+    void AttackRecuperationEnd()
+    {}
+};
+
+// Calls in extra weak minions (only while players are present).
+class AtkSummonHorde : IAttack
+{
+    CBoss@ boss;
+    int    variant;
+    uint   count;
+    AtkSummonHorde(CBoss@ b, int v, uint c)
+    {
+        @this.boss = @b;
+        variant = v;
+        count = c;
+    }
+    void AttackPrepareStart()
+    {}
+    void AttackCommence()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(!valid(c) || !_EventMapHasEnemies(c))
+            return;
+        Map@ map = c.GetMap();
+        if(!valid(map))
+            return;
+        c.Say(SAY_SHOUT, "To me, my servants!");
+        SpawnEventMinions(map, c.HexX, c.HexY, variant, count);
+    }
+    void AttackRecuperationEnd()
+    {}
+};
+
+// Self-heal / enrage (only while players are present, so it can't ramp on an empty map).
+class AtkEnrageHeal : IAttack
+{
+    CBoss@ boss;
+    int    healAmt;
+    AtkEnrageHeal(CBoss@ b, int amt)
+    {
+        @this.boss = @b;
+        healAmt = amt;
+    }
+    void AttackPrepareStart()
+    {}
+    void AttackCommence()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(!valid(c) || !_EventMapHasEnemies(c))
+            return;
+        int maxHp = c.Stat[ST_MAX_LIFE];
+        int newHp = c.Stat[ST_CURRENT_HP] + healAmt;
+        if(newHp > maxHp)
+            newHp = maxHp;
+        c.StatBase[ST_CURRENT_HP] = newHp;
+        c.Say(SAY_SHOUT_ON_HEAD, "You cannot kill me!");
+        Map@ map = c.GetMap();
+        if(valid(map))
+            map.RunEffect(PID_EXPLODE_FIRE_BIG, c.HexX, c.HexY, 1);
+    }
+    void AttackRecuperationEnd()
+    {}
+};
+
+
+// ---------------------------------------------------------------------------
+//  Boss variants
+// ---------------------------------------------------------------------------
+
+// Variant 0: The Abomination -- a giant deathclaw (2D sprite scaled 1.5x via ST_SCALE_FACTOR);
+// melee bruiser, natural claw attacks, frequent 3-hex shockwave, rallies its horde. (Class name kept for stability.)
+class EventBossBehemoth : CBoss
+{
+    uint locId;
+    EventBossBehemoth(Map & map, uint16 x, uint16 y, uint id, uint locId)
+    {
+        this.id = id;
+        this.locId = locId;
+        patern = false;
+        Critter@ npc = map.AddNpc(NPC_PID_MotherDeathclaw, x, y, Random(0, 5), null, null, "_EventBossBehemothInit");
+        if(valid(npc))
+            AddCritter(npc);
+        // Damage comes from the engine-driven 3-hex ranged claw (MODE_RANGE_HTH); specials are utility only.
+        AddAttack(AtkSummonHorde(this, 0, 6), 3, REAL_SECOND(2), REAL_SECOND(4));
+        AddAttack(AtkEnrageHeal(this, 600), 2, REAL_SECOND(2), REAL_SECOND(6));
+    }
+    void aggressionStart()
+    {
+        Critter@ boss = GetCritter(critterList[0]);
+        _EventBossAggroAll(boss);
+    }
+    void bossSee(Critter& cr, Critter& shownCr)
+    {
+        _EventBossSee(cr, shownCr);
+        if(_IsEventEnemy(cr, shownCr))
+            _EventFocusMinionsOnTarget(cr, shownCr);   // whole horde piles onto the boss's target
+    }
+    bool bossAttacked(Critter& cr, Critter& attacker)
+    {
+        if(!cr.CheckEnemyInStack(attacker.Id))
+        {
+            cr.AddEnemyInStack(attacker.Id);
+            AddAttackPlane(cr, 180, attacker, true);
+        }
+        _EventFocusMinionsOnTarget(cr, attacker);
+        return true;
+    }
+    void bossKilled(Critter& cr, Critter@ attacker)
+    {
+        if(timeEvent != 0)
+            EraseTimeEvent(timeEvent);
+        timeEvent = 0;
+        _EventBossOnDeath(cr, locId);
+    }
+    void bossFinish(Critter& cr, bool deleted)
+    {
+        if(timeEvent != 0)
+            EraseTimeEvent(timeEvent);
+        timeEvent = 0;
+    }
+};
+
+// Variant 1: Warlord Kaine -- ranged gunner, grenade volleys and suppressive fire.
+class EventBossWarlord : CBoss
+{
+    uint locId;
+    EventBossWarlord(Map & map, uint16 x, uint16 y, uint id, uint locId)
+    {
+        this.id = id;
+        this.locId = locId;
+        patern = false;
+        Critter@ npc = map.AddNpc(NPC_PID_EnclaveGuard, x, y, 3, null, null, "_EventBossWarlordInit");
+        if(valid(npc))
+            AddCritter(npc);
+        // Barrage is the primary threat: announced, then lands 5s later, hitting the whole area
+        // regardless of line of fire / its own minions.
+        AddAttack(AtkFragBarrage(this, 60), 6, REAL_SECOND(5), REAL_SECOND(6));
+        AddAttack(AtkSuppression(this, 35, 75), 3, REAL_SECOND(3), REAL_SECOND(4));
+        AddAttack(AtkSummonHorde(this, 1, 2), 2, REAL_SECOND(4), REAL_SECOND(12));
+    }
+    void aggressionStart()
+    {
+        _EventBossAggroAll(GetCritter(critterList[0]));
+    }
+    void bossSee(Critter& cr, Critter& shownCr)
+    {
+        _EventBossSee(cr, shownCr);
+    }
+    bool bossAttacked(Critter& cr, Critter& attacker)
+    {
+        if(!cr.CheckEnemyInStack(attacker.Id))
+        {
+            cr.AddEnemyInStack(attacker.Id);
+            AddAttackPlane(cr, 180, attacker, true);
+        }
+        return true;
+    }
+    void bossKilled(Critter& cr, Critter@ attacker)
+    {
+        if(timeEvent != 0)
+            EraseTimeEvent(timeEvent);
+        timeEvent = 0;
+        _EventBossOnDeath(cr, locId);
+    }
+    void bossFinish(Critter& cr, bool deleted)
+    {
+        if(timeEvent != 0)
+            EraseTimeEvent(timeEvent);
+        timeEvent = 0;
+    }
+};
+
+// Variant 2: The Harbinger -- glowing horror, energy novas, raises hordes, drains life.
+class EventBossHarbinger : CBoss
+{
+    uint locId;
+    EventBossHarbinger(Map & map, uint16 x, uint16 y, uint id, uint locId)
+    {
+        this.id = id;
+        this.locId = locId;
+        patern = false;
+        Critter@ npc = map.AddNpc(NPC_PID_GenericGlowingOne, x, y, Random(0, 5), null, null, "_EventBossHarbingerInit");
+        if(valid(npc))
+            AddCritter(npc);
+        AddAttack(AtkEnergyNova(this, 90, 150, 5, DAMAGE_LASER), 4, REAL_SECOND(4), REAL_SECOND(4));
+        AddAttack(AtkSummonHorde(this, 2, 4), 3, REAL_SECOND(2), REAL_SECOND(4));
+        AddAttack(AtkEnrageHeal(this, 900), 2, REAL_SECOND(2), REAL_SECOND(5));
+    }
+    void aggressionStart()
+    {
+        _EventBossAggroAll(GetCritter(critterList[0]));
+    }
+    void bossSee(Critter& cr, Critter& shownCr)
+    {
+        _EventBossSee(cr, shownCr);
+    }
+    bool bossAttacked(Critter& cr, Critter& attacker)
+    {
+        if(!cr.CheckEnemyInStack(attacker.Id))
+        {
+            cr.AddEnemyInStack(attacker.Id);
+            AddAttackPlane(cr, 180, attacker, true);
+        }
+        return true;
+    }
+    void bossKilled(Critter& cr, Critter@ attacker)
+    {
+        if(timeEvent != 0)
+            EraseTimeEvent(timeEvent);
+        timeEvent = 0;
+        _EventBossOnDeath(cr, locId);
+    }
+    void bossFinish(Critter& cr, bool deleted)
+    {
+        if(timeEvent != 0)
+            EraseTimeEvent(timeEvent);
+        timeEvent = 0;
+    }
+};
+
+
+// ---------------------------------------------------------------------------
+//  Boss NPC stat initializers (turbo-tanky, but no percentage/one-shot damage)
+// ---------------------------------------------------------------------------
+
+void _EventBossCommonInit(Critter& b)
+{
+    b.StatBase[ST_HEALING_RATE] = 25;
+    b.ParamBase[PE_SHARPSHOOTER] = 20;
+    b.ParamBase[MODE_NEGATE_CRIT_EFF] = int(0xFFFFFFFF);   // immune to crippling crits
+    b.ParamBase[MODE_UNLIMITED_AMMO] = 1;
+    b.ParamBase[MODE_NO_HOME] = 1;
+    b.ParamBase[ST_TEAM_ID] = EVENT_BOSS_TEAM;
+    // Heavy but non-absolute damage resistance -- fights are long, not unwinnable.
+    b.ParamBase[ST_NORMAL_RESIST] = 60;
+    b.ParamBase[ST_EXPLODE_RESIST] = 60;
+    b.ParamBase[ST_LASER_RESIST] = 55;
+    b.ParamBase[ST_PLASMA_RESIST] = 55;
+    b.ParamBase[ST_FIRE_RESIST] = 55;
+    // Never respawn AND keep the corpse (so the New Era Holotape can be looted);
+    // the whole location is removed by e_EventBossCleanup instead.
+    b.StatBase[ST_REPLICATION_TIME] = REPLICATION_NEVER;
+}
+
+void _EventBossBehemothInit(Critter& b, bool firstTime)
+{
+    b.ParamBase[ST_MAX_LIFE] = 2500;
+    if(firstTime)
+        b.ParamBase[ST_CURRENT_HP] = 2500;
+    _EventBossCommonInit(b);
+    b.StatBase[ST_HEALING_RATE] = 18;
+    b.ParamBase[ST_STRENGTH] = 12;
+    b.ParamBase[ST_AGILITY] = 8;
+    b.ParamBase[ST_ARMOR_CLASS] = 50;
+    b.ParamBase[SK_CLOSE_COMBAT] = 300;
+    b.ParamBase[MODE_NO_AIM] = 1;              // only unaimed (uncalled/torso) hits
+    b.ParamBase[MODE_RANGE_HTH] = 1;           // +1 hex reach on top of the claw's base range (2) -> 3-hex claw (main_planes + combat.fos)
+    b.ParamBase[MODE_NO_DROP] = 0;             // deathclaw proto sets NO_DROP -- clear it so the New Era Holotape can be looted
+    b.StatBase[ST_MELEE_DAMAGE] = 100;         // added to every melee hit (combat.fos)
+    b.ParamBase[ST_SCALE_FACTOR] = 1500;       // 1.5x size -- requires the 2D-sprite scaling engine change (SpriteManager/HexManager)
+    // NPC_PID_MotherDeathclaw is a combat creature (walk + claw attack anims) -> moves and attacks; no weapon.
+}
+
+void _EventBossWarlordInit(Critter& b, bool firstTime)
+{
+    b.ParamBase[ST_MAX_LIFE] = 1000;
+    if(firstTime)
+        b.ParamBase[ST_CURRENT_HP] = 1000;
+    _EventBossCommonInit(b);
+    b.StatBase[ST_HEALING_RATE] = 18;
+    b.ParamBase[ST_AGILITY] = 10;
+    b.ParamBase[ST_ARMOR_CLASS] = 70;
+    b.ParamBase[SK_BIG_GUNS] = 300;
+    b.ParamBase[MODE_UNLIMITED_AMMO] = 1;      // never runs out of ammo (also set in _EventBossCommonInit)
+    // Minigun instead of the Bozar: the Bozar has WEAPON_PERK_DEPLOY (only fires while deployed) and NPCs
+    // never deploy, so it could not shoot. The minigun is a mobile big gun the AI fires normally.
+    b.AddItem(PID_MINIGUN, 1);
+    b.AddItem(PID_5MM_AP, 500);                // loaded rounds so it starts firing immediately
+    b.SetFavoriteItem(SLOT_HAND1, PID_MINIGUN);
+}
+
+void _EventBossHarbingerInit(Critter& b, bool firstTime)
+{
+    b.ParamBase[ST_MAX_LIFE] = 4000;
+    if(firstTime)
+        b.ParamBase[ST_CURRENT_HP] = 4000;
+    _EventBossCommonInit(b);
+    b.StatBase[ST_HEALING_RATE] = 250;
+    b.ParamBase[ST_AGILITY] = 9;
+    b.ParamBase[ST_ARMOR_CLASS] = 0;
+    // No weapon -- GenericGlowingOne is a creature and can't wield guns. It fights with its energy nova,
+    // its radiation/poison aura (map loop for variant 2) and its summoned horde.
+    b.AddItem(PID_ACTIVE_FLARE_GREEN, 1);      // lit green flare -> the boss gives off an eerie green glow
+}
+
+
+// ---------------------------------------------------------------------------
+//  Spawning: minions, arena selection, worldmap placement
+// ---------------------------------------------------------------------------
+
+Item@ _EventMakeExplosive(Critter@ owner, int bonusDmg, int bonusRadius)
+{
+    Item@ expl = owner.AddItem(PID_ACTIVE_DYNAMITE, 1);
+    if(!valid(expl))
+        return null;
+    SETFLAG(expl.Flags, ITEM_TRAP);
+    _ExplodeSetOwner(expl, owner.Id);
+    expl.TrapValue = TRAPS_HIDE(200);
+    _Complexity(expl) = 5000;
+    _ExplodeSetBonusDamage(expl, bonusDmg);
+    _ExplodeSetBonusRadius(expl, bonusRadius);
+    expl.Update();
+    return expl;
+}
+
+bool _EventFindPassableHex(Map& map, uint16& x, uint16& y, uint radius)
+{
+    if(map.IsHexPassed(x, y))
+        return true;
+    for(uint r = 1; r <= radius; r++)
+    {
+        for(uint d = 0; d < 6; d++)
+        {
+            uint16 tx = x, ty = y;
+            map.MoveHexByDir(tx, ty, d, r);
+            if(map.IsHexPassed(tx, ty))
+            {
+                x = tx;
+                y = ty;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+void _EventGetBaseHex(Map& map, uint16& bx, uint16& by)
+{
+    uint16 ex = 0, ey = 0;
+    if(map.CountEntire(0) > 0 && map.GetEntireCoords(0, 0, ex, ey))
+    {
+        // Offset off the player landing spot so the boss doesn't block the entrance.
+        uint16 tx = ex, ty = ey;
+        map.MoveHexByDir(tx, ty, Random(0, 5), 8);
+        if(_EventFindPassableHex(map, tx, ty, 6))
+        {
+            bx = tx;
+            by = ty;
+            return;
+        }
+        bx = ex;
+        by = ey;
+        if(_EventFindPassableHex(map, bx, by, 6))
+            return;
+    }
+    bx = map.GetWidth() / 2;
+    by = map.GetHeight() / 2;
+    _EventFindPassableHex(map, bx, by, 15);
+}
+
+// Per-boss maximum live minion count (also the initial spawn size and respawn target).
+uint _EventMinionMax(int variant)
+{
+    if(variant == 1)
+        return 3;    // Warlord Kaine -- few, but bagged Enclave soldiers
+    if(variant == 2)
+        return 40;   // The Harbinger -- swarms of weak fodder
+    return 18;       // The Abomination -- a pack of deathclaws
+}
+
+void SpawnEventMinions(Map& map, uint16 cx, uint16 cy, int variant, uint count)
+{
+    array<uint16>@ pool = @EventMinionsBehemoth;
+    uint           bag = 0;
+    if(variant == 1)
+    {
+        @pool = @EventMinionsWarlord;
+        bag = EVENT_BOSS_MINION_BAG_WARLORD;   // Enclave soldiers are humanoids -> need a weapon loadout
+    }
+    else if(variant == 2)
+        @pool = @EventMinionsHarbinger;
+
+    for(uint i = 0; i < count; i++)
+    {
+        uint16 mx = cx, my = cy;
+        map.MoveHexByDir(mx, my, i % 6, Random(3, 9));   // wider ring so the pack spreads out
+        if(!_EventFindPassableHex(map, mx, my, 4))
+            continue;
+
+        uint16     pid = pool[Random(0, pool.length() - 1)];
+        array<int> mp = { ST_AI_ID, EVENT_BOSS_AIPACKET, ST_TEAM_ID, EVENT_BOSS_TEAM, ST_LEVEL, EVENT_BOSS_MINION_LEVEL };
+        if(bag != 0)
+        {
+            mp.insertLast(ST_BAG_ID);
+            mp.insertLast(int(bag));
+        }
+        Critter@ m = map.AddNpc(pid, mx, my, Random(0, 5), mp, null, "mob@critter_init_aggr");
+        if(valid(m))
+        {
+            m.ParamBase[MODE_NO_HOME] = 1;
+            m.ParamBase[MODE_NO_LOOT] = 1;   // fodder drops nothing
+            m.ParamBase[ST_NPC_ROLE] = ROLE_MOB_AGRESSIVE;
+            m.ParamBase[ST_REPLICATION_TIME] = REPLICATION_DELETE_FAST;
+            if(bag != 0)
+                m.ParamBase[MODE_UNLIMITED_AMMO] = 1;   // bagged shooters never run dry
+        }
+    }
+}
+
+bool _EventTownNearby(uint16 x, uint16 y, uint radius)
+{
+    array<Location@> near;
+    uint             n = GetLocations(x, y, radius, near);
+    for(uint i = 0; i < n; i++)
+        if(valid(near[i]) && (near[i].IsTown() || near[i].IsTCTown()))
+            return true;
+    return false;
+}
+
+bool _EventFindSpot(uint16& outX, uint16& outY)
+{
+    int maxx = int(__GlobalMapWidth) * int(__GlobalMapZoneLength);
+    int maxy = int(__GlobalMapHeight) * int(__GlobalMapZoneLength);
+    for(uint t = 0; t < EVENT_BOSS_SPAWN_TRIES; t++)
+    {
+        uint16 x = Random(60, maxx - 60);
+        uint16 y = Random(60, maxy - 60);
+        if(GetGlobalMapRelief(x, y) == 0)   // water
+            continue;
+        if(_EventTownNearby(x, y, EVENT_BOSS_TOWN_CLEAR))
+            continue;
+        outX = x;
+        outY = y;
+        return true;
+    }
+    return false;
+}
+
+string _EventBossTitle(int variant)
+{
+    if(variant == 1)
+        return "Warlord Kaine";
+    if(variant == 2)
+        return "The Harbinger";
+    return "The Abomination";
+}
+
+CBoss@ _EventCreateBoss(int variant, Map& map, uint16 x, uint16 y, uint id, uint locId)
+{
+    if(variant == 1)
+    {
+        EventBossWarlord@ b = EventBossWarlord(map, x, y, id, locId);
+        return b;
+    }
+    if(variant == 2)
+    {
+        EventBossHarbinger@ b = EventBossHarbinger(map, x, y, id, locId);
+        return b;
+    }
+    EventBossBehemoth@ b = EventBossBehemoth(map, x, y, id, locId);
+    return b;
+}
+
+
+// ---------------------------------------------------------------------------
+//  Event orchestration + lifecycle
+// ---------------------------------------------------------------------------
+
+// Spawns one worldmap boss event. Returns the location id, or 0 on failure.
+uint SpawnWorldmapBoss(int forceVariant)
+{
+    uint16 wx = 0, wy = 0;
+    if(!_EventFindSpot(wx, wy))
+    {
+        Log("EventBoss: could not find a valid worldmap spot.");
+        return 0;
+    }
+
+    uint16 arenaPid = EventBossArenas[Random(0, EventBossArenas.length() - 1)];
+    uint   locId = CreateLocation(arenaPid, wx, wy, null);
+    if(locId == 0)
+    {
+        Log("EventBoss: CreateLocation failed.");
+        return 0;
+    }
+
+    Location@ loc = GetLocation(locId);
+    if(!valid(loc))
+        return 0;
+    loc.Visible = true;
+    loc.AutoGarbage = false;
+    loc.Color = COLOR_RGBA(200, 0, 0, 130);   // ominous red circle on the worldmap
+    loc.Update();
+
+    Map@ map = loc.GetMapByIndex(0);
+    if(!valid(map))
+    {
+        DeleteLocation(locId);
+        return 0;
+    }
+
+    uint16 bx = 0, by = 0;
+    _EventGetBaseHex(map, bx, by);
+
+    int    variant = (forceVariant >= 0 && forceVariant <= 2) ? forceVariant : Random(0, 2);
+    CBoss@ boss = _EventCreateBoss(variant, map, bx, by, bosses.length(), locId);
+    if(!valid(boss) || boss.critterList.length() < 1)
+    {
+        DeleteLocation(locId);
+        return 0;
+    }
+    AddBoss(boss);
+    boss.MakeAgressive();
+
+    SpawnEventMinions(map, bx, by, variant, _EventMinionMax(variant));
+
+    // Aggro the boss + horde as soon as any player enters the arena (not only when attacked).
+    map.SetEvent(MAP_EVENT_IN_CRITTER, "eventboss@_EventBossMapIn");
+
+    // Keep the minions topped up to the boss's cap every EVENT_BOSS_RESPAWN_TIME while it lives.
+    array<uint> rd = { locId, uint(variant), boss.critterList[0] };
+    CreateTimeEvent(AFTER(EVENT_BOSS_RESPAWN_TIME), "e_EventMinionRespawn", rd, true);
+
+    // The Harbinger's arena is a Glow-style radiation death zone, plus a telegraphed poison cast.
+    if(variant == 2)
+    {
+        map.SetEvent(MAP_EVENT_LOOP_1, "eventboss@_EventHarbingerAura");
+        map.SetLoopTime(1, 5000);
+        // "POISON!" -> 5s later a ~50% poison hit, repeating every 30s (stops when the boss dies).
+        array<uint> pd = { boss.critterList[0] };
+        CreateTimeEvent(AFTER(REAL_SECOND(30)), "e_EventHarbingerPoisonCast", pd, true);
+    }
+
+    _EventRegisterLocation(locId);
+    array<uint> cd = { locId };
+    CreateTimeEvent(AFTER(EVENT_BOSS_LOC_LIFETIME), "e_EventBossCleanup", cd, true);
+
+    uint   zx = wx / __GlobalMapZoneLength;
+    uint   zy = wy / __GlobalMapZoneLength;
+    string msg = "|0xFFCC2020 A terrifying presence stirs in the wasteland (zone " + zx + ":" + zy + ")... " + _EventBossTitle(variant) + " has appeared! Hunt it down for the New Era Holotape.";
+    Broadcast_Message(msg, REAL_MINUTE(1), BROADCAST_FILTER_NONE);
+
+    Log("EventBoss: spawned " + _EventBossTitle(variant) + " at worldmap " + wx + "," + wy + " (loc " + locId + ", arena proto " + arenaPid + ").");
+    return locId;
+}
+
+void _EventBossOnDeath(Critter& boss, uint locId)
+{
+    // Turn off the Harbinger's radiation aura on death (no-op for the other bosses, which never set it).
+    Map@ deathMap = boss.GetMap();
+    if(valid(deathMap))
+        deathMap.SetEvent(MAP_EVENT_LOOP_1, null);
+
+    // Loot: strip everything, leave exactly one New Era Holotape.
+    array<Item@> items;
+    boss.GetItems(-1, items);
+    if(items.length() > 0)
+        DeleteItems(items);
+    boss.AddItem(PID_NEW_ERA_HOLOTAPE, 1);
+    boss.StatBase[ST_REPLICATION_TIME] = REPLICATION_NEVER;
+
+    // Clean up the location after a short looting window.
+    array<uint> cd = { locId };
+    CreateTimeEvent(AFTER(EVENT_BOSS_LOOT_GRACE), "e_EventBossCleanup", cd, true);
+
+    string msg = "|0xFF20CC20 A wasteland boss has been slain! Its New Era Holotape can be claimed.";
+    Broadcast_Message(msg, REAL_MINUTE(1), BROADCAST_FILTER_NONE);
+}
+
+bool _EventLocationHasPlayers(Location& loc)
+{
+    array<Map@> maps;
+    uint        n = loc.GetMaps(maps);
+    for(uint i = 0; i < n; i++)
+    {
+        if(!valid(maps[i]))
+            continue;
+        array<Critter@> players;
+        if(maps[i].GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players) > 0)
+            return true;
+    }
+    return false;
+}
+
+uint e_EventBossCleanup(array<uint>@ vals)
+{
+    uint      locId = vals[0];
+    Location@ loc = GetLocation(locId);
+    if(!valid(loc))
+    {
+        _EventUnregisterLocation(locId);
+        return 0;
+    }
+    if(_EventLocationHasPlayers(loc))
+        return EVENT_BOSS_LOOT_GRACE;   // players still inside; check again later
+
+    _EventUnregisterLocation(locId);
+    DeleteLocation(locId);
+    return 0;
+}
+
+uint e_EventBossSpawn(array<uint>@ empty)
+{
+    // Only bother when someone is online.
+    array<Critter@> online;
+    if(GetAllOnlinePlayers(online) > 0)
+        SpawnWorldmapBoss(-1);
+    return EVENT_BOSS_INTERVAL;
+}
+
+// Tops the horde back up to the boss's cap; never spawns past it (spawns only cap - alive).
+uint e_EventMinionRespawn(array<uint>@ vals)
+{
+    Critter@ bossNpc = GetCritter(vals[2]);
+    if(!valid(bossNpc) || bossNpc.IsDead())
+        return 0;   // boss dead/gone -> stop respawning
+    Map@ map = bossNpc.GetMap();
+    if(!valid(map))
+        return 0;
+    int  variant = int(vals[1]);
+    uint cap = _EventMinionMax(variant);
+    uint alive = map.GetNpcCount(ROLE_MOB_AGRESSIVE, FIND_ONLY_NPC | FIND_LIFE);
+    if(alive < cap)
+        SpawnEventMinions(map, bossNpc.HexX, bossNpc.HexY, variant, cap - alive);
+    return EVENT_BOSS_RESPAWN_TIME;
+}
+
+
+// ---------------------------------------------------------------------------
+//  Persistent bookkeeping of live event locations (survives restarts)
+// ---------------------------------------------------------------------------
+
+void _EventRegisterLocation(uint locId)
+{
+    array<uint> ids;
+    if(IsAnyData(EVENT_BOSS_ANYDATA))
+        GetAnyData(EVENT_BOSS_ANYDATA, ids);
+    ids.insertLast(locId);
+    SetAnyData(EVENT_BOSS_ANYDATA, ids);
+}
+
+void _EventUnregisterLocation(uint locId)
+{
+    if(!IsAnyData(EVENT_BOSS_ANYDATA))
+        return;
+    array<uint> ids;
+    GetAnyData(EVENT_BOSS_ANYDATA, ids);
+    for(uint i = 0; i < ids.length(); i++)
+    {
+        if(ids[i] == locId)
+        {
+            ids.removeAt(i);
+            break;
+        }
+    }
+    SetAnyData(EVENT_BOSS_ANYDATA, ids);
+}
+
+// Called on server start: bosses/timers don't survive a restart, so wipe any
+// leftover event locations to avoid orphaned free-loot arenas.
+void _EventCleanupOrphans()
+{
+    if(!IsAnyData(EVENT_BOSS_ANYDATA))
+        return;
+    array<uint> ids;
+    GetAnyData(EVENT_BOSS_ANYDATA, ids);
+    for(uint i = 0; i < ids.length(); i++)
+    {
+        if(valid(GetLocation(ids[i])))
+            DeleteLocation(ids[i]);
+    }
+    ids.resize(0);
+    SetAnyData(EVENT_BOSS_ANYDATA, ids);
+}
+
+// Entry point -- call once from main start().
+void InitEventBossWM()
+{
+    _EventCleanupOrphans();
+    CreateTimeEvent(AFTER(EVENT_BOSS_INTERVAL), "e_EventBossSpawn", false);
+    Log("EventBoss: worldmap boss event initialized (interval " + (EVENT_BOSS_INTERVAL / __TimeMultiplier) + "s).");
+}
+
+// Admin/test trigger: force-spawn an event now. p0 = variant (-1 random, 0/1/2 forced).
+// Run from the server console: ~runscript eventboss eventbossnow 0 0 0
+void eventbossnow(Critter& player, int variant, int, int)
+{
+    if(player.GetAccess() < ACCESS_ADMIN)
+    {
+        player.Say(SAY_NETMSG, "You are not allowed to use this feature.");
+        return;
+    }
+    uint locId = SpawnWorldmapBoss(variant);
+    if(locId != 0)
+        player.Say(SAY_NETMSG, "Event boss spawned (location " + locId + ").");
+    else
+        player.Say(SAY_NETMSG, "Failed to spawn event boss (see server log).");
+}

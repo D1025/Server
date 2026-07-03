@@ -1101,7 +1101,7 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
 
         // non-ranged weapons:
         int skill = _WeaponSkill(weapon, use);
-        if(skill == SK_CLOSE_COMBAT || skill == SK_RIFLES)
+        if(skill == SK_CLOSE_COMBAT || wpnDist <= 2)
         {
             int base =
                 npc.Skill[skill] -
@@ -1126,9 +1126,10 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
             }
             else
             {
-                r0 = 1 + multihex;
+                int reach = npc.Param[MODE_RANGE_HTH];   // extra hand-to-hand reach in hexes (event bosses set this)
                 r1 = 1 + multihex;
-                r2 = (wpnDist > 1 ? 2 : 1) + multihex;
+                r2 = (wpnDist > 1 ? 2 : 1) + multihex + reach;
+                r0 = (reach > 0 ? r2 : 1 + multihex);    // reach attackers prefer to strike from their max reach
             }
             return true;
         }
@@ -1268,6 +1269,52 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
                     r0 = r2;
             }
 
+            // --- AfterTimes tactical positioning ---
+            // r0=best, r1=min(safe), r2=max(acceptable accuracy). Raw hit chance is highest at
+            // point-blank (combat.fos: up to +8*PE bonus), so a ranged NPC left to pure accuracy
+            // optimization hugs its target. Bias the engagement distance from the AI packet's
+            // Distance disposition instead, so ranged NPCs keep a sensible standoff.
+            {
+                int aiDist = AI_DISTANCE(npc.Stat[ST_AI_ID]);
+                int lo     = int(r1);
+                int hi     = int(r2);
+                int best   = int(r0);
+                switch(aiDist)
+                {
+                case D_Charge:
+                    best = lo;                                              // rush in to the ranged minimum
+                    break;
+                case D_Stay:
+                    {
+                        int cur = GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY);
+                        best = CLAMP(cur, lo, hi);
+                    }
+                    break;
+                case D_Snipe:
+                    best = MAX(best, (best + hi) / 2);                      // engage from as far as accuracy allows
+                    break;
+                case D_StayClose:
+                    best = CLAMP(best, lo, MAX(lo, MIN(hi, 6)));            // short but non-melee gap
+                    break;
+                default:                                                    // D_Random / D_OnYourOwn
+                    best = MAX(best, MIN(hi, 5));                           // stand off >= 5 hexes when accuracy allows
+                    break;
+                }
+
+                // Dynamic by situation: a hurt ranged NPC "takes cover" by falling back toward
+                // its max accurate range instead of trading blows up close. Chargers press on.
+                if(aiDist != D_Charge)
+                {
+                    int maxhp = npc.Stat[ST_MAX_LIFE];
+                    int hpPct = (maxhp > 0 ? npc.Stat[ST_CURRENT_HP] * 100 / maxhp : 100);
+                    if(hpPct < 20)
+                        best = hi;                                          // badly hurt: full fall-back
+                    else if(hpPct < 40)
+                        best = MAX(best, (best + hi) / 2);                  // hurt: give ground
+                }
+                r0 = CLAMP(best, lo, hi);
+            }
+
             // Multihex
             r0 += multihex;
             r1 += multihex;
@@ -1355,7 +1402,7 @@ bool CogitateFiring(Critter& cr, uint& mode, uint& aim)   // in: targetId, 0; ou
     ProtoItem@ protoAmmo = null;
     if(weapon.AmmoPid != 0)
         @protoAmmo = GetProtoItem(weapon.AmmoPid);
-    if(protoWeapon.Weapon_Skill_0 == SK_CLOSE_COMBAT || protoWeapon.Weapon_Skill_0 == SK_RIFLES)     // assuming all modes melee
+    if(protoWeapon.Weapon_Skill_0 == SK_CLOSE_COMBAT)  // assuming all modes melee
     {
         mode = 0;
         if(cr.IsCanAim())
@@ -1423,7 +1470,7 @@ int ChooseAim(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 mode, Proto
 
     int  ap = valid(weapon) ? _WeaponApCost(weapon, mode) : 3;
     uint skill = valid(weapon) ? _WeaponSkill(weapon, mode) : 0;
-    int  pendiv = valid(weapon) ? (skill == SK_RIFLES || skill == SK_CLOSE_COMBAT ? 2 : 1) : 2;
+    int  pendiv = valid(weapon) ? (skill == SK_CLOSE_COMBAT ? 2 : 1) : 2;   // aim penalty halved only for HtH (see combat.fos:608)
     bool isTB = cr.GetMap().IsTurnBasedAvailability();
     int  maxap = isTB ? cr.Stat[ST_CURRENT_AP] : cr.Stat[ST_ACTION_POINTS];
 
