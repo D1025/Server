@@ -867,13 +867,33 @@ void _EventFocusMinionsOnTarget(Critter& boss, Critter& target)
     }
 }
 
+// Pick a random living player/merc enemy and return their hex (used to drop a minion pack on top of players).
+bool _EventRandomEnemyHex(Critter& boss, uint16& outX, uint16& outY)
+{
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return false;
+    array<Critter@> crits;
+    uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+    array<Critter@> enemies;
+    for(uint i = 0; i < n; i++)
+        if(_IsEventEnemy(boss, crits[i]))
+            enemies.insertLast(crits[i]);
+    if(enemies.length() == 0)
+        return false;
+    Critter@ pick = enemies[Random(0, enemies.length() - 1)];
+    outX = pick.HexX;
+    outY = pick.HexY;
+    return true;
+}
+
 // Harbinger radiation aura (map loop, ~5s): irradiate every living player, Glow-style.
 void _EventHarbingerAura(Map& map)
 {
     array<Critter@> crits;
     uint            n = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE, crits);
     for(uint i = 0; i < n; i++)
-        AffectRadiation(crits[i], Random(25, 50));
+        AffectRadiation(crits[i], Random(90, 175));
 }
 
 // Telegraphed poison cast: the boss shouts "POISON!", and the hit lands 5s later (repeats every 30s).
@@ -1125,11 +1145,13 @@ class AtkSummonHorde : IAttack
     CBoss@ boss;
     int    variant;
     uint   count;
-    AtkSummonHorde(CBoss@ b, int v, uint c)
+    bool   atPlayer;
+    AtkSummonHorde(CBoss@ b, int v, uint c, bool atPlayer)
     {
         @this.boss = @b;
         variant = v;
         count = c;
+        this.atPlayer = atPlayer;
     }
     void AttackPrepareStart()
     {}
@@ -1141,8 +1163,20 @@ class AtkSummonHorde : IAttack
         Map@ map = c.GetMap();
         if(!valid(map))
             return;
+        // Never summon past the boss's live-minion cap -- only refill empty slots.
+        // (Warlord caps at 3: if all 3 are alive this does nothing; if one died it summons one, not a fresh batch.)
+        uint cap = _EventMinionMax(variant);
+        uint alive = map.GetNpcCount(ROLE_MOB_AGRESSIVE, FIND_ONLY_NPC | FIND_LIFE);
+        if(alive >= cap)
+            return;
+        uint room = cap - alive;
+        uint toSpawn = count < room ? count : room;
+        // Abomination drops its pack on top of a random player; the other bosses rally them at their own hex.
+        uint16 sx = c.HexX, sy = c.HexY;
+        if(atPlayer)
+            _EventRandomEnemyHex(c, sx, sy);
         c.Say(SAY_SHOUT, "To me, my servants!");
-        SpawnEventMinions(map, c.HexX, c.HexY, variant, count);
+        SpawnEventMinions(map, sx, sy, variant, toSpawn);
     }
     void AttackRecuperationEnd()
     {}
@@ -1179,6 +1213,49 @@ class AtkEnrageHeal : IAttack
     {}
 };
 
+// Periodically swaps the boss's (and its horde's) focus to a random nearby player, so it doesn't tunnel a
+// single target -- it keeps switching between whoever is close (within radius hexes).
+class AtkRetarget : IAttack
+{
+    CBoss@ boss;
+    uint   radius;
+    AtkRetarget(CBoss@ b, uint r)
+    {
+        @this.boss = @b;
+        radius = r;
+    }
+    void AttackPrepareStart()
+    {}
+    void AttackCommence()
+    {
+        Critter@ c = GetCritter(boss.critterList[0]);
+        if(!valid(c))
+            return;
+        Map@ map = c.GetMap();
+        if(!valid(map))
+            return;
+        array<Critter@> crits;
+        uint            n = map.GetCritters(0, FIND_LIFE_AND_KO, crits);
+        array<Critter@> nearby;
+        for(uint i = 0; i < n; i++)
+        {
+            if(!_IsEventEnemy(c, crits[i]))
+                continue;
+            if(GetDistantion(c.HexX, c.HexY, crits[i].HexX, crits[i].HexY) <= radius)
+                nearby.insertLast(crits[i]);
+        }
+        if(nearby.length() == 0)
+            return;
+        Critter@ pick = nearby[Random(0, nearby.length() - 1)];
+        c.AddEnemyInStack(pick.Id);
+        AddAttackPlane(c, 200, pick, true);      // higher priority than the standing plane (180) -> boss swaps target
+        _EventFocusMinionsOnTarget(c, pick);      // the horde follows the boss's new focus
+        c.Say(SAY_SHOUT_ON_HEAD, "You're next!");
+    }
+    void AttackRecuperationEnd()
+    {}
+};
+
 
 // ---------------------------------------------------------------------------
 //  Boss variants
@@ -1198,8 +1275,9 @@ class EventBossBehemoth : CBoss
         if(valid(npc))
             AddCritter(npc);
         // Damage comes from the engine-driven 3-hex ranged claw (MODE_RANGE_HTH); specials are utility only.
-        AddAttack(AtkSummonHorde(this, 0, 6), 3, REAL_SECOND(2), REAL_SECOND(4));
+        AddAttack(AtkSummonHorde(this, 0, 6, true), 3, REAL_SECOND(2), REAL_SECOND(4));   // pack spawns on a random player
         AddAttack(AtkEnrageHeal(this, 600), 2, REAL_SECOND(2), REAL_SECOND(6));
+        AddAttack(AtkRetarget(this, 30), 3, REAL_SECOND(2), REAL_SECOND(6));              // keeps switching to different nearby players
     }
     void aggressionStart()
     {
@@ -1253,7 +1331,7 @@ class EventBossWarlord : CBoss
         // regardless of line of fire / its own minions.
         AddAttack(AtkFragBarrage(this, 60), 6, REAL_SECOND(5), REAL_SECOND(6));
         AddAttack(AtkSuppression(this, 35, 75), 3, REAL_SECOND(3), REAL_SECOND(4));
-        AddAttack(AtkSummonHorde(this, 1, 2), 2, REAL_SECOND(4), REAL_SECOND(12));
+        AddAttack(AtkSummonHorde(this, 1, 2, false), 2, REAL_SECOND(4), REAL_SECOND(12));
     }
     void aggressionStart()
     {
@@ -1300,7 +1378,8 @@ class EventBossHarbinger : CBoss
         if(valid(npc))
             AddCritter(npc);
         AddAttack(AtkEnergyNova(this, 90, 150, 5, DAMAGE_LASER), 4, REAL_SECOND(4), REAL_SECOND(4));
-        AddAttack(AtkSummonHorde(this, 2, 4), 3, REAL_SECOND(2), REAL_SECOND(4));
+        // Count == cap: AtkSummonHorde clamps to (cap - alive), so each cast refills the horde back to full.
+        AddAttack(AtkSummonHorde(this, 2, _EventMinionMax(2), false), 3, REAL_SECOND(2), REAL_SECOND(4));
         AddAttack(AtkEnrageHeal(this, 900), 2, REAL_SECOND(2), REAL_SECOND(5));
     }
     void aggressionStart()
@@ -1370,6 +1449,9 @@ void _EventBossBehemothInit(Critter& b, bool firstTime)
     b.ParamBase[ST_AGILITY] = 8;
     b.ParamBase[ST_ARMOR_CLASS] = 50;
     b.ParamBase[SK_CLOSE_COMBAT] = 300;
+    // "Heavy handed" -> Grappler trait: unarmed claw hits knock down any target weaker than its STR (12),
+    // with no damage penalty (combat.fos halves only weapon melee, and the claw is unarmed).
+    b.TraitBase[TRAIT_GRAPPLER] = 1;
     b.ParamBase[MODE_NO_AIM] = 1;              // only unaimed (uncalled/torso) hits
     b.ParamBase[MODE_RANGE_HTH] = 1;           // +1 hex reach on top of the claw's base range (2) -> 3-hex claw (main_planes + combat.fos)
     b.ParamBase[MODE_NO_DROP] = 0;             // deathclaw proto sets NO_DROP -- clear it so the New Era Holotape can be looted
@@ -1405,6 +1487,7 @@ void _EventBossHarbingerInit(Critter& b, bool firstTime)
     b.StatBase[ST_HEALING_RATE] = 250;
     b.ParamBase[ST_AGILITY] = 9;
     b.ParamBase[ST_ARMOR_CLASS] = 0;
+    b.ParamBase[ST_SCALE_FACTOR] = 1500;       // 1.5x size (same 2D-sprite scaling as the Abomination)
     // No weapon -- GenericGlowingOne is a creature and can't wield guns. It fights with its energy nova,
     // its radiation/poison aura (map loop for variant 2) and its summoned horde.
     b.AddItem(PID_ACTIVE_FLARE_GREEN, 1);      // lit green flare -> the boss gives off an eerie green glow
@@ -1485,6 +1568,58 @@ uint _EventMinionMax(int variant)
     return 18;       // The Abomination -- a pack of deathclaws
 }
 
+// ---------------------------------------------------------------------------
+//  The Abomination's pack: sequential limb-crippling ("dismember") targeting
+// ---------------------------------------------------------------------------
+// The deathclaw minions gnaw a victim apart limb by limb. The whole pack piles
+// onto the SAME limb (a per-target, pseudo-random pick) until it is crippled,
+// then moves on to the next -- always saving the head for last. Returns the hit
+// location the minion should aim for, or -1 if this critter is not an Abomination
+// minion (in which case the caller keeps the stock aim logic). Called from
+// main_planes.fos::npc_plane_run (REASON_ATTACK_USE_AIM).
+int _AbominationMinionAim(Critter& npc, Critter& target)
+{
+    // Only The Abomination's deathclaw pack: event team + a Behemoth-pool proto.
+    if(npc.Stat[ST_TEAM_ID] != EVENT_BOSS_TEAM)
+        return -1;
+    uint16 pid = npc.GetProtoId();
+    bool   isPack = false;
+    for(uint i = 0; i < EventMinionsBehemoth.length(); i++)
+        if(EventMinionsBehemoth[i] == pid)
+        {
+            isPack = true;
+            break;
+        }
+    if(!isPack)
+        return -1;
+
+    // The four limbs, paired with the damage flag that marks each as crippled.
+    array<int> limbHit = { HIT_LOCATION_LEFT_LEG, HIT_LOCATION_RIGHT_LEG, HIT_LOCATION_LEFT_ARM, HIT_LOCATION_RIGHT_ARM };
+    array<int> limbDmg = { DAMAGE_LEFT_LEG, DAMAGE_RIGHT_LEG, DAMAGE_LEFT_ARM, DAMAGE_RIGHT_ARM };
+
+    // Pick the still-intact limb with the lowest per-target rank, so the whole
+    // pack converges on one limb at a time. The rank hash keeps the order stable
+    // for a given victim but random from one fight to the next.
+    int  focus = -1;
+    uint bestRank = 0;
+    for(uint i = 0; i < limbHit.length(); i++)
+    {
+        if(target.Damage[limbDmg[i]] != 0)
+            continue;   // already crippled -> leave it, move to the next limb
+        uint rank = ((target.Id * 73856093) ^ ((i + 1) * 19349663)) & 0xFFFFFF;
+        if(focus < 0 || rank < bestRank)
+        {
+            focus = limbHit[i];
+            bestRank = rank;
+        }
+    }
+
+    if(focus < 0)
+        return HIT_LOCATION_HEAD;   // every limb is down -> finish on the head
+
+    return focus;
+}
+
 void SpawnEventMinions(Map& map, uint16 cx, uint16 cy, int variant, uint count)
 {
     array<uint16>@ pool = @EventMinionsBehemoth;
@@ -1520,6 +1655,8 @@ void SpawnEventMinions(Map& map, uint16 cx, uint16 cy, int variant, uint count)
             m.ParamBase[ST_REPLICATION_TIME] = REPLICATION_DELETE_FAST;
             if(bag != 0)
                 m.ParamBase[MODE_UNLIMITED_AMMO] = 1;   // bagged shooters never run dry
+            if(variant == 2)
+                m.StatBase[ST_TOXIC] = 40;   // Harbinger's ghouls poison on hit (combat.fos: Random(toxic/3, toxic))
         }
     }
 }
