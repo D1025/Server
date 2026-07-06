@@ -1797,7 +1797,7 @@
 {103822}{}{You pay much closer attention to the smaller details when reading.  You gain 50% more skill points when reading books.}
 # PE_DEMOLITION_EXPERT
 {103831}{}{Demolition Expert}
-{103832}{}{You are an expert when it comes to the fine art of handling explosives.  They always go off when they're supposed to and inflict some extra damage.}
+{103832}{}{You are an expert when it comes to the fine art of handling explosives.  They always go off when they're supposed to, deal 25% more damage and have a noticeably larger blast radius.}
 # PE_GAMBLER
 {103841}{}{Gambler}
 {103842}{}{You can roll with the best of them.  You gain +20% to your gambling skill.}

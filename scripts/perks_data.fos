@@ -995,6 +995,7 @@ int[][] PerksData = {
 	{ 383, 0, 1 }, // Demolition Expert, Support, 1 ranks
 	{ // level 1 requirements
 		4, 1, 6, // Inteligence at least 6
+		6, 1, 6, // Luck at least 6
 	},
 #ifdef __SERVER
 	{ // level 1 perk up effects

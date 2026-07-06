@@ -55,6 +55,12 @@ bool OnUseExplode(Critter& cr, Item& explode, Critter@ targetCr, Item@ targetIte
     if(trapsSkill < 0)
         trapsSkill = 0;
 
+    // Demolition Expert: +25% explosive damage and +2 (instead of +1) blast radius.
+    // Explode() computes final = base * (1 + bonusDamage/55); feeding it bonusDamage*1.25 + 14
+    // yields final * 1.25, so the +25% is baked in and survives even if the setter logs off.
+    int expertDamage = isExpert ? (trapsSkill * 5) / 4 + 14 : trapsSkill;
+    int expertRadius = isExpert ? cr.Perk[PE_DEMOLITION_EXPERT] * 2 : 0;
+
     // Activate dynamite explosion
     if(pid == PID_DYNAMITE)
     {
@@ -77,8 +83,8 @@ bool OnUseExplode(Critter& cr, Item& explode, Critter@ targetCr, Item@ targetIte
         _ExplodeSetOwner(activateExpl, cr.Id);
         activateExpl.TrapValue = TRAPS_HIDE(MIN(cr.Skill[SK_TRAPS]*2,300));
         _Complexity(activateExpl) = MIN(cr.Skill[SK_TRAPS]*2,300);
-        _ExplodeSetBonusDamage(activateExpl, trapsSkill);
-        _ExplodeSetBonusRadius(activateExpl, isExpert ? cr.Perk[PE_DEMOLITION_EXPERT] : 0);
+        _ExplodeSetBonusDamage(activateExpl, expertDamage);
+        _ExplodeSetBonusRadius(activateExpl, expertRadius);
         if(int(cr.Timeout[TO_REMOVE_FROM_GAME]) < int(GAME_MINUTE(timer + 5)))
             _SetTimeout(cr, TO_REMOVE_FROM_GAME, GAME_MINUTE(timer + 5));
         ExpLog("" + activateExpl.Id + " dynamite armed by " + cr.Name);
@@ -101,8 +107,8 @@ bool OnUseExplode(Critter& cr, Item& explode, Critter@ targetCr, Item@ targetIte
         _ExplodeSetOwner(expl, cr.Id);
         expl.TrapValue = TRAPS_HIDE(MIN(cr.Skill[SK_TRAPS]*2,300));
         _Complexity(expl) = MIN(cr.Skill[SK_TRAPS]*2,300);
-        _ExplodeSetBonusDamage(expl, trapsSkill);
-        _ExplodeSetBonusRadius(expl, isExpert ? cr.Perk[PE_DEMOLITION_EXPERT] : 0);
+        _ExplodeSetBonusDamage(expl, expertDamage);
+        _ExplodeSetBonusRadius(expl, expertRadius);
 
         SetLexem(expl, "$frequency", "" + expl.Id);
         SetLexem(explSwitch, "$frequency", "" + expl.Id);
@@ -145,7 +151,7 @@ bool OnUseExplode(Critter& cr, Item& explode, Critter@ targetCr, Item@ targetIte
         if(!valid(mine))
             return false;
 
-        MakeMine(mine, cr.Id, MIN(cr.Skill[SK_TRAPS]*2,300), MIN(cr.Skill[SK_TRAPS]*2,300), trapsSkill, isExpert ? cr.Perk[PE_DEMOLITION_EXPERT] : 0);
+        MakeMine(mine, cr.Id, MIN(cr.Skill[SK_TRAPS]*2,300), MIN(cr.Skill[SK_TRAPS]*2,300), expertDamage, expertRadius);
 		VerboseAction(cr, "arms landmine");
 	}
     // Deactivate dynamite explosion, plastic explosion or mine
