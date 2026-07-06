@@ -9,6 +9,14 @@
 #define LABX7_DOOR_PID                (2470)
 #define LABX7_DOOR_X                  (70)
 #define LABX7_DOOR_Y                  (109)
+// Elevator car hex on lvl1 (trigger 3852). Players caught here on reset are cheating.
+#define LABX7_ELEVATOR_X              (70)
+#define LABX7_ELEVATOR_Y              (108)
+#define LABX7_ELEVATOR_RADIUS         (2)
+// Keeps the door locked for everyone but the terminal. Any nonzero id no key matches.
+#define LABX7_DOOR_LOCKER_ID          (970108)
+// So high that no lockpick/science roll can ever beat it (keycard-only access).
+#define LABX7_DOOR_COMPLEXITY         (30000)
 
 import bool LockerClose(Item& item) from "lockers";
 import void SwitchState(Item& locker) from "lockers";
@@ -20,14 +28,16 @@ bool ElevatorsAdded = false;
 
 void map_init(Map& map, bool firstTime)
 {
+    uint pid = map.GetProtoId();
+
     // Dynamic mobs.
-    if(firstTime)
-    {
-        if(map.GetProtoId() == MAP_Labx7_lvl2)
-            InitializeDynamicMob(map, true);
-        else
-            InitializeDynamicMob(map);
-    }
+    // The boss floor (lvl2 == "level 3") is topped up on every load so it is never
+    // left empty after a wipe or server restart. InitializeDynamicMob only spawns the
+    // difference up to the required count, so calling it repeatedly is safe.
+    if(pid == MAP_Labx7_lvl2)
+        InitializeDynamicMob(map, true);
+    else if(firstTime)
+        InitializeDynamicMob(map);
 
     // Add elevator descriptor only once.
     if(!ElevatorsAdded)
@@ -39,7 +49,7 @@ void map_init(Map& map, bool firstTime)
     uint16 x = 0, y = 0;
 
     // Register both floors for one elevator and configure scanner on level 1.
-    switch(map.GetProtoId())
+    switch(pid)
     {
     case MAP_Labx7_lvl1:
         if(map.GetEntireCoords(1, 0, x, y))
@@ -62,11 +72,27 @@ void t_Elevator(Critter& critter, Scenery& trigger, bool entered, uint8 dir)
 void ConfigureLabx7Scanner(Map& map)
 {
     Item@ scanner = map.GetItem(LABX7_SCANNER_X, LABX7_SCANNER_Y, LABX7_SCANNER_PID);
-    if(!valid(scanner))
-        return;
+    if(valid(scanner))
+    {
+        scanner.SetEvent(ITEM_EVENT_SKILL, "_UseLabx7Scanner");
+        scanner.SetEvent(ITEM_EVENT_USE_ON_ME, "_UseLabx7ScannerWithItem");
+    }
 
-    scanner.SetEvent(ITEM_EVENT_SKILL, "_UseLabx7Scanner");
-    scanner.SetEvent(ITEM_EVENT_USE_ON_ME, "_UseLabx7ScannerWithItem");
+    // Make sure the elevator door starts sealed on every (re)load of the map.
+    Item@ door = map.GetItem(LABX7_DOOR_X, LABX7_DOOR_Y, LABX7_DOOR_PID);
+    if(valid(door))
+        SealLabx7Door(door);
+}
+
+// Locks the elevator door and closes it if it happens to be open. With a nonzero
+// LockerId and an impossible complexity, HandleLocker refuses to open it on click and
+// lockpick/science can never crack it - only the terminal (SwitchState) can.
+void SealLabx7Door(Item& door)
+{
+    door.LockerId = LABX7_DOOR_LOCKER_ID;
+    door.LockerComplexity = LABX7_DOOR_COMPLEXITY;
+    if(FLAG(door.LockerCondition, LOCKER_ISOPEN))
+        LockerClose(door);
 }
 
 bool _UseLabx7Scanner(Item& scanner, Critter& player, int skill)
@@ -115,18 +141,51 @@ bool _UseLabx7ScannerWithItem(Item& scanner, Critter& player, Item@ usedItem)
     DeleteItem(usedItem);
     player.Say(SAY_NETMSG, "Access granted. Door unlocked for 30 minutes.");
 
-    CreateTimeEvent(AFTER(REAL_MINUTE(LABX7_EVENT_TIME_MINUTES)), "e_CloseLabx7Door", door.Id, false);
+    CreateTimeEvent(AFTER(REAL_MINUTE(LABX7_EVENT_TIME_MINUTES)), "e_Labx7Reset", door.Id, false);
     return true;
 }
 
-uint e_CloseLabx7Door(array<uint>@ values)
+// End of the 30-minute access window == location/loot reset.
+// Re-locks the door, throws every player still inside the vault (level 3 map or the
+// level-2 elevator car) out to the worldmap, and respawns the boss + mob pack so the
+// next keycard holder finds a fresh dungeon.
+uint e_Labx7Reset(array<uint>@ values)
 {
     Item@ door = GetItem(values[0]);
     if(!valid(door))
         return 0;
 
-    if(FLAG(door.LockerCondition, LOCKER_ISOPEN))
-        LockerClose(door);
+    // Re-lock and close the access door.
+    SealLabx7Door(door);
+
+    Map@ lvl1 = GetMap(door.MapId);
+    if(!valid(lvl1))
+        return 0;
+
+    Location@ loc = lvl1.GetLocation();
+    if(!valid(loc))
+        return 0;
+
+    // Eject players lurking in the elevator on floor 2 (the lvl1 map, behind the door).
+    array<Critter@> intruders;
+    lvl1.GetCrittersHex(LABX7_ELEVATOR_X, LABX7_ELEVATOR_Y, LABX7_ELEVATOR_RADIUS,
+                        FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, intruders);
+    for(uint i = 0; i < intruders.length(); i++)
+        if(valid(intruders[i]))
+            intruders[i].TransitToGlobal(false);
+
+    // Eject everyone on level 3 (lvl2 map) and respawn the heavy enemy + mobs.
+    Map@ lvl2 = loc.GetMap(MAP_Labx7_lvl2);
+    if(valid(lvl2))
+    {
+        array<Critter@> raiders;
+        lvl2.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, raiders);
+        for(uint i = 0; i < raiders.length(); i++)
+            if(valid(raiders[i]))
+                raiders[i].TransitToGlobal(false);
+
+        InitializeDynamicMob(lvl2, true);
+    }
 
     return 0;
 }

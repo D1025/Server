@@ -195,6 +195,17 @@ bool HandleLocker(Critter& cr, Map@ map, Item& locker, bool disregardKey)   // e
             return true;
         }
 
+        // Labx7 vault door (elevator access on lvl1): once the terminal unlocks it, players
+        // must not be able to close it (anti-grief). Only the 30-min reset closes it, and it
+        // does so via LockerClose directly - not through this handler. See map_labx7.fos.
+        if(mapProtoId == MAP_Labx7_lvl1 && locker.GetProtoId() == 2470
+           && locker.HexX == 70 && locker.HexY == 109
+           && FLAG(locker.LockerCondition, LOCKER_ISOPEN))
+        {
+            cr.Say(SAY_NETMSG, "The access door is held open by the terminal.");
+            return true;
+        }
+
         // Check if something is blocking the door
         if(FLAG(locker.LockerCondition, LOCKER_ISOPEN))
         {
