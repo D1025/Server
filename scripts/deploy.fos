@@ -9,8 +9,12 @@
 //   - While deployed the critter cannot walk or run (engine MODE_NO_WALK / MODE_NO_RUN)
 //     and is flagged through ST_DEPLOYED, which is replicated to other clients
 //     (see main.fos: SetSendParameter(ST_DEPLOYED, ...)) so everyone sees the state.
+//   - Exception - Powered Bipod perk (PE_POWERED_BIPOD) worn with a power armor: the wielder
+//     stays mobile while deployed (DEPLOY_STATE_MOBILE); the deploy weapon's run lock is lifted
+//     and the engine charges 1 AP per move hex (Act_Move / GetApCostCritterMove keyed on ST_DEPLOYED).
 //   - A weapon with WEAPON_PERK_DEPLOY can only fire while its wielder is deployed
-//     (gate in main.fos::critter_attack).
+//     (gate in main.fos::critter_attack) - unless the wielder has PE_SERVO_GUNNER and a power armor,
+//     which lets them fire un-deployed (deploying then shaves 1 AP off each shot, in parameters.dll).
 //   - Deploy never survives a session: CleanupDeploy() runs on critter_init / player_login.
 //   - Server authoritative. unsafe_ToggleDeploy is the single client entry point,
 //     used by the keybind (client_keybinds) and the native Deploy bar option.
@@ -19,7 +23,39 @@
 #include "_macros.fos"
 #include "item_upgrades_shared.fos"
 
+import bool IsInPowerArmor(Critter& cr) from "power_armor";
+
 #define DEPLOY_AP_COST    (5)
+
+// ST_DEPLOYED value encodes HOW the deploy locked movement, so the teardown
+// (ExitDeploy / CleanupDeploy) can reverse exactly what EnterDeploy applied even
+// if it runs after a save/login. Any nonzero value still means "deployed".
+#define DEPLOY_STATE_NORMAL    (1) // immobile bipod: MODE_NO_WALK + MODE_NO_RUN added
+#define DEPLOY_STATE_MOBILE    (2) // Powered Bipod in power armor: mobile, weapon run-lock lifted, 1 AP/hex (engine)
+
+// Powered Bipod perk + a power armor: the wielder stays mobile while deployed.
+bool CanDeployMobile(Critter& cr)   // Export
+{
+    return cr.Perk[PE_POWERED_BIPOD] > 0 && IsInPowerArmor(cr);
+}
+
+// Reverse exactly the movement locks EnterDeploy applied, keyed on the stored deploy state.
+// Call BEFORE clearing ST_DEPLOYED.
+void _ReleaseDeployLocks(Critter& cr)
+{
+    if(cr.Param[ST_DEPLOYED] == DEPLOY_STATE_MOBILE)
+    {
+        // Mobile deploy only lifted the deploy weapon's run lock; put it back.
+        cr.ModeBase[MODE_NO_RUN] += 1;
+    }
+    else
+    {
+        if(cr.ModeBase[MODE_NO_WALK] > 0)
+            cr.ModeBase[MODE_NO_WALK] -= 1;
+        if(cr.ModeBase[MODE_NO_RUN] > 0)
+            cr.ModeBase[MODE_NO_RUN] -= 1;
+    }
+}
 
 bool IsDeployed(Critter& cr)   // Export
 {
@@ -54,9 +90,20 @@ bool EnterDeploy(Critter& cr)   // Export
     }
 
     cr.StatBase[ST_CURRENT_AP] = 100 * (cr.Stat[ST_CURRENT_AP] - DEPLOY_AP_COST);
-    cr.ParamBase[ST_DEPLOYED] = 1;
-    cr.ModeBase[MODE_NO_WALK] += 1;
-    cr.ModeBase[MODE_NO_RUN] += 1;
+    if(CanDeployMobile(cr))
+    {
+        // Powered Bipod + power armor: stay mobile while deployed. Lift the deploy weapon's
+        // run lock (Weapon_NoRunning) so the wielder can run; the engine charges 1 AP per move
+        // hex while ST_DEPLOYED is set (Act_Move / GetApCostCritterMove). No walk/run lock added.
+        cr.ParamBase[ST_DEPLOYED] = DEPLOY_STATE_MOBILE;
+        cr.ModeBase[MODE_NO_RUN] -= 1;
+    }
+    else
+    {
+        cr.ParamBase[ST_DEPLOYED] = DEPLOY_STATE_NORMAL;
+        cr.ModeBase[MODE_NO_WALK] += 1;
+        cr.ModeBase[MODE_NO_RUN] += 1;
+    }
     cr.Action(ACTION_REFRESH, DEPLOY_ANIM_ON, null); // tell clients to apply the deploy pose
     if(cr.IsPlayer())
         cr.Say(SAY_NETMSG, "Weapon deployed.");
@@ -67,11 +114,8 @@ void ExitDeploy(Critter& cr)   // Export - free and instant
 {
     if(!IsDeployed(cr))
         return;
+    _ReleaseDeployLocks(cr);            // reverse locks before clearing the state value
     cr.ParamBase[ST_DEPLOYED] = 0;
-    if(cr.ModeBase[MODE_NO_WALK] > 0)
-        cr.ModeBase[MODE_NO_WALK] -= 1;
-    if(cr.ModeBase[MODE_NO_RUN] > 0)
-        cr.ModeBase[MODE_NO_RUN] -= 1;
     cr.Action(ACTION_REFRESH, DEPLOY_ANIM_OFF, null); // tell clients to remove the deploy pose
     if(cr.IsPlayer())
         cr.Say(SAY_NETMSG, "Weapon undeployed.");
@@ -91,11 +135,8 @@ void CleanupDeploy(Critter& cr)   // Export
 {
     if(cr.Param[ST_DEPLOYED] == 0)
         return;
+    _ReleaseDeployLocks(cr);            // reverse locks before clearing the state value
     cr.ParamBase[ST_DEPLOYED] = 0;
-    if(cr.ModeBase[MODE_NO_WALK] > 0)
-        cr.ModeBase[MODE_NO_WALK] -= 1;
-    if(cr.ModeBase[MODE_NO_RUN] > 0)
-        cr.ModeBase[MODE_NO_RUN] -= 1;
 }
 
 // Client -> server entry point (keybind and native Deploy bar option). The client is

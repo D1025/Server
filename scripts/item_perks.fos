@@ -108,6 +108,9 @@ void ApplyItemPerk(Critter& cr, uint8 type, uint perk, bool enable)
         switch(perk)
         {
         case ARMOR_PERK_POWERED:
+            // The +/-3 is kept symmetric so equip/unequip stays balanced (and legacy saves that
+            // already banked +3 don't get stranded). While the suit is worn this ST_STRENGTH_EXT is
+            // masked: parameters.dll getParam_Strength SETS Strength to 19 (+ slot strength upgrades).
             cr.StatBase[ST_STRENGTH_EXT] += 3 * sign;
             cr.StatBase[ST_RADIATION_RESISTANCE_EXT] += 30 * sign;
             break;

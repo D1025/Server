@@ -619,7 +619,13 @@ void critter_attack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weapo
 	// Deploy gate: a weapon carrying WEAPON_PERK_DEPLOY can only fire while its wielder is deployed.
 	if(WeaponHasProtoPerk(weapon, WEAPON_PERK_DEPLOY) && !IsDeployed(cr))
 	{
-		if(cr.IsPlayer())
+		// Servo Gunner + power armor: fire deployable weapons from the hip, no deploy required.
+		// (Deploying anyway shaves 1 AP off each shot - handled in parameters.dll GetUseApCost.)
+		if(cr.Perk[PE_SERVO_GUNNER] > 0 && IsInPowerArmor(cr))
+		{
+			// allowed to fire un-deployed - fall through to the attack
+		}
+		else if(cr.IsPlayer())
 		{
 			// Players must deploy deliberately (native bar option or the Deploy keybind).
 			cr.Say(SAY_NETMSG, "You must deploy this weapon before firing.");
@@ -627,7 +633,7 @@ void critter_attack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weapo
 		}
 		// NPCs enter deploy automatically so they can use the weapon; if they can't
 		// (no AP / not in hand), the attack is skipped this turn.
-		if(!EnterDeploy(cr))
+		else if(!EnterDeploy(cr))
 			return;
 	}
 	if((target.Timeout[TO_GOD_MODE] <= 0) || (!target.IsPlayer()))
@@ -2590,6 +2596,11 @@ void critter_finish(Critter& cr, bool toDelete)
 			CreateTimeEvent(AFTER(REAL_MINUTE(2)), "base_control@e_AntiLogOut", logoutdata, true);
 		}
     }
+    // The corpse is being deleted: drop a kept power suit onto the ground so it isn't destroyed with
+    // the body (players keep the suit on the corpse after death - see critter_dead). Idempotent.
+    if(toDelete && IsInPowerArmor(cr))
+        ExitPowerArmor(cr);
+
     if(toDelete && cr.Stat[ST_DEAD_BLOCKER_ID] != 0)
     {
         Item@ block = ::GetItem(cr.Stat[ST_DEAD_BLOCKER_ID]);
@@ -2797,7 +2808,13 @@ void critter_idle(Critter& cr)
 
     // replication
     if(cr.IsDead() && cr.Timeout[TO_REPLICATION] == 0)
+    {
+        // The dead body is about to respawn/move away: drop a kept power suit where it fell first,
+        // so the pilot leaves it on the ground at the death spot.
+        if(IsInPowerArmor(cr))
+            ExitPowerArmor(cr);
         ReplicateCritter(cr);
+    }
 
     if(cr.IsNotValid)     // might have been deleted during replication
         return;
@@ -2880,7 +2897,10 @@ void critter_dead(Critter& cr, Critter@ killer)
 		//return;
 
 	CleanupDeploy(cr); // Clear deploy flag / movement lock on death
-	if(IsInPowerArmor(cr)) // Eject a dead pilot's power suit onto the ground; stashed gear becomes corpse loot
+	// A power-armored PLAYER keeps the suit on the corpse: it drops to the ground only when the body
+	// vanishes (respawn / corpse deletion) or someone uses Traps on the dead body. NPCs still eject
+	// immediately, so their suit stays lootable as before.
+	if(IsInPowerArmor(cr) && !cr.IsPlayer())
 		ExitPowerArmor(cr);
 	uint crGroup = _GroupIndex(cr);
     Map@ map = cr.GetMap();

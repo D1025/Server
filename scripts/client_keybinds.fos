@@ -113,7 +113,6 @@ bool InitBinds() // export
     ret = ret && InitCenterChosenBind();
 	ret = ret && InitRepairAtHexBind();
     ret = ret && InitDeployBind();
-    ret = ret && InitPowerArmorExitBind();
     return ret;
 }
 
@@ -255,16 +254,6 @@ bool InitDeployBind()
     DeployBind bnd;
     if(!valid(s))
         return TryAddBind("Y", bnd);
-    return TryAddBind(s, bnd);
-}
-
-bool InitPowerArmorExitBind()
-{
-    // User-configurable via [Bindings] PowerArmorExit=<key>; defaults to "U".
-    string@            s = GetConfigValue(CONFIG_FILE, "Bindings", "PowerArmorExit");
-    PowerArmorExitBind bnd;
-    if(!valid(s))
-        return TryAddBind("U", bnd);
     return TryAddBind(s, bnd);
 }
 

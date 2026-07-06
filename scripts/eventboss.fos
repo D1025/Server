@@ -1247,8 +1247,12 @@ class AtkRetarget : IAttack
         if(nearby.length() == 0)
             return;
         Critter@ pick = nearby[Random(0, nearby.length() - 1)];
+        // Force an actual target swap. A new attack plane of equal priority does NOT preempt the one
+        // already on top, so just adding a 200-plane left the boss glued to its first target forever.
+        // Clear the plane list first, then make the new pick the sole (and top) attack plane.
+        c.DropPlanes();
         c.AddEnemyInStack(pick.Id);
-        AddAttackPlane(c, 200, pick, true);      // higher priority than the standing plane (180) -> boss swaps target
+        AddAttackPlane(c, 200, pick, true);
         _EventFocusMinionsOnTarget(c, pick);      // the horde follows the boss's new focus
         c.Say(SAY_SHOUT_ON_HEAD, "You're next!");
     }
@@ -1445,17 +1449,17 @@ void _EventBossBehemothInit(Critter& b, bool firstTime)
         b.ParamBase[ST_CURRENT_HP] = 2500;
     _EventBossCommonInit(b);
     b.StatBase[ST_HEALING_RATE] = 18;
-    b.ParamBase[ST_STRENGTH] = 12;
+    b.ParamBase[ST_STRENGTH] = 20;
     b.ParamBase[ST_AGILITY] = 8;
     b.ParamBase[ST_ARMOR_CLASS] = 50;
     b.ParamBase[SK_CLOSE_COMBAT] = 300;
-    // "Heavy handed" -> Grappler trait: unarmed claw hits knock down any target weaker than its STR (12),
+    // "Heavy handed" -> Grappler trait: unarmed claw hits knock down any target weaker than its STR (20),
     // with no damage penalty (combat.fos halves only weapon melee, and the claw is unarmed).
     b.TraitBase[TRAIT_GRAPPLER] = 1;
     b.ParamBase[MODE_NO_AIM] = 1;              // only unaimed (uncalled/torso) hits
     b.ParamBase[MODE_RANGE_HTH] = 1;           // +1 hex reach on top of the claw's base range (2) -> 3-hex claw (main_planes + combat.fos)
     b.ParamBase[MODE_NO_DROP] = 0;             // deathclaw proto sets NO_DROP -- clear it so the New Era Holotape can be looted
-    b.StatBase[ST_MELEE_DAMAGE] = 100;         // added to every melee hit (combat.fos)
+    b.StatBase[ST_MELEE_DAMAGE] = 120;         // added to every melee hit (combat.fos); STR-3 stacks on top via getParam_MeleeDamage (STR 20 -> +17)
     b.ParamBase[ST_SCALE_FACTOR] = 1500;       // 1.5x size -- requires the 2D-sprite scaling engine change (SpriteManager/HexManager)
     // NPC_PID_MotherDeathclaw is a combat creature (walk + claw attack anims) -> moves and attacks; no weapon.
 }
@@ -1657,6 +1661,8 @@ void SpawnEventMinions(Map& map, uint16 cx, uint16 cy, int variant, uint count)
                 m.ParamBase[MODE_UNLIMITED_AMMO] = 1;   // bagged shooters never run dry
             if(variant == 2)
                 m.StatBase[ST_TOXIC] = 40;   // Harbinger's ghouls poison on hit (combat.fos: Random(toxic/3, toxic))
+            if(variant == 0)
+                m.StatBase[ST_MELEE_DAMAGE] = 30;   // the deathclaw pack barely scratched players -> real bite added to every claw hit (combat.fos)
         }
     }
 }

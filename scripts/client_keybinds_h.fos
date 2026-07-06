@@ -188,14 +188,7 @@ class DeployBind : BaseBind
     }
 };
 
-class PowerArmorExitBind : BaseBind
-{
-    void Exec()
-    {
-        // Climb out of the worn power armor (server validates the state).
-        RunServerScriptUnsafe("power_armor@unsafe_ExitPowerArmor", 0, 0, 0, "", null);
-    }
-};
+// (Removed: the "U" Power Armor exit keybind. Leave the suit via Traps on yourself instead.)
 
 class DropallBind : BaseBind
 {

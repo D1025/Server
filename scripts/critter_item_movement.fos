@@ -254,9 +254,11 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
 
     GuardMultihexMove(item, fromSlot, toSlot);
 
-    // Any change of the active-hand weapon ends deploy immediately and for free.
+    // Any change of the active-hand weapon - or of the worn armor, which the Powered Bipod mobile
+    // deploy depends on (power armor) - ends deploy immediately and for free. Tearing down here keeps
+    // CanDeployMobile() constant for the whole deploy, so the movement-lock bookkeeping stays balanced.
     #ifdef __SERVER
-    if((fromSlot == SLOT_HAND1 || toSlot == SLOT_HAND1) && IsDeployed(cr))
+    if((fromSlot == SLOT_HAND1 || toSlot == SLOT_HAND1 || fromSlot == SLOT_ARMOR || toSlot == SLOT_ARMOR) && IsDeployed(cr))
         ExitDeploy(cr);
     #endif
 

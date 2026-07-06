@@ -277,7 +277,7 @@
 #define DAMAGE_EXPLODE                           (7)
 
 // Wall-slam: surowe obrazenia (przed resistami) za kazdy nieprzebyty heks odrzutu (patrz ApplyWallSlam w combat.fos)
-#define WALL_SLAM_DMG_PER_HEX                    (10)
+#define WALL_SLAM_DMG_PER_HEX                    (14)
 
 // Critter events, description see in templates.fos
 #define CRITTER_EVENT_IDLE                       (0)
@@ -392,14 +392,14 @@
 #define WEAPON_PERK_CRITLESS                     (19)
 #define WEAPON_PERK_DEPLOY                       (20) // Heavy weapon: must Deploy (bipod) before it can fire; blocks movement while deployed
 #define WEAPON_PERK_GUARDED_STANCE               (21) // +10 AC while this weapon is held in the active hand
-#define DEPLOY_HOLD_FRAME                        (2)  // Frame of the weapon shoot animation held while deployed (aiming pose)
+#define DEPLOY_HOLD_FRAME                        (1)  // Frame of the weapon shoot animation held while deployed (aiming pose)
 #define DEPLOY_ANIM_ON                           (1)  // critter_action actionExt: apply the deploy pose (client)
 #define DEPLOY_ANIM_OFF                          (2)  // critter_action actionExt: remove the deploy pose (client)
 
 #define MASTERWORK_CHANCE                        (5)  // % chance a crafted Unique (quality 5) becomes Masterwork instead (1 in 20 Uniques)
 // Masterwork items carry the "$mw" lexem (marker) plus "$crafter" (name); shown as "<Crafter>'s <item>" in red.
 
-#define ARMOR_PERK_POWERED                       (1)    // +3 strength, +30 radiation resist
+#define ARMOR_PERK_POWERED                       (1)    // sets Strength to 19 (+ slot str upgrades) while worn, +30 radiation resist
 #define ARMOR_PERK_COMBAT                        (2)    // +20 radiation resist
 #define ARMOR_PERK_ADVANCED_I                    (3)    // +4 strength, +60 radiation resist
 #define ARMOR_PERK_ADVANCED_II                   (4)    // +4 strength, +75 radiation resist
@@ -832,8 +832,8 @@
 #define PE_THIEF                                 (406) // Nolevel
 #define PE_WEAPON_HANDLING                       (407)
 #define PE_VAULT_CITY_TRAINING                   (408) // Not implemented
-#define PE_ALCOHOL_RAISED_HP                     (409) // Not implemented
-#define PE_ALCOHOL_RAISED_HP_II                  (410) // Not implemented
+#define PE_POWERED_BIPOD                         (409) // Deploy perk: while deployed in power armor you may walk/run, but each move hex costs 1 AP (deploy.fos + engine Act_Move). Reused slot (was unused PE_ALCOHOL_RAISED_HP)
+#define PE_SERVO_GUNNER                          (410) // Deploy perk: in power armor you may fire a deployable weapon without deploying; deploying gives -1 AP per shot. Requires PE_POWERED_BIPOD (main.fos + parameters.dll). Reused slot (was unused PE_ALCOHOL_RAISED_HP_II)
 #define PE_ALCOHOL_LOWERED_HP                    (411) // Not implemented
 #define PE_ALCOHOL_LOWERED_HP_II                 (412) // Not implemented
 #define PE_AUTODOC_RAISED_HP                     (413) // Not implemented

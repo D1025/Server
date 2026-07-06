@@ -1515,11 +1515,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 	bool     isSwingThrustWeapon = (valid(realWeapon) ? (weapPid == 517 || weapPid == 160 || weapPid == 236 || weapPid == 530 || weapPid == 9676 || weapPid == 4 || weapPid == 116 || weapPid == 383 || weapPid == 6 || weapPid == 399 || weapPid == 115 || weapPid == 319 || weapPid == 622 || weapPid == 522 || weapPid == 600 || weapPid == 610 || weapPid == 289) : false);
     bool     isThrustThrowWeapon = (valid(realWeapon) ? (weapPid == 9916 || weapPid == 618 || weapPid == 320 || weapPid == 280 || weapPid == 7) : false);
-	bool     isSlugger = (valid(realWeapon) ? realWeapon.Proto.ProtoId==PID_LOUISVILLE_SLUGGER : false);
-
 	bool     knockbackFromCrit = false;
 	bool     quick = target.Perk[PE_QUICK_RECOVERY] > 0;
 
+	// Knockback is driven by the weapon's WEAPON_PERK_KNOCKBACK perk (assign it in the weapon proto),
+	// not by hardcoded proto IDs. Shotguns keep their separate rule (shotgun type + the And Stay Back perk).
+	bool     hasKnockbackPerk = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_KNOCKBACK) : (weaponPerk == WEAPON_PERK_KNOCKBACK);
 	bool     isWeaponBluedgeoning = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_BLUDGEONING) : (weaponPerk == WEAPON_PERK_BLUDGEONING);
     bool     hasWeaponPersistent = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_PERSISTENT) : (weaponPerk == WEAPON_PERK_PERSISTENT);
     int      upgradePersistentStacks = UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_PERSISTENT);
@@ -2513,7 +2514,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			target.ToDead(anim2Dead, attacker);
     }
     else 
-	if(isKo || (isShotgun && rounds >1 && attacker.Perk[PE_AND_STAY_BACK] !=0) || knockbackFromCrit || isSlugger)
+	if(isKo || (isShotgun && rounds >1 && attacker.Perk[PE_AND_STAY_BACK] !=0) || knockbackFromCrit || hasKnockbackPerk)
     {
         //Log("isKo = True");
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
@@ -2523,20 +2524,18 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             target.StatBase[ST_MOVE_AP] = 0;
         }
         	
-		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || isSlugger || knockbackFromCrit) && !targetWasKnockout && target.Mode[MODE_NO_KNOCK] == 0)
+		if((isBelow || knockOut || knockDown || dmgType == DAMAGE_EXPLODE || isShotgun || hasKnockbackPerk || knockbackFromCrit) && !targetWasKnockout && target.Mode[MODE_NO_KNOCK] == 0)
         {
             //Log("jest knockOut albo knockDown");
             int knockDist = knockDmg;
 			//Log("knockDist = " + knockDist);
-            if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun  || isSlugger || (valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_KNOCKBACK) : (weaponPerk == WEAPON_PERK_KNOCKBACK)) || knockbackFromCrit) && target.IsCanWalk())
+            if((dmgType == DAMAGE_EXPLODE || attack.WeaponSubtype == WS_MELEE || isShotgun || hasKnockbackPerk || knockbackFromCrit) && target.IsCanWalk())
             {
 				//Log(" bron jest WS_MELEE");
-				if((valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_KNOCKBACK) : (weaponPerk == WEAPON_PERK_KNOCKBACK)) || (isShotgun && rounds > 1 && attacker.Perk[PE_AND_STAY_BACK]!=0))
+				if(hasKnockbackPerk || (isShotgun && rounds > 1 && attacker.Perk[PE_AND_STAY_BACK]!=0))
                     knockDist /= 5;
                 else
                     knockDist /= 15;
-                if (isSlugger)
-                    knockDist = 15;
                 if(target.Perk[PE_STONEWALL] != 0) {
                     knockDist -= (target.Stat[ST_STRENGTH]+target.Stat[ST_STRENGTH_EXT]+target.Stat[ST_ENDURANCE]+target.Stat[ST_ENDURANCE_EXT])/5;
                 }
@@ -3309,7 +3308,7 @@ void WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
 
     victim.StatBase[ST_CURRENT_HP] -= dmg;
     if(victim.IsPlayer())
-        victim.Say(SAY_NETMSG, "Wall impact: " + dmg + " damage!");
+        victim.Say(SAY_NETMSG, "|0xFF8000 You are slammed into a wall for " + dmg + " hit points!");   // orange = the received-damage combat colour (client_combat.fos MsgDefColor)
 
     // Prog smierci - lustro bloku obrazen (~combat.fos:2200).
     int deadFloor = victim.Trait[TRAIT_DEAD_MAN_WALKING] > 0 ? __DeadHitPoints : __DeadHitPoints / 6;
@@ -3365,6 +3364,9 @@ void ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, ui
         // Wpadniecie na inna postac - obrazenia na pol dla obojga.
         WallSlamHurt(target,  slamDmg / 2, killer);
         WallSlamHurt(slammed, slamDmg / 2, killer);
+        // Postac, w ktora wpadl odrzucony cel, zostaje przewrocona (KD).
+        if(!slammed.IsDead() && slammed.Mode[MODE_NO_KNOCK] == 0)
+            slammed.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(true), 0, slammed.HexX, slammed.HexY);
     }
     else
         WallSlamHurt(target, slamDmg, killer);
