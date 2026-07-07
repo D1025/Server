@@ -840,7 +840,7 @@
 #define PE_WEAPON_HANDLING                       (407)
 #define PE_VAULT_CITY_TRAINING                   (408) // Not implemented
 #define PE_POWERED_BIPOD                         (409) // Deploy perk: while deployed in power armor you may still walk (never run), each move hex costs 1 AP (deploy.fos + engine Act_Move). Reused slot (was unused PE_ALCOHOL_RAISED_HP)
-#define PE_SERVO_GUNNER                          (410) // Deploy perk: in power armor you may fire a deployable weapon without deploying; deploying gives -1 AP per shot. Requires PE_POWERED_BIPOD (main.fos + parameters.dll). Reused slot (was unused PE_ALCOHOL_RAISED_HP_II)
+#define PE_SERVO_GUNNER                          (410) // Deploy perk: in power armor you may fire a deployable weapon without deploying; while deployed you gain +10 DR to arms/legs (combat.fos). Requires PE_POWERED_BIPOD (main.fos). Reused slot (was unused PE_ALCOHOL_RAISED_HP_II)
 #define PE_ALCOHOL_LOWERED_HP                    (411) // Not implemented
 #define PE_ALCOHOL_LOWERED_HP_II                 (412) // Not implemented
 #define PE_AUTODOC_RAISED_HP                     (413) // Not implemented

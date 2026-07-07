@@ -1802,6 +1802,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     }
     targetDR += attack.DRMod;   // Always
 
+    // Servo Gunner: while deployed, servo-braced armor hardens the limbs — +10 DR to arms and legs.
+    if(target.Param[ST_DEPLOYED] != 0 && target.Perk[PE_SERVO_GUNNER] != 0 &&
+       (aim == HIT_LOCATION_LEFT_ARM || aim == HIT_LOCATION_RIGHT_ARM ||
+        aim == HIT_LOCATION_LEFT_LEG || aim == HIT_LOCATION_RIGHT_LEG))
+        targetDR += 10;
+
     if(FLAG(eff, HF_BYPASS_ARMOR) && dmgType != DAMAGE_EMP)
     {
         if(critLevel == 4)

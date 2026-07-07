@@ -768,9 +768,6 @@ uint GetUseApCost(CritterMutual& cr, Item& item, uint8 mode)
 		apCost = item.Proto->Weapon_ApCost[use];
 		if(aim) apCost += GetAimApCost(aim);
 		if(cr.Params[PE_BONUS_RATE_OF_FIRE] !=0) apCost--;
-		// Servo Gunner: choosing to deploy a deployable weapon shaves 1 AP off each shot.
-		if(cr.Params[ST_DEPLOYED] && cr.Params[PE_SERVO_GUNNER]) apCost--;
-		//if(checkBonus(item, BONUS_WEAPON_AP_COST)!=0) apCost--;
 	}
 
 	if(use == USE_RELOAD)

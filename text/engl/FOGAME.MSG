@@ -1878,7 +1878,7 @@
 {104092}{}{Your power armor's servos brace a deployed heavy weapon on the move. While wearing a power armor you can walk with the weapon deployed, but every step costs 1 AP.}
 # PE_SERVO_GUNNER              (410)
 {104101}{}{Servo Gunner}
-{104102}{}{Your power armor steadies deployable weapons well enough to fire from the hip - no need to deploy first. If you do deploy, the extra bracing shaves 1 AP off every shot. Requires Powered Bipod.}
+{104102}{}{Your power armor steadies deployable weapons well enough to fire from the hip - no need to deploy first. If you do deploy, the servo bracing hardens your limbs for +10 damage resistance to arms and legs. Requires Powered Bipod.}
 # PE_EXPERT_EXCREMENT
 {104171}{}{Expert Excrement Expeditor}
 {104172}{}{You can sling bull with the best of them.}
