@@ -1001,6 +1001,30 @@ void AddSpecialBonusWeighted(Item@ it)
     }
 }
 
+// Dungeon reward stat-roll: quality is rolled on the same curve crafting uses
+// (Normal .. Unique, see QualityByRoll_Crafted) and the resulting upgrade slots are
+// filled with the weighted rules the loot spawners use. No masterwork/crafter marker.
+// Used for the La Gold Reserve Power Armor drop - see map_la_gold_reserve.fos.
+void StatDungeonReward(Item@ it)   // Export
+{
+    if(!valid(it))
+        return;
+
+    if(it.GetType() == ITEM_TYPE_WEAPON && !it.IsStackable())
+    {
+        uint quality = QualityByRoll_Crafted(Random(0, 99));
+        quality = EnsureWeaponBaseQuality(quality);
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, true);
+    }
+    else if(it.GetType() == ITEM_TYPE_ARMOR)
+    {
+        uint quality = QualityByRoll_Crafted(Random(0, 99));
+        ResetUpgradeSlots(it, quality);
+        TryFillUpgradeSlotsWeighted(it, false);
+    }
+}
+
 // Force an item into the Masterwork state: Unique-tier (5) empty upgrade slots, marker + crafter name.
 void MakeMasterwork(Item@ it, const string& crafter)   // Export
 {

@@ -83,6 +83,7 @@ import void   AddPlayerDeaths() from "cavelog";
 import void   ApplyTimeout(array<Item@>& items, array<uint>& itemsCount, array<Item@>& resources, Critter& crafter) from "fix_boy";
 import void   CheckBountyHunters(Critter& cr, Critter@ killer) from "bounties";
 import void   CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo) from "combat";
+import void   CombatAttackHex(Critter& cr, uint16 tx, uint16 ty, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo) from "combat";
 import bool   IsDeployed(Critter& cr) from "deploy";
 import bool   EnterDeploy(Critter& cr) from "deploy";
 import void   CleanupDeploy(Critter& cr) from "deploy";
@@ -640,6 +641,31 @@ void critter_attack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weapo
 	{
 		CombatAttack(cr, target, weapon, weaponMode, ammo);
 	} else return;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Called when a critter "fires into the air" - an attack aimed at a hex instead of
+// a target critter (Ctrl + click on an empty hex with a Cascade weapon). Raised by
+// the engine (Act_Attack_Hex -> critter_attack_hex). AP was already spent engine-side.
+void critter_attack_hex(Critter& cr, uint16 tx, uint16 ty, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo)
+{
+	speedboost(cr);
+	// Deploy gate: mirror critter_attack so a deployable weapon still requires deploy.
+	if(WeaponHasProtoPerk(weapon, WEAPON_PERK_DEPLOY) && !IsDeployed(cr))
+	{
+		if(cr.Perk[PE_SERVO_GUNNER] > 0 && IsInPowerArmor(cr))
+		{
+			// Servo Gunner + power armor: fire from the hip, no deploy required.
+		}
+		else if(cr.IsPlayer())
+		{
+			cr.Say(SAY_NETMSG, "You must deploy this weapon before firing.");
+			return;
+		}
+		else if(!EnterDeploy(cr))
+			return;
+	}
+	CombatAttackHex(cr, tx, ty, weapon, weaponMode, ammo);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

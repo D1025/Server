@@ -1510,6 +1510,31 @@ int[][] PerksData = {
 	},
 #endif
 
+	{ 409, 0, 1 }, // PE_POWERED_BIPOD, Leveling, 1 ranks
+	{	// level 1 requirements	
+		4, 1, 4, // 4 Inteligance
+	},
+	#ifdef __SERVER
+	{ // level 1 perk up effects
+	},
+	{ // level 1 perk down effects
+		-1 // Just revert
+	},
+#endif
+
+	{ 410, 0, 1 }, // PE_SERVO_GUNNER, Leveling, 1 ranks
+	{	// level 1 requirements	
+		4, 1, 6, // 6 Inteligance
+		409, 1, 1,
+	},
+	#ifdef __SERVER
+	{ // level 1 perk up effects
+	},
+	{ // level 1 perk down effects
+		-1 // Just revert
+	},
+#endif
+
 	{ 417, 2, 1 }, // Expert Excrement Expeditor, Disabled, 1 ranks
 	{ // level 1 requirements
 	},

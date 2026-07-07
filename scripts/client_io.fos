@@ -43,6 +43,7 @@ import void HexShotingKeyDown(uint8 key, string& keyText) from "hexShot";
 import void HexShotingKeyUp(uint8 key, string& keyText) from "hexShot";
 import void HexShotingInputLost() from "hexShot";
 import bool HexShotingMouseDown(int click) from "hexShot";
+import bool CascadeAirShotMouseDown(int click) from "hexShot";
 
 import void HexThrowingKeyDown(uint8 key, string& keyText) from "hexThrow";
 import void HexThrowingKeyUp(uint8 key, string& keyText) from "hexThrow";
@@ -342,6 +343,11 @@ bool mouse_down(int click)
 
     if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME)
     {
+        // Cascade "fire into the air": Ctrl + click sprays the forward cone at the
+        // aimed hex. Handle before the Ctrl-based menus so it isn't stolen by them.
+        if(LeftCtrl && !AltPressed && CascadeAirShotMouseDown(click))
+            return true;
+
         if(IsGMTEnabled() && GMToolsMenu() && LeftCtrl && !AltPressed)           // show gmtools menu
         {
             ChangeCursor(CURSOR_DEFAULT);

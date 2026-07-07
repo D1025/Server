@@ -10,6 +10,7 @@ import bool IsArenaItem(Item@ item) from "arena";
 import bool IsInsideArena(Critter& cr) from "arena";
 import bool IsInsideArena(uint16 x, uint16 y) from "arena";
 import void WearItem(Critter& cr, Item& item, int wearCount) from "repair";
+import void CombatAttackHex(Critter& cr, uint16 tx, uint16 ty, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo) from "combat";
 
 #endif
 #ifdef __CLIENT
@@ -37,7 +38,43 @@ bool IsHexShotWeapon(ItemMutual@ item)
     return (item.GetProtoId() == PID_ROCKET_LAUNCHER
             || item.GetProtoId() == PID_GRENADE_PISTOL
             || item.GetProtoId() == PID_GRENADE_LAUNCHER
-            || item.GetProtoId() == PID_M203);
+            || item.GetProtoId() == PID_M203
+            || WeaponHasProtoPerk(item.Proto, WEAPON_PERK_CASCADE));
+}
+
+// A Cascade weapon fired at a hex sprays its forward cone instead of lobbing a
+// single explosive shell, so it takes a different resolution path below.
+bool IsCascadeHexWeapon(ItemMutual@ item)
+{
+    return valid(item) && item.GetType() == ITEM_TYPE_WEAPON && WeaponHasProtoPerk(item.Proto, WEAPON_PERK_CASCADE);
+}
+
+// Any ranged burst weapon can be fired "into the air" at a hex (Ctrl + click):
+// Cascade sprays its whole forward cone, anything else hoses the straight line
+// through the aimed hex. Explosive hex weapons (rocket/grenade launchers) keep
+// their lobbed-shell path instead.
+bool IsAirShotWeapon(ItemMutual@ item)
+{
+    if(!valid(item) || item.GetType() != ITEM_TYPE_WEAPON)
+        return false;
+    if(IsCascadeHexWeapon(item))
+        return true;
+    if(IsHexShotWeapon(item))
+        return false;
+    uint8 use = _WeaponModeUse(item.Mode);
+    return _WeaponMaxDist(item.Proto, use) > 2 && _WeaponRound(item.Proto, use) > 1;
+}
+
+// Servo Gunner in a power armor fires deployable weapons from the hip, no deploy needed -
+// mirrors the deploy-gate bypass in main.fos::critter_attack. Client-safe (reads the armor proto).
+bool ServoHipFire(CritterMutual& cr)
+{
+    if(cr.Perk[PE_SERVO_GUNNER] <= 0)
+        return false;
+    ItemMutual@ armor = cr.GetItem(0, SLOT_ARMOR);
+    if(!valid(armor) || armor.GetType() != ITEM_TYPE_ARMOR || armor.Proto.Slot != SLOT_ARMOR)
+        return false;
+    return armor.Proto.Armor_Perk == ARMOR_PERK_POWERED || armor.Proto.Armor_Perk_2 == ARMOR_PERK_POWERED || armor.Proto.Armor_Perk_3 == ARMOR_PERK_POWERED;
 }
 
 uint HexShotGetMaxRange(CritterMutual& cr, ItemMutual@ item)
@@ -45,7 +82,7 @@ uint HexShotGetMaxRange(CritterMutual& cr, ItemMutual@ item)
     if(!valid(item))
         return 0;
     uint viewRange = 20 + 3 * cr.Stat[ST_PERCEPTION] + 6 * cr.Perk[PE_SHARPSHOOTER];
-    if(IsHexShotWeapon(item))
+    if(IsHexShotWeapon(item) || IsAirShotWeapon(item))
     {
         uint8 use = _WeaponModeUse(item.Mode);
         uint bonusRange = uint(MAX(0, UpgradeWeaponRangeBonus(item, _WeaponMaxDist(item.Proto, use))));
@@ -149,7 +186,7 @@ int HexShotingToHit(CritterMutual& cr, uint16 tx, uint16 ty, ProtoItem& weapon, 
 
 int HexShotActionPointsCost(ItemMutual& item, CritterMutual& cr)
 {
-    if(IsHexShotWeapon(item))
+    if(IsHexShotWeapon(item) || IsAirShotWeapon(item))
     {
         uint8 use = _WeaponModeUse(item.Mode);
         int apCost = (cr.Perk[PE_BONUS_RATE_OF_FIRE]>0)?-1:0;
@@ -241,6 +278,11 @@ void unsafe_HexShot(Critter& player, int px, int py, int p2, string@ param3, arr
     if(!player.IsLife())
         return;
 
+    // Rate limit: the previous shot's cr.Wait(__Breaktime) must run out first,
+    // the same way the engine rejects a normal attack while the critter is busy.
+    if(player.IsBusy())
+        return;
+
     Map@ map = player.GetMap();
     if(!valid(map))
         return;
@@ -254,6 +296,14 @@ void unsafe_HexShot(Critter& player, int px, int py, int p2, string@ param3, arr
 
     if(item.AmmoCount <= 0)
         return;
+
+    // Burst weapons spray at the aimed hex (Cascade: forward cone, others: a
+    // straight line) instead of lobbing a single explosive shell.
+    if(IsAirShotWeapon(item))
+    {
+        CommenceAirShot(player, map, item, uint16(px), uint16(py));
+        return;
+    }
 
     uint16 tx = px;
     uint16 ty = py;
@@ -313,6 +363,43 @@ void CommenceHexShoting(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty)
     }
 }
 
+// Burst "fire into the air": sprays at the aimed hex (Cascade fans its cone, other
+// weapons hose the straight line), reusing the normal resolution (CombatAttackHex
+// -> CombatAttack) for damage, ammo and hit visuals. AP/battle state are handled
+// here because this is a script-driven shot, not one dispatched by the engine
+// attack pipeline.
+void CommenceAirShot(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty)
+{
+    // Deploy gate: a deployable weapon still has to be deployed to fire
+    // (unless Servo Gunner + power armor allow firing from the hip).
+    if(WeaponHasProtoPerk(item.Proto, WEAPON_PERK_DEPLOY) && cr.Param[ST_DEPLOYED] == 0 && !ServoHipFire(cr))
+    {
+        cr.Say(SAY_NETMSG, "You must deploy this weapon before firing.");
+        return;
+    }
+
+    uint8 dir = GetDirection(cr.HexX, cr.HexY, tx, ty);
+    cr.SetDir(dir);
+    // The burst animation + fire sound are broadcast by CombatAttack (on hits) or
+    // FireIntoEmptyAir (empty cone) via cr.Action(ACTION_USE_WEAPON) - the same path
+    // a normal attack uses, so the correct weapon animation and sound play.
+    if(cr.Mode[MODE_HIDE] != 0)
+    {
+        if(!cr.IsPlayer() || cr.GetAccess() == ACCESS_CLIENT)
+            cr.ModeBase[MODE_HIDE] = 0;
+    }
+    cr.Wait(__Breaktime);
+    cr.StatBase[ST_CURRENT_AP] -= 100 * HexShotActionPointsCost(item, cr);
+
+    if(cr.Timeout[TO_BATTLE] < int(__TimeoutBattle))
+        _SetTimeout(cr, TO_BATTLE, __TimeoutBattle);
+    if(!map.IsTurnBased() && map.IsTurnBasedAvailability())
+        map.BeginTurnBased(cr);
+
+    ProtoItem@ ammo = (item.AmmoPid != 0 ? GetProtoItem(item.AmmoPid) : null);
+    CombatAttackHex(cr, tx, ty, item.Proto, item.Mode, ammo);
+}
+
 uint e_HexShotExplode(array<uint>@ values)     // map id, tx, ty, pid, attacker id, ammo pid
 {
     Map@ map = GetMap(values[0]);
@@ -344,6 +431,80 @@ uint e_HexShotExplode(array<uint>@ values)     // map id, tx, ty, pid, attacker 
 bool Active = false;
 int  LastCursor = 0;
 uint16 lastH = 0, lastM = 0, lastS = 0, lastMS = 0;
+
+// An air shot was just sent to the server: until this tick passes, the chosen
+// accepts the server's ACTION_USE_WEAPON echo and animates from it (see
+// critter_action in client_mapper_animation). The echo has to drive the
+// animation because the server turns the critter toward the aimed hex first -
+// a locally played animation would fire before the turn.
+uint AirShotEchoDeadline = 0;
+
+// Exported: consume the pending air-shot echo. One-shot, so a normal attack's
+// echo right after it stays ignored (that one already animated locally).
+bool ConsumeAirShotEcho()
+{
+    if(AirShotEchoDeadline == 0 || GetTick() > AirShotEchoDeadline)
+        return false;
+    AirShotEchoDeadline = 0;
+    return true;
+}
+
+// Ctrl + left-click fire gesture for burst weapons (Cascade cone or straight
+// line). Handled directly (not through the Active/keydown flag) and called early
+// in client_io so it can't be stolen by the GM dev menu or fall through to the
+// engine attack pipeline (which would print "Aim is blocked" for an empty hex).
+// The caller gates on Ctrl being held.
+bool CascadeAirShotMouseDown(int click)
+{
+    if(click != MOUSE_CLICK_LEFT)
+        return false;
+    if(::GetCurrentCursor() != CURSOR_USE_WEAPON)
+        return false;
+
+    CritterCl@ chosen = GetChosen();
+    if(!valid(chosen))
+        return false;
+
+    ItemCl@ item = chosen.GetItem(0, SLOT_HAND1);
+    if(!IsAirShotWeapon(item))
+        return false;
+
+    // Deploy gate mirrors the server one: don't animate a shot it will reject.
+    // Servo Gunner + power armor fires from the hip, same as the server allows.
+    if(WeaponHasProtoPerk(item.Proto, WEAPON_PERK_DEPLOY) && chosen.Param[ST_DEPLOYED] == 0 && !ServoHipFire(chosen))
+    {
+        Message("You must deploy this weapon before firing.");
+        return true;
+    }
+
+    // Rate limit like a normal attack: the previous shot's animation has to end
+    // (and the busy/wait timer run out) before the next one fires. The server
+    // enforces the same via IsBusy in unsafe_HexShot; this just keeps the local
+    // animation honest and consumes the click.
+    if(chosen.IsAnimPlaying() || chosen.IsBusy())
+        return true;
+
+    uint16 hx = 0, hy = 0;
+    if(GetMonitorHex(__MouseX, __MouseY, hx, hy)
+       && GetDistantion(chosen.HexX, chosen.HexY, hx, hy) > 0
+       && IsHexShotableThere(chosen, item, hx, hy))
+    {
+        if(item.AmmoCount <= 0)
+            PlaySound('W', SOUND_WEAPON_EMPTY, item.Proto.Weapon_SoundId_0, '1');
+        else if(HexShotActionPointsCost(item, chosen) <= chosen.Stat[ST_CURRENT_AP])
+        {
+            RunServerScriptUnsafe("hexShot@unsafe_HexShot", hx, hy, 0, null, null);
+            // The animation + sound are driven by the server's ACTION_USE_WEAPON
+            // echo (accepted while this deadline holds): the server turns the
+            // critter toward the aimed hex before broadcasting the action, so
+            // the shot animation plays already facing the right way. Tracers
+            // come back from the server too, so every player sees the volley.
+            AirShotEchoDeadline = GetTick() + 1500;
+        }
+    }
+
+    return true;   // consume the Ctrl+click fire gesture
+}
 
 bool HexShotingMouseDown(int click)
 {
@@ -427,6 +588,11 @@ void RenderHexShoting() // export
         return;
     // todo: check for sanity?
     ItemCl@ item = chosen.GetItem(0, SLOT_HAND1);
+    // Air-shot weapons draw their own aim highlight (render_iface -> DrawCascadeCone
+    // for the cone, DrawAirShotHex for the single aimed hex), so skip the blast
+    // circle here.
+    if(IsAirShotWeapon(item))
+        return;
     if(!IsHexShotableThere(chosen, item, hx, hy))
         return;
 

@@ -116,6 +116,9 @@ import void DrawMuzzleFlashes() from "client_drawing";
 import void DrawBurstMuzzles() from "client_drawing";
 //import void DrawWepRadius(CritterCl@ chosen) from "client_drawing";
 import void DrawCustomRadiuses() from "client_drawing";
+import void DrawCascadeCone(CritterCl@ chosen, ItemCl@ weapon) from "client_drawing";
+import void DrawAirShotHex(CritterCl@ chosen, ItemCl@ weapon) from "client_drawing";
+import void AirShotTracers(uint16 fromHx, uint16 fromHy, uint16 tx, uint16 ty, uint maxDist, uint rounds, bool cone) from "client_drawing";
 
 import void DrawWMZones() from "client_drawing"; // void implementation
 /*

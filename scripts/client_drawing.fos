@@ -1068,6 +1068,159 @@ void DrawCustomRadiuses()
 	}
 }
 
+// Highlights a Cascade weapon's forward cone as a filled, darkened sector from the
+// chosen toward the aimed hex, using the same half-angle the server sprays
+// (CASCADE_CONE_ANGLE_OUTER). Called while holding Ctrl in the weapon cursor so the
+// player can see the affected area before firing (and fire into the air).
+// Non-Cascade bursts use DrawAirShotHex (single aimed hex) instead.
+void DrawCascadeCone(CritterCl@ chosen, ItemCl@ weapon)
+{
+	if(!valid(chosen) || !valid(weapon))
+		return;
+
+	uint8 wepMode    = weapon.Mode & 0x0F;
+	uint  wpnMaxDist = _WeaponMaxDist(weapon.Proto, wepMode);
+	if(chosen.Perk[PE_SHARPSHOOTER] == 1 && WeaponHasProtoPerk(weapon.Proto, WEAPON_PERK_SCOPE_RANGE))
+		wpnMaxDist += 5;
+	if(wpnMaxDist < 1)
+		return;
+
+	uint16 mhx, mhy;
+	if(!GetMonitorHex(__MouseX, __MouseY, mhx, mhy))
+		return;
+	if(mhx == chosen.HexX && mhy == chosen.HexY)
+		return;
+
+	int sx = 0, sy = 0;
+	GetHexPos(chosen.HexX, chosen.HexY, sx, sy);
+
+	// Filled, darkened sector: a triangle fan from the shooter (apex) across the
+	// cone's arc at CASCADE_CONE_ANGLE_OUTER each side. This shades the whole area
+	// the side volley can hit, not just the fire lines.
+	float outer   = float(CASCADE_CONE_ANGLE_OUTER);
+	int   steps   = 12;
+	int   fill    = int(0x66101010);   // translucent dark overlay -> darkens the ground
+	int[] fan;
+	fan.insertLast(sx); fan.insertLast(sy); fan.insertLast(fill);   // apex
+	for(int s = 0; s <= steps; s++)
+	{
+		float a = -outer + (2.0f * outer) * float(s) / float(steps);
+		uint16 ehx = mhx, ehy = mhy;
+		GetHexCoord(chosen.HexX, chosen.HexY, ehx, ehy, a, wpnMaxDist);
+		int ex = 0, ey = 0;
+		GetHexPos(ehx, ehy, ex, ey);
+		fan.insertLast(ex); fan.insertLast(ey); fan.insertLast(fill);
+	}
+	DrawPrimitive(DRAW_PRIMITIVE_TRIANGLEFAN, fan);
+}
+
+// Draws the bullet tracers of a shot fired "into the air" at a hex. Cascade
+// weapons pepper their whole forward cone (each bullet picks its own angle and
+// flies out to the weapon's reach); anything else hoses a straight line through
+// the aimed hex like a regular burst. Fed by the server (_AirShotTracers) so
+// every player who sees the shooter gets the same volley, not just the shooter.
+void AirShotTracers(uint16 fromHx, uint16 fromHy, uint16 tx, uint16 ty, uint maxDist, uint rounds, bool cone)
+{
+	if(GetDistantion(fromHx, fromHy, tx, ty) < 1 || maxDist < 1)
+		return;
+
+	if(rounds < 1)
+		rounds = 1;
+	if(rounds > 24)
+		rounds = 24;
+
+	int color1 = int(0xFFFFFF66);
+	int color2 = int(0xFFCC6600);
+
+	if(!cone)
+	{
+		// One lane through the aimed hex, bullets strung along it.
+		uint16 ehx = tx, ehy = ty;
+		GetHexCoord(fromHx, fromHy, ehx, ehy, 0.0f, maxDist);
+
+		int[] muzzleData(9, 0);
+		muzzleData[0] = fromHx;
+		muzzleData[1] = fromHy;
+		muzzleData[2] = color1;
+		muzzleData[3] = ehx;
+		muzzleData[4] = ehy;
+		muzzleData[5] = color2;
+		muzzleData[6] = 3000;      // length (ms)
+		muzzleData[7] = 90;        // delay between bullets
+		muzzleData[8] = rounds;
+		CreateBurstMuzzle(muzzleData, MUZZLE_TYPE_DEFAULT);
+		return;
+	}
+
+	// Cone: each bullet gets a random angle inside the cone and a slightly
+	// randomized reach, so the whole highlighted sector is peppered.
+	float outer = float(CASCADE_CONE_ANGLE_OUTER);
+	for(uint i = 0; i < rounds; i++)
+	{
+		float a = float(Random(-int(outer * 10.0f), int(outer * 10.0f))) / 10.0f;
+		uint16 ehx = tx, ehy = ty;
+		GetHexCoord(fromHx, fromHy, ehx, ehy, a, maxDist - Random(0, int(maxDist) / 4));
+
+		int[] muzzleData(9, 0);
+		muzzleData[0] = fromHx;
+		muzzleData[1] = fromHy;
+		muzzleData[2] = color1;
+		muzzleData[3] = ehx;
+		muzzleData[4] = ehy;
+		muzzleData[5] = color2;
+		muzzleData[6] = 3000;                          // length (ms)
+		muzzleData[7] = 60 * (i + 1) + Random(0, 40);  // this bullet's start delay
+		muzzleData[8] = 1;                             // one bullet per lane
+		CreateBurstMuzzle(muzzleData, MUZZLE_TYPE_DEFAULT);
+	}
+}
+
+// to use with RunClientScript: p4 = { shooterHx, shooterHy, aimHx, aimHy, maxDist, rounds, coneFlag }
+void _AirShotTracers(int param0, int param1, int param2, string@ param3, int[]@ param4)
+{
+	if(!valid(param4) || param4.length() < 7)
+		return;
+	AirShotTracers(uint16(param4[0]), uint16(param4[1]), uint16(param4[2]), uint16(param4[3]), uint(param4[4]), uint(param4[5]), param4[6] != 0);
+}
+
+// Single-hex air-shot aim: greys just the hex a non-Cascade burst is aimed at
+// when Ctrl+clicking. Such a burst still hoses the straight lane through the hex,
+// but the "area" the player picks is that one hex - so we shade only it, unlike
+// DrawCascadeCone which shades the whole forward sector for cone weapons.
+void DrawAirShotHex(CritterCl@ chosen, ItemCl@ weapon)
+{
+	if(!valid(chosen) || !valid(weapon))
+		return;
+
+	uint16 mhx, mhy;
+	if(!GetMonitorHex(__MouseX, __MouseY, mhx, mhy))
+		return;
+	if(mhx == chosen.HexX && mhy == chosen.HexY)
+		return;
+
+	int cx = 0, cy = 0;
+	GetHexPos(mhx, mhy, cx, cy);
+
+	// Filled flat-top Fallout hexagon centred on the aimed hex. The hex size is in
+	// map pixels, so scale the offsets to the current sprite zoom the same way
+	// GetHexPos already scaled the centre.
+	int hw = int(float(__MapHexWidth)  / 2.0f / __SpritesZoom);   // half width  (left/right corners)
+	int sh = int(float(__MapHexWidth)  / 4.0f / __SpritesZoom);   // shoulder x-inset (top/bottom corners)
+	int hh = int(float(__MapHexHeight) / 2.0f / __SpritesZoom);   // half height
+	int fill = int(0x66404040);   // translucent grey overlay
+
+	int[] fan;
+	fan.insertLast(cx);      fan.insertLast(cy);      fan.insertLast(fill);   // centre (apex)
+	fan.insertLast(cx - hw); fan.insertLast(cy);      fan.insertLast(fill);   // left
+	fan.insertLast(cx - sh); fan.insertLast(cy - hh); fan.insertLast(fill);   // top-left
+	fan.insertLast(cx + sh); fan.insertLast(cy - hh); fan.insertLast(fill);   // top-right
+	fan.insertLast(cx + hw); fan.insertLast(cy);      fan.insertLast(fill);   // right
+	fan.insertLast(cx + sh); fan.insertLast(cy + hh); fan.insertLast(fill);   // bottom-right
+	fan.insertLast(cx - sh); fan.insertLast(cy + hh); fan.insertLast(fill);   // bottom-left
+	fan.insertLast(cx - hw); fan.insertLast(cy);      fan.insertLast(fill);   // close back to left
+	DrawPrimitive(DRAW_PRIMITIVE_TRIANGLEFAN, fan);
+}
+
 void DrawWMZones() // require manual define for ZONE_IDX, and some checks, aswell as layer input argument, to control the layers overlapping
 				   // ( intended to work with a single-dimensional array holding WMZoneRender objects, just like *vanilla* worldmap cells macros )
 {

@@ -1112,139 +1112,81 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         // Sprawdzenie, czy broń ma perk CASCADE
         bool hasCascade = WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE);
 
-        // Cascade keeps a stronger central stream while spreading the rest over
-        // four side lines. Bullets assigned to an empty line are intentionally lost.
-        uint numberOfLines = hasCascade ? 5 : 1;
-
-        array<uint> roundsPerEachLine;
-        if (hasCascade)
-        {
-            uint centralRounds = (totalRounds * 40 + 99) / 100; // ceil(40%)
-            uint sideRounds = totalRounds - centralRounds;
-            uint sideRoundsPerLine = sideRounds / 4;
-            uint sideRemainder = sideRounds % 4;
-
-            roundsPerEachLine.insertLast(centralRounds);
-            for (uint i = 0; i < 4; i++)
-                roundsPerEachLine.insertLast(sideRoundsPerLine + (i < sideRemainder ? 1 : 0));
-        }
-        else
-        {
-            // Wszystkie rundy przypisane do jednej linii
-            roundsPerEachLine.insertLast(totalRounds);
-        }
-
         // Tablice przechowujące trafione krytery i liczby trafień
         array<Critter@> critsHit(0);
         array<uint> critsHitBullets(0);
-
         int len_ = 0;
-
-        // Przygotowanie wszystkich linii ognia
-        array<array<Critter@> > allLines(numberOfLines, array<Critter@>());
 
         if (hasCascade)
         {
-            // 1. Centralna linia
-            allLines[0].insertLast(realTarget); // Zakładamy, że centralna linia trafia główny cel
+            // Cascade fires a forward cone. The central stream pours the main 40%
+            // of the burst into the primary target; every OTHER critter standing in
+            // the whole cone area (within +/-CASCADE_CONE_ANGLE_OUTER of the aim
+            // line, not just those on a fire line) is peppered with a ~15% volley.
+            uint centralRounds = (totalRounds * 40 + 99) / 100;   // ceil(40%)
+            uint areaRounds    = (totalRounds * 15 + 50) / 100;   // round(15%) per enemy
 
-            // 2. Lewa linia
-            array<Critter@> lineLeft;
-            map.GetCrittersPath(hx, hy, tx, ty, 89.0f, wpnMaxDist, FIND_LIFE_AND_KO, lineLeft);
-            FilterOutAttacker(lineLeft, cr);
-            allLines[1] = lineLeft;
+            // 1. Central stream -> primary target.
+            if (valid(realTarget))
+            {
+                float dist = GetDistantion(hx, hy, realTarget.HexX, realTarget.HexY);
+                float toHit = baseToHit + float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
+                if (realTarget.IsKnockout())
+                    toHit += 40;
+                if (realTarget.GetMultihex() > 0)
+                    toHit += 15;
+                toHit = CLAMP(toHit, 0, 100);
+                CascadeApplyVolley(critsHit, critsHitBullets, len_, realTarget, centralRounds, toHit);
+            }
 
-            // 3. Prawa linia
-            array<Critter@> lineRight;
-            map.GetCrittersPath(hx, hy, tx, ty, -89.0f, wpnMaxDist, FIND_LIFE_AND_KO, lineRight);
-            FilterOutAttacker(lineRight, cr);
-            allLines[2] = lineRight;
-
-            // 4. Daleko-lewa linia
-            uint8 farLeftDir = GetOffsetDir(hx, hy, tx, ty, 85.0f); // Kąt dla daleko-lewej linii
-            uint16 sx = hx;
-            uint16 sy = hy;
-            uint16 ex = tx;
-            uint16 ey = ty;
-
-            map.MoveHexByDir(sx, sy, farLeftDir, 1);
-            map.MoveHexByDir(ex, ey, farLeftDir, 1);
-
-            array<Critter@> lineFarLeft;
-            map.GetCrittersPath(sx, sy, ex, ey, 0.0f, wpnMaxDist - 1, FIND_LIFE_AND_KO, lineFarLeft);
-            FilterOutAttacker(lineFarLeft, cr);
-            allLines[3] = lineFarLeft;
-
-            // 5. Daleko-prawa linia
-            uint8 farRightDir = GetOffsetDir(hx, hy, tx, ty, -85.0f); // Kąt dla daleko-prawej linii
-            sx = hx;
-            sy = hy;
-            ex = tx;
-            ey = ty;
-
-            map.MoveHexByDir(sx, sy, farRightDir, 1);
-            map.MoveHexByDir(ex, ey, farRightDir, 1);
-
-            array<Critter@> lineFarRight;
-            map.GetCrittersPath(sx, sy, ex, ey, 0.0f, wpnMaxDist - 1, FIND_LIFE_AND_KO, lineFarRight);
-            FilterOutAttacker(lineFarRight, cr);
-            allLines[4] = lineFarRight;
+            // 2. Area volley -> everyone else caught inside the cone.
+            if (areaRounds > 0)
+            {
+                array<Critter@> coneCrits;
+                GetCrittersInCone(map, cr, hx, hy, tx, ty, wpnMaxDist, float(CASCADE_CONE_ANGLE_OUTER), realTarget, coneCrits);
+                for (uint i = 0; i < coneCrits.length(); i++)
+                {
+                    Critter@ c = coneCrits[i];
+                    float dist = GetDistantion(hx, hy, c.HexX, c.HexY);
+                    int blockers = int(map.GetCrittersPath(hx, hy, c.HexX, c.HexY, 0.0f, uint(dist), FIND_LIFE, null)) - 1;
+                    if (blockers < 0)
+                        blockers = 0;
+                    float toHit = baseToHit - 10 * blockers + float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
+                    if (c.IsKnockout())
+                        toHit += 40;
+                    if (c.GetMultihex() > 0)
+                        toHit += 15;
+                    toHit = CLAMP(toHit, 0, 100);
+                    CascadeApplyVolley(critsHit, critsHitBullets, len_, c, areaRounds, toHit);
+                }
+            }
         }
         else
         {
-            // Tylko jedna linia (centralna)
+            // Non-Cascade burst: one fire line, bullets deplete as they hit
+            // critters down the line.
             array<Critter@> lineCentral;
             map.GetCrittersPath(hx, hy, tx, ty, 0.0f, wpnMaxDist, FIND_LIFE_AND_KO, lineCentral);
             FilterOutAttacker(lineCentral, cr);
-            allLines[0] = lineCentral;
-        }
 
-        // Przetwarzanie każdej linii
-        for (uint lineCount = 0; lineCount < numberOfLines; lineCount++)
-        {
-            uint volleyRounds = roundsPerEachLine[lineCount];
-            if (volleyRounds == 0)
-                continue; // Brak rund do wystrzelenia na tej linii
-
-            array<Critter@> currentLine = allLines[lineCount];
-            if (currentLine.length() == 0)
-                continue; // Brak celów na tej linii
-
-            // Przetwarzanie trafień dla bieżącej linii
+            uint volleyRounds = totalRounds;
             uint bl = 0; // Liczba blokujących przeszkód
-
-            for (uint i = 0; i < currentLine.length() && volleyRounds > 0; i++)
+            for (uint i = 0; i < lineCentral.length() && volleyRounds > 0; i++)
             {
-                Critter@ currentTarget = currentLine[i];
+                Critter@ currentTarget = lineCentral[i];
 
-                // The primary target belongs to the central stream only. A target
-                // already hit by another Cascade line cannot collect another quota.
-                if (hasCascade && lineCount > 0 && currentTarget.Id == realTarget.Id)
-                    continue;
-
-                int crIndex = FindCritterInArray(critsHit, currentTarget);
-                if (hasCascade && crIndex != -1)
-                    continue;
-
-                // Obliczenie toHit dla bieżącego celu
                 float toHitLocal = baseToHit - 10 * bl;
                 float dist = GetDistantion(hx, hy, currentTarget.HexX, currentTarget.HexY);
-                float acc = float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
-                toHitLocal += acc;
-
+                toHitLocal += float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
                 if (currentTarget.IsKnockout())
                     toHitLocal += 40;
-
                 if (currentTarget.GetMultihex() > 0)
                     toHitLocal += 15;
-
                 toHitLocal = CLAMP(toHitLocal, 0, 100);
 
-                // Aktualizacja liczby blokujących przeszkód
                 if (!currentTarget.IsKnockout())
                     bl++;
 
-                // Symulacja trafień
                 uint curRounds = 0;
                 for (uint k = 0; k < volleyRounds; ++k)
                 {
@@ -1252,9 +1194,9 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                         curRounds++;
                 }
 
-                // Przypisanie rund do trafionego celu
                 if (curRounds > 0)
                 {
+                    int crIndex = FindCritterInArray(critsHit, currentTarget);
                     if (crIndex == -1)
                     {
                         critsHit.resize(len_ + 1);
@@ -1267,7 +1209,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     critsHitBullets[crIndex] += curRounds;
                 }
 
-                // Redukcja rund do wystrzelenia
                 volleyRounds -= curRounds;
             }
         }
@@ -3819,6 +3760,213 @@ void FilterOutAttacker(array<Critter@> &inout targets, Critter@ attacker)
             targets.removeAt(i);
         }
     }
+}
+
+// Direction from (hx,hy) to (tx,ty) as a continuous angle in degrees (0..360),
+// matching the engine hex LineTracer (see linetracer.fos::GetDirectionF). Used to
+// decide which critters fall inside the Cascade cone.
+float HexAngleDeg(uint16 hx, uint16 hy, uint16 tx, uint16 ty)
+{
+    float nx = 3.0f * (float(tx) - float(hx));
+    float ny = 3.4641016151f * (float(ty) - float(hy)) - (float(tx % 2) - float(hx % 2)) * 1.732050807568877f;
+    return 180.0f + 57.29577951f * atan2(ny, nx);
+}
+
+// Smallest signed difference a-b, wrapped to [-180,180].
+float AngleDiffDeg(float a, float b)
+{
+    float d = a - b;
+    while(d > 180.0f)
+        d -= 360.0f;
+    while(d < -180.0f)
+        d += 360.0f;
+    return d;
+}
+
+// Collects every living/KO critter standing inside the Cascade cone: within
+// maxDist, inside +/-halfAngle of the aim direction (hx,hy)->(tx,ty), and with a
+// clear line of fire (traced straight to it). The attacker and, if given, the
+// primary target are excluded. This is what makes the side volley hit the whole
+// area between the outermost lines instead of only the critters on a fire line.
+void GetCrittersInCone(Map@ map, Critter@ attacker, uint16 hx, uint16 hy, uint16 tx, uint16 ty, uint maxDist, float halfAngle, Critter@ primaryTarget, array<Critter@> &inout outCrits)
+{
+    array<Critter@> nearby;
+    map.GetCrittersHex(hx, hy, maxDist, FIND_LIFE_AND_KO, nearby);
+    float aim = HexAngleDeg(hx, hy, tx, ty);
+
+    for(uint i = 0; i < nearby.length(); i++)
+    {
+        Critter@ c = nearby[i];
+        if(c.Id == attacker.Id)
+            continue;
+        if(valid(primaryTarget) && c.Id == primaryTarget.Id)
+            continue;
+
+        int dist = GetDistantion(hx, hy, c.HexX, c.HexY);
+        if(dist < 1 || dist > int(maxDist))
+            continue;
+
+        float delta = AngleDiffDeg(HexAngleDeg(hx, hy, c.HexX, c.HexY), aim);
+        if(delta < 0.0f)
+            delta = -delta;
+        if(delta > halfAngle)
+            continue;
+
+        // Line of fire: trace straight to the critter; it must be reachable
+        // (a wall between the shooter and the critter blocks the spray).
+        array<Critter@> path;
+        map.GetCrittersPath(hx, hy, c.HexX, c.HexY, 0.0f, uint(dist), FIND_LIFE_AND_KO, path);
+        for(uint j = 0; j < path.length(); j++)
+        {
+            if(path[j].Id == c.Id)
+            {
+                outCrits.insertLast(c);
+                break;
+            }
+        }
+    }
+}
+
+// Rolls a volley of `rounds` shots at `toHit`% against a target and books the
+// hits into critsHit/critsHitBullets (merging with any earlier entry).
+void CascadeApplyVolley(array<Critter@> &inout critsHit, array<uint> &inout critsHitBullets, int& len_, Critter@ target, uint rounds, float toHit)
+{
+    if(rounds == 0 || !valid(target))
+        return;
+
+    uint hits = 0;
+    for(uint k = 0; k < rounds; k++)
+    {
+        if(Random(1, 100) <= toHit)
+            hits++;
+    }
+    if(hits == 0)
+        return;
+
+    int idx = FindCritterInArray(critsHit, target);
+    if(idx == -1)
+    {
+        critsHit.resize(len_ + 1);
+        @critsHit[len_] = target;
+        critsHitBullets.resize(len_ + 1);
+        critsHitBullets[len_] = 0;
+        idx = len_;
+        len_++;
+    }
+    critsHitBullets[idx] += hits;
+}
+
+// Fire into empty air: no critter in the forward cone. Play the muzzle/fly effect
+// toward the aimed hex and consume ammo. AP was already spent by the engine
+// (Act_Attack_Hex), matching how the normal attack path works.
+void FireIntoEmptyAir(Critter& cr, Map@ map, uint16 tx, uint16 ty, ProtoItem& weapon, uint8 use, ProtoItem@ ammo)
+{
+    uint16 hx = cr.HexX;
+    uint16 hy = cr.HexY;
+    Item@  realWeapon = _CritGetItemHand(cr);
+    uint16 ammoRound = _WeaponRound(weapon, use);
+
+    // Play the burst animation + fire sound (shooter and observers), same as a
+    // normal attack - there is no target critter to drive it otherwise.
+    if(valid(realWeapon))
+        cr.Action(ACTION_USE_WEAPON, int(use), realWeapon);
+
+    if(_WeaponEffect(weapon, use) != 0)
+        map.RunFlyEffect(_WeaponEffect(weapon, use), cr, null, hx, hy, tx, ty);
+
+    if(ammoRound > 0 && valid(realWeapon) && cr.Mode[MODE_UNLIMITED_AMMO] == 0)
+    {
+        if(realWeapon.AmmoCount <= ammoRound)
+            realWeapon.AmmoCount = 0;
+        else
+            realWeapon.AmmoCount -= ammoRound;
+        realWeapon.Update();
+    }
+}
+
+// Burst "fire into the air": spray toward an aimed hex with no locked target
+// (raised by the engine critter_attack_hex event or the hexShot Ctrl+click path).
+// Cascade fans its forward cone and picks the critter nearest the aim line as the
+// primary; any other weapon hoses the straight line through the hex and the first
+// live critter on it becomes the primary. Either way CombatAttack then resolves
+// the full pipeline (damage, ammo, animation, messages); an empty spray is a
+// harmless shot that still spends ammo.
+void CombatAttackHex(Critter& cr, uint16 tx, uint16 ty, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo)   // Export
+{
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+        return;
+
+    uint8  use = _WeaponModeUse(weaponMode);
+    uint16 hx = cr.HexX;
+    uint16 hy = cr.HexY;
+    int    wpnMaxDist = _WeaponMaxDist(weapon, use);
+    bool   hasCascade = WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE);
+
+    // Face the aimed hex so the shoot animation points the right way.
+    if(hx != tx || hy != ty)
+        cr.SetDir(GetDirection(hx, hy, tx, ty));
+
+    // The bullet tracers are a client-side drawing, so hand the volley to every
+    // player who can see the shooter (the shooter included) - one shared visual
+    // instead of the old shooter-only spray.
+    {
+        array<int> trData = { int(hx), int(hy), int(tx), int(ty), wpnMaxDist, int(_WeaponRound(weapon, use)), hasCascade ? 1 : 0 };
+        Critter@[] shooterArr = { cr };
+        array<Critter@> viewers;
+        map.GetCrittersSeeing(shooterArr, true, FIND_ALL | FIND_ONLY_PLAYERS, viewers);
+        bool shooterIncluded = false;
+        for(uint i = 0; i < viewers.length(); i++)
+        {
+            if(viewers[i].Id == cr.Id)
+                shooterIncluded = true;
+            viewers[i].RunClientScript("client_drawing@_AirShotTracers", 0, 0, 0, null, trData);
+        }
+        if(!shooterIncluded && cr.IsPlayer())
+            cr.RunClientScript("client_drawing@_AirShotTracers", 0, 0, 0, null, trData);
+    }
+
+    Critter@ primary = null;
+    if(hasCascade)
+    {
+        // Gather everyone inside the cone toward the aimed hex and pick the
+        // critter closest to the aim line as the primary. CombatAttack then
+        // resolves the full Cascade cone around it (central 40% + 15% to the
+        // rest of the area).
+        array<Critter@> coneCrits;
+        GetCrittersInCone(map, cr, hx, hy, tx, ty, uint(wpnMaxDist), float(CASCADE_CONE_ANGLE_OUTER), null, coneCrits);
+
+        float bestDelta = 1000.0f;
+        float aim = HexAngleDeg(hx, hy, tx, ty);
+        for(uint i = 0; i < coneCrits.length(); i++)
+        {
+            Critter@ c = coneCrits[i];
+            float delta = AngleDiffDeg(HexAngleDeg(hx, hy, c.HexX, c.HexY), aim);
+            if(delta < 0.0f)
+                delta = -delta;
+            if(delta < bestDelta)
+            {
+                bestDelta = delta;
+                @primary = c;
+            }
+        }
+    }
+    else
+    {
+        // Straight line through the aimed hex, out to the weapon's reach: the
+        // first live critter on the lane takes the burst and CombatAttack
+        // resolves the usual line spread behind it.
+        array<Critter@> lineCrits;
+        map.GetCrittersPath(hx, hy, tx, ty, 0.0f, uint(wpnMaxDist), FIND_LIFE_AND_KO, lineCrits);
+        FilterOutAttacker(lineCrits, cr);
+        if(lineCrits.length() > 0)
+            @primary = lineCrits[0];
+    }
+
+    if(valid(primary))
+        CombatAttack(cr, primary, weapon, weaponMode, ammo);
+    else
+        FireIntoEmptyAir(cr, map, tx, ty, weapon, use, ammo);
 }
 
 uint cte_removeNoMove(Critter& cr, int identifier, uint& rate) {

@@ -1,0 +1,134 @@
+//
+// FOnline: AfterTimes
+//
+// map_la_gold_reserve.fos
+//
+// NCR LA Gold Reserve dungeon (map q_la_gold_reserve, MAP_NCRLAGoldReserve).
+//
+// Design:
+//  - The vault lockers can no longer be lockpicked open - lockpicking them does
+//    nothing.
+//  - They stay sealed until every hostile NPC on the map is dead. Once the reserve
+//    is cleared they open freely (no lockpick, no key needed).
+//  - Matching keys keep working exactly as before, at any time.
+//  - When the reserve is first cleared and its vault opened, a single stat-rolled
+//    Powered Armor is dropped on the vault floor (on the ground, not inside a
+//    locker) as bonus loot next to the gold/caps. Quality is rolled Normal..Unique
+//    on the crafting curve, with random upgrades per the loot upgrade rules.
+//    Spawns once per map regen.
+//
+
+#include "_macros.fos"
+
+import bool IsKeyAviable(Critter& cr, uint lockerId) from "lockers";
+import void StatDungeonReward(Item@ it) from "item_bonus";
+
+// Bonus reward dropped on the vault floor once the reserve is cleared.
+#define GRESERVE_PA_PID              (PID_POWERED_ARMOR) // 3
+// Vault floor, right in front of the gold stash. Row y=75 (x 85..91) is open floor;
+// the dollar lockers sit on the y=74 row and the x=85 column around it.
+#define GRESERVE_PA_X               (88)
+#define GRESERVE_PA_Y               (75)
+// Fallback, also open vault floor on the same row.
+#define GRESERVE_PA_FALLBACK_X      (87)
+#define GRESERVE_PA_FALLBACK_Y      (75)
+
+// Per-map flag: 1 once the Power Armor reward has been dropped this map generation.
+// Uses a script-private map data slot (>= 20 are free for map scripts); reset on regen.
+#define GRESERVE_MDATA_REWARD_DONE  (20)
+
+void map_init(Map& map, bool firstTime)
+{
+    // (Re)attach the vault-locker gate on every map load - runtime item events do
+    // not survive a server restart.
+    array<Item@> containers;
+    uint count = map.GetItemsByType(ITEM_TYPE_CONTAINER, containers);
+    for(uint i = 0; i < count; i++)
+    {
+        Item@ cont = containers[i];
+        if(!valid(cont))
+            continue;
+        // Only the actually-locked vault lockers (they carry a locker/key id).
+        if(cont.LockerId != 0)
+            cont.SetEvent(ITEM_EVENT_SKILL, "_GReserveLocker");
+    }
+}
+
+// True when no hostile NPC is left alive or knocked out on the map. Players'
+// companions/slaves are ignored so they can never keep the vault sealed.
+bool ReserveCleared(Map@ map)
+{
+    if(!valid(map))
+        return false;
+
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE_AND_KO, npcs);
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ npc = npcs[i];
+        if(!valid(npc))
+            continue;
+        if(_CritHasExtMode(npc, MODE_EXT_FOLLOWER) || _CritHasExtMode(npc, MODE_EXT_SLAVE))
+            continue;
+        return false; // a defender still stands
+    }
+    return true;
+}
+
+// Drops the stat-rolled Power Armor on the vault floor, once per map generation.
+void SpawnReserveReward(Map@ map)
+{
+    if(!valid(map))
+        return;
+    if(map.GetData(GRESERVE_MDATA_REWARD_DONE) != 0)
+        return;
+
+    Item@ pa = map.AddItem(GRESERVE_PA_X, GRESERVE_PA_Y, GRESERVE_PA_PID, 1);
+    if(!valid(pa))
+        @pa = map.AddItem(GRESERVE_PA_FALLBACK_X, GRESERVE_PA_FALLBACK_Y, GRESERVE_PA_PID, 1);
+    if(!valid(pa))
+        return;
+
+    StatDungeonReward(pa);
+    map.SetData(GRESERVE_MDATA_REWARD_DONE, 1);
+}
+
+// ITEM_EVENT_SKILL handler on the vault lockers. Runs before the default locker
+// handling (see ServerClient.cpp: item->EventSkill() is called before
+// critter_use_skill). Returning true blocks the default handling; false lets it run.
+bool _GReserveLocker(Item& locker, Critter& player, int skill)
+{
+    // Lockpicking these is disabled entirely.
+    if(skill == SK_LOCKPICK)
+    {
+        player.Say(SAY_NETMSG, "The vault lock won't yield to any lockpick.");
+        return true;
+    }
+
+    if(skill == SKILL_PICK_ON_GROUND)
+    {
+        Map@ map = player.GetMap();
+        bool hasKey = (locker.LockerId != 0 && IsKeyAviable(player, locker.LockerId));
+        bool cleared = ReserveCleared(map);
+
+        if(!cleared && !hasKey)
+        {
+            player.Say(SAY_NETMSG, "The vault stays sealed while the reserve's defenders still stand.");
+            return true;
+        }
+
+        // Once the reserve is cleared the lockers open freely (no key required) and
+        // the Power Armor reward drops by the gold.
+        if(cleared)
+        {
+            locker.LockerId = 0;
+            locker.LockerComplexity = 0;
+            SpawnReserveReward(map);
+        }
+        // else: opened with a matching key, exactly as before.
+
+        return false; // let the default locker handler open the container
+    }
+
+    return false;
+}

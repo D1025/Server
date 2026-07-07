@@ -73,6 +73,7 @@ import int stringReplaceText(string& s, string@ f, string@ t) from "config_file"
 
 import void RenderThrowing() from "throwing";
 import void RenderHexShoting() from "hexShot";
+import bool IsAirShotWeapon(ItemCl@ item) from "hexShot";
 import void RenderHexThrowing() from "hexThrow";
 
 import void DrawCritterOnHead() from "client_critter_onhead";
@@ -626,6 +627,17 @@ void render_iface(uint layer)
 					MoveHexByDir(splashRadiusVert[10], splashRadiusVert[11], 5, splashRadius);
 
 					DrawHexArea(splashRadiusVert, false, 0x77FF0000);
+				}
+
+				// draw the air-shot aim while holding Ctrl in the weapon cursor
+				// (Ctrl+click fires at the hex): Cascade shades its whole forward
+				// cone, any other burst weapon just greys the single aimed hex
+				if(!AltPressed && cur == CURSOR_USE_WEAPON && CtrlPressed)
+				{
+					if(WeaponHasProtoPerk(item.Proto, WEAPON_PERK_CASCADE))
+						DrawCascadeCone(chosen, item);
+					else if(IsAirShotWeapon(item))
+						DrawAirShotHex(chosen, item);
 				}
 			}
 

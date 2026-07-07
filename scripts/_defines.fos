@@ -381,6 +381,13 @@
 #define WEAPON_PERK_BLUDGEONING                  (8)
 #define WEAPON_PERK_ENHANCED_KNOCKOUT            (9)
 #define WEAPON_PERK_CASCADE                      (10)
+// Cascade forward-cone spread. Angles are degrees each side line is rotated off
+// the aim direction (see engine LineTracer). Shared by the server hit tracing
+// (combat.fos) and the client Ctrl cone highlight (client_drawing.fos) so both
+// draw/hit the same cone. Central line = 0 deg, inner pair = +/-INNER, outer
+// pair = +/-OUTER.
+#define CASCADE_CONE_ANGLE_INNER                 (9)
+#define CASCADE_CONE_ANGLE_OUTER                 (18)
 #define WEAPON_PERK_COMMANDO                     (11)
 #define WEAPON_PERK_RIPPER_SAWING                (12)
 #define WEAPON_PERK_SKILLESS                     (13)
@@ -666,7 +673,7 @@
 #define ST_COMBAT_IMPLANTS_COUNT    (191) // Counter for combat implants
 #define ST_PERSISTENT_DOT           (192) // Persistent damage-over-time pool
 #define ST_PERSISTENT_DOT_LAST_ENEMY_ID (193) // Last critter id that applied persistent damage-over-time
-#define ST_DEPLOYED                 (194) // Deploy state flag (0/1); replicated to other clients (see main.fos SetSendParameter), transient (cleared on init/login)
+#define ST_DEPLOYED                 (194) // Deploy state (0=off, 1=immobile, 2=mobile Powered Bipod - see deploy.fos DEPLOY_STATE_*); replicated to other clients (see main.fos SetSendParameter), transient (cleared on init/login)
 
 /// Skills
 #define SKILL_BEGIN                              (__SkillBegin)
@@ -832,7 +839,7 @@
 #define PE_THIEF                                 (406) // Nolevel
 #define PE_WEAPON_HANDLING                       (407)
 #define PE_VAULT_CITY_TRAINING                   (408) // Not implemented
-#define PE_POWERED_BIPOD                         (409) // Deploy perk: while deployed in power armor you may walk/run, but each move hex costs 1 AP (deploy.fos + engine Act_Move). Reused slot (was unused PE_ALCOHOL_RAISED_HP)
+#define PE_POWERED_BIPOD                         (409) // Deploy perk: while deployed in power armor you may still walk (never run), each move hex costs 1 AP (deploy.fos + engine Act_Move). Reused slot (was unused PE_ALCOHOL_RAISED_HP)
 #define PE_SERVO_GUNNER                          (410) // Deploy perk: in power armor you may fire a deployable weapon without deploying; deploying gives -1 AP per shot. Requires PE_POWERED_BIPOD (main.fos + parameters.dll). Reused slot (was unused PE_ALCOHOL_RAISED_HP_II)
 #define PE_ALCOHOL_LOWERED_HP                    (411) // Not implemented
 #define PE_ALCOHOL_LOWERED_HP_II                 (412) // Not implemented

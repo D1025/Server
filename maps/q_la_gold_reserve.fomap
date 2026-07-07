@@ -4,8 +4,8 @@ MaxHexX              205
 MaxHexY              215
 WorkHexX             101
 WorkHexY             111
-ScriptModule         -
-ScriptFunc           -
+ScriptModule         map_la_gold_reserve
+ScriptFunc           map_init
 NoLogOut             0
 Time                 -1
 DayTime              300  600  1140 1380
