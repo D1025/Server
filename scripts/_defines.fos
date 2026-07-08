@@ -388,6 +388,11 @@
 // pair = +/-OUTER.
 #define CASCADE_CONE_ANGLE_INNER                 (9)
 #define CASCADE_CONE_ANGLE_OUTER                 (18)
+// Cover: a burst fired through a shoot-through-but-block-move obstacle (window,
+// barrel, fence) standing in the far half of the line to the target loses part of
+// its rounds before the hit rolls. See combat.fos::ApplyCoverLoss.
+#define COVER_ROUNDS_LOSS_PCT                    (20)   // % of rounds eaten per obstacle
+#define COVER_MAX                                (1)    // obstacles that count (max ~20%)
 #define WEAPON_PERK_COMMANDO                     (11)
 #define WEAPON_PERK_RIPPER_SAWING                (12)
 #define WEAPON_PERK_SKILLESS                     (13)

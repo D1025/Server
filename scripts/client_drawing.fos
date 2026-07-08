@@ -1085,7 +1085,7 @@ void DrawCascadeCone(CritterCl@ chosen, ItemCl@ weapon)
 	if(wpnMaxDist < 1)
 		return;
 
-	uint16 mhx, mhy;
+	uint16 mhx = 0, mhy = 0;
 	if(!GetMonitorHex(__MouseX, __MouseY, mhx, mhy))
 		return;
 	if(mhx == chosen.HexX && mhy == chosen.HexY)
@@ -1192,7 +1192,7 @@ void DrawAirShotHex(CritterCl@ chosen, ItemCl@ weapon)
 	if(!valid(chosen) || !valid(weapon))
 		return;
 
-	uint16 mhx, mhy;
+	uint16 mhx = 0, mhy = 0;
 	if(!GetMonitorHex(__MouseX, __MouseY, mhx, mhy))
 		return;
 	if(mhx == chosen.HexX && mhy == chosen.HexY)

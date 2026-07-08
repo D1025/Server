@@ -29,6 +29,7 @@
 #include "MsgStr.h"
 #include "combat_h.fos"
 #include "_npc_pids.fos"
+#include "linetracer_h.fos"
 
 
 import void AffectPoison(Critter& cr, int value) from "poison";
@@ -282,7 +283,7 @@ bool PerformSewingFollowUpHit(Critter& attacker, Critter& target, uint16 weaponP
     if(ammoRound > 0 && attacker.Mode[MODE_UNLIMITED_AMMO] == 0 && realWeapon.AmmoCount < ammoRound)
         return false;
 
-    if(GetDistantion(attacker.HexX, attacker.HexY, target.HexX, target.HexY) > _WeaponMaxDist(protoWeapon, use) + attacker.Param[MODE_RANGE_HTH])
+    if(GetDistantion(attacker.HexX, attacker.HexY, target.HexX, target.HexY) > _WeaponMaxDist(protoWeapon, use) + uint(attacker.Param[MODE_RANGE_HTH]))
         return false;
 
     attacker.SetDir(GetDirection(attacker.HexX, attacker.HexY, target.HexX, target.HexY));
@@ -1136,7 +1137,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 if (realTarget.GetMultihex() > 0)
                     toHit += 15;
                 toHit = CLAMP(toHit, 0, 100);
-                CascadeApplyVolley(critsHit, critsHitBullets, len_, realTarget, centralRounds, toHit);
+                uint centralAfter = ApplyCoverLoss(map, hx, hy, realTarget.HexX, realTarget.HexY, centralRounds);
+                CascadeApplyVolley(critsHit, critsHitBullets, len_, realTarget, centralAfter, toHit);
             }
 
             // 2. Area volley -> everyone else caught inside the cone.
@@ -1157,7 +1159,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                     if (c.GetMultihex() > 0)
                         toHit += 15;
                     toHit = CLAMP(toHit, 0, 100);
-                    CascadeApplyVolley(critsHit, critsHitBullets, len_, c, areaRounds, toHit);
+                    uint areaAfter = ApplyCoverLoss(map, hx, hy, c.HexX, c.HexY, areaRounds);
+                    CascadeApplyVolley(critsHit, critsHitBullets, len_, c, areaAfter, toHit);
                 }
             }
         }
@@ -1187,8 +1190,12 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 if (!currentTarget.IsKnockout())
                     bl++;
 
+                // Cover: an obstacle in the far half of the line eats part of the
+                // volley before it can reach this target.
+                uint effRounds = ApplyCoverLoss(map, hx, hy, currentTarget.HexX, currentTarget.HexY, volleyRounds);
+
                 uint curRounds = 0;
-                for (uint k = 0; k < volleyRounds; ++k)
+                for (uint k = 0; k < effRounds; ++k)
                 {
                     if (Random(1, 100) <= toHitLocal)
                         curRounds++;
@@ -3860,6 +3867,60 @@ void CascadeApplyVolley(array<Critter@> &inout critsHit, array<uint> &inout crit
         len_++;
     }
     critsHitBullets[idx] += hits;
+}
+
+// Walks the fire line and counts "cover" hexes: hexes that can be shot through
+// (IsHexRaked) but block movement (!IsHexPassed) -- i.e. windows, barrels, fences.
+// Only hexes in the far half of the line (closer to the target than to the shooter)
+// count, and the target's own hex is ignored. The line is never stopped early;
+// every hex is examined.
+class CoverCounter : ITraceContext
+{
+    uint16 shx, shy, thx, thy;
+    uint   totalDist;
+    uint   count;
+
+    bool Exec(Map& map, uint16 cx, uint16 cy)
+    {
+        if(cx == thx && cy == thy)                        // target hex -> ignore
+            return false;
+        uint d = GetDistantion(shx, shy, cx, cy);
+        if(d * 2 > totalDist                              // far half (nearer target)
+           && map.IsHexRaked(cx, cy)                      // can shoot through
+           && !map.IsHexPassed(cx, cy))                   // but blocks movement
+            count++;
+        return false;                                     // walk the whole line
+    }
+}
+
+// Returns how many of `rounds` still reach the target after cover along the fire
+// line. Each counted obstacle eats COVER_ROUNDS_LOSS_PCT% of the rounds (min 1),
+// capped at COVER_MAX obstacles. No cover -> rounds unchanged.
+uint ApplyCoverLoss(Map@ map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, uint rounds)
+{
+    if(rounds == 0)
+        return 0;
+    uint dist = GetDistantion(hx, hy, tx, ty);
+    if(dist == 0)
+        return rounds;
+
+    CoverCounter ctx;
+    ctx.shx = hx; ctx.shy = hy; ctx.thx = tx; ctx.thy = ty;
+    ctx.totalDist = dist; ctx.count = 0;
+    LineTracerHex(hx, hy, tx, ty, map, dist, ctx);
+
+    uint cov = ctx.count;
+    if(cov > COVER_MAX)
+        cov = COVER_MAX;
+    if(cov == 0)
+        return rounds;
+
+    uint loss = rounds * COVER_ROUNDS_LOSS_PCT * cov / 100;   // floor
+    if(loss < 1)
+        loss = 1;                                            // min 1
+    if(loss > rounds)
+        loss = rounds;
+    return rounds - loss;
 }
 
 // Fire into empty air: no critter in the forward cone. Play the muzzle/fly effect
