@@ -1909,6 +1909,8 @@ string GetArmorUpgradePerkText(int type)
         return "Fast Reload";
     case BONUS_ARMOR_ALL_DR:
         return "Adaptive Plating";
+    case BONUS_ARMOR_AC:
+        return "Deflector Lining";
     default:
         return "";
     }
@@ -1949,6 +1951,7 @@ if(it.GetType() == ITEM_TYPE_ARMOR)
 		case BONUS_ARMOR_HEALING_RATE:
 		case BONUS_ARMOR_FAST_RELOAD:
 		case BONUS_ARMOR_ALL_DR:
+		case BONUS_ARMOR_AC:
 		{
 			string txt = GetArmorUpgradePerkText(type);
 			if(txt.length() > 0)

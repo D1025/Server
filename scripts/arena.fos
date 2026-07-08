@@ -365,6 +365,7 @@ bool ArenaIsArmorBonusType(int bonusType)
     case BONUS_ARMOR_INTELLIGENCE:
     case BONUS_ARMOR_AGILITY:
     case BONUS_ARMOR_LUCK:
+    case BONUS_ARMOR_AC:
         return true;
     default:
         return false;
@@ -397,7 +398,7 @@ int ArenaArmorUpgradeDefaultValue(int perkType)
     case BONUS_ARMOR_FIRE_DR:
     case BONUS_ARMOR_PLASMA_DR:
     case BONUS_ARMOR_EXPLODE_DR:
-        return 3;
+        return 2;
     case BONUS_ARMOR_ALL_DR:
         return 1;
     case BONUS_ARMOR_RAD_RES:
@@ -413,6 +414,7 @@ int ArenaArmorUpgradeDefaultValue(int perkType)
     case BONUS_ARMOR_INTELLIGENCE:
     case BONUS_ARMOR_AGILITY:
     case BONUS_ARMOR_LUCK:
+    case BONUS_ARMOR_AC:
         return 1;
     default:
         return 0;
@@ -447,6 +449,7 @@ uint ArenaArmorUpgradeCost(int perkType)
     case BONUS_ARMOR_RAD_RES:
     case BONUS_ARMOR_POISON_RES:
     case BONUS_ARMOR_ALL_DR:
+    case BONUS_ARMOR_AC:
         return 1;
     case BONUS_ARMOR_STRENGTH:
     case BONUS_ARMOR_PERCEPTION:
@@ -1985,6 +1988,8 @@ uint16 ArenaBlueprintPidByChoice(int choice)
         return PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR;
     case 124:
         return PID_BLUEPRINT_ADV_ARM_PERK_FAST_RELOAD;
+    case 125:
+        return PID_BLUEPRINT_ADV_ARM_PERK_AC;
     default:
         return 0;
     }

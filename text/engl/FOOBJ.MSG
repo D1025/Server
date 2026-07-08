@@ -9937,6 +9937,8 @@ a58ew64v}
 {2558201}{}{Technical sketch for applying the Gain Luck perk to a piece of armor. Use it on an armor item in your inventory.}
 {2558300}{}{Advanced Armor Blueprint: Adaptive Plating}
 {2558301}{}{Technical sketch for applying the Adaptive Plating perk to a piece of armor. Use it on an armor item in your inventory.}
+{2558400}{}{Advanced Armor Blueprint: Deflector Lining}
+{2558401}{}{Technical sketch for applying the Deflector Lining perk to a piece of armor. Use it on an armor item in your inventory.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 {2999100}{}{Laboratory Keycard}

@@ -244,7 +244,7 @@ int _ArmorPerkBlueprintValue(int bonusType)
     case BONUS_ARMOR_FIRE_DR:
     case BONUS_ARMOR_PLASMA_DR:
     case BONUS_ARMOR_EXPLODE_DR:
-        return 3;
+        return 2;
     case BONUS_ARMOR_ALL_DR:
         return 1;
     case BONUS_ARMOR_RAD_RES:
@@ -261,6 +261,7 @@ int _ArmorPerkBlueprintValue(int bonusType)
     case BONUS_ARMOR_AGILITY:
     case BONUS_ARMOR_LUCK:
     case BONUS_ARMOR_FAST_RELOAD:
+    case BONUS_ARMOR_AC:
         return 1;
     default:
         return 0;
@@ -318,6 +319,8 @@ string _ArmorPerkBlueprintName(int bonusType)
         return "Fast Reload";
     case BONUS_ARMOR_ALL_DR:
         return "Adaptive Plating";
+    case BONUS_ARMOR_AC:
+        return "Deflector Lining";
     default:
         return "Unknown";
     }
@@ -532,6 +535,7 @@ void _AbpIntelligenceInit(Item& item, bool firstTime)  { item.SetEvent(ITEM_EVEN
 void _AbpAgilityInit(Item& item, bool firstTime)       { item.SetEvent(ITEM_EVENT_USE, "_AbpAgilityUse"); }
 void _AbpLuckInit(Item& item, bool firstTime)          { item.SetEvent(ITEM_EVENT_USE, "_AbpLuckUse"); }
 void _AbpAllDrInit(Item& item, bool firstTime)         { item.SetEvent(ITEM_EVENT_USE, "_AbpAllDrUse"); }
+void _AbpAcInit(Item& item, bool firstTime)            { item.SetEvent(ITEM_EVENT_USE, "_AbpAcUse"); }
 
 bool _AbpNormalDtUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)      { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_NORMAL_DT); }
 bool _AbpLaserDtUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)       { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_LASER_DT); }
@@ -556,4 +560,5 @@ bool _AbpIntelligenceUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onIt
 bool _AbpAgilityUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)       { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_AGILITY); }
 bool _AbpLuckUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)          { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_LUCK); }
 bool _AbpAllDrUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)         { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_ALL_DR); }
+bool _AbpAcUse(Item& item, Critter& cr, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)            { return _UseArmorPerkBlueprint(item, cr, onCritter, onItem, onScenery, BONUS_ARMOR_AC); }
 #endif // __ITEM_MISC__ //

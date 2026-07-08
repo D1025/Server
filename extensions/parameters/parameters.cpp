@@ -43,6 +43,7 @@
 #define BONUS_ARMOR_HEALING_RATE				(123)
 #define BONUS_ARMOR_ALL_DR						(124)
 #define BONUS_ARMOR_FAST_RELOAD					(125)
+#define BONUS_ARMOR_AC							(126)
 #ifndef UPGRADE_MAX_SLOTS
 #define UPGRADE_MAX_SLOTS                       (7)
 #endif
@@ -499,7 +500,7 @@ int GetRunningAc(CritterMutual& cr, bool head)
 	}
 
 	const Item* armor = head ? GetHeadArmor(cr) : cr.ItemSlotArmor;
-	if(armor->GetId() && armor->IsArmor()) val += armor->Proto->Armor_AC;
+	if(armor->GetId() && armor->IsArmor()) val += armor->Proto->Armor_AC + checkBonus(armor, BONUS_ARMOR_AC);
 
 	return CLAMP(val, 0, 95);
 }

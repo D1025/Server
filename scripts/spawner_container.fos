@@ -168,6 +168,7 @@ class ItemSpawner : IItemSpawner
         AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 1);
         AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 1);
         AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 1);
+        AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AC, 1);
         return this;
     }
 
@@ -1493,6 +1494,7 @@ void ItemSpawnInit() // export
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ENDURANCE, 1).
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 1).
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AC, 1).
 
                     AddItem(PID_BIG_BOOK_OF_SCIENCE, 20).
 					AddItem(PID_FIRST_AID_BOOK, 13).
@@ -1541,6 +1543,7 @@ void ItemSpawnInit() // export
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 2).
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 2).
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 2).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AC, 2).
 
                     AddItem(PID_BIG_BOOK_OF_SCIENCE, 20).
 					AddItem(PID_FIRST_AID_BOOK, 13).
@@ -1638,7 +1641,8 @@ void ItemSpawnInit() // export
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_INTELLIGENCE, 1).
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AGILITY, 1).
                     AddItem(PID_BLUEPRINT_ADV_ARM_PERK_LUCK, 1).
-                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 1)
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR, 1).
+                    AddItem(PID_BLUEPRINT_ADV_ARM_PERK_AC, 1)
 
                     /*AddItem(PID_BIG_BOOK_OF_SCIENCE, 20).
 					AddItem(PID_BARTER_BOOK, 20).

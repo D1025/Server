@@ -1386,6 +1386,7 @@
 #define PID_BLUEPRINT_ADV_ARM_PERK_AGILITY             (25581)
 #define PID_BLUEPRINT_ADV_ARM_PERK_LUCK                (25582)
 #define PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR              (25583)
+#define PID_BLUEPRINT_ADV_ARM_PERK_AC                  (25584)
 
 /*
 PID_BONES

@@ -112,21 +112,22 @@ lang=engl
 16 15080 R _script arena@r_GiveArenaBlueprint 1 108 #
 16 15090 R _script arena@r_GiveArenaBlueprint 1 109 #
 16 15100 R _script arena@r_GiveArenaBlueprint 1 110 #
-16 15120 R _script arena@r_GiveArenaBlueprint 1 112 #
-16 15130 R _script arena@r_GiveArenaBlueprint 1 113 #
-16 15140 R _script arena@r_GiveArenaBlueprint 1 124 #
-16 15150 R _script arena@r_GiveArenaBlueprint 1 114 #
-16 15160 R _script arena@r_GiveArenaBlueprint 1 115 #
-16 15170 R _script arena@r_GiveArenaBlueprint 1 116 #
-16 15180 R _script arena@r_GiveArenaBlueprint 1 117 #
-16 15190 R _script arena@r_GiveArenaBlueprint 1 118 #
-16 15200 R _script arena@r_GiveArenaBlueprint 1 119 #
-16 15210 R _script arena@r_GiveArenaBlueprint 1 120 #
-16 15220 R _script arena@r_GiveArenaBlueprint 1 121 #
-16 15230 R _script arena@r_GiveArenaBlueprint 1 122 #
-16 15240 R _script arena@r_GiveArenaBlueprint 1 123 #
-2 15250 #
-0 15260 @
+16 15110 R _script arena@r_GiveArenaBlueprint 1 112 #
+16 15120 R _script arena@r_GiveArenaBlueprint 1 113 #
+16 15130 R _script arena@r_GiveArenaBlueprint 1 124 #
+16 15140 R _script arena@r_GiveArenaBlueprint 1 114 #
+16 15150 R _script arena@r_GiveArenaBlueprint 1 115 #
+16 15160 R _script arena@r_GiveArenaBlueprint 1 116 #
+16 15170 R _script arena@r_GiveArenaBlueprint 1 117 #
+16 15180 R _script arena@r_GiveArenaBlueprint 1 118 #
+16 15190 R _script arena@r_GiveArenaBlueprint 1 119 #
+16 15200 R _script arena@r_GiveArenaBlueprint 1 120 #
+16 15210 R _script arena@r_GiveArenaBlueprint 1 121 #
+16 15220 R _script arena@r_GiveArenaBlueprint 1 122 #
+16 15230 R _script arena@r_GiveArenaBlueprint 1 123 #
+16 15235 R _script arena@r_GiveArenaBlueprint 1 125 #
+2 15240 #
+0 15250 @
 16 16000 None 0 #
 15 16010 #
 13 16020 #
@@ -254,6 +255,7 @@ lang=engl
 {15210}{}{Agility.}
 {15220}{}{Luck.}
 {15230}{}{All DR.}
+{15235}{}{Armor Class.}
 {15240}{}{Back to the regular gear.}
 {15250}{}{That's all.}
 {16000}{}{Here you go. Need another armor upgrade blueprint?}

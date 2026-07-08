@@ -252,6 +252,7 @@
 #define BONUS_ARMOR_HEALING_RATE				(123)
 #define BONUS_ARMOR_ALL_DR						(124)
 #define BONUS_ARMOR_FAST_RELOAD					(125)
+#define BONUS_ARMOR_AC							(126)
 
 // Grid Types
 #define GRID_EXITGRID                            (1)
@@ -1803,14 +1804,14 @@
 # pragma crdata "Stat 0 199"
 # pragma crdata "Skill 200 217"
 # pragma crdata "TagSkill 226 229"
-# pragma crdata "Timeout 950 986"
+# pragma crdata "Timeout 950 998"
 # pragma crdata "Kill 260 283"
 # pragma crdata "Perk 300 469"
 # pragma crdata "Addiction 470 478"
 # pragma crdata "Karma 480 496"
 # pragma crdata "Damage 500 506"
 # pragma crdata "Mode 510 549"
-# pragma crdata "Trait 550 565"
+# pragma crdata "Trait 550 566"
 # pragma crdata "Profession 570 580"
 # pragma crdata "Achievement 580 587"
 # pragma crdata "Reputation 600 699 +"

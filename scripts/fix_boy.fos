@@ -147,6 +147,8 @@ uint16 ArmorUpgradeBlueprintPidByPerk(int perkType)
         return PID_BLUEPRINT_ADV_ARM_PERK_LUCK;
     case BONUS_ARMOR_ALL_DR:
         return PID_BLUEPRINT_ADV_ARM_PERK_ALL_DR;
+    case BONUS_ARMOR_AC:
+        return PID_BLUEPRINT_ADV_ARM_PERK_AC;
     default:
         return 0;
     }
