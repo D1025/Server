@@ -1980,10 +1980,11 @@ bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetIt
     case SK_TRAPS:     /////////////////////////////////////////////////
     {
         // Power armor: using Traps on someone in a power suit ejects it. "On yourself" arrives with no target.
+        // True NPCs can't be stripped this way - their suits must never end up on the ground.
         Critter@ paTarget = targetCr;
         if(!valid(paTarget))
             @paTarget = cr;
-        if(!valid(targetItem) && IsInPowerArmor(paTarget))
+        if(!valid(targetItem) && IsInPowerArmor(paTarget) && !_IsTrueNpc(paTarget))
         {
             ExitPowerArmor(paTarget);
             return true;
@@ -2623,9 +2624,15 @@ void critter_finish(Critter& cr, bool toDelete)
 		}
     }
     // The corpse is being deleted: drop a kept power suit onto the ground so it isn't destroyed with
-    // the body (players keep the suit on the corpse after death - see critter_dead). Idempotent.
+    // the body (players keep the suit on the corpse after death - see critter_dead). True NPCs never
+    // leave a suit behind - theirs is destroyed instead. Idempotent.
     if(toDelete && IsInPowerArmor(cr))
-        ExitPowerArmor(cr);
+    {
+        if(_IsTrueNpc(cr))
+            DeletePoweredArmors(cr);
+        else
+            ExitPowerArmor(cr);
+    }
 
     if(toDelete && cr.Stat[ST_DEAD_BLOCKER_ID] != 0)
     {
@@ -2836,9 +2843,15 @@ void critter_idle(Critter& cr)
     if(cr.IsDead() && cr.Timeout[TO_REPLICATION] == 0)
     {
         // The dead body is about to respawn/move away: drop a kept power suit where it fell first,
-        // so the pilot leaves it on the ground at the death spot.
+        // so the pilot leaves it on the ground at the death spot. True NPCs never leave a suit
+        // behind - theirs is destroyed instead.
         if(IsInPowerArmor(cr))
-            ExitPowerArmor(cr);
+        {
+            if(_IsTrueNpc(cr))
+                DeletePoweredArmors(cr);
+            else
+                ExitPowerArmor(cr);
+        }
         ReplicateCritter(cr);
     }
 
@@ -2917,6 +2930,22 @@ void death(Critter& cr, int p0, int p1, int p2)
     cr.ToDead(p0, null);
 }
 
+// Destroy every powered armor (worn or carried) on the critter so none of it reaches the loot.
+void DeletePoweredArmors(Critter& cr)
+{
+    Item@ worn = cr.GetItem(0, SLOT_ARMOR);
+    if(IsPoweredArmorItem(worn))
+        DeleteItem(worn);
+
+    array<Item@> inv;
+    cr.GetItems(SLOT_INV, inv);
+    for(uint i = 0, j = inv.length(); i < j; i++)
+    {
+        if(IsPoweredArmorItem(inv[i]))
+            DeleteItem(inv[i]);
+    }
+}
+
 void critter_dead(Critter& cr, Critter@ killer)
 {
     //if(!valid(cr) || !valid(killer))
@@ -2924,10 +2953,17 @@ void critter_dead(Critter& cr, Critter@ killer)
 
 	CleanupDeploy(cr); // Clear deploy flag / movement lock on death
 	// A power-armored PLAYER keeps the suit on the corpse: it drops to the ground only when the body
-	// vanishes (respawn / corpse deletion) or someone uses Traps on the dead body. NPCs still eject
-	// immediately, so their suit stays lootable as before.
-	if(IsInPowerArmor(cr) && !cr.IsPlayer())
-		ExitPowerArmor(cr);
+	// vanishes (respawn / corpse deletion) or someone uses Traps on the dead body. True NPCs never
+	// leave a power suit behind: every powered armor (PA/APA family) they wear or carry is destroyed
+	// on death, so it can't be looted off NPCs anywhere. Followers still eject, so the suit an owner
+	// gave them stays recoverable.
+	if(!cr.IsPlayer())
+	{
+		if(_IsTrueNpc(cr))
+			DeletePoweredArmors(cr);
+		else if(IsInPowerArmor(cr))
+			ExitPowerArmor(cr);
+	}
 	uint crGroup = _GroupIndex(cr);
     Map@ map = cr.GetMap();
     cr.ParamBase[TO_IMMUNITY_TIME] = MAX(uint(cr.Param[TO_IMMUNITY_TIME]), ELAPSED_TIME + SLEEPY_DEATH_IMMUNITY(cr));

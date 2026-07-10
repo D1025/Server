@@ -52,7 +52,35 @@ import void MolotovBlast( Map& map, uint16 hexX, uint16 hexY, uint16 firePid, ui
 #define PERSISTENT_DOT_TICK_PERIOD   (REAL_SECOND(1))
 #define SILENT_HILL_LOW_LIFE_THRESHOLD_PERCENT (35)
 #define SILENT_HILL_PROTO_BONUS_PERCENT        (50)
-	
+
+// In towns, dungeons, base control maps (incl. Hawthorne), event boss arenas and the locations
+// listed below a disarmed NPC keeps its weapon: the crit still knocks it out of the hands, but it
+// lands in the NPC's inventory instead of on the ground, so players can't collect it.
+bool IsNpcWeaponDropDisabled(Map@ map)
+{
+    if(!valid(map))
+        return false;
+    if(IsTown(map) || IsDungeon(map) || IsBaseControl(map))
+        return true;
+
+    switch(map.GetLocation().GetProtoId())
+    {
+    case LOCATION_EventBoss1:
+    case LOCATION_EventBoss2:
+    case LOCATION_EventBoss3:
+    case LOCATION_EventBoss4:
+    case LOCATION_EventBoss5:
+    case LOCATION_EventBoss6:
+    case LOCATION_EventBoss7:
+    case LOCATION_EventBoss8:
+        return true;
+        // Add more location pids here to disable NPC weapon drops in specific places.
+    default:
+        break;
+    }
+    return false;
+}
+
 class AttackStruct
 {
     Critter@   Attacker = null;
@@ -1121,27 +1149,22 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         if (hasCascade)
         {
             // Cascade fires a forward cone. The central stream pours the main 40%
-            // of the burst into the primary target; every OTHER critter standing in
-            // the whole cone area (within +/-CASCADE_CONE_ANGLE_OUTER of the aim
-            // line, not just those on a fire line) is peppered with a ~15% volley.
+            // of the burst into the primary target, resolved like a regular burst
+            // down the fire line (bodies in front of the primary roll first and
+            // stop the bullets they catch). Every OTHER critter in the cone with a
+            // CLEAN line of fire - no other live critter standing between it and
+            // the shooter - takes its own ~15% volley; anyone hidden behind a body
+            // is skipped, because the body in front is a target itself and stops
+            // the spray.
             uint centralRounds = (totalRounds * 40 + 99) / 100;   // ceil(40%)
             uint areaRounds    = (totalRounds * 15 + 50) / 100;   // round(15%) per enemy
 
-            // 1. Central stream -> primary target.
+            // 1. Central stream -> down the fire line to the primary target.
             if (valid(realTarget))
-            {
-                float dist = GetDistantion(hx, hy, realTarget.HexX, realTarget.HexY);
-                float toHit = baseToHit + float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
-                if (realTarget.IsKnockout())
-                    toHit += 40;
-                if (realTarget.GetMultihex() > 0)
-                    toHit += 15;
-                toHit = CLAMP(toHit, 0, 100);
-                uint centralAfter = ApplyCoverLoss(map, hx, hy, realTarget.HexX, realTarget.HexY, centralRounds);
-                CascadeApplyVolley(critsHit, critsHitBullets, len_, realTarget, centralAfter, toHit);
-            }
+                CascadeLineVolley(critsHit, critsHitBullets, len_, map, cr, hx, hy, realTarget, centralRounds,
+                                  baseToHit, distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless);
 
-            // 2. Area volley -> everyone else caught inside the cone.
+            // 2. Area volley -> every cone critter with a clean line of fire.
             if (areaRounds > 0)
             {
                 array<Critter@> coneCrits;
@@ -1149,18 +1172,25 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                 for (uint i = 0; i < coneCrits.length(); i++)
                 {
                     Critter@ c = coneCrits[i];
+                    if (!HasCleanFireLine(map, cr, hx, hy, c))
+                        continue;
+
                     float dist = GetDistantion(hx, hy, c.HexX, c.HexY);
-                    int blockers = int(map.GetCrittersPath(hx, hy, c.HexX, c.HexY, 0.0f, uint(dist), FIND_LIFE, null)) - 1;
-                    if (blockers < 0)
-                        blockers = 0;
-                    float toHit = baseToHit - 10 * blockers + float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
+                    float toHit = baseToHit + float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
                     if (c.IsKnockout())
                         toHit += 40;
                     if (c.GetMultihex() > 0)
                         toHit += 15;
                     toHit = CLAMP(toHit, 0, 100);
+
                     uint areaAfter = ApplyCoverLoss(map, hx, hy, c.HexX, c.HexY, areaRounds);
-                    CascadeApplyVolley(critsHit, critsHitBullets, len_, c, areaAfter, toHit);
+                    uint hits = 0;
+                    for (uint k = 0; k < areaAfter; ++k)
+                    {
+                        if (Random(1, 100) <= toHit)
+                            hits++;
+                    }
+                    CascadeBookHits(critsHit, critsHitBullets, len_, c, hits);
                 }
             }
         }
@@ -2181,7 +2211,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         Item@ realWeaponTarget = _CritGetItemHand(target);
         if(valid(realWeaponTarget))
         {
-            if(realWeaponTarget.IsStackable())
+            if(!target.IsPlayer() && IsNpcWeaponDropDisabled(map))
+            {
+                // Knocked out of the hands, but it stays on the NPC instead of the ground.
+                target.MoveItem(realWeaponTarget.Id, realWeaponTarget.GetCount(), SLOT_INV);
+            }
+            else if(realWeaponTarget.IsStackable())
             {
                 Item@ dropped = map.AddItem(target.HexX, target.HexY, realWeaponTarget.GetProtoId(), 1);
                 if(realWeaponTarget.GetCount() > 1)
@@ -3087,7 +3122,12 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 
     if(FLAG(eff, MF_WEAPON_DROPPED) && valid(realWeapon))
     {
-        if(realWeapon.IsStackable())
+        if(!cr.IsPlayer() && IsNpcWeaponDropDisabled(map))
+        {
+            // Critical failure still disarms the NPC, but the weapon stays in its inventory.
+            cr.MoveItem(realWeapon.Id, realWeapon.GetCount(), SLOT_INV);
+        }
+        else if(realWeapon.IsStackable())
         {
             Item@ dropped = map.AddItem(cr.HexX, cr.HexY, weapon.ProtoId, 1);
             if(realWeapon.GetCount() > 1)
@@ -3819,16 +3859,26 @@ void GetCrittersInCone(Map@ map, Critter@ attacker, uint16 hx, uint16 hy, uint16
         if(dist < 1 || dist > int(maxDist))
             continue;
 
+        // Hex quantization slack: a critter is inside the cone when its HEX
+        // overlaps the drawn sector, not only when its hex CENTER does. Half a
+        // hex seen from the shooter spans ~atan(0.5/dist) degrees, so the edge
+        // test widens by that much (coarse up close, negligible far away) -
+        // otherwise critters standing on the highlighted edge never qualify.
+        float slack = 57.29577951f * atan2(0.5f, float(dist));
         float delta = AngleDiffDeg(HexAngleDeg(hx, hy, c.HexX, c.HexY), aim);
         if(delta < 0.0f)
             delta = -delta;
-        if(delta > halfAngle)
+        if(delta > halfAngle + slack)
             continue;
 
         // Line of fire: trace straight to the critter; it must be reachable
-        // (a wall between the shooter and the critter blocks the spray).
+        // (a wall between the shooter and the critter blocks the spray). The
+        // trace gets a few extra steps of budget: the float line clips hex
+        // corners and can walk through more hexes than the plain hex distance,
+        // so a budget of exactly `dist` used to stop just short of critters on
+        // awkward diagonals and drop them from the cone entirely.
         array<Critter@> path;
-        map.GetCrittersPath(hx, hy, c.HexX, c.HexY, 0.0f, uint(dist), FIND_LIFE_AND_KO, path);
+        map.GetCrittersPath(hx, hy, c.HexX, c.HexY, 0.0f, uint(dist) + 3, FIND_LIFE_AND_KO, path);
         for(uint j = 0; j < path.length(); j++)
         {
             if(path[j].Id == c.Id)
@@ -3840,20 +3890,11 @@ void GetCrittersInCone(Map@ map, Critter@ attacker, uint16 hx, uint16 hy, uint16
     }
 }
 
-// Rolls a volley of `rounds` shots at `toHit`% against a target and books the
-// hits into critsHit/critsHitBullets (merging with any earlier entry).
-void CascadeApplyVolley(array<Critter@> &inout critsHit, array<uint> &inout critsHitBullets, int& len_, Critter@ target, uint rounds, float toHit)
+// Books `hits` bullets on a target into critsHit/critsHitBullets (merging with
+// any earlier entry).
+void CascadeBookHits(array<Critter@> &inout critsHit, array<uint> &inout critsHitBullets, int& len_, Critter@ target, uint hits)
 {
-    if(rounds == 0 || !valid(target))
-        return;
-
-    uint hits = 0;
-    for(uint k = 0; k < rounds; k++)
-    {
-        if(Random(1, 100) <= toHit)
-            hits++;
-    }
-    if(hits == 0)
+    if(hits == 0 || !valid(target))
         return;
 
     int idx = FindCritterInArray(critsHit, target);
@@ -3867,6 +3908,90 @@ void CascadeApplyVolley(array<Critter@> &inout critsHit, array<uint> &inout crit
         len_++;
     }
     critsHitBullets[idx] += hits;
+}
+
+// True when no OTHER live critter stands between the shooter and the target:
+// this is what qualifies a cone critter for the Cascade area volley. KO bodies
+// lying on the ground do not block. The trace gets a few extra steps of budget
+// (the float line clips hex corners and can pass through more hexes than the
+// plain hex distance), so anything it collects past the target is filtered out
+// again by distance.
+bool HasCleanFireLine(Map@ map, Critter@ attacker, uint16 hx, uint16 hy, Critter@ target)
+{
+    uint distTo = GetDistantion(hx, hy, target.HexX, target.HexY);
+    if(distTo < 2)
+        return true;
+
+    array<Critter@> line;
+    map.GetCrittersPath(hx, hy, target.HexX, target.HexY, 0.0f, distTo + 3, FIND_LIFE, line);
+    for(uint i = 0; i < line.length(); i++)
+    {
+        if(line[i].Id == attacker.Id || line[i].Id == target.Id)
+            continue;
+        if(GetDistantion(hx, hy, line[i].HexX, line[i].HexY) < distTo)
+            return false;
+    }
+    return true;
+}
+
+// The Cascade central stream resolved like a regular burst: `rounds` are fired
+// down the line shooter->target and every living/KO critter standing on that
+// line rolls in order, nearest first; each hit stops its bullet, so a primary
+// target hiding behind other bodies only receives the rounds that got past
+// them. Cover (windows, barrels) applies per critter exactly like in the
+// non-Cascade branch.
+void CascadeLineVolley(array<Critter@> &inout critsHit, array<uint> &inout critsHitBullets, int& len_,
+                       Map@ map, Critter@ attacker, uint16 hx, uint16 hy, Critter@ target, uint rounds,
+                       int baseToHit, int distmod2, int accloss, int perception, int sharpshooter, bool eyeDamage, bool perkSkilleless)
+{
+    if(!valid(target))
+        return;
+
+    // Extra trace budget: the float line clips hex corners and can pass through
+    // more hexes than the plain hex distance, so an exact `distTo` budget could
+    // stop just short of the target on awkward diagonals.
+    uint distTo = GetDistantion(hx, hy, target.HexX, target.HexY);
+    array<Critter@> lineCrits;
+    map.GetCrittersPath(hx, hy, target.HexX, target.HexY, 0.0f, distTo + 3, FIND_LIFE_AND_KO, lineCrits);
+    FilterOutAttacker(lineCrits, attacker);
+
+    // The stream ends at its aimed critter: cut everything the surplus budget
+    // collected past it (and make sure the target itself closes the line).
+    int tIdx = FindCritterInArray(lineCrits, target);
+    if(tIdx != -1)
+        lineCrits.resize(tIdx + 1);
+    else
+        lineCrits.insertLast(target);
+
+    uint volleyRounds = rounds;
+    int  bl = 0;
+    for(uint i = 0; i < lineCrits.length() && volleyRounds > 0; i++)
+    {
+        Critter@ cur = lineCrits[i];
+
+        float toHitLocal = baseToHit - 10 * bl;
+        float dist = GetDistantion(hx, hy, cur.HexX, cur.HexY);
+        toHitLocal += float(ComputeRangedAccMod(int(dist), distmod2, accloss, perception, sharpshooter, eyeDamage, perkSkilleless));
+        if(cur.IsKnockout())
+            toHitLocal += 40;
+        if(cur.GetMultihex() > 0)
+            toHitLocal += 15;
+        toHitLocal = CLAMP(toHitLocal, 0, 100);
+
+        if(!cur.IsKnockout())
+            bl++;
+
+        uint effRounds = ApplyCoverLoss(map, hx, hy, cur.HexX, cur.HexY, volleyRounds);
+        uint curHits = 0;
+        for(uint k = 0; k < effRounds; ++k)
+        {
+            if(Random(1, 100) <= toHitLocal)
+                curHits++;
+        }
+
+        CascadeBookHits(critsHit, critsHitBullets, len_, cur, curHits);
+        volleyRounds -= curHits;
+    }
 }
 
 // Walks the fire line and counts "cover" hexes: hexes that can be shot through
