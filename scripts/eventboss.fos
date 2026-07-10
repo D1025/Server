@@ -1035,7 +1035,9 @@ class AtkFragBarrage : IAttack
         {
             uint16 gx = c.HexX, gy = c.HexY;
             map.MoveHexByDir(gx, gy, Random(0, 5), Random(3, 30));
-            map.MoveHexByDir(gx, gy, Random(0, 5), Random(0, 10));   // scatter across the whole area
+            uint scatter = Random(0, 10);                            // scatter across the whole area
+            if(scatter > 0)
+                map.MoveHexByDir(gx, gy, Random(0, 5), scatter);     // engine rejects steps == 0
             map.RunEffect(PID_EXPLODE_FIRE_BIG, gx, gy, 1);
             _EventGrenadeBlast(map, c, gx, gy, 2, dmg);
         }

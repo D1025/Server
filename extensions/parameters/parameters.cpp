@@ -268,11 +268,11 @@ EXPORT int getParam_Strength(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	int armorStr = checkBonus(armor, BONUS_ARMOR_STRENGTH);
 
-	// A worn power armor (ARMOR_PERK_POWERED) overrides Strength: while worn it SETS Strength to 19,
+	// A worn power armor (ARMOR_PERK_POWERED) overrides Strength: while worn it SETS Strength to 13,
 	// plus any strength upgrades installed in the suit's slots. This ignores base Strength and the
 	// perk's own ST_STRENGTH_EXT bonus (kept symmetric in item_perks.fos, masked here).
 	if(getArmorPerkStacks(armor, ARMOR_PERK_POWERED) > 0)
-		return CLAMP(19 + armorStr, 1, 30);
+		return CLAMP(13 + armorStr, 1, 30);
 
 	val += armorStr;
 	return CLAMP(val, 1, 30);
@@ -487,16 +487,16 @@ int GetRunningAc(CritterMutual& cr, bool head)
 
 	const Item* activeWeapon = cr.ItemSlotMain;
 	if(activeWeapon->IsWeapon() && activeWeapon->Proto->WeaponHasPerk(WEAPON_PERK_GUARDED_STANCE))
-		val += 10;
+		val += 5;
 
-	// HtH Evade: +20 AC while fighting hand-to-hand -- bare-handed, or wielding any melee weapon
+	// HtH Evade: +15 AC while fighting hand-to-hand -- bare-handed, or wielding any melee weapon
 	// (SK_CLOSE_COMBAT, which here also covers unarmed weapons like the power fist). Previously this
 	// required a close-combat/throwing weapon in BOTH hands, so in practice only spears qualified.
 	if(cr.Params[PE_HTH_EVADE])
 	{
 		const Item* weapon = cr.ItemSlotMain;
 		if(!weapon->IsWeapon() || weapon->Proto->Weapon_Skill[0] == SK_CLOSE_COMBAT)
-			val += 20;
+			val += 15;
 	}
 
 	const Item* armor = head ? GetHeadArmor(cr) : cr.ItemSlotArmor;

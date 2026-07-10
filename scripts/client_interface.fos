@@ -707,7 +707,7 @@ void render_iface(uint layer)
         }
         if(__ConfigOnHeadAwareness > 0)
             DrawCritterOnHead();
-        
+
         if(IsPossessMode())
             DrawText("Possess mode on", 0, 0, __ScreenWidth, 20, 0, FONT_FALLOUT, FT_CENTERX | FT_CENTERY | FT_BORDERED);
 
@@ -1004,9 +1004,14 @@ void render_iface(uint layer)
 				if(InterfaceShown)
 					DrawIndicators();
 				RenderThrowing();
-        
+
 				TryDrawSmartCursor();
 			} */
+
+        // Alt overlay: hovered item vs equipped comparison. Must come after
+        // GUI_Render(false), which is what draws the inventory/barter/pickup
+        // screens - anything drawn earlier in this layer ends up below them.
+        DrawCompareWindow(sc);
 
         DrawAchievements();         // should be last
     }
@@ -1348,6 +1353,334 @@ string generic_description(int descType, int& offsX, int& offsY)
 #define AltPressed          ( GUI_IsKeyPressed( DIK_LMENU ) || GUI_IsKeyPressed( DIK_RMENU ) )
 #define OnlyAltPressed      ( AltPressed && !CtrlPressed && !ShiftPressed )
 */
+// === Equipped-item comparison (Alt overlay) ================================
+// While Alt is held on an item screen, DrawCompareWindow (render_iface,
+// layer 3) polls GetMonitorContItem() every frame - the item under the cursor
+// with no LMenu delay - and shows a floating side-by-side table: the hovered
+// armor/weapon vs the equipped counterpart (armor/helmet vs the worn piece in
+// the matching slot, weapon vs main hand). Armor rows use the classic
+// "damage type: DT/DR%" layout. Hovered values are green where better, red
+// where worse; the equipped column is gray. All values include upgrade-slot
+// bonuses, mirroring how parameters.dll applies them in combat.
+
+string[] CompareDmgTypeNames = { "Norm", "Las", "Fire", "Plas", "Elec", "EMP", "Expl" };
+
+string        CompareTitle = "";      // hovered item name
+string        CompareSubtitle = "";   // "vs <equipped item name>"
+uint          CompareItemId = 0;      // hovered item id the rows were built for
+array<string> CmpLabel;
+array<bool>   CmpDual;                // true = DT/DR pair row, false = single value
+array<string> CmpHovA;                // hovered value (DT part for dual rows)
+array<int>    CmpHovADir;             // 1 = hovered better, -1 = worse, 0 = equal
+array<string> CmpHovB;                // hovered DR part (dual rows only)
+array<int>    CmpHovBDir;
+array<string> CmpEqA;                 // equipped values (drawn gray)
+array<string> CmpEqB;
+
+void CompareReset()
+{
+    CompareTitle = "";
+    CompareSubtitle = "";
+    CompareItemId = 0;
+    CmpLabel.resize(0);
+    CmpDual.resize(0);
+    CmpHovA.resize(0);
+    CmpHovADir.resize(0);
+    CmpHovB.resize(0);
+    CmpHovBDir.resize(0);
+    CmpEqA.resize(0);
+    CmpEqB.resize(0);
+}
+
+int CompareDir(int hov, int eq, bool lowerIsBetter)
+{
+    if(hov == eq)
+        return 0;
+
+    int dir = -1;
+    if(hov > eq)
+        dir = 1;
+    if(lowerIsBetter)
+        dir = -dir;
+    return dir;
+}
+
+void CmpAddSingle(string label, int hov, int eq, bool lowerIsBetter, string suffix)
+{
+    CmpLabel.insertLast(label);
+    CmpDual.insertLast(false);
+    CmpHovA.insertLast("" + hov + suffix);
+    CmpHovADir.insertLast(CompareDir(hov, eq, lowerIsBetter));
+    CmpHovB.insertLast("");
+    CmpHovBDir.insertLast(0);
+    CmpEqA.insertLast("" + eq + suffix);
+    CmpEqB.insertLast("");
+}
+
+void CmpAddDual(string label, int hovDt, int eqDt, int hovDr, int eqDr)
+{
+    CmpLabel.insertLast(label);
+    CmpDual.insertLast(true);
+    CmpHovA.insertLast("" + hovDt);
+    CmpHovADir.insertLast(CompareDir(hovDt, eqDt, false));
+    CmpHovB.insertLast("" + hovDr + "%");
+    CmpHovBDir.insertLast(CompareDir(hovDr, eqDr, false));
+    CmpEqA.insertLast("" + eqDt);
+    CmpEqB.insertLast("" + eqDr + "%");
+}
+
+int CompareArmorDt(ItemCl@ it, uint typeIndex)
+{
+    switch(typeIndex)
+    {
+    case 0:
+        return it.Proto.Armor_DTNormal + UpgradeBonusValue(it, BONUS_ARMOR_NORMAL_DT);
+    case 1:
+        return it.Proto.Armor_DTLaser + UpgradeBonusValue(it, BONUS_ARMOR_LASER_DT);
+    case 2:
+        return it.Proto.Armor_DTFire + UpgradeBonusValue(it, BONUS_ARMOR_FIRE_DT);
+    case 3:
+        return it.Proto.Armor_DTPlasma + UpgradeBonusValue(it, BONUS_ARMOR_PLASMA_DT);
+    case 4:
+        return it.Proto.Armor_DTElectr;
+    case 5:
+        return it.Proto.Armor_DTEmp;
+    case 6:
+        return it.Proto.Armor_DTExplode + UpgradeBonusValue(it, BONUS_ARMOR_EXPLODE_DT);
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+int CompareArmorDr(ItemCl@ it, uint typeIndex)
+{
+    // Adaptive Plating (ALL_DR) counts only for the five upgradeable types,
+    // same as GetArmoredDR in parameters.cpp.
+    int allDr = UpgradeBonusValue(it, BONUS_ARMOR_ALL_DR);
+    switch(typeIndex)
+    {
+    case 0:
+        return it.Proto.Armor_DRNormal + UpgradeBonusValue(it, BONUS_ARMOR_NORMAL_DR) + allDr;
+    case 1:
+        return it.Proto.Armor_DRLaser + UpgradeBonusValue(it, BONUS_ARMOR_LASER_DR) + allDr;
+    case 2:
+        return it.Proto.Armor_DRFire + UpgradeBonusValue(it, BONUS_ARMOR_FIRE_DR) + allDr;
+    case 3:
+        return it.Proto.Armor_DRPlasma + UpgradeBonusValue(it, BONUS_ARMOR_PLASMA_DR) + allDr;
+    case 4:
+        return it.Proto.Armor_DRElectr;
+    case 5:
+        return it.Proto.Armor_DREmp;
+    case 6:
+        return it.Proto.Armor_DRExplode + UpgradeBonusValue(it, BONUS_ARMOR_EXPLODE_DR) + allDr;
+    default:
+        return 0;
+    }
+
+    return 0;
+}
+
+void CollectArmorCompare(ItemCl@ item, CritterCl@ chosen)
+{
+    if(!valid(item) || !valid(chosen))
+        return;
+
+    uint16 pid = item.GetProtoId();
+    bool   isHelmet = UpgradeProtoIsHelmet(item.Proto) || (pid >= 719 && pid <= 749);
+
+    ItemCl@ equipped;
+    if(isHelmet)
+        @equipped = chosen.GetItem(0, SLOT_HEAD);
+    else
+        @equipped = chosen.GetItem(0, SLOT_ARMOR);
+
+    if(!valid(equipped) || equipped.GetType() != ITEM_TYPE_ARMOR || equipped.Id == item.Id)
+        return;
+
+    CompareTitle = GetMsgStr(TEXTMSG_ITEM, STR_ITEM_INFO(item));
+    CompareSubtitle = "vs " + GetMsgStr(TEXTMSG_ITEM, STR_ITEM_INFO(equipped));
+
+    CmpAddSingle("AC",
+                 item.Proto.Armor_AC + UpgradeBonusValue(item, BONUS_ARMOR_AC),
+                 equipped.Proto.Armor_AC + UpgradeBonusValue(equipped, BONUS_ARMOR_AC),
+                 false, "");
+
+    // Crit mods work against the wearer, so a lower value is the better one.
+    CmpAddSingle("Crit ch.", item.Proto.Armor_CMCritChance, equipped.Proto.Armor_CMCritChance, true, "");
+    CmpAddSingle("Crit pw.",
+                 item.Proto.Armor_CMCritPower + UpgradeBonusValue(item, BONUS_ARMOR_CRIT_POWER),
+                 equipped.Proto.Armor_CMCritPower + UpgradeBonusValue(equipped, BONUS_ARMOR_CRIT_POWER),
+                 true, "");
+
+    // Classic armor readout: one "damage type: DT/DR%" row per type.
+    for(uint i = 0; i < CompareDmgTypeNames.length(); i++)
+    {
+        CmpAddDual(CompareDmgTypeNames[i],
+                   CompareArmorDt(item, i), CompareArmorDt(equipped, i),
+                   CompareArmorDr(item, i), CompareArmorDr(equipped, i));
+    }
+}
+
+int CompareWeaponDamage(ItemCl@ it)
+{
+    int dmg = _WeaponDmg(it.Proto, 0);
+    return dmg + dmg * UpgradeWeaponBonus(it, BONUS_WEAPON_DAMAGE) / 100;
+}
+
+int CompareWeaponRange(ItemCl@ it)
+{
+    int base = _WeaponMaxDist(it.Proto, 0);
+    return base + UpgradeWeaponRangeBonus(it, base);
+}
+
+void CollectWeaponCompare(ItemCl@ item, CritterCl@ chosen)
+{
+    if(!valid(item) || !valid(chosen))
+        return;
+
+    ItemCl@ equipped = chosen.GetItem(0, SLOT_HAND1);
+    if(!valid(equipped) || equipped.GetType() != ITEM_TYPE_WEAPON || equipped.Id == item.Id)
+        return;
+
+    CompareTitle = GetMsgStr(TEXTMSG_ITEM, STR_ITEM_INFO(item));
+    CompareSubtitle = "vs " + GetMsgStr(TEXTMSG_ITEM, STR_ITEM_INFO(equipped));
+
+    CmpAddSingle("Damage", CompareWeaponDamage(item), CompareWeaponDamage(equipped), false, "");
+    CmpAddSingle("Range", CompareWeaponRange(item), CompareWeaponRange(equipped), false, "");
+    CmpAddSingle("Accuracy", UpgradeWeaponBonus(item, BONUS_WEAPON_ACCURACY), UpgradeWeaponBonus(equipped, BONUS_WEAPON_ACCURACY), false, "%");
+    CmpAddSingle("Crit pw.", UpgradeWeaponBonus(item, BONUS_WEAPON_CRITICAL_ROLL), UpgradeWeaponBonus(equipped, BONUS_WEAPON_CRITICAL_ROLL), false, "");
+    CmpAddSingle("Max AP", UpgradeWeaponBonus(item, BONUS_WEAPON_MAX_AP), UpgradeWeaponBonus(equipped, BONUS_WEAPON_MAX_AP), false, "");
+    CmpAddSingle("Mag", int(UpgradeWeaponMaxAmmo(item)), int(UpgradeWeaponMaxAmmo(equipped)), false, "");
+}
+
+uint CompareDirColor(int direction)
+{
+    if(direction > 0)
+        return COLOR_RGB(90, 230, 90);
+    if(direction < 0)
+        return COLOR_RGB(235, 90, 90);
+    return COLOR_TEXT;
+}
+
+void DrawCompareWindow(uint activeScreen)
+{
+    if(activeScreen != CLIENT_SCREEN_INVENTORY && activeScreen != CLIENT_SCREEN_BARTER && activeScreen != CLIENT_SCREEN_PICKUP)
+        return;
+    if(!GUI_IsKeyPressed(DIK_LMENU) && !GUI_IsKeyPressed(DIK_RMENU))
+        return;
+
+    // Live refresh: poll the item under the cursor every frame (engine-side
+    // hit test, no LMenu delay) and rebuild the table when it changes.
+    ItemCl@ hovered = GetMonitorContItem();
+    if(!valid(hovered))
+    {
+        CompareReset();
+        return;
+    }
+    if(hovered.Id != CompareItemId)
+    {
+        uint hoveredId = hovered.Id;
+        CompareReset();
+        CompareItemId = hoveredId;
+        if(hovered.GetType() == ITEM_TYPE_ARMOR)
+            CollectArmorCompare(hovered, GetChosen());
+        else if(hovered.GetType() == ITEM_TYPE_WEAPON)
+            CollectWeaponCompare(hovered, GetChosen());
+    }
+
+    if(CompareTitle.length() == 0 || CmpLabel.length() == 0)
+        return;
+
+    const int lineHeight = 12;
+    const int padding = 8;
+
+    // Table columns (relative to the panel): label | hovered | equipped.
+    const int labelX = padding;
+    const int hovX = padding + 46;
+    const int eqX = padding + 46 + 76;
+    const int colWidth = 72;
+    const int dualSlashOffs = 24;
+    const int dualDrOffs = 32;
+
+    uint longest = CompareTitle.length();
+    if(CompareSubtitle.length() > longest)
+        longest = CompareSubtitle.length();
+
+    int w = eqX + colWidth + padding;
+    int wHeader = int(longest) * 6 + padding * 2;
+    if(wHeader > w)
+        w = wHeader;
+    int h = padding * 2 + lineHeight * (3 + int(CmpLabel.length()));
+
+    // Sit above the cursor: the engine draws the LMenu icons (look/use etc.)
+    // at/below the cursor and above this layer, so anything placed there gets
+    // covered by them.
+    int x = __MouseX + 25;
+    int y = __MouseY - h - 8;
+    if(x + w > __ScreenWidth)
+        x = __ScreenWidth - w;
+    if(x < 0)
+        x = 0;
+    if(y < 0)
+        y = __MouseY + 45;   // no room above - drop below, past the LMenu icons
+    if(y + h > __ScreenHeight)
+        y = __ScreenHeight - h;
+
+    int fill = int(0xE8181410);
+    int edge = int(0xFF6A6456);
+
+    int[] fan;
+    fan.insertLast(x);     fan.insertLast(y);     fan.insertLast(fill);
+    fan.insertLast(x + w); fan.insertLast(y);     fan.insertLast(fill);
+    fan.insertLast(x + w); fan.insertLast(y + h); fan.insertLast(fill);
+    fan.insertLast(x);     fan.insertLast(y + h); fan.insertLast(fill);
+    DrawPrimitive(DRAW_PRIMITIVE_TRIANGLEFAN, fan);
+
+    int[] frame;
+    frame.insertLast(x);     frame.insertLast(y);     frame.insertLast(edge);
+    frame.insertLast(x + w); frame.insertLast(y);     frame.insertLast(edge);
+    frame.insertLast(x + w); frame.insertLast(y + h); frame.insertLast(edge);
+    frame.insertLast(x);     frame.insertLast(y + h); frame.insertLast(edge);
+    frame.insertLast(x);     frame.insertLast(y);     frame.insertLast(edge);
+    DrawPrimitive(DRAW_PRIMITIVE_LINESTRIP, frame);
+
+    int textY = y + padding;
+    DrawText(CompareTitle, x + padding, textY, w - 2 * padding, lineHeight, COLOR_SAND, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+    textY += lineHeight;
+    DrawText(CompareSubtitle, x + padding, textY, w - 2 * padding, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+    textY += lineHeight;
+
+    // Column headers.
+    DrawText("this", x + hovX, textY, colWidth, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+    DrawText("worn", x + eqX, textY, colWidth, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+    textY += lineHeight;
+
+    for(uint i = 0; i < CmpLabel.length(); i++)
+    {
+        DrawText(CmpLabel[i], x + labelX, textY, 44, lineHeight, COLOR_TEXT, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+
+        if(CmpDual[i])
+        {
+            DrawText(CmpHovA[i], x + hovX, textY, dualSlashOffs, lineHeight, CompareDirColor(CmpHovADir[i]), FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+            DrawText("/", x + hovX + dualSlashOffs, textY, 8, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+            DrawText(CmpHovB[i], x + hovX + dualDrOffs, textY, colWidth - dualDrOffs, lineHeight, CompareDirColor(CmpHovBDir[i]), FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+
+            DrawText(CmpEqA[i], x + eqX, textY, dualSlashOffs, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+            DrawText("/", x + eqX + dualSlashOffs, textY, 8, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+            DrawText(CmpEqB[i], x + eqX + dualDrOffs, textY, colWidth - dualDrOffs, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+        }
+        else
+        {
+            DrawText(CmpHovA[i], x + hovX, textY, colWidth, lineHeight, CompareDirColor(CmpHovADir[i]), FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+            DrawText(CmpEqA[i], x + eqX, textY, colWidth, lineHeight, COLOR_LGRAY, FONT_FALLOUT, FT_BORDERED | FT_NOBREAK);
+        }
+
+        textY += lineHeight;
+    }
+}
+
 string item_description(ItemCl& item, int lookType)
 {
     CritterCl@ chosen = GetChosen();
@@ -1761,7 +2094,7 @@ string item_description(ItemCl& item, int lookType)
 			
 			// Show bonuses (stack same upgrade types in one line).
 			result += showItemBonusesStacked(item);
-			
+
 			if(item.GetProtoId() == PID_BOOK_OF_ACHIEVEMENT)
 			{
 				if(IsLexem(item, "$writtenby")) result += "\n\nWritten by: " + GetLexem(item, "$writtenby");

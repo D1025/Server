@@ -1,0 +1,461 @@
+//
+// client_arena_upgrades.fos
+//
+// Hinkley gear upgrade editor. The arena outfitter opens this window
+// (arena@r_ConfigureUpgrades -> RunClientScript OpenWindow); every click goes
+// back through arena@unsafe_ArenaLoadout* which validates, updates the stored
+// loadout and re-sends the fresh state, so the server stays authoritative.
+//
+
+#define SKIP_PRAGMAS    // deleteme as soon the pragma bug is fixed
+// Compile with -client switch
+#define __CLIENT
+
+#ifndef __CLIENT_ARENA_UPGRADES__
+# define __CLIENT_ARENA_UPGRADES__
+
+# include "_macros.fos"
+# include "_defines.fos"
+# include "_client_defines.fos"
+# include "client_gui_h.fos"
+# include "_colors.fos"
+
+import string GetWeaponUpgradePerkText(int type) from "client_interface";
+import string GetArmorUpgradePerkText(int type) from "client_interface";
+
+const int ARENA_UPG_MAX_PERK_BUTTONS = 28;
+
+const int ARENA_UPG_PADDING = 10;
+const int ARENA_UPG_COL_WIDTH = 178;     // 119px wm_tab sprite stretched +50%
+const int ARENA_UPG_COL_STEP = 184;
+const int ARENA_UPG_COLUMNS = 3;
+const int ARENA_UPG_BTN_HEIGHT = 30;
+const int ARENA_UPG_LINE_HEIGHT = 18;
+const int ARENA_UPG_TEXT_BORDER = 28;    // ~4 chars of left margin, keeps text off the tab graphic
+const int ARENA_UPG_WIDTH = 2 * ARENA_UPG_PADDING + (ARENA_UPG_COLUMNS - 1) * ARENA_UPG_COL_STEP + ARENA_UPG_COL_WIDTH;
+
+bool ArenaUpgWindowPositioned = false;
+
+// State received from the server (see arena@SendArenaUpgradeState)
+int        ArenaUpgSlotType = 0;
+int        ArenaUpgFreeSlots = 0;
+int        ArenaUpgTotalSlots = 5;
+array<int> ArenaUpgAvailTypes;
+array<int> ArenaUpgAvailCosts;
+array<int> ArenaUpgCurTypes;
+array<int> ArenaUpgCurCosts;
+
+string ArenaUpgPerkName(int type)
+{
+    string name = "";
+    if(ArenaUpgSlotType == 3)
+        name = GetArmorUpgradePerkText(type);
+    else
+        name = GetWeaponUpgradePerkText(type);
+    if(name.length() == 0)
+        name = "Perk #" + type;
+    return name;
+}
+
+string ArenaUpgTargetName(int slotType)
+{
+    switch(slotType)
+    {
+    case 1:
+        return "Weapon (hand 1)";
+    case 2:
+        return "Weapon (hand 2)";
+    case 3:
+        return "Armor";
+    default:
+        return "???";
+    }
+
+    return "???";
+}
+
+ItemCl@ ArenaUpgEquippedItem(int slotType)
+{
+    CritterCl@ chosen = GetChosen();
+    if(!valid(chosen))
+        return null;
+
+    int slot = SLOT_HAND1;
+    if(slotType == 2)
+        slot = SLOT_HAND2;
+    else if(slotType == 3)
+        slot = SLOT_ARMOR;
+
+    ItemCl@ item = chosen.GetItem(0, slot);
+    if(!valid(item))
+        return null;
+
+    if(slotType == 3)
+    {
+        if(item.GetType() != ITEM_TYPE_ARMOR)
+            return null;
+    }
+    else
+    {
+        if(item.GetType() != ITEM_TYPE_WEAPON)
+            return null;
+    }
+    return item;
+}
+
+string ArenaUpgTabName(int slotType)
+{
+    ItemCl@ item = ArenaUpgEquippedItem(slotType);
+    if(valid(item))
+        return GetMsgStr(TEXTMSG_ITEM, STR_ITEM_INFO(item));
+    return ArenaUpgTargetName(slotType);
+}
+
+//
+// Common button: wm_tab sprite stretched to the widened field, single-line
+// caption (FT_NOBREAK) so long names clip instead of spilling onto other rows.
+//
+class CArenaUpgButton : CButton
+{
+    CArenaUpgButton(string caption)
+    {
+        super(0, 0, caption);
+        width = ARENA_UPG_COL_WIDTH;
+        textBorder = ARENA_UPG_TEXT_BORDER;
+    }
+
+    void Draw()
+    {
+        if(mousePressed)
+        {
+            if(spriteDown.Id != 0)
+                DrawSprite(spriteDown.Id, 0, Left(), Top(), Width(), Height(), true, false, 0);
+        }
+        else
+        {
+            if(spriteUp.Id != 0)
+                DrawSprite(spriteUp.Id, 0, Left(), Top(), Width(), Height(), true, false, 0);
+        }
+        int color = active ? 0 : int(0xffaaaaaa);
+        if(caption != "")
+            DrawText(caption, Left() + textBorder, Top(), Width() - textBorder, Height(), color, FONT_FALLOUT, FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+    }
+};
+
+class CArenaUpgTabButton : CArenaUpgButton
+{
+    int slotType;
+
+    CArenaUpgTabButton(int slotType, string caption)
+    {
+        super(caption);
+        this.slotType = slotType;
+    }
+
+    void Click()
+    {
+        if(slotType == ArenaUpgSlotType)
+            return;
+        RunServerScriptUnsafe("arena@unsafe_ArenaLoadoutShow", slotType, 0, 0, null, null);
+    }
+};
+
+class CArenaUpgPerkButton : CArenaUpgButton
+{
+    int perkType;
+
+    CArenaUpgPerkButton()
+    {
+        super("");
+        perkType = 0;
+    }
+
+    void Click()
+    {
+        if(perkType == 0)
+            return;
+        RunServerScriptUnsafe("arena@unsafe_ArenaLoadoutPick", ArenaUpgSlotType, perkType, 0, null, null);
+    }
+};
+
+class CArenaUpgClearButton : CArenaUpgButton
+{
+    CArenaUpgClearButton()
+    {
+        super("Clear all");
+    }
+
+    void Click()
+    {
+        RunServerScriptUnsafe("arena@unsafe_ArenaLoadoutClear", ArenaUpgSlotType, 0, 0, null, null);
+    }
+};
+
+class CArenaUpgCloseButton : CArenaUpgButton
+{
+    CArenaUpgCloseButton()
+    {
+        super("Close");
+    }
+
+    void Click()
+    {
+        parent.HideWindow();
+    }
+};
+
+class CArenaUpgradesWindow : Window
+{
+    // Draws a flat backdrop + border behind the controls (the screen itself has
+    // no surface sprite). Runs before Control::Draw, i.e. under everything.
+    void Draw()
+    {
+        int l = Left();
+        int t = Top();
+        int r = l + Width();
+        int b = t + Height();
+        int fill = int(0xE8181410);
+        int edge = int(0xFF6A6456);
+
+        int[] fan;
+        fan.insertLast(l); fan.insertLast(t); fan.insertLast(fill);
+        fan.insertLast(r); fan.insertLast(t); fan.insertLast(fill);
+        fan.insertLast(r); fan.insertLast(b); fan.insertLast(fill);
+        fan.insertLast(l); fan.insertLast(b); fan.insertLast(fill);
+        DrawPrimitive(DRAW_PRIMITIVE_TRIANGLEFAN, fan);
+
+        int[] frame;
+        frame.insertLast(l); frame.insertLast(t); frame.insertLast(edge);
+        frame.insertLast(r); frame.insertLast(t); frame.insertLast(edge);
+        frame.insertLast(r); frame.insertLast(b); frame.insertLast(edge);
+        frame.insertLast(l); frame.insertLast(b); frame.insertLast(edge);
+        frame.insertLast(l); frame.insertLast(t); frame.insertLast(edge);
+        DrawPrimitive(DRAW_PRIMITIVE_LINESTRIP, frame);
+
+        Control::Draw();
+    }
+
+    CLabel@                       title;
+    CLabel@                       freeLabel;
+    CLabel@                       installedLabel;
+    array<CArenaUpgTabButton@>    tabButtons;
+    array<CArenaUpgPerkButton@>   perkButtons;
+    CArenaUpgClearButton@         clearBtn;
+    CArenaUpgCloseButton@         closeBtn;
+
+    void Init()
+    {
+        @title = CLabel(ARENA_UPG_PADDING, 0, ARENA_UPG_WIDTH - 2 * ARENA_UPG_PADDING, 20, "Gear upgrades");
+        title.SetColor(COLOR_RGB(255, 255, 0));
+        title.SetFormat(FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+        title.Disable();    // labels don't take clicks, so the window can be dragged by them
+        AddControl(@title);
+
+        tabButtons.resize(0);
+        for(int i = 1; i <= 3; i++)
+        {
+            CArenaUpgTabButton@ tab = CArenaUpgTabButton(i, ArenaUpgTargetName(i));
+            tabButtons.insertLast(@tab);
+            AddControl(@tab);
+        }
+
+        @freeLabel = CLabel(ARENA_UPG_PADDING, 0, ARENA_UPG_WIDTH - 2 * ARENA_UPG_PADDING, ARENA_UPG_LINE_HEIGHT, "");
+        freeLabel.SetFormat(FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+        freeLabel.Disable();
+        AddControl(@freeLabel);
+
+        @installedLabel = CLabel(ARENA_UPG_PADDING, 0, ARENA_UPG_WIDTH - 2 * ARENA_UPG_PADDING, ARENA_UPG_LINE_HEIGHT, "");
+        installedLabel.SetColor(COLOR_RGB(60, 248, 0));
+        installedLabel.SetFormat(FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+        installedLabel.Disable();
+        AddControl(@installedLabel);
+
+        perkButtons.resize(0);
+        for(int i = 0; i < ARENA_UPG_MAX_PERK_BUTTONS; i++)
+        {
+            CArenaUpgPerkButton@ button = CArenaUpgPerkButton();
+            perkButtons.insertLast(@button);
+            AddControl(@button);
+        }
+
+        @clearBtn = CArenaUpgClearButton();
+        AddControl(@clearBtn);
+        @closeBtn = CArenaUpgCloseButton();
+        AddControl(@closeBtn);
+
+        Window::Init();
+    }
+
+    void Refresh()
+    {
+        int y = 8;
+
+        title.SetCaption("Gear upgrades - " + ArenaUpgTabName(ArenaUpgSlotType));
+        title.Position(ARENA_UPG_PADDING, y);
+        y += 22;
+
+        // One tab per slot that actually holds an item; empty slots get no tab.
+        // The current slot is always shown (grayed out = you are here).
+        int tabCol = 0;
+        for(uint i = 0; i < tabButtons.length(); i++)
+        {
+            CArenaUpgTabButton@ tab = tabButtons[i];
+            bool equipped = valid(ArenaUpgEquippedItem(tab.slotType));
+            if(!equipped && tab.slotType != ArenaUpgSlotType)
+            {
+                tab.Hide();
+                tab.Disable();
+                continue;
+            }
+
+            tab.SetCaption(ArenaUpgTabName(tab.slotType));
+            tab.Position(ARENA_UPG_PADDING + tabCol * ARENA_UPG_COL_STEP, y);
+            tabCol++;
+            tab.Show();
+            if(tab.slotType == ArenaUpgSlotType)
+                tab.Disable();
+            else
+                tab.Enable();
+        }
+        y += ARENA_UPG_BTN_HEIGHT + 4;
+
+        freeLabel.SetCaption("Free slots: " + ArenaUpgFreeSlots + " / " + ArenaUpgTotalSlots);
+        freeLabel.Position(ARENA_UPG_PADDING, y);
+        y += ARENA_UPG_LINE_HEIGHT + 2;
+
+        string installed = "Installed: ";
+        if(ArenaUpgCurTypes.length() == 0)
+        {
+            installed += "none";
+        }
+        else
+        {
+            for(uint i = 0; i < ArenaUpgCurTypes.length(); i++)
+            {
+                if(i > 0)
+                    installed += ", ";
+                installed += ArenaUpgPerkName(ArenaUpgCurTypes[i]);
+                int cost = (i < ArenaUpgCurCosts.length() ? ArenaUpgCurCosts[i] : 1);
+                if(cost > 1)
+                    installed += " (" + cost + ")";
+            }
+        }
+        installedLabel.SetCaption(installed);
+        installedLabel.Position(ARENA_UPG_PADDING, y);
+        y += ARENA_UPG_LINE_HEIGHT + 6;
+
+        int shown = 0;
+        for(uint i = 0; i < perkButtons.length(); i++)
+        {
+            CArenaUpgPerkButton@ button = perkButtons[i];
+            if(i < ArenaUpgAvailTypes.length())
+            {
+                int cost = (i < ArenaUpgAvailCosts.length() ? ArenaUpgAvailCosts[i] : 1);
+                button.perkType = ArenaUpgAvailTypes[i];
+                // Cost goes first so it survives FT_NOBREAK clipping of long names.
+                button.SetCaption("[" + cost + "] " + ArenaUpgPerkName(button.perkType));
+
+                int col = shown % ARENA_UPG_COLUMNS;
+                int row = shown / ARENA_UPG_COLUMNS;
+                button.Position(ARENA_UPG_PADDING + col * ARENA_UPG_COL_STEP, y + row * ARENA_UPG_BTN_HEIGHT);
+                button.Show();
+                if(cost <= ArenaUpgFreeSlots)
+                    button.Enable();
+                else
+                    button.Disable();
+                shown++;
+            }
+            else
+            {
+                button.perkType = 0;
+                button.Hide();
+                button.Disable();
+            }
+        }
+        y += ((shown + ARENA_UPG_COLUMNS - 1) / ARENA_UPG_COLUMNS) * ARENA_UPG_BTN_HEIGHT + 8;
+
+        clearBtn.Position(ARENA_UPG_PADDING, y);
+        clearBtn.Show();
+        clearBtn.Enable();
+        closeBtn.Position(ARENA_UPG_PADDING + (ARENA_UPG_COLUMNS - 1) * ARENA_UPG_COL_STEP, y);
+        closeBtn.Show();
+        closeBtn.Enable();
+        y += ARENA_UPG_BTN_HEIGHT + 8;
+
+        title.Show();
+        freeLabel.Show();
+        installedLabel.Show();
+
+        screen.Size(ARENA_UPG_WIDTH, y);
+    }
+};
+
+CArenaUpgradesWindow ArenaUpgradesWindow;
+
+void InitArenaUpgradesMenu()
+{
+    GUI_CreateScreen(CLIENT_SCREEN_ARENAUPGRADES, null)
+    .Control(ArenaUpgradesWindow)
+    .SetCallbackShow(ArenaUpgradesWindow)
+    .CanMove(true)
+    .Modal(false)
+    .Multiinstance(false);
+}
+
+//
+// Called by the server (arena@SendArenaUpgradeState).
+// p0 = slot type (1 hand1 weapon, 2 hand2 weapon, 3 armor)
+// p1 = free loadout slots, p2 = total loadout slots
+// p4 = [availCount, (type, cost) * availCount, curCount, (type, cost) * curCount]
+//
+void OpenWindow(int p0, int p1, int p2, string@ + p3, array<int>@ + p4)
+{
+    if(!valid(p4) || p4.length() < 1)
+        return;
+
+    ArenaUpgSlotType = p0;
+    ArenaUpgFreeSlots = p1;
+    ArenaUpgTotalSlots = p2;
+    ArenaUpgAvailTypes.resize(0);
+    ArenaUpgAvailCosts.resize(0);
+    ArenaUpgCurTypes.resize(0);
+    ArenaUpgCurCosts.resize(0);
+
+    uint idx = 0;
+    int  availCount = p4[idx++];
+    for(int i = 0; i < availCount && idx + 1 < p4.length(); i++)
+    {
+        ArenaUpgAvailTypes.insertLast(p4[idx++]);
+        ArenaUpgAvailCosts.insertLast(p4[idx++]);
+    }
+
+    if(idx < p4.length())
+    {
+        int curCount = p4[idx++];
+        for(int i = 0; i < curCount && idx + 1 < p4.length(); i++)
+        {
+            ArenaUpgCurTypes.insertLast(p4[idx++]);
+            ArenaUpgCurCosts.insertLast(p4[idx++]);
+        }
+    }
+
+    ArenaUpgradesWindow.Refresh();
+    ArenaUpgradesWindow.ShowWindow();
+    ArenaUpgradesWindow.Enable();
+
+    if(!ArenaUpgWindowPositioned)
+    {
+        // Center horizontally, sit a bit above the vertical center. Afterwards
+        // the window keeps whatever position the player dragged it to.
+        int x = (__ScreenWidth - ArenaUpgradesWindow.Width()) / 2;
+        int y = (__ScreenHeight - ArenaUpgradesWindow.Height()) * 2 / 5;
+        if(x < 0)
+            x = 0;
+        if(y < 10)
+            y = 10;
+        ArenaUpgradesWindow.Position(x, y);
+        ArenaUpgWindowPositioned = true;
+    }
+}
+
+#endif // __CLIENT_ARENA_UPGRADES__

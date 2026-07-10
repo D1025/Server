@@ -148,6 +148,7 @@
 #define CLIENT_SCREEN_PICTURE              (50) // client_screen_picture.fos
 #define CLIENT_SCREEN_TAG			       (51)
 #define CLIENT_SCREEN_FOLLOWERSMENU2	   (52) // Drug uses for followers
+#define CLIENT_SCREEN_ARENAUPGRADES        (53) // client_arena_upgrades.fos, Hinkley gear upgrade editor
 
 
 #define CLIENT_SCREEN_FIXBOY               (100)

@@ -45,6 +45,8 @@ import void EncountersProcess() from "client_fef";
 
 import void InitFollowersMenu() from "client_followers_menu";
 
+import void InitArenaUpgradesMenu() from "client_arena_upgrades";
+
 import void GMToolsLoadConfig() from "client_gmtools";
 
 import bool GMToolsLoadMenu() from "client_gmtools_menu";
@@ -149,6 +151,7 @@ bool start()
         GMToolsLoadMenu();
     }
     InitFollowersMenu();
+    InitArenaUpgradesMenu();
     InitElevatorScreens();
     #ifdef PLAYERS_3D
     InitRegWindowEx();
