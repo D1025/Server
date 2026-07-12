@@ -377,12 +377,6 @@
 #define GVAR_talchem_rl                         (9211)
 #define LVAR_q_secret_factory                   (9220)
 #define LVAR_q_secret_hospital                  (9221)
-#define LVAR_Book_Science                     (9946)
-#define LVAR_Book_Repair                      (9947)
-#define LVAR_Book_Outdoorsman                 (9949)
-#define LVAR_Book_Barter	                  (9950)
-#define LVAR_Book_FirstAid	                  (9951)
-#define LVAR_Book_SmallGuns	                  (9952)
 #define LVAR_current_followers                  (10010)
 #define LVAR_patrol_currentnode                 (10100)
 #define LVAR_slaverun_status                    (11100)
@@ -2588,38 +2582,6 @@ Gvar controlling the robots in Sierra Army Depot
 **********
    hospital special encounter
 **********
-
-**********
-
-$	9946	1	LVAR_FO2077_Book_Science  0	0	10	0
-************
-0 - ksiazka nie zostala jeszcze przeczytana
-1 - ksiazka zostala przeczytana
-
-Added by Kilgore 28.01.2011
-************
-
-
-$	9947	1	LVAR_FO2077_Book_Repair   0	0	10	0
-************
-************
-
-$	9949	1	LVAR_FO2077_Book_Outdoorsman  0	0	10	0
-************
-************
-
-$	9950	1	LVAR_FO2077_Book_Barter  0	0	10	0
-************
-************
-
-$	9951	1	LVAR_FO2077_Book_FirstAid  0	0	10	0
-************
-************
-
-$	9952	1	LVAR_FO2077_Book_SmallGuns  0	0	10	0
-************
-************
-
 
    $	10010	1	current_followers	0	0	0	4
 **********

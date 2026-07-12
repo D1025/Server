@@ -6673,8 +6673,8 @@ void ExecShowHandsCommand(array<string@>@ command, Critter@ player, Critter@ tar
             case SLOT_ARMOR:
                 slot = "Armor";
                 break;
-            case SLOT_HEAD:
-                slot = "Helmet";
+            case SLOT_UTILITY:
+                slot = "Utility";
                 break;
             case SLOT_TROPHY:
                 slot = "Trophy";
@@ -7728,24 +7728,24 @@ void ExecGetItemsCommand(array<string@>@ command, Critter@ player, Critter@ targ
 
     string[] sinv   = { "-i", "-inv", "-inventory", "-all" };
     string[] sarmor = { "-a", "-armor", "-all" };
-    string[] shead  = { "-h3", "-head", "-helmet", "-all" };
+    string[] sutility = { "-u", "-utility", "-trinket", "-all" };
     string[] shand1 = { "-h1", "-hand1", "-hands", "-all" };
     string[] shand2 = { "-h2", "-hand2", "-hands", "-all" };
 
     bool inv                = (GetIndexOfString(command, sinv) != -1);
     bool armor              = (GetIndexOfString(command, sarmor) != -1);
-    bool head               = (GetIndexOfString(command, shead) != -1);
+    bool utility            = (GetIndexOfString(command, sutility) != -1);
     bool hand1              = (GetIndexOfString(command, shand1) != -1);
     bool hand2              = (GetIndexOfString(command, shand2) != -1);
 
-    if(!inv && !armor && !hand1 && !hand2 && !head)
+    if(!inv && !armor && !hand1 && !hand2 && !utility)
     {
         player.Say(SAY_NETMSG, "Nothing to transfer.");
         return;
     }
 
     #ifdef __DEBUG__
-    player.Say(SAY_NETMSG, "ExecGetItemsCommand:" + (inv ? " inv" : "") + (head ? " helmet" : "") + (armor ? " armor" : "") + (hand1 ? "hand1" : "") + (hand2 ? "hand2" : ""));
+    player.Say(SAY_NETMSG, "ExecGetItemsCommand:" + (inv ? " inv" : "") + (utility ? " utility" : "") + (armor ? " armor" : "") + (hand1 ? "hand1" : "") + (hand2 ? "hand2" : ""));
     #endif
 
     array<Item@> items;
@@ -7755,8 +7755,8 @@ void ExecGetItemsCommand(array<string@>@ command, Critter@ player, Critter@ targ
         count += target.GetItems(SLOT_INV, items);
     if(armor)
         count += target.GetItems(SLOT_ARMOR, items);
-    if(head)
-        count += target.GetItems(SLOT_HEAD, items);
+    if(utility)
+        count += target.GetItems(SLOT_UTILITY, items);
     if(hand1)
         count += target.GetItems(SLOT_HAND1, items);
     if(hand2)
@@ -10230,14 +10230,8 @@ uint e_ApplyDeterioration(array<uint>@ settings)
 	
 	if(settings[0] == 4 || settings[1] == 4)
 	{
-		GetAllItems(PID_POWER_HELMET, items);
-		GetAllItems(PID_APA_HELMET, items);
-		GetAllItems(PID_APA_HELMET_MK2, items);
-		GetAllItems(PID_HARDENED_POWER_HELMET, items);
 		GetAllItems(PID_POWERED_ARMOR, items);
-		GetAllItems(PID_HARDENED_POWER_ARMOR, items);
 		GetAllItems(PID_ADVANCED_POWER_ARMOR, items);
-		GetAllItems(PID_ADVANCED_POWER_ARMOR_MK2, items);
 		GetAllItems(PID_PK12_GAUSS_PISTOL, items);
 		GetAllItems(PID_M72_GAUSS_RIFLE, items);
 		GetAllItems(PID_VINDICATOR_MINIGUN, items);

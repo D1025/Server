@@ -52,43 +52,16 @@
 
 //Heavy
 #define PID_POWERED_ARMOR                   (3)
-#define PID_HARDENED_POWER_ARMOR            (232)
 #define PID_ADVANCED_POWER_ARMOR            (348)
-#define PID_ADVANCED_POWER_ARMOR_MK2        (349)
 
 //Robes
 #define PID_PURPLE_ROBE                     (113)
 #define PID_KEEPBRIGE_ROBE                  (524) // PID_BRIDGEKEEPERS_ROBE
 #define PID_SAND_ROBE                       (750) // Has same stats as PID_PURPLE_ROBE
 
-//Helmets
-#define PID_STRAWHAT                        (719)
-#define PID_ARMIN_CAP                       (720)
-#define PID_POWER_HELMET                    (721)
-#define PID_MOTORCYCLE_HELMET               (722)
-
 //New armors
 #define PID_TIBBETS_PRISON                  (723)
 #define PID_VAULT_SUIT2                     (724)
-
-//More helmets
-#define PID_COMBAT_HELMET                  (725)
-#define PID_COMBAT_HELMET_MK_II            (726)
-#define PID_BROTHERHOOD_HELMET             (727)
-#define PID_LEATHER_JACKET_HELMET          (728)
-#define PID_COMBAT_LEATHER_JACKET_HELMET   (729)
-#define PID_LEATHER_ARMOR_HELMET           (730)
-#define PID_LEATHER_ARMOR_HELMET_MK2       (731)
-#define PID_METAL_HELMET                   (732)
-#define PID_METAL_HELMET_MK2               (733)
-#define PID_TESLA_HELMET                   (734)
-#define PID_APA_HELMET                     (735)
-#define PID_APA_HELMET_MK2                 (736)
-#define PID_HARDENED_POWER_HELMET          (737)
-#define PID_ENCLAVE_COMBAT_HELMET          (738)
-#define PID_ENCLAVE_COMBAT_HELMET_MK2      (739)
-#define PID_DESERT_COMBAT_HELMET           (740)
-#define PID_NCR_HELMET                     (741)
 
 //TODO:
 //#define PID_BLACK_ROBE                      (xxx)
@@ -96,7 +69,7 @@
 //#define PID_RED_трико                       (xxx)
 //#define PID_GREEN_трико                     (xxx)
 
-// PID 719 to 749 are free for helmet objects!
+// PID 721 to 749 are retired and available for future content.
 // Use PID 750 to 799 for new armor objects!
 // Check FOOBJ.MSG to see what's still free.
 
@@ -106,15 +79,12 @@
 
 //Small Guns
     //Pistols
-#define PID_ZIP_GUN                         (300)
 #define PID_9MM_MAUSER                      (122)
 #define PID_10MM_PISTOL                     (8)
 #define PID_14MM_PISTOL                     (22)
 #define PID_DESERT_EAGLE                    (18)
-#define PID_DESERT_EAGLE_EXT_MAG            (404)
 #define PID_223_PISTOL                      (241)
 #define PID_44_MAGNUM_REVOLVER              (313)
-#define PID_44_MAGNUM_SPEEDLOADER           (398)
 #define PID_NEEDLER_PISTOL                  (388)  // HN Needler
 #define PID_PK12_GAUSS_PISTOL               (394)  // 2mm EC
 #define PID_GRENADE_PISTOL					(619)
@@ -124,10 +94,8 @@
 #define PID_SCOPED_HUNTING_RIFLE            (287)
 #define PID_SPRINGER_RIFLE                  (299)
 #define PID_ASSAULT_RIFLE                   (23)
-#define PID_ASSAULT_RIFLE_EXT_MAG           (405)
 #define PID_SNIPER_RIFLE                    (143)
 #define PID_FN_FAL                          (351)
-#define PID_FN_FAL_NIGHT_SCOPE              (403)
 #define PID_FN_FAL_HPFA                     (500)
 #define PID_RED_RYDER_BB_GUN                (161)
 #define PID_RED_RYDER_LE_BB_GUN             (162)
@@ -168,13 +136,11 @@
 #define PID_MAGNETO_LASER_PISTOL            (402)
 #define PID_SOLAR_SCORCHER                  (390)  // No ammo
 #define PID_LASER_RIFLE                     (118)
-#define PID_LASER_RIFLE_EXT_CAP             (401)
 #define PID_GATLING_LASER                   (28)
 #define PID_ALIEN_LASER_PISTOL              (120)
 #define PID_DUAL_LASER_CANNON               (9659) // Vault City Gun Turret
     //Plasma
 #define PID_PLASMA_PISTOL                   (24)
-#define PID_PLASMA_PISTOL_EXT_CART          (406)
 #define PID_PLASMA_RIFLE                    (15)
 #define PID_TURBO_PLASMA_RIFLE              (233)
 #define PID_PLASMA_GATLING                  (25452)
@@ -607,6 +573,16 @@
 #define PID_DERMAL_PIP_BOY_DISK             (499)
 #define PID_PIP_BOY_MEDICAL_ENHANCER        (516)
 
+// SPECIAL bobbleheads
+#define PID_BOBBLEHEAD_STRENGTH              (25585)
+#define PID_BOBBLEHEAD_PERCEPTION            (25586)
+#define PID_BOBBLEHEAD_ENDURANCE             (25587)
+#define PID_BOBBLEHEAD_CHARISMA              (25588)
+#define PID_BOBBLEHEAD_INTELLIGENCE          (25589)
+#define PID_BOBBLEHEAD_AGILITY               (25590)
+#define PID_BOBBLEHEAD_LUCK                  (25591)
+#define PID_RIOT_SHIELD                      (25592)
+
 //Tools
     //Tech
 #define PID_MULTI_TOOL                      (75)  // +25 repair
@@ -633,9 +609,7 @@
 #define PID_GEIGER_COUNTER                  (52)
 #define PID_ACTIVE_GEIGER_COUNTER           (207) //Active
 #define PID_STEALTH_BOY                     (54)
-#define PID_ACTIVE_STEALTH_BOY              (210) //Active
 #define PID_MOTION_SENSOR                   (59)
-#define PID_ACTIVE_MOTION_SENSOR            (208) //Active
 #define PID_WATER_BAG                       (605)
 
 //Books
@@ -719,7 +693,6 @@
 #define PID_VIC_RADIO                       (266)
 #define PID_VIC_WATER_FLASK                 (267)
 #define PID_TROPHY_OF_RECOGNITION           (275)
-#define PID_NEURAL_INTERFACE                (279)
 #define PID_CLIPBOARD                       (301)
 #define PID_DECK_OF_TRAGIC_CARDS            (304) //Play cards
 #define PID_TALISMAN                        (309)
@@ -882,28 +855,13 @@
 #define PID_BLUEPRINT_METAL_ARMOR_MK_III    (9836)
 #define PID_BLUEPRINT_TESLA_ARMOR           (9781)
 #define PID_BLUEPRINT_COMBAT_ARMOR          (9782)
-#define PID_BLUEPRINT_METAL_HELMET_MK2      (9810)
-#define PID_BLUEPRINT_TESLA_HELMET          (9811)
-#define PID_BLUEPRINT_COMBAT_HELMET         (9812)
-#define PID_BLUEPRINT_COMBAT_HELMET_MK_II   (9813)
-#define PID_BLUEPRINT_BROTHERHOOD_HELMET    (9814)
-#define PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET (9815)
-#define PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II (9816)
-#define PID_BLUEPRINT_DESERT_COMBAT_HELMET  (9817)
-#define PID_BLUEPRINT_NCR_HELMET            (9818)
-#define PID_BLUEPRINT_POWER_HELMET          (9819)
-#define PID_BLUEPRINT_HARDENED_POWER_HELMET (9820)
-#define PID_BLUEPRINT_ADVANCED_POWER_HELMET (9821)
-#define PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2 (9822)
 #define PID_BLUEPRINT_COMBAT_ARMOR_MK_II    (9783)
 #define PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR (9784)
 #define PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR  (9785)
 #define PID_BLUEPRINT_DESERT_COMBAT_ARMOR   (9786)
 #define PID_BLUEPRINT_NCR_ARMOR             (9787)
 #define PID_BLUEPRINT_POWERED_ARMOR         (9788)
-#define PID_BLUEPRINT_HARDENED_POWER_ARMOR  (9789)
 #define PID_BLUEPRINT_ADVANCED_POWER_ARMOR  (9823)
-#define PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2 (9824)
 
 // Blueprints, misc, ST_MISC_BLUEPRINTS
 #define PID_BLUEPRINT_SUPER_STIMPAK         (9790)

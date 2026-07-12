@@ -191,18 +191,22 @@ Container_Changeble=1
 
 [Proto]
 ProtoId=90
-Type=8
+Type=5
 PicMap=art\items\backpack.frm
 PicInv=art\inven\pack2c.frm
-Flags=402653726
+Flags=402653214
 DisableEgg=1
-GroundLevel=1
+Stackable=0
+Slot=4
 Weight=2267
+Volume=1
 SoundId=48
 Cost=100
 Material=7
-Container_Volume=4000
-Container_MagicHandsGrnd=1
+LightColor=-16777216
+Utility_Param=11
+Utility_Value=50
+Utility_Flags=8
 
 [Proto]
 ProtoId=93

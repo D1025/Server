@@ -73,21 +73,16 @@ string PrepareSound_Pick(Item& item)
         sound = "mtlarmor.acm";
         break;
     case PID_POWERED_ARMOR:
-    case PID_HARDENED_POWER_ARMOR:
     case PID_ADVANCED_POWER_ARMOR:
-    case PID_ADVANCED_POWER_ARMOR_MK2:
         sound = "pwrarmor.acm";
         break;
     // weapons
-    case PID_ZIP_GUN:
     case PID_9MM_MAUSER:
     case PID_10MM_PISTOL:
     case PID_14MM_PISTOL:
     case PID_DESERT_EAGLE:
-    case PID_DESERT_EAGLE_EXT_MAG:
     case PID_223_PISTOL:
     case PID_44_MAGNUM_REVOLVER:
-    case PID_44_MAGNUM_SPEEDLOADER:
     case PID_NEEDLER_PISTOL:
     case PID_PK12_GAUSS_PISTOL:
         sound = "pistol.acm";
@@ -96,10 +91,8 @@ string PrepareSound_Pick(Item& item)
     case PID_SCOPED_HUNTING_RIFLE:
     case PID_SPRINGER_RIFLE:
     case PID_ASSAULT_RIFLE:
-    case PID_ASSAULT_RIFLE_EXT_MAG:
     case PID_SNIPER_RIFLE:
     case PID_FN_FAL:
-    case PID_FN_FAL_NIGHT_SCOPE:
     case PID_FN_FAL_HPFA:
     case PID_RED_RYDER_BB_GUN:
     case PID_RED_RYDER_LE_BB_GUN:

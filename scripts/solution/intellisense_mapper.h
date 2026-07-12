@@ -432,6 +432,9 @@ class ProtoItem
 	const uint16 Misc_ChargeMax;
 	const uint16 Misc_ToolSkillNum;
 	const int Misc_ToolSkillBonus;
+	const int Utility_Param;
+	const int Utility_Value;
+	const uint Utility_Flags;
 	const uint Armor_CrTypeMale;
 	const uint Armor_CrTypeFemale;
 	const int Armor_AC;

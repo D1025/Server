@@ -89,7 +89,6 @@ class CEncounterObject
     uint                     Ratio;  // szansa crittera na wylosowanie w obrebie grupy np Radscoprion 30%
     bool                     Dead;
     int                      Armor;
-    int                      Helmet;
     int                      OverrideCrtype;
     // Only for item
     uint                     Minimum;
@@ -119,7 +118,6 @@ class CEncounterObject
         NpcRole = 0;
         Dead = false;
         Armor = 0;
-        Helmet = 0;
         OverrideCrtype = 0;
         Minimum = 0;
         Maximum = 0;
@@ -1403,12 +1401,6 @@ void ParseEncounterObject(CEncounterObject@ obj, Map@ map, uint16 posX, uint16 p
             params.insertLast(obj.OverrideCrtype);
         }
 
-        if(obj.Helmet != -1)
-        {
-            params.insertLast(ST_DEFAULT_HELMET_PID);
-            params.insertLast(obj.Helmet);
-        }
-
         if(teamId < 200)
             @npc = AddNpc(map, obj.Pid, posX, posY, reversDir, params, obj.Dialog, obj.Script, aiPack, obj.Bag, teamId + (TEAM_Mob0 - TEAM_Mob0_Worldmap), false /*isMob*/, level);
         else
@@ -1435,7 +1427,7 @@ void ParseEncounterObject(CEncounterObject@ obj, Map@ map, uint16 posX, uint16 p
 		// najpierw hi-tech
         if(valid(armor) && armor.IsDeteriorable() && !armor.IsStackable() && (armor.Proto.ProtoId == PID_COMBAT_ARMOR_MK_II || armor.Proto.ProtoId == PID_NCR_ARMOR 
 		|| armor.Proto.ProtoId == PID_BROTHERHOOD_COMBAT_ARMOR || armor.Proto.ProtoId == PID_ENCLAVE_COMBAT_ARMOR 
-		|| armor.Proto.ProtoId == PID_POWERED_ARMOR || armor.Proto.ProtoId == PID_HARDENED_POWER_ARMOR || armor.Proto.ProtoId == PID_ADVANCED_POWER_ARMOR || armor.Proto.ProtoId == PID_ADVANCED_POWER_ARMOR_MK2))
+		|| armor.Proto.ProtoId == PID_POWERED_ARMOR || armor.Proto.ProtoId == PID_ADVANCED_POWER_ARMOR))
         {
             if(armor.Proto.ProtoId != PID_COMBAT_ARMOR_MK_II)
 				armor.BrokenFlags = BI_ETERNAL;
@@ -1449,8 +1441,7 @@ void ParseEncounterObject(CEncounterObject@ obj, Map@ map, uint16 posX, uint16 p
 		// typowe armory
 		if(valid(armor) && armor.IsDeteriorable() && !armor.IsStackable() && armor.Proto.ProtoId != PID_COMBAT_ARMOR_MK_II && armor.Proto.ProtoId != PID_NCR_ARMOR 
 		&& armor.Proto.ProtoId != PID_BROTHERHOOD_COMBAT_ARMOR && armor.Proto.ProtoId != PID_ENCLAVE_COMBAT_ARMOR 
-		&& armor.Proto.ProtoId != PID_POWERED_ARMOR && armor.Proto.ProtoId != PID_HARDENED_POWER_ARMOR 
-		&& armor.Proto.ProtoId != PID_ADVANCED_POWER_ARMOR && armor.Proto.ProtoId != PID_ADVANCED_POWER_ARMOR_MK2)
+		&& armor.Proto.ProtoId != PID_POWERED_ARMOR && armor.Proto.ProtoId != PID_ADVANCED_POWER_ARMOR)
         {
             SetMinWear(armor, Random(MAX(0, (MAX_BROKENS - 60) - (7 * npc.Stat[ST_LEVEL]) / 3), (MAX_BROKENS - 40)));
             // add some deterioration: 50-90%
@@ -1459,35 +1450,6 @@ void ParseEncounterObject(CEncounterObject@ obj, Map@ map, uint16 posX, uint16 p
             SetWear(armor, toWear);
         }
 		
-        @armor = npc.GetItem(0, SLOT_HEAD);
-        
-		// helmety hi-tech
-		if(valid(armor) && armor.IsDeteriorable() && !armor.IsStackable() && (armor.Proto.ProtoId == PID_COMBAT_HELMET_MK_II || armor.Proto.ProtoId == PID_NCR_HELMET 
-		|| armor.Proto.ProtoId == PID_BROTHERHOOD_HELMET || armor.Proto.ProtoId == PID_ENCLAVE_COMBAT_HELMET || armor.Proto.ProtoId == PID_ENCLAVE_COMBAT_HELMET_MK2 
-		|| armor.Proto.ProtoId == PID_POWER_HELMET || armor.Proto.ProtoId == PID_HARDENED_POWER_HELMET 
-		|| armor.Proto.ProtoId == PID_APA_HELMET || armor.Proto.ProtoId == PID_APA_HELMET_MK2))
-		{
-			if(armor.Proto.ProtoId != PID_COMBAT_HELMET_MK_II)
-				armor.BrokenFlags = BI_ETERNAL;
-			// gowniana kondycja max to 15-25%
-			SetMinWear(armor, Random(75, 85));
-            // 5-25%
-			SetWear(armor, Random(75, 95));
-			armor.Cost = Random(200, 500);
-        }
-		// typowe helmety
-		if(valid(armor) && armor.IsDeteriorable() && !armor.IsStackable() && armor.Proto.ProtoId != PID_COMBAT_HELMET_MK_II && armor.Proto.ProtoId != PID_NCR_HELMET 
-		&& armor.Proto.ProtoId != PID_BROTHERHOOD_HELMET && armor.Proto.ProtoId != PID_ENCLAVE_COMBAT_HELMET && armor.Proto.ProtoId != PID_ENCLAVE_COMBAT_HELMET_MK2 
-		&& armor.Proto.ProtoId != PID_POWER_HELMET && armor.Proto.ProtoId != PID_HARDENED_POWER_HELMET 
-		&& armor.Proto.ProtoId != PID_APA_HELMET && armor.Proto.ProtoId != PID_APA_HELMET_MK2)
-        {
-            SetMinWear(armor, Random(MAX(0, (MAX_BROKENS - 60) - (7 * npc.Stat[ST_LEVEL]) / 3), (MAX_BROKENS - 40)));
-            // add some deterioration: 50-90%
-            int toWear = Random(armor.BrokenCount, 90);
-            toWear -= npc.Stat[ST_LEVEL] * 2 / 3;
-            SetWear(armor, toWear);
-        }
-
         if(obj.Childs.length() > 0)
         {
             for(uint i = 0, j = obj.Childs.length(); i < j; i++)
@@ -1524,8 +1486,7 @@ void ParseEncounterObject(CEncounterObject@ obj, Map@ map, uint16 posX, uint16 p
 						|| item.Proto.ProtoId == PID_PANCOR_JACKHAMMER 
 						|| item.Proto.ProtoId == PID_HK_P90C 
 						|| item.Proto.ProtoId == PID_MINIGUN 
-						|| item.Proto.ProtoId == PID_LIGHT_SUPPORT_WEAPON 
-						|| item.Proto.ProtoId == PID_LASER_RIFLE_EXT_CAP))
+						|| item.Proto.ProtoId == PID_LIGHT_SUPPORT_WEAPON))
 						{
 						// gowniana kondycja max to 10-40%
 						SetMinWear(item, Random(60, 90));
@@ -1570,7 +1531,6 @@ void ParseEncounterObject(CEncounterObject@ obj, Map@ map, uint16 posX, uint16 p
 						&& item.Proto.ProtoId != PID_HK_P90C 
 						&& item.Proto.ProtoId != PID_MINIGUN 
 						&& item.Proto.ProtoId != PID_LIGHT_SUPPORT_WEAPON 
-						&& item.Proto.ProtoId != PID_LASER_RIFLE_EXT_CAP 
 						&& item.Proto.ProtoId != PID_HK_G11 
 						&& item.Proto.ProtoId != PID_HK_G11E 
 						&& item.Proto.ProtoId != PID_AVENGER_MINIGUN 
@@ -2721,8 +2681,8 @@ void LoadWorldmapGroups(string@ fileName)
 
                 Example string:
                 GROUP_Raiders,1,5,2,3,0,0,1.00,1.00,7,15
-         *,36,63,mob@critter_init,50,0,-1,-1,0|0,122,1,1,1|0,121,10,25,0|0,40,0,1,0|1,PE_ACTION_BOY,327,1,100
-         *,33,63,mob@critter_init,45,0,-1,-1,0|0,7,1,1,1
+         *,36,63,mob@critter_init,50,0,-1,0|0,122,1,1,1|0,121,10,25,0|0,40,0,1,0|1,PE_ACTION_BOY,327,1,100
+         *,33,63,mob@critter_init,45,0,-1,0|0,7,1,1,1
 
          */
 
@@ -2747,7 +2707,6 @@ void LoadWorldmapGroups(string@ fileName)
                 int               dialog = 0;
                 int               ratio = 0;
                 int               armor = 0;
-                int               helmet = 0;
                 int               overridecrtype = 0;
                 StrToInt(param[1], crpid);
                 StrToInt(param[2], dialog);
@@ -2755,12 +2714,10 @@ void LoadWorldmapGroups(string@ fileName)
                 StrToInt(param[4], ratio);
                 string dead = param[5];
                 StrToInt(param[6], armor);
-                StrToInt(param[7], helmet);
-                StrToInt(param[8], overridecrtype);
+                StrToInt(param[7], overridecrtype);
 
                 @cr = group.AddCritter(crpid).SetRatio(ratio).SetDialog(dialog).SetScript(script);
                 cr.Armor = armor;
-                cr.Helmet = helmet;
                 cr.OverrideCrtype = overridecrtype;
                 if(dead == "1")
                     @cr.SetDead(true);

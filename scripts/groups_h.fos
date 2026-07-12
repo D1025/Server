@@ -117,7 +117,6 @@
 // uniforms
 
 #define UNIFORM_NONE                    (0)
-#define UNIFORM_BAD_HELMET              (1)
 #define UNIFORM_BODY_ONLY               (2)
 #define UNIFORM_FULL                    (3)
 

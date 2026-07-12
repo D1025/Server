@@ -7,7 +7,6 @@ lang=engl
 [dialog]
 &
 1 1000 None 0 #
-4 1010 D _script dialog@d_IsWearingScaryHelmet 0  R _script dialog@r_RunAway 2 15 30 #
 3 1020 D _script dialog@d_CheckNight 0  #
 2 1030 @
 2 2000 None 0 @
@@ -19,7 +18,6 @@ lang=engl
 {200}{}{You see a child.}
 {210}{}{You see a kid, dressed in rags. His hungry eyes stare at you all the time.}
 {1000}{}{Predialogue installations}
-{1010}{}{scary helmet}
 {1020}{}{night}
 {1030}{}{Answer text}
 {2000}{}{Spare change?@@What?@@I'm not doin' anythin'!}

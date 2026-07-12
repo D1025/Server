@@ -429,15 +429,14 @@ void _MBFirstFloor(Map& map, bool firstTime)
 		{		
 			switch (Random(1,9))
 			{
-				case 1: 	{ skrytka.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); skrytka.AddItem(PID_BROTHERHOOD_HELMET, 1, 0); break;}
-				case 2: 	{ skrytka.AddItem(PID_COMBAT_ARMOR_MK_II, 1, 0); skrytka.AddItem(PID_COMBAT_HELMET_MK_II, 1, 0); break;}
-				case 3: 	{ skrytka.AddItem(PID_NCR_ARMOR, 1, 0); skrytka.AddItem(PID_NCR_HELMET, 1, 0); break;}
+				case 1: 	{ skrytka.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}
+				case 2: 	{ skrytka.AddItem(PID_COMBAT_ARMOR_MK_II, 1, 0); break;}
+				case 3: 	{ skrytka.AddItem(PID_NCR_ARMOR, 1, 0); break;}
 				case 4: 	{ skrytka.AddItem(PID_NCR_ARMOR, 1, 0); skrytka.AddItem(PID_MIRROR_SHADES, 1, 0); break;}								
-				case 5: 	{ skrytka.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); skrytka.AddItem(PID_ENCLAVE_COMBAT_HELMET, 1, 0); break;}
-				case 6: 	{ skrytka.AddItem(PID_DESERT_COMBAT_ARMOR, 1, 0); skrytka.AddItem(PID_DESERT_COMBAT_HELMET, 1, 0); break;}
+				case 5: 	{ skrytka.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
+				case 6: 	{ skrytka.AddItem(PID_DESERT_COMBAT_ARMOR, 1, 0); break;}
 				case 7: 	{ skrytka.AddItem(PID_KEEPBRIGE_ROBE, 1, 0); break;}
-				case 8: 	{ skrytka.AddItem(PID_POWERED_ARMOR, 1, 0); skrytka.AddItem(PID_POWER_HELMET, 1, 0); break;}
-				case 9: 	{ skrytka.AddItem(PID_HARDENED_POWER_ARMOR, 1, 0); skrytka.AddItem(PID_HARDENED_POWER_HELMET, 1, 0); break;}
+				case 8: 	{ skrytka.AddItem(PID_POWERED_ARMOR, 1, 0); break;}
 				default: break;
 			}
 		}
@@ -450,15 +449,14 @@ void _MBFirstFloor(Map& map, bool firstTime)
 		{		
 			switch (Random(1,9))
 			{
-				case 1: 	{ skrytka2.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); skrytka2.AddItem(PID_BROTHERHOOD_HELMET, 1, 0); break;}
-				case 2: 	{ skrytka2.AddItem(PID_COMBAT_ARMOR_MK_II, 1, 0); skrytka2.AddItem(PID_COMBAT_HELMET_MK_II, 1, 0); break;}
-				case 3: 	{ skrytka2.AddItem(PID_NCR_ARMOR, 1, 0); skrytka2.AddItem(PID_NCR_HELMET, 1, 0); break;}
+				case 1: 	{ skrytka2.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}
+				case 2: 	{ skrytka2.AddItem(PID_COMBAT_ARMOR_MK_II, 1, 0); break;}
+				case 3: 	{ skrytka2.AddItem(PID_NCR_ARMOR, 1, 0); break;}
 				case 4: 	{ skrytka2.AddItem(PID_NCR_ARMOR, 1, 0); skrytka2.AddItem(PID_MIRROR_SHADES, 1, 0); break;}
-				case 5: 	{ skrytka2.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); skrytka2.AddItem(PID_ENCLAVE_COMBAT_HELMET, 1, 0); break;}
-				case 6: 	{ skrytka2.AddItem(PID_DESERT_COMBAT_ARMOR, 1, 0); skrytka2.AddItem(PID_DESERT_COMBAT_HELMET, 1, 0); break;}
+				case 5: 	{ skrytka2.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
+				case 6: 	{ skrytka2.AddItem(PID_DESERT_COMBAT_ARMOR, 1, 0); break;}
 				case 7: 	{ skrytka2.AddItem(PID_KEEPBRIGE_ROBE, 1, 0); break;}
-				case 8: 	{ skrytka2.AddItem(PID_POWERED_ARMOR, 1, 0); skrytka2.AddItem(PID_POWER_HELMET, 1, 0); break;}
-				case 9: 	{ skrytka2.AddItem(PID_HARDENED_POWER_ARMOR, 1, 0); skrytka2.AddItem(PID_HARDENED_POWER_HELMET, 1, 0); break;}
+				case 8: 	{ skrytka2.AddItem(PID_POWERED_ARMOR, 1, 0); break;}
 				default: break;
 			}
 		}
@@ -644,12 +642,12 @@ void _MBSecondFloor(Map& map, bool firstTime)
 		
 			switch (Random(1,7)) // ToDo: dodac dla tych armorów bonusy unique, superior 
 			{
-				case 1: 	{ SpawnBuffItem(skrytka4, PID_BROTHERHOOD_COMBAT_ARMOR); SpawnBuffItem(skrytka4, PID_BROTHERHOOD_HELMET); break;}
-				case 2: 	{ SpawnBuffItem(skrytka4, PID_COMBAT_ARMOR_MK_II); SpawnBuffItem(skrytka4, PID_COMBAT_HELMET_MK_II); break;}
-				case 3: 	{ SpawnBuffItem(skrytka4, PID_NCR_ARMOR); SpawnBuffItem(skrytka4, PID_NCR_HELMET); break;}
+				case 1: 	{ SpawnBuffItem(skrytka4, PID_BROTHERHOOD_COMBAT_ARMOR); break;}
+				case 2: 	{ SpawnBuffItem(skrytka4, PID_COMBAT_ARMOR_MK_II); break;}
+				case 3: 	{ SpawnBuffItem(skrytka4, PID_NCR_ARMOR); break;}
 				case 4: 	{ SpawnBuffItem(skrytka4, PID_NCR_ARMOR); SpawnBuffItem(skrytka4, PID_MIRROR_SHADES); break;}				
-				case 5: 	{ SpawnBuffItem(skrytka4, PID_ENCLAVE_COMBAT_ARMOR); SpawnBuffItem(skrytka4, PID_ENCLAVE_COMBAT_HELMET); break;}
-				case 6: 	{ SpawnBuffItem(skrytka4, PID_DESERT_COMBAT_ARMOR); SpawnBuffItem(skrytka4, PID_DESERT_COMBAT_HELMET); break;}
+				case 5: 	{ SpawnBuffItem(skrytka4, PID_ENCLAVE_COMBAT_ARMOR); break;}
+				case 6: 	{ SpawnBuffItem(skrytka4, PID_DESERT_COMBAT_ARMOR); break;}
 				case 7: 	{ SpawnBuffItem(skrytka4, PID_KEEPBRIGE_ROBE); break;}
 				default: break;
 			}

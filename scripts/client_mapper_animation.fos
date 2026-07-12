@@ -443,26 +443,15 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
 
     # ifdef PLAYERS_3D
     // You must implement this pids
-    #  define PID_STRAWHAT             uint(-1)      // Head slot
-    #  define PID_ARMIN_CAP            uint(-2)      // Head slot
-    #  define PID_POWER_HELMET         uint(-3)      // Head slot
-    #  define PID_MOTORCYCLE_HELMET    uint(-4)      // Head slot
     #  define PID_TIBBETS_PRISON       uint(-5)      // Armor slot
     #  define PID_VAULT_SUIT           uint(-6)      // Armor slot
 
     // Change values
     uint8   mode = 0;
     uint16  armorPid   = (valid(cr.GetSlotProto(SLOT_ARMOR, mode)) ? cr.GetSlotProto(SLOT_ARMOR, mode).ProtoId : 0);
-    uint16  headPid    = 0;
     uint16  weapPid    = (valid(item) ? item.GetProtoId() : cr.GetSlotProto(SLOT_HAND1, mode).ProtoId);
     uint16  weapExPid  = (valid(cr.GetSlotProto(SLOT_HAND2, mode)) ? cr.GetSlotProto(SLOT_HAND2, mode).ProtoId : 0);
     ItemCl@ armorItem = cr.GetItem(0, SLOT_ARMOR);
-    ItemCl@ headItem  = null;
-
-    #  ifndef PLAYERS_3D_NO_HEAD
-    headPid    = (valid(cr.GetSlotProto(SLOT_HEAD,  mode)) ? cr.GetSlotProto(SLOT_HEAD,  mode).ProtoId : 0);
-    @headItem       = cr.GetItem(0, SLOT_HEAD);
-    #  endif
 
     bool weapBigGun = false;
     if(valid(item))
@@ -486,7 +475,6 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
     int eyeAtr      = 0;
     int shoulderAtr = 0;
     int backAtr     = 0;
-    int backpackAtr = 0;
 
     /*switch(armorPid)
        {
@@ -497,7 +485,6 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
             shoulderAtr = ATTRIBUTE_Shoulderpieces_LeatherOutfit;
             break;
        case PID_POWERED_ARMOR:
-       case PID_HARDENED_POWER_ARMOR:
             bodyAtr     = ATTRIBUTE_Body_PowerArmor;
             handsAtr    = ATTRIBUTE_Hands_PowerArmor;
             feetAtr     = ATTRIBUTE_Feet_PowerArmor;
@@ -528,7 +515,6 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
        case PID_COMBAT_ARMOR_MK_II:
        case PID_BROTHERHOOD_COMBAT_ARMOR:
        case PID_ADVANCED_POWER_ARMOR:
-       case PID_ADVANCED_POWER_ARMOR_MK2:
        case PID_PURPLE_ROBE:
        case PID_KEEPBRIGE_ROBE:
             bodyAtr     = ATTRIBUTE_Body_PrisonSuit;
@@ -549,7 +535,6 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
         break;
 
     case PID_POWERED_ARMOR:
-    case PID_HARDENED_POWER_ARMOR:
         bodyAtr     = ATTRIBUTE_Body_PowerArmor;
         handsAtr    = ATTRIBUTE_Hands_PowerArmor;
         feetAtr     = ATTRIBUTE_Feet_PowerArmor;
@@ -596,7 +581,6 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
         #  endif
         break;
     case PID_ADVANCED_POWER_ARMOR:
-    case PID_ADVANCED_POWER_ARMOR_MK2:
         bodyAtr     = ATTRIBUTE_Body_PowerArmor;
         handsAtr    = ATTRIBUTE_Hands_PowerArmor;
         feetAtr     = ATTRIBUTE_Feet_PowerArmor;
@@ -617,35 +601,6 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
     default:
         break;
     }
-
-    // Head
-    switch(headPid)
-    {
-    case PID_STRAWHAT:
-        headAtr     = ATTRIBUTE_Head_StrawHat;
-        break;
-    case PID_ARMIN_CAP:
-        headAtr     = ATTRIBUTE_Head_ArmingCap;
-        break;
-    case PID_POWER_HELMET:
-        headAtr     = ATTRIBUTE_Head_PowerArmor;
-        break;
-    case PID_MOTORCYCLE_HELMET:
-        headAtr     = (headItem.Val7 != 0 ? headItem.Val7 : ATTRIBUTE_Head_Motorcycle_White);
-        break;
-    default:
-        break;
-    }
-
-    // Backpack
-    if(weapPid   == PID_BAG || weapPid   == PID_BROWN_BAG)
-        backpackAtr = ATTRIBUTE_Backpack_PaLg01;
-    else if(weapPid   == PID_BACKPACK)
-        backpackAtr = ATTRIBUTE_Backpack_PaSm01;
-    else if(weapExPid == PID_BAG || weapExPid == PID_BROWN_BAG)
-        backpackAtr = ATTRIBUTE_Backpack_PaLg01;
-    else if(weapExPid == PID_BACKPACK)
-        backpackAtr = ATTRIBUTE_Backpack_PaSm01;
 
     // Hands
     if(weapPid == PID_POWER_FIST || weapPid == PID_MEGA_POWER_FIST)
@@ -677,7 +632,7 @@ void animation3d_process(bool animateStay, CritterCl& cr, uint anim1, uint anim2
     cr.Anim3dLayer[ANIM3D_LAYER_SHOULDER] = shoulderAtr;
     cr.Anim3dLayer[ANIM3D_LAYER_EYE] = eyeAtr;
     cr.Anim3dLayer[ANIM3D_LAYER_BACK] = backAtr;
-    cr.Anim3dLayer[ANIM3D_LAYER_BACKPACK] = backpackAtr;
+    cr.Anim3dLayer[ANIM3D_LAYER_BACKPACK] = 0;
 
     // Set custom values
     for(uint i = ANIM3D_LAYER_SKIN; i <= ANIM3D_LAYER_BACKPACK; i++)
@@ -695,9 +650,6 @@ int GetHandleValue(uint16 pid)
     int handle = 0;
     switch(pid)
     {
-    case PID_ZIP_GUN:
-        handle = ATTRIBUTE_Handle_Weapon_22Autoloader;
-        break;
     case PID_9MM_MAUSER:
         handle = ATTRIBUTE_Handle_Weapon_9mmAutoloader;
         break;
@@ -710,16 +662,10 @@ int GetHandleValue(uint16 pid)
     case PID_DESERT_EAGLE:
         handle = ATTRIBUTE_Handle_Weapon_45Autoloader;
         break;
-    case PID_DESERT_EAGLE_EXT_MAG:
-        handle = ATTRIBUTE_Handle_Weapon_45Autoloader_GunExtClip;
-        break;
     case PID_223_PISTOL:
         handle = ATTRIBUTE_Handle_Weapon_223Autoloader;
         break;
     case PID_44_MAGNUM_REVOLVER:
-        handle = ATTRIBUTE_Handle_Weapon_44Revolver;
-        break;
-    case PID_44_MAGNUM_SPEEDLOADER:
         handle = ATTRIBUTE_Handle_Weapon_44Revolver;
         break;
     case PID_NEEDLER_PISTOL:
@@ -740,16 +686,10 @@ int GetHandleValue(uint16 pid)
     case PID_ASSAULT_RIFLE:
         handle = ATTRIBUTE_Handle_Weapon_SawedOffShotgun;
         break;
-    case PID_ASSAULT_RIFLE_EXT_MAG:
-        handle = ATTRIBUTE_Handle_Weapon_SawedOffShotgun;
-        break;
     case PID_SNIPER_RIFLE:
         handle = ATTRIBUTE_Handle_Weapon_SawedOffShotgun;
         break;
     case PID_FN_FAL:
-        handle = ATTRIBUTE_Handle_Weapon_SawedOffShotgun;
-        break;
-    case PID_FN_FAL_NIGHT_SCOPE:
         handle = ATTRIBUTE_Handle_Weapon_SawedOffShotgun;
         break;
     case PID_FN_FAL_HPFA:
@@ -842,9 +782,6 @@ int GetHandleValue(uint16 pid)
     case PID_LASER_RIFLE:
         handle = ATTRIBUTE_Handle_Weapon_LaserArraygun;
         break;
-    case PID_LASER_RIFLE_EXT_CAP:
-        handle = ATTRIBUTE_Handle_Weapon_LaserArraygun;
-        break;
     case PID_GATLING_LASER:
         handle = ATTRIBUTE_Handle_Weapon_223Minigun;
         break;
@@ -852,9 +789,6 @@ int GetHandleValue(uint16 pid)
         handle = ATTRIBUTE_Handle_Weapon_APOLLOLaserPistol;
         break;
     case PID_PLASMA_PISTOL:
-        handle = ATTRIBUTE_Handle_Weapon_LaserPistol;
-        break;
-    case PID_PLASMA_PISTOL_EXT_CART:
         handle = ATTRIBUTE_Handle_Weapon_LaserPistol;
         break;
     case PID_PLASMA_RIFLE:

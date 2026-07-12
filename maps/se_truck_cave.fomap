@@ -8131,11 +8131,6 @@ MapX                 80
 MapY                 55
 
 MapObjType           1
-ProtoId              732
-MapX                 83
-MapY                 53
-
-MapObjType           1
 ProtoId              825
 MapX                 73
 MapY                 56
@@ -8182,5 +8177,4 @@ MapY                 55
 ScriptName           triggers
 FuncName             _Aggravate
 Item_Val2            5000
-
 

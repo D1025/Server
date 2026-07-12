@@ -3903,24 +3903,21 @@ array<int>@ PrecizeBoss(Map& map, Location& location, uint16 CritterPid)
 
 void SetArmor(Critter& mob)
 {
-	uint16 armorpid, helmetpid;
+	uint16 armorpid;
 	
 	//leather jackets
 	if((mob.GetProtoId() >= 30 && mob.GetProtoId() <= 33) || mob.GetProtoId() == 472)
 	{
 		switch(Random(1, 2))
 		{
-			case 1 : armorpid = PID_LEATHER_JACKET; helmetpid = PID_LEATHER_JACKET_HELMET; break;
-			case 2 : armorpid = PID_CURED_LEATHER_ARMOR; helmetpid = PID_COMBAT_LEATHER_JACKET_HELMET; break;
+			case 1 : armorpid = PID_LEATHER_JACKET; break;
+			case 2 : armorpid = PID_CURED_LEATHER_ARMOR; break;
 		}
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//metal armors
@@ -3928,214 +3925,158 @@ void SetArmor(Critter& mob)
 	{
 		switch(Random(1, 3))
 		{
-			case 1 : armorpid = PID_METAL_ARMOR; helmetpid = PID_METAL_HELMET; break;
-			case 2 : armorpid = PID_METAL_ARMOR_MK_II; helmetpid = PID_METAL_HELMET_MK2; break;
-			case 3  :armorpid = PID_TESLA_ARMOR; helmetpid = PID_TESLA_HELMET; break;
+			case 1 : armorpid = PID_METAL_ARMOR; break;
+			case 2 : armorpid = PID_METAL_ARMOR_MK_II; break;
+			case 3  :armorpid = PID_TESLA_ARMOR; break;
 		}
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//leather armors
 	if((mob.GetProtoId() >= 69 && mob.GetProtoId() <= 71) || mob.GetProtoId() == 897)
 	{
 		armorpid = PID_LEATHER_ARMOR;
-		helmetpid = PID_LEATHER_ARMOR_HELMET;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//combat armors
 	if(mob.GetProtoId() >= 134 && mob.GetProtoId() <= 135)
 	{
 		armorpid = PID_COMBAT_ARMOR;
-		helmetpid = PID_COMBAT_HELMET;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//combat armors mk2
 	if(mob.GetProtoId() >= 261 && mob.GetProtoId() <= 262)
 	{
 		armorpid = PID_COMBAT_ARMOR_MK_II;
-		helmetpid = PID_COMBAT_HELMET_MK_II;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//combat armors ncr
 	if(mob.GetProtoId() >= 475 && mob.GetProtoId() <= 476)
 	{
 		armorpid = PID_NCR_ARMOR;
-		helmetpid = PID_NCR_HELMET;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 		
 	//PA
 	if(mob.GetProtoId() == 122)
 	{
-		armorpid = PID_POWERED_ARMOR; helmetpid = PID_POWER_HELMET;
+		armorpid = PID_POWERED_ARMOR;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//HPA
 	if(mob.GetProtoId() == 893)
 	{
-		armorpid = PID_HARDENED_POWER_ARMOR; helmetpid = PID_HARDENED_POWER_HELMET;
+		armorpid = PID_POWERED_ARMOR;
 
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//APA
 	if(mob.GetProtoId() == 250)
 	{
-		switch(Random(1, 2))
-		{
-			case 1 : armorpid = PID_ADVANCED_POWER_ARMOR; helmetpid = PID_APA_HELMET; break;
-			case 2 : armorpid = PID_ADVANCED_POWER_ARMOR_MK2; helmetpid = PID_APA_HELMET_MK2; break;
-		}
+		armorpid = PID_ADVANCED_POWER_ARMOR;
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//brotherhood combat armors
 	if(mob.GetProtoId() >= 886 && mob.GetProtoId() <= 887)
 	{
 		armorpid = PID_BROTHERHOOD_COMBAT_ARMOR;
-		helmetpid = PID_BROTHERHOOD_HELMET;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//enlcave combat armors
 	if(mob.GetProtoId() >= 888 && mob.GetProtoId() <= 889)
 	{
 		armorpid = PID_ENCLAVE_COMBAT_ARMOR;
-		switch(Random(1, 2))
-		{
-			case 1 : helmetpid = PID_ENCLAVE_COMBAT_HELMET; break;
-			case 2 : helmetpid = PID_ENCLAVE_COMBAT_HELMET_MK2; break;
-		}
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//police uniforms replacement
 	if(mob.GetProtoId() >= 894 && mob.GetProtoId() <= 895)
 	{
 		armorpid = PID_CLOTHES_POLICE;
-		helmetpid = PID_COMBAT_HELMET_MK_II;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//leather armor mk2
 	if(mob.GetProtoId() >= 891 && mob.GetProtoId() <= 892)
 	{
 		armorpid = PID_LEATHER_ARMOR_MK_II;
-		helmetpid = PID_LEATHER_ARMOR_HELMET_MK2;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);
 	}
 	
 	//blue jumpsuit
 	if(mob.GetProtoId() >= 898 && mob.GetProtoId() <= 900)
 	{
 		armorpid = PID_VAULT_13_SUIT;
-		// helmetpid = PID_LEATHER_ARMOR_HELMET_MK2;
 		
 		Item@ armor = mob.AddItem(armorpid, 1);
 		mob.MoveItem(armor.Id, armor.GetCount(), SLOT_ARMOR);
 		mob.SetFavoriteItem(SLOT_ARMOR, armor.GetProtoId());
 		AddBonusOrNot(armor);
 		
-		/*Item@ helmet = mob.AddItem(helmetpid, 1);
-		mob.MoveItem(helmet.Id, helmet.GetCount(), SLOT_HEAD);
-		AddBonusOrNot(helmet);*/
 	}
 }
 
@@ -4511,14 +4452,13 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 	{
 		array<uint16> weapons = {
 								//pistols
-								PID_10MM_PISTOL , PID_14MM_PISTOL , PID_9MM_MAUSER , PID_223_PISTOL , PID_ZIP_GUN , 
-								PID_44_MAGNUM_REVOLVER , PID_44_MAGNUM_SPEEDLOADER , PID_NEEDLER_PISTOL , PID_PK12_GAUSS_PISTOL ,
-								PID_DESERT_EAGLE_EXT_MAG , 
+								PID_10MM_PISTOL , PID_14MM_PISTOL , PID_9MM_MAUSER , PID_223_PISTOL ,
+								PID_44_MAGNUM_REVOLVER , PID_NEEDLER_PISTOL , PID_PK12_GAUSS_PISTOL ,
 								//rifles
 								PID_HUNTING_RIFLE , PID_ASSAULT_RIFLE , PID_SNIPER_RIFLE , PID_RED_RYDER_BB_GUN ,
 								PID_RED_RYDER_LE_BB_GUN , PID_JONNY_BB_GUN , PID_SCOPED_HUNTING_RIFLE ,
 								PID_SPRINGER_RIFLE , PID_FN_FAL , PID_INDEPENDENT , PID_M72_GAUSS_RIFLE , 
-								PID_FN_FAL_NIGHT_SCOPE , PID_ASSAULT_RIFLE_EXT_MAG , PID_FN_FAL_HPFA ,
+								PID_FN_FAL_HPFA ,
 								//shotguns
 								PID_SHOTGUN , PID_COMBAT_SHOTGUN , PID_HK_CAWS , PID_PANCOR_JACKHAMMER ,
 								PID_SAWED_OFF_SHOTGUN , PID_SAIGA12 ,
@@ -4531,10 +4471,10 @@ void SetWeapon(Critter& mob, uint8 weaponforgroup)
 								PID_M60 , PID_BOZAR , PID_ROCKET_LAUNCHER , PID_M203 ,
 								//energy
 								PID_LASER_PISTOL , PID_GATLING_LASER , PID_LASER_RIFLE , PID_ALIEN_LASER_PISTOL ,
-								PID_SOLAR_SCORCHER , PID_LASER_RIFLE_EXT_CAP , PID_MAGNETO_LASER_PISTOL ,
+								PID_SOLAR_SCORCHER , PID_MAGNETO_LASER_PISTOL ,
 								// PID_DUAL_LASER_CANNON , // Vault City Gun Turret
 								//plasma
-								PID_PLASMA_RIFLE , PID_PLASMA_PISTOL , PID_TURBO_PLASMA_RIFLE , PID_PLASMA_PISTOL_EXT_CART ,
+								PID_PLASMA_RIFLE , PID_PLASMA_PISTOL , PID_TURBO_PLASMA_RIFLE ,
 								PID_PLASMA_GATLING ,
 								//pulse/electro
 								PID_YK32_PULSE_PISTOL , PID_YK42B_PULSE_RIFLE ,

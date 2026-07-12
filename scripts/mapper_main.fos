@@ -72,7 +72,7 @@ void start()
     SetDefaultCritterParam(8, ST_OVERRIDE_CRTYPE);
     SetDefaultCritterParam(9, ST_LEVEL);
 
-    AllowSlot(4, "Helmet");
+    AllowSlot(SLOT_UTILITY, "Utility");
 
     Message("Welcome to FOnline: New Dawn Mapper. Run #FOAT command to get the newest commands!");
     Message("Maps not created in this mapper must be converted with the #PortMap command.");

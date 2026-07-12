@@ -318,9 +318,7 @@
 
 # Stealth Boy
 {4800}{}{You've used a Stealth Boy. You're more stealthy now.}
-{4801}{}{You've prolonged your increased stealth.}
 {4802}{}{Your Stealth Boy has been used up.}
-{4803}{}{Stealth Boy bug. Please report this.}
 
 # Motion sensor
 {4900}{}{Motion sensor has no charges left.}
@@ -1222,8 +1220,8 @@
 {1000721}{}{The Wasteland Scumbags}
 {1000722}{}{The World Eaters}
 {1000723}{}{The World Eaters}
-{1000724}{}{The Zip Gun Bandits}
-{1000725}{}{The Zip Gun Bandits}
+{1000724}{}{The Pistol Bandits}
+{1000725}{}{The Pistol Bandits}
 {1000726}{}{The Den Headaches}
 {1000727}{}{The Den Headaches}
 {1000728}{}{The Suicidal Assault Team}

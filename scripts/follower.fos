@@ -573,21 +573,6 @@ void r_SetArmor(Critter& player, Critter@ follower, int pid)
     follower.SetFavoriteItem(SLOT_ARMOR, item.GetProtoId());
 }
 
-void r_RemoveHelmet(Critter& player, Critter@ follower)
-{
-    Item@ item = follower.GetItem(0, SLOT_HEAD);
-    if(!valid(item))
-        return;
-    follower.MoveItem(item.Id, item.GetCount(), SLOT_INV);
-}
-
-void r_SetHelmet(Critter& player, Critter@ follower, int pid)
-{
-    r_RemoveHelmet(player, follower);
-    Item@ item = follower.GetItem(pid, -1);
-    follower.MoveItem(item.Id, item.GetCount(), SLOT_HEAD);
-}
-
 void r_SetSpawnPlace(Critter& player, Critter@ follower, int place)
 {
     follower.FollowerVarBase[FV_RESPAWN_PLACE] = place;

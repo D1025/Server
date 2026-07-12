@@ -13,6 +13,7 @@
 # include "logging_h.fos"
 # include "mapdata_h.fos"
 # include "utils_h.fos"
+import void OnUtilitySlotChanged(Critter& cr, Item& item, uint8 fromSlot, uint8 toSlot) from "item_stealth";
 import bool GodOfTheRealm(uint) from "cheats";
 import bool GuardNotLegit(Critter@ cr, Item@ item, bool deleteItem) from "cheats";
 import void GuardMultihexMove(Item& item, uint8 fromSlot, uint8 toSlot) from "multihex";
@@ -110,15 +111,36 @@ bool critter_check_move_item(Critter& cr, Item& item, uint8 toSlot, Item@ itemSw
         return true;
     }
 
-    if(item.GetType() == ITEM_TYPE_CONTAINER && toSlot != SLOT_INV)
+    // Utility is a strictly single-item equipment slot. Reject malformed/future
+    // stackable prototypes here as well as declaring every current utility non-stackable.
+    if(toSlot == SLOT_UTILITY && cr.Trait[TRAIT_ARMOR_TRAINING] != 0)
+        return false;
+
+    // All active utility effects share one cooldown. The currently equipped utility may still be
+    // removed, but no utility can be equipped or swapped in until the cooldown expires.
+    if(toSlot == SLOT_UTILITY && fromSlot != SLOT_UTILITY && cr.Timeout[TO_UTILITY_COOLDOWN] > 0)
+    {
+        #ifdef __SERVER
+        if(cr.IsPlayer())
+            cr.Say(SAY_NETMSG, "You must wait for the utility cooldown to expire.");
+        #endif
+        return false;
+    }
+
+    if(toSlot == SLOT_UTILITY && (item.Proto.Slot != SLOT_UTILITY || item.IsStackable()))
+        return false;
+
+    if(item.GetType() == ITEM_TYPE_CONTAINER && toSlot != SLOT_INV &&
+       !(toSlot == SLOT_UTILITY && item.Proto.Slot == SLOT_UTILITY))
     {
         if(item.Proto.ProtoId != PID_TENT)
             return false;
     }
 
-    // If busy, then allow only hands item swapping
+    // If busy, then allow hands swapping and replacing the equipped utility.
     bool handsSwap = ((fromSlot == SLOT_HAND1 && toSlot == SLOT_HAND2) || (fromSlot == SLOT_HAND2 && toSlot == SLOT_HAND1));
-    if(valid(itemSwap) && !handsSwap)
+    bool utilitySwap = (valid(itemSwap) && toSlot == SLOT_UTILITY && item.Proto.Slot == SLOT_UTILITY && itemSwap.CritSlot == SLOT_UTILITY);
+    if(valid(itemSwap) && !handsSwap && !utilitySwap)
         return false;
 
     // Weapon animation
@@ -155,52 +177,19 @@ bool critter_check_move_item(Critter& cr, Item& item, uint8 toSlot, Item@ itemSw
 			
 		if((armor == PID_NCR_ARMOR 
 		|| armor == PID_BROTHERHOOD_COMBAT_ARMOR || armor == PID_ENCLAVE_COMBAT_ARMOR 
-		|| armor == PID_POWERED_ARMOR || armor == PID_HARDENED_POWER_ARMOR
-		|| armor == PID_ADVANCED_POWER_ARMOR || armor == PID_ADVANCED_POWER_ARMOR_MK2) && item.BrokenFlags == BI_ETERNAL)
+		|| armor == PID_POWERED_ARMOR || armor == PID_ADVANCED_POWER_ARMOR) && item.BrokenFlags == BI_ETERNAL)
 		
 		/* Item@ armor = cr.GetItem(item);
 			
 		if((armor.Proto.ProtoId == PID_NCR_ARMOR 
 		|| armor.Proto.ProtoId == PID_BROTHERHOOD_COMBAT_ARMOR || armor.Proto.ProtoId == PID_ENCLAVE_COMBAT_ARMOR 
-		|| armor.Proto.ProtoId == PID_POWERED_ARMOR || armor.Proto.ProtoId == PID_HARDENED_POWER_ARMOR
-		|| armor.Proto.ProtoId == PID_ADVANCED_POWER_ARMOR || armor.Proto.ProtoId == PID_ADVANCED_POWER_ARMOR_MK2)) // && FLAG(item.BrokenFlags, BI_BROKEN)) */
+		|| armor.Proto.ProtoId == PID_POWERED_ARMOR || armor.Proto.ProtoId == PID_ADVANCED_POWER_ARMOR)) // && FLAG(item.BrokenFlags, BI_BROKEN)) */
 		
 		can = false;
 
         return(can);
     }
 	
-	// Able to wear broken special helmets from encounters.
-	if(toSlot == SLOT_HEAD)
-    {
-        bool can = true;
-		
-		if(item.GetType() != ITEM_TYPE_ARMOR || item.Proto.Slot != SLOT_HEAD)
-        {
-            if(cr.PerkBase[PE_TERMINATOR] == 1337)
-            {
-                #ifdef __SERVER
-                if(GodOfTheRealm(cr.Id))
-                #endif
-                can = true;
-            }
-            else
-                can = false;						
-        }
-			
-		uint armor = item.GetProtoId();
-			
-		if((armor == PID_NCR_HELMET 
-		|| armor == PID_BROTHERHOOD_HELMET || armor == PID_ENCLAVE_COMBAT_HELMET || armor == PID_ENCLAVE_COMBAT_HELMET_MK2 
-		|| armor == PID_POWER_HELMET || armor == PID_HARDENED_POWER_HELMET 
-		|| armor == PID_APA_HELMET || armor == PID_APA_HELMET_MK2) && item.BrokenFlags == BI_ETERNAL)
-		
-		can = false;
-
-        return(can);
-    }
-	
-
     // Custom slot checks
     if(toSlot > SLOT_ARMOR)
     {
@@ -431,14 +420,10 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
             DisableItemPerk(cr, item, ITEM_PERK_ARMOR);
     }
 
-    if(fromSlot == SLOT_HEAD || toSlot == SLOT_HEAD)
-    {
-        // Helmet modifiers
-        if(toSlot == SLOT_HEAD)
-            EnableItemPerk(cr, item, ITEM_PERK_HELMET);
-        else if(fromSlot == SLOT_HEAD)
-            DisableItemPerk(cr, item, ITEM_PERK_HELMET);
-    }
+    #ifdef __SERVER
+    if(fromSlot == SLOT_UTILITY || toSlot == SLOT_UTILITY)
+        OnUtilitySlotChanged(cr, item, fromSlot, toSlot);
+    #endif
 
     if(item.GetType() == ITEM_TYPE_WEAPON && item.Proto.Weapon_NoRunning)
     {
@@ -472,12 +457,6 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
             }
         }
     }
-
-    // Slot modifiers
-// SLOT_PERK_MIRROR_SHADES // +1 charisma
-// SLOT_PERK_COSMETIC_CASE // +1 charisma to female
-// SLOT_PERK_MOTION_SENSOR // +20 outdoorsman
-// SLOT_PERK_STEALTH_BOY   // +20 sneak
 
 	speedboost(cr);
 }
@@ -529,7 +508,8 @@ void speedboost(Critter& cr)
     uint weapon1Pid = valid(weapon1) ? weapon1.ProtoId : 0;
     uint weapon2Pid = valid(weapon2) ? weapon2.ProtoId : 0;
     string state = "" + skill + "|" + penalty + "|" + armorPid + "|" + weapon1Pid + "|" + weapon2Pid + "|" + skillNum1 + "|" + skillNum2 + "|" +
-                   cr.Perk[PE_BONUS_HTH_DAMAGE] + "|" + cr.Perk[PE_BONUS_MOVE] + "|" + cr.Trait[TRAIT_SMALL_FRAME] + "|" + cr.Trait[TRAIT_BRUISER] + "|" + (berserkActive ? 1 : 0) + "|" + cocaineStage;
+                   cr.Perk[PE_BONUS_HTH_DAMAGE] + "|" + cr.Perk[PE_BONUS_MOVE] + "|" + cr.Trait[TRAIT_SMALL_FRAME] + "|" + cr.Trait[TRAIT_BRUISER] + "|" +
+                   cr.Trait[TRAIT_ARMOR_TRAINING] + "|" + (berserkActive ? 1 : 0) + "|" + cocaineStage;
 
     string key = "" + cr.Id;
     string lastState;
@@ -581,20 +561,23 @@ void speedboost(Critter& cr)
 			bonus+=6;												//Additional bonus for Leather Armors 6 pts (3%)
 		}
 	
-		if( (CritterArmor.GetProtoId()== PID_METAL_ARMOR) ||
-			(CritterArmor.GetProtoId()== PID_METAL_ARMOR_MK_II) ||
-			(CritterArmor.GetProtoId()== PID_TESLA_ARMOR))
-		{	
-			penalty+=30;												//Additional penalty for Metal Armors 30 pts (15%)
-		}
-	
-		if( ( CritterArmor.GetProtoId() == PID_POWERED_ARMOR ) ||
-			( CritterArmor.GetProtoId() == PID_HARDENED_POWER_ARMOR ) ||
-			( CritterArmor.GetProtoId() == PID_ADVANCED_POWER_ARMOR ) ||
-			( CritterArmor.GetProtoId() == PID_ADVANCED_POWER_ARMOR_MK2 ))
-		{	
-			penalty+=40;											//Additional penalty for Power Armors 40 pts (20%)
-		}
+
+        // Armor Training removes only penalties originating from worn armor.
+        if(cr.Trait[TRAIT_ARMOR_TRAINING] == 0)
+        {
+		    if( (CritterArmor.GetProtoId()== PID_METAL_ARMOR) ||
+			    (CritterArmor.GetProtoId()== PID_METAL_ARMOR_MK_II) ||
+			    (CritterArmor.GetProtoId()== PID_TESLA_ARMOR))
+		    {
+			    penalty+=30;											//Additional penalty for Metal Armors 30 pts (15%)
+		    }
+
+		    if( ( CritterArmor.GetProtoId() == PID_POWERED_ARMOR ) ||
+			    ( CritterArmor.GetProtoId() == PID_ADVANCED_POWER_ARMOR ))
+		    {
+			    penalty+=40;											//Additional penalty for Power Armors 40 pts (20%)
+		    }
+        }
 	}
 		
     int runTime = CLAMP(200 - bonus + penalty, 100, 300);                    // Formula

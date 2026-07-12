@@ -64,8 +64,8 @@ lang=engl
 13 18000 None 0 #
 12 18010 D _script dialog@d_IsLocationNotVisible 1 39 R _script dialog@r_ShowLocation 1 39 #
 18 18020 D _var p q_hub_gunrunner_supplies = 5 D _var p q_hub_gunrunner_supplies_deal = 2 R _var p q_hub_gunrunner_supplies = 6 R _script dialog@r_AddMoney 1 400 R _param p REPUTATION_HUB + 50 R _item p PID_10MM_AP + 50 R _param p ST_EXPERIENCE + 750 R _item p PID_10MM_JHP + 150 #
-19 18030 D _var p q_hub_gunrunner_supplies_deal = 3 D _var p q_hub_gunrunner_supplies = 5 R _var p q_hub_gunrunner_supplies = 6 R _script dialog@r_AddMoney 1 600 R _param p REPUTATION_HUB + 50 R _item p PID_10MM_AP + 100 R _item p PID_BLUEPRINT_METAL_HELMET_MK2 + 1 R _param p ST_EXPERIENCE + 1000 #
-17 18040 D _var p q_hub_gunrunner_supplies_deal = 4 D _var p q_hub_gunrunner_supplies = 5 R _var p q_hub_gunrunner_supplies = 6 R _script dialog@r_AddMoney 1 400 R _param p REPUTATION_HUB + 50 R _item p PID_10MM_AP + 100 R _item p PID_BLUEPRINT_METAL_HELMET_MK2 + 1 R _param p ST_EXPERIENCE + 500 #
+19 18030 D _var p q_hub_gunrunner_supplies_deal = 3 D _var p q_hub_gunrunner_supplies = 5 R _var p q_hub_gunrunner_supplies = 6 R _script dialog@r_AddMoney 1 600 R _param p REPUTATION_HUB + 50 R _item p PID_10MM_AP + 100 R _param p ST_EXPERIENCE + 1000 #
+17 18040 D _var p q_hub_gunrunner_supplies_deal = 4 D _var p q_hub_gunrunner_supplies = 5 R _var p q_hub_gunrunner_supplies = 6 R _script dialog@r_AddMoney 1 400 R _param p REPUTATION_HUB + 50 R _item p PID_10MM_AP + 100 R _param p ST_EXPERIENCE + 500 #
 14 18050 D _var p q_hub_gunrunner_supplies = 2 #
 0 18060 @
 14 19000 None 0 #
@@ -74,7 +74,7 @@ lang=engl
 15 20000 None 0 #
 0 20010 R _var p q_hub_gunrunner_supplies = 3 @
 16 21000 None 0 #
-20 21010 R _var p q_hub_gunrunner_supplies = 6 R _param p REPUTATION_HUB + 50 R _script dialog@r_AddMoney 1 300 R _item p PID_BLUEPRINT_METAL_HELMET_MK2 + 1 R _item p PID_10MM_AP + 30 R _param p ST_EXPERIENCE + 750 @
+20 21010 R _var p q_hub_gunrunner_supplies = 6 R _param p REPUTATION_HUB + 50 R _script dialog@r_AddMoney 1 300 R _item p PID_10MM_AP + 30 R _param p ST_EXPERIENCE + 750 @
 17 22000 None 0 #
 0 22010 @
 18 23000 None 0 #

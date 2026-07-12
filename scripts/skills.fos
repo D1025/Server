@@ -118,14 +118,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 	
     @item = SelectSkillItem(cr, item, SK_FIRST_AID);
     if(valid(item))
-    {
-		toolBonus = item.Proto.Misc_ToolSkillBonus;
-        if(Random(0, 30) == 0)
-		{
-            cr.DeleteItem(item.GetProtoId(), 1);
-			cr.Say(SAY_NETMSG, "You ran out of medical supplies after healing yourself.");		// First Aid Kit broke
-		}
-    }
+        toolBonus = item.Proto.Misc_ToolSkillBonus;
     int intelligence = cr.Stat[ST_INTELLECT];
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
     int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
@@ -218,11 +211,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 
     @item = SelectSkillItem(cr, item, SK_DOCTOR);
     if(valid(item))
-    {
         toolBonus += item.Proto.Misc_ToolSkillBonus;
-        if(Random(0, 30) == 0)
-            cr.DeleteItem(item.GetProtoId(), 1);
-    }
     sk += toolBonus;
     int intelligence = cr.Stat[ST_INTELLECT];
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;

@@ -23,7 +23,6 @@
 array<int> GroupAlliancesSQ(FACTION_NPC_MAX* FACTION_NPC_MAX);
 array<int> ReputationModifiersSQ(FACTION_NPC_MAX* FACTION_NPC_MAX);
 dictionary FactionUniformsDictionary;
-dictionary UniformHelmetsDictionary;
 
 #include "reputations_tables.fos"
 
@@ -43,13 +42,7 @@ void InitGroups() // export
             GroupAlliancesSQ[IDX(i, AllianceMods[i][k])] = AllianceMods[i][k + 1];
 
     //FactionUniformsDictionary.set("" + PID_BROTHERHOOD_COMBAT_ARMOR, FACTION_BOS);
-    //UniformHelmetsDictionary.set("" + PID_BROTHERHOOD_HELMET, PID_BROTHERHOOD_COMBAT_ARMOR);
-    //UniformHelmetsDictionary.set("" + PID_COMBAT_HELMET, PID_BROTHERHOOD_COMBAT_ARMOR);
-
     //FactionUniformsDictionary.set("" + PID_ENCLAVE_COMBAT_ARMOR, FACTION_ENCLAVE);
-    //UniformHelmetsDictionary.set("" + PID_ENCLAVE_COMBAT_HELMET, PID_ENCLAVE_COMBAT_ARMOR);
-    //UniformHelmetsDictionary.set("" + PID_ENCLAVE_COMBAT_HELMET_MK2, PID_ENCLAVE_COMBAT_ARMOR);
-    //UniformHelmetsDictionary.set("" + PID_COMBAT_HELMET_MK_II, PID_ENCLAVE_COMBAT_ARMOR);
 }
 
 
@@ -95,18 +88,7 @@ int GetUniform(Critter& cr, int& factionOut)
         if(FactionUniformsDictionary.get("" + uniformPid, faction))
         {
             factionOut = faction;
-            Item@ head = _CritGetItemHead(cr);
-            if(valid(head) && head.GetType() == ITEM_TYPE_ARMOR)
-            {
-                int helmetUniformPid = 0;
-                UniformHelmetsDictionary.get("" + head.GetProtoId(), helmetUniformPid);
-                if(helmetUniformPid == uniformPid)
-                    return UNIFORM_FULL;
-                else
-                    return UNIFORM_BAD_HELMET;
-            }
-            else
-                return UNIFORM_BODY_ONLY;
+            return UNIFORM_FULL;
         }
         else
         {
@@ -158,7 +140,7 @@ int GetGroupsStatus(Critter& c2, Critter& c1)   // export
     int uniformFaction = 0;
     int uniformStatus = GetUniform(c2, uniformFaction);
     int uniformGroupStatus = GetGroupsStatus(_GroupIndex(c1), uniformFaction);
-    if(uniformGroupStatus == FACTION_ENEMY || (groupStatus == FACTION_ENEMY && !(uniformGroupStatus == FACTION_ALLY && uniformStatus > UNIFORM_BAD_HELMET)))
+    if(uniformGroupStatus == FACTION_ENEMY || (groupStatus == FACTION_ENEMY && !(uniformGroupStatus == FACTION_ALLY && uniformStatus >= UNIFORM_BODY_ONLY)))
     {
         return FACTION_ENEMY;
     }

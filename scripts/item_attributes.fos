@@ -7,7 +7,6 @@
 
 // Used for management items that have many attributes.
 // Export templates:
-// import void SetItemAttribute(Item& item, int attribute) from "item_attributes";
 //   - attribute get from _animation.fos ATTRIBUTE_*.
 // import void SetSuitNumber(Item& suit, int number) from "item_attributes";
 //   - tibbets prison suit have 1..24 numbers;
@@ -18,19 +17,6 @@
 #include "_math.fos"
 #include "ITEMPID.H"
 
-
-void SetItemAttribute(Item& item, int attribute)   // Export
-{
-    uint16 pid = item.GetProtoId();
-    if(pid == PID_MOTORCYCLE_HELMET)
-    {
-        // Inventory lst numbers 417..429
-        attribute = CLAMP(attribute, ATTRIBUTE_Head_Motorcycle_White, ATTRIBUTE_Head_Motorcycle_Skull);
-        item.Val7 = attribute;
-        item.PicInv = 417 + (attribute - ATTRIBUTE_Head_Motorcycle_White);
-        item.Update();
-    }
-}
 
 void SetSuitNumber(Item& suit, int number)   // Export
 {

@@ -747,7 +747,7 @@
 {8920}{}{Mob}
 {8921}{}{Male in Leather Armor MK2}
 {8930}{}{Mob}
-{8931}{}{Mob in Hardened Power Armor}
+{8931}{}{Mob in Power Armor}
 {8940}{}{Mob}
 {8941}{}{Male in Police Uniform}
 {8950}{}{Mob}

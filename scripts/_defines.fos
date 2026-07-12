@@ -370,7 +370,6 @@
 
 // Item perks
 #define ITEM_PERK_ARMOR                          (1)
-#define ITEM_PERK_HELMET                         (2)
 
 #define WEAPON_PERK_LONG_RANGE                   (1)
 #define WEAPON_PERK_ACCURATE                     (2)
@@ -425,13 +424,13 @@
 #define ARMOR_PERK_GRENADIER_RIG                 (11)   // +3 grenade throwing range
 #define ARMOR_PERK_FLAWLESS_DEFENSE              (12)   // +10 all DR while at full HP
 
-#define HELMET_PERK_CHARISMA                     (1)    // +1 charisma
-#define HELMET_PERK_PERCEPTION_GLASSES           (2)    // PE1:+3, PE2:+2, PE3:+1, PE4+:0
-#define HELMET_PERK_PROTECT_EYES                 (3)    // when attacked, HIT_LOCATION_EYES changes to HIT_LOCATION_HEAD
-
-#define SLOT_PERK_COSMETIC_CASE                  (0x02) // +1 charisma to female
-#define SLOT_PERK_MOTION_SENSOR                  (0x04) // +20 outdoorsman
-#define SLOT_PERK_STEALTH_BOY                    (0x08) // +20 sneak
+#define UTILITY_FLAG_STEALTH                     (0x01)
+#define UTILITY_FLAG_MOTION_SENSOR               (0x02)
+#define UTILITY_FLAG_MEDICAL                     (0x04)
+#define UTILITY_FLAG_BACKPACK                    (0x08)
+#define UTILITY_FLAG_BOOK                        (0x10)
+#define UTILITY_FLAG_TALISMAN                    (0x20)
+#define UTILITY_FLAG_RIOT_SHIELD                 (0x40)
 
 // In SendMessage
 #define MESSAGE_TO_VISIBLE_ME                    (0)    // Отослать сообщения всем кто видет криттера.
@@ -477,7 +476,7 @@
 #define SLOT_HAND1                               (1)   // Weapon slot
 #define SLOT_HAND2                               (2)   // Extended slot
 #define SLOT_ARMOR                               (3)   // Armor slot
-#define SLOT_HEAD                                (4)   // Head slot
+#define SLOT_UTILITY                             (4)   // Utility / trinket slot
 #define SLOT_TROPHY                              (5)   // Animals skins, teeths, claws, etc.
 #define SLOT_POWER_STASH                         (6)   // Holds the body armor displaced while wearing a power armor
 #define SLOT_GROUND                              (255) // Ground slot, used when critter drop/pick item
@@ -651,10 +650,10 @@
 #define ST_DESCRIPTION1                          (138)
 #define ST_DESCRIPTION2                          (139)
 #define ST_DEFAULT_ARMOR_PID                     (140)
-#define ST_DEFAULT_HELMET_PID                    (141)
+#define ST_DEFAULT_UTILITY_PID                   (141)
 #define ST_OVERRIDE_CRTYPE                       (143)
 #define ST_TURN_BASED_HEX                        (144)
-#define ST_CURRENT_HELMET_PERK                   (145) // we're running out of space here :)
+#define ST_UNUSED_145                            (145)
 #define ST_FACTION_UPDATE_SEQ                    (146)
 #define ST_MINIGAME_DATA                         (147) // custom minigame data (first byte is reserved to store minigame team and id)
 #define ST_CRITICAL_POWER                        (148)
@@ -1037,7 +1036,7 @@
 #define TRAIT_KAMIKAZE                           (555)
 #define TRAIT_GRAPPLER                       (556)
 #define TRAIT_GIFTED                             (557) // Used in engine
-#define TRAIT_BLOODY_MESS                        (558)
+#define TRAIT_ARMOR_TRAINING                     (558)
 #define TRAIT_BERSERKER                             (559)
 #define TRAIT_VAMPIRISM                          (560)
 #define TRAIT_CHEM_RELIANT                       (561)
@@ -1150,6 +1149,8 @@
 #define TO_HEALING_POWDER                        (984)
 #define TO_ROT_GUT                               (985)
 #define TO_KILO_OF_COCAINE                       (986)
+#define TO_UTILITY_COOLDOWN                      (987)
+#define TO_TALISMAN_IMMUNITY                     (988)
 
 #define ST_EX_IDX                                (999)
 #define PARAMS_COUNT                             (1000)
@@ -1854,11 +1855,11 @@
 #  pragma bindfunc "bool Critter::IsDmgTwoArm()   -> parameters.dll Critter_IsDmgTwoArm "
 #  pragma bindfunc "bool Critter::IsAddicted()    -> parameters.dll Critter_IsAddicted  "
 #  pragma bindfunc "bool Critter::IsOverweight()  -> parameters.dll Critter_IsOverweight"
-#  pragma bindfunc "int Critter::GetAC(bool)      -> parameters.dll Critter_GetAC       "
-#  pragma bindfunc "int Critter::GetDR(uint,bool) -> parameters.dll Critter_GetDR       "
-#  pragma bindfunc "int Critter::GetDT(uint,bool) -> parameters.dll Critter_GetDT       "
-#  pragma bindfunc "int Critter::GetArmorDR(uint,bool) -> parameters.dll Critter_GetArmorDR  "
-#  pragma bindfunc "int Critter::GetArmorDT(uint,bool) -> parameters.dll Critter_GetArmorDT  "
+#  pragma bindfunc "int Critter::GetAC()          -> parameters.dll Critter_GetAC       "
+#  pragma bindfunc "int Critter::GetDR(uint)      -> parameters.dll Critter_GetDR       "
+#  pragma bindfunc "int Critter::GetDT(uint)      -> parameters.dll Critter_GetDT       "
+#  pragma bindfunc "int Critter::GetArmorDR(uint) -> parameters.dll Critter_GetArmorDR  "
+#  pragma bindfunc "int Critter::GetArmorDT(uint) -> parameters.dll Critter_GetArmorDT  "
 
 #  pragma bindfunc "bool Item::Weapon_IsHtHAttack(uint8 mode)    -> parameters.dll Item_Weapon_IsHtHAttack   "
 #  pragma bindfunc "bool Item::Weapon_IsGunAttack(uint8 mode)    -> parameters.dll Item_Weapon_IsGunAttack   "
@@ -1875,9 +1876,9 @@
 #  pragma bindfunc "bool CritterCl::IsDmgTwoArm()   -> client_parameters.dll Critter_IsDmgTwoArm "
 #  pragma bindfunc "bool CritterCl::IsAddicted()    -> client_parameters.dll Critter_IsAddicted  "
 #  pragma bindfunc "bool CritterCl::IsOverweight()  -> client_parameters.dll Critter_IsOverweight"
-#  pragma bindfunc "int CritterCl::GetAC(bool)      -> client_parameters.dll Critter_GetAC       "
-#  pragma bindfunc "int CritterCl::GetDR(uint,bool) -> client_parameters.dll Critter_GetDR       "
-#  pragma bindfunc "int CritterCl::GetDT(uint,bool) -> client_parameters.dll Critter_GetDT       "
+#  pragma bindfunc "int CritterCl::GetAC()          -> client_parameters.dll Critter_GetAC       "
+#  pragma bindfunc "int CritterCl::GetDR(uint)      -> client_parameters.dll Critter_GetDR       "
+#  pragma bindfunc "int CritterCl::GetDT(uint)      -> client_parameters.dll Critter_GetDT       "
 
 #  pragma bindfunc "bool ItemCl::Weapon_IsHtHAttack(uint8 mode)    -> client_parameters.dll Item_Weapon_IsHtHAttack   "
 #  pragma bindfunc "bool ItemCl::Weapon_IsGunAttack(uint8 mode)    -> client_parameters.dll Item_Weapon_IsGunAttack   "
@@ -1901,6 +1902,11 @@
 # pragma bindfield "const uint16 ProtoItem::Misc_ChargeMax      -> 48"
 # pragma bindfield "const uint16 ProtoItem::Misc_ToolSkillNum   -> 50"
 # pragma bindfield "const int    ProtoItem::Misc_ToolSkillBonus -> 52"
+
+// Utility / trinket. Utility_Value==0 means no passive SPECIAL/skill bonus.
+# pragma bindfield "const int    ProtoItem::Utility_Param -> 56"
+# pragma bindfield "const int    ProtoItem::Utility_Value -> 60"
+# pragma bindfield "const uint   ProtoItem::Utility_Flags -> 64"
 
 // Armor
 # pragma bindfield "const uint   ProtoItem::Armor_CrTypeMale   -> 100"

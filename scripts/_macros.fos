@@ -137,7 +137,7 @@
 #define _CritGetItemHand             # (cr) cr.GetItem(0, SLOT_HAND1)
 #define _CritGetItemHandExt          # (cr) cr.GetItem(0, SLOT_HAND2)
 #define _CritGetItemArmor            # (cr) cr.GetItem(0, SLOT_ARMOR)
-#define _CritGetItemHead             # (cr) cr.GetItem(0, SLOT_HEAD)
+#define _CritGetItemUtility          # (cr) cr.GetItem(0, SLOT_UTILITY)
 #define _CritGetItemInv              # (cr, pid)cr.GetItem(pid, SLOT_INV)
 #define _CritMoveItem                # (cr, item, toSlot)cr.MoveItem(item.Id, item.GetCount(), toSlot)
 #define _CritDropItem                # (cr, item)cr.MoveItem(item.Id, item.GetCount(), 0xFF)

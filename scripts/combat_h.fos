@@ -43,7 +43,7 @@
 #define WS_THROWING                (3)
 #define WS_GUN                     (4)
 
-#define _GetCritterArmor           # (cr_, head_)(cr_.GetItem(0, (head_) ? SLOT_HEAD : SLOT_ARMOR))
+#define _GetCritterArmor           # (cr_)(cr_.GetItem(0, SLOT_ARMOR))
 #define COMBAT_AMMO_AP             # (ammo_) (valid(ammo_) ? (ammo_.Ammo_DTDiv > 0) : false)
 // todo: move to proto
 #define COMBAT_WEAPON_ALLOWS_SD    # (__weapon)     (__weapon.Proto.ProtoId == PID_14MM_PISTOL || __weapon.Proto.ProtoId == PID_223_PISTOL)

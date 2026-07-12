@@ -1240,32 +1240,21 @@ uint e_SpecialItemEvent(array<uint>@ values)
 	switch(itemkind)
 	{
 		case 1:
-			switch(Random(1,8))
+			switch(Random(1,2))
 			{
 				case 1: item = PID_POWERED_ARMOR; itemname = "Power Armor"; break;
-				case 2: item = PID_HARDENED_POWER_ARMOR; itemname = "Hardened Power Armor"; break;
-				case 3: item = PID_ADVANCED_POWER_ARMOR; itemname = "Advanced Power Armor"; break;
-				case 4: item = PID_ADVANCED_POWER_ARMOR_MK2; itemname = "Advanced Power Armor MK2"; break;
-				case 5: item = PID_APA_HELMET; itemname = "Advanced Power Helmet"; break;
-				case 6: item = PID_APA_HELMET_MK2; itemname = "Advanced Power Helmet MK2"; break;
-				case 7: item = PID_HARDENED_POWER_HELMET; itemname = "Hardened Power Helmet"; break;
-				case 8: item = PID_POWER_HELMET; itemname = "Power Helmet"; break;
+				case 2: item = PID_ADVANCED_POWER_ARMOR; itemname = "Advanced Power Armor"; break;
 			}
 			break;
 		case 2:
 		case 3:
-			switch(Random(1,10))
+			switch(Random(1,5))
 			{
 				case 1: item = PID_BROTHERHOOD_COMBAT_ARMOR; itemname = "Brotherhood Combat Armor"; break;
 				case 2: item = PID_NCR_ARMOR; itemname = "NCR Ranger Combat Armor"; break;
 				case 3: item = PID_ENCLAVE_COMBAT_ARMOR; itemname = "Enclave Combat Armor"; break;
-				case 4: item = PID_BROTHERHOOD_HELMET; itemname = "Brotherhood Combat Helmet"; break;
-				case 5: item = PID_ENCLAVE_COMBAT_HELMET; itemname = "Enclave Combat Helmet"; break;
-				case 6: item = PID_ENCLAVE_COMBAT_HELMET_MK2; itemname = "Enclave Combat Helmet MK2"; break;
-				case 7: item = PID_DESERT_COMBAT_HELMET; itemname = "Desert Combat Helmet"; break;
-				case 8: item = PID_NCR_HELMET; itemname = "NCR Ranger Combat Helmet"; break;
-				case 9: item = PID_CLOTHES_POLICE; itemname = "Police Uniform"; break;
-				case 10: item = PID_DESERT_COMBAT_ARMOR; itemname = "Desert Combat Armor"; break;
+				case 4: item = PID_CLOTHES_POLICE; itemname = "Police Uniform"; break;
+				case 5: item = PID_DESERT_COMBAT_ARMOR; itemname = "Desert Combat Armor"; break;
 			}
 			break;
 		case 4:
@@ -1308,7 +1297,7 @@ uint e_SpecialItemEvent(array<uint>@ values)
 			}
 			break;
 		case 7:
-			switch(Random(1,40))
+			switch(Random(1,30))
 			{
 				case 1: item = PID_BLUEPRINT_INDEPENDENT; itemname = "plans for XL70E3 Rifle"; break;
 				case 2: item = PID_BLUEPRINT_BOZAR; itemname = "plans for Bozar"; break;
@@ -1324,32 +1313,22 @@ uint e_SpecialItemEvent(array<uint>@ values)
 				case 12: item = PID_BLUEPRINT_M72_GAUSS_RIFLE; itemname = "plans for M72 Gauss Rifle"; break;
 				case 13: item = PID_BLUEPRINT_SOLAR_SCORCHER; itemname = "plans for Solar Scorcher"; break;
 				case 14: item = PID_BLUEPRINT_METAL_ARMOR_MK_III; itemname = "plans for Metal Armor Mark 3"; break;
-				case 15: item = PID_BLUEPRINT_COMBAT_HELMET_MK_II; itemname = "plans for a Combat Helmet Mark II"; break;
-				case 16: item = PID_BLUEPRINT_BROTHERHOOD_HELMET; itemname = "plans for a Brotherhood Combat Helmet"; break;
-				case 17: item = PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET; itemname = "plans for an Enclave Combat Helmet"; break;
-				case 18: item = PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II; itemname = "plans for an Enclave Combat Helmet Mark II"; break;
-				case 19: item = PID_BLUEPRINT_DESERT_COMBAT_HELMET; itemname = "plans for a Desert Combat Helmet"; break;
-				case 20: item = PID_BLUEPRINT_NCR_HELMET; itemname = "plans for a NCR Combat Helmet"; break;
-				case 21: item = PID_BLUEPRINT_POWER_HELMET; itemname = "plans for a Power Helmet"; break;
-				case 22: item = PID_BLUEPRINT_HARDENED_POWER_HELMET; itemname = "plans for a Hardened Power Helmet"; break;
-				case 23: item = PID_BLUEPRINT_ADVANCED_POWER_HELMET; itemname = "plans for a Advanced Power Helmet"; break;
-				case 24: item = PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2; itemname = "plans for a Advanced Power Helmet Mark II"; break;
-				case 25: item = PID_BLUEPRINT_COMBAT_ARMOR_MK_II; itemname = "plans for a Combat Armor Mark II"; break;
-				case 26: item = PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR; itemname = "plans for a Brotherhood Combat Armor"; break;
-				case 27: item = PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR; itemname = "plans for an Enclave Combat Armor"; break;
-				case 28: item = PID_BLUEPRINT_DESERT_COMBAT_ARMOR; itemname = "plans for a Desert Combat Armor"; break;
-				case 29: item = PID_BLUEPRINT_NCR_ARMOR; itemname = "plans for a NCR Ranger Combat Armor"; break;
-				case 30: item = PID_BLUEPRINT_POWERED_ARMOR; itemname = "plans for a Power Armor"; break;
-				case 31: item = PID_BLUEPRINT_HARDENED_POWER_ARMOR; itemname = "plans for a Hardened Power Armor"; break;
-				case 32: item = PID_BLUEPRINT_ADVANCED_POWER_ARMOR; itemname = "plans for a Advanced Power Armor"; break;
-				case 33: item = PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2; itemname = "plans for a Advanced Power Armor Mark II"; break;
-				case 34: item = PID_BLUEPRINT_PID_HYPO; itemname = "Recipe for the Hypo"; break;
-				case 35: item = PID_BLUEPRINT_JET_ANTIDOTE; itemname = "Recipe for the Jet Antidote"; break;
-				case 36: item = PID_BLUEPRINT_SHOTGUN_DRAGON_BREATH_SHELLS; itemname = "plans for Gecko's Breath Shotgun Shells"; break;
-				case 37: item = PID_BLUEPRINT_4_7MM_CASELESS; itemname = "plans for 4.7mm caseless ammunition"; break;
-				case 38: item = PID_BLUEPRINT_2MM_EC_AMMO; itemname = "plans for 2mm EC ammunition"; break;
-				case 39: item = PID_BLUEPRINT_GATLING_LASER; itemname = "plans for Gatling Laser"; break;
-				case 40: item = PID_BLUEPRINT_SAIGA_12; itemname = "plans for Saiga-12 semi-automatic shotgun"; break;
+				case 15: item = PID_BLUEPRINT_COMBAT_ARMOR_MK_II; itemname = "plans for a Combat Armor Mark II"; break;
+				case 16: item = PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR; itemname = "plans for a Brotherhood Combat Armor"; break;
+				case 17: item = PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR; itemname = "plans for an Enclave Combat Armor"; break;
+				case 18: item = PID_BLUEPRINT_DESERT_COMBAT_ARMOR; itemname = "plans for a Desert Combat Armor"; break;
+				case 19: item = PID_BLUEPRINT_NCR_ARMOR; itemname = "plans for a NCR Ranger Combat Armor"; break;
+				case 20: item = PID_BLUEPRINT_POWERED_ARMOR; itemname = "plans for a Power Armor"; break;
+				case 21: item = PID_BLUEPRINT_POWERED_ARMOR; itemname = "plans for a Power Armor"; break;
+				case 22: item = PID_BLUEPRINT_ADVANCED_POWER_ARMOR; itemname = "plans for a Advanced Power Armor"; break;
+				case 23: item = PID_BLUEPRINT_ADVANCED_POWER_ARMOR; itemname = "plans for a Advanced Power Armor"; break;
+				case 24: item = PID_BLUEPRINT_PID_HYPO; itemname = "Recipe for the Hypo"; break;
+				case 25: item = PID_BLUEPRINT_JET_ANTIDOTE; itemname = "Recipe for the Jet Antidote"; break;
+				case 26: item = PID_BLUEPRINT_SHOTGUN_DRAGON_BREATH_SHELLS; itemname = "plans for Gecko's Breath Shotgun Shells"; break;
+				case 27: item = PID_BLUEPRINT_4_7MM_CASELESS; itemname = "plans for 4.7mm caseless ammunition"; break;
+				case 28: item = PID_BLUEPRINT_2MM_EC_AMMO; itemname = "plans for 2mm EC ammunition"; break;
+				case 29: item = PID_BLUEPRINT_GATLING_LASER; itemname = "plans for Gatling Laser"; break;
+				case 30: item = PID_BLUEPRINT_SAIGA_12; itemname = "plans for Saiga-12 semi-automatic shotgun"; break;
 			}
 			break;
 		case 8:
@@ -1368,7 +1347,7 @@ uint e_SpecialItemEvent(array<uint>@ values)
 			}
 			break;
 		case 9:
-			switch(Random(1,37))
+			switch(Random(1,34))
 			{
 				case 1: item = PID_BLUEPRINT_14MM_PISTOL; itemname = "plans for Sig-Sauer 14mm Auto Pistol"; break;
 				case 2: item = PID_BLUEPRINT_NEEDLER_PISTOL; itemname = "plans for HN Needler Pistol"; break;
@@ -1396,17 +1375,14 @@ uint e_SpecialItemEvent(array<uint>@ values)
 				case 24: item = PID_BLUEPRINT_METAL_ARMOR_MK_II; itemname = "plans for Metal Armor Mark II"; break;
 				case 25: item = PID_BLUEPRINT_TESLA_ARMOR; itemname = "plans for Tesla Armor"; break;
 				case 26: item = PID_BLUEPRINT_COMBAT_ARMOR; itemname = "plans for Combat Armor"; break;
-				case 27: item = PID_BLUEPRINT_METAL_HELMET_MK2; itemname = "plans for Metal Mask MkII"; break;
-				case 28: item = PID_BLUEPRINT_TESLA_HELMET; itemname = "plans for Tesla Helmet"; break;
-				case 29: item = PID_BLUEPRINT_COMBAT_HELMET; itemname = "plans for Combat Helmet"; break;
-				case 30: item = PID_BLUEPRINT_SUPER_STIMPAK; itemname = "plans for Super Stimpak"; break;
-				case 31: item = PID_BLUEPRINT_STIMPAK; itemname = "plans for Stimpak"; break;
-				case 32: item = PID_BLUEPRINT_JET; itemname = "plans for Jet"; break;
-				case 33: item = PID_BLUEPRINT_BUFFOUT; itemname = "plans for Buffout"; break;
-				case 34: item = PID_BLUEPRINT_MENTATS; itemname = "plans for Mentats"; break;
-				case 35: item = PID_BLUEPRINT_PSYCHO; itemname = "plans for Psycho"; break;
-				case 36: item = PID_BLUEPRINT_RADAWAY; itemname = "plans for Rad Away"; break;
-				case 37: item = PID_BLUEPRINT_RADX; itemname = "plans for Rad-X"; break;
+				case 27: item = PID_BLUEPRINT_SUPER_STIMPAK; itemname = "plans for Super Stimpak"; break;
+				case 28: item = PID_BLUEPRINT_STIMPAK; itemname = "plans for Stimpak"; break;
+				case 29: item = PID_BLUEPRINT_JET; itemname = "plans for Jet"; break;
+				case 30: item = PID_BLUEPRINT_BUFFOUT; itemname = "plans for Buffout"; break;
+				case 31: item = PID_BLUEPRINT_MENTATS; itemname = "plans for Mentats"; break;
+				case 32: item = PID_BLUEPRINT_PSYCHO; itemname = "plans for Psycho"; break;
+				case 33: item = PID_BLUEPRINT_RADAWAY; itemname = "plans for Rad Away"; break;
+				case 34: item = PID_BLUEPRINT_RADX; itemname = "plans for Rad-X"; break;
 			}
 			break;
 		default: return REAL_MINUTE(Random(360, 2880));
@@ -1418,21 +1394,10 @@ uint e_SpecialItemEvent(array<uint>@ values)
 		switch(item)
 		{
 			case PID_POWERED_ARMOR: itemname = "Power Armor"; break;
-			case PID_HARDENED_POWER_ARMOR: itemname = "Hardened Power Armor"; break;
 			case PID_ADVANCED_POWER_ARMOR: itemname = "Advanced Power Armor"; break;
-			case PID_ADVANCED_POWER_ARMOR_MK2: itemname = "Advanced Power Armor MK2"; break;
-			case PID_APA_HELMET: itemname = "Advanced Power Helmet"; break;
-			case PID_APA_HELMET_MK2: itemname = "Advanced Power Helmet MK2"; break;
-			case PID_HARDENED_POWER_HELMET: itemname = "Hardened Power Helmet"; break;
-			case PID_POWER_HELMET: itemname = "Power Helmet"; break;
 			case PID_BROTHERHOOD_COMBAT_ARMOR: itemname = "Brotherhood Combat Armor"; break;
 			case PID_NCR_ARMOR: itemname = "NCR Ranger Combat Armor"; break;
 			case PID_ENCLAVE_COMBAT_ARMOR: itemname = "Enclave Combat Armor"; break;
-			case PID_BROTHERHOOD_HELMET: itemname = "Brotherhood Combat Helmet"; break;
-			case PID_ENCLAVE_COMBAT_HELMET: itemname = "Enclave Combat Helmet"; break;
-			case PID_ENCLAVE_COMBAT_HELMET_MK2: itemname = "Enclave Combat Helmet MK2"; break;
-			case PID_DESERT_COMBAT_HELMET: itemname = "Desert Combat Helmet"; break;
-			case PID_NCR_HELMET: itemname = "NCR Ranger Combat Helmet"; break;
 			case PID_CLOTHES_POLICE: itemname = "Police Uniform"; break;
 			case PID_DESERT_COMBAT_ARMOR: itemname = "Desert Combat Armor"; break;
 			case PID_PK12_GAUSS_PISTOL: itemname = "PPK12 Gauss Pistol"; break;
@@ -1457,7 +1422,6 @@ uint e_SpecialItemEvent(array<uint>@ values)
 			case PID_AVENGER_MINIGUN: itemname = "Avenger Minigun"; break;
 			case PID_LIGHT_SUPPORT_WEAPON: itemname = "Light Support Weapon"; break;
 			case PID_LASER_RIFLE: itemname = "Laser Rifle"; break;
-			case PID_LASER_RIFLE_EXT_CAP: itemname = "Laser Rifle (Ext. Cap.)"; break;
 			case PID_PLASMA_RIFLE: itemname = "Plasma Rifle"; break;
 			case PID_4_7MM_CASELESS: itemname = "4.7mm Caseless"; break;
 			case PID_2MM_EC_AMMO: itemname = "2mm EC ammunition"; break;
@@ -1477,25 +1441,13 @@ uint e_SpecialItemEvent(array<uint>@ values)
 			case PID_BLUEPRINT_M72_GAUSS_RIFLE: itemname = "plans for M72 Gauss Rifle"; break;
 			case PID_BLUEPRINT_SOLAR_SCORCHER: itemname = "plans for Solar Scorcher"; break;
 			case PID_BLUEPRINT_METAL_ARMOR_MK_III: itemname = "plans for Metal Armor Mark 3"; break;
-			case PID_BLUEPRINT_COMBAT_HELMET_MK_II: itemname = "plans for a Combat Helmet Mark II"; break;
-			case PID_BLUEPRINT_BROTHERHOOD_HELMET: itemname = "plans for a Brotherhood Combat Helmet"; break;
-			case PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET: itemname = "plans for an Enclave Combat Helmet"; break;
-			case PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II: itemname = "plans for an Enclave Combat Helmet Mark II"; break;
-			case PID_BLUEPRINT_DESERT_COMBAT_HELMET: itemname = "plans for a Desert Combat Helmet"; break;
-			case PID_BLUEPRINT_NCR_HELMET: itemname = "plans for a NCR Combat Helmet"; break;
-			case PID_BLUEPRINT_POWER_HELMET: itemname = "plans for a Power Helmet"; break;
-			case PID_BLUEPRINT_HARDENED_POWER_HELMET: itemname = "plans for a Hardened Power Helmet"; break;
-			case PID_BLUEPRINT_ADVANCED_POWER_HELMET: itemname = "plans for a Advanced Power Helmet"; break;
-			case PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2: itemname = "plans for a Advanced Power Helmet Mark II"; break;
 			case PID_BLUEPRINT_COMBAT_ARMOR_MK_II: itemname = "plans for a Combat Armor Mark II"; break;
 			case PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR: itemname = "plans for a Brotherhood Combat Armor"; break;
 			case PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR: itemname = "plans for an Enclave Combat Armor"; break;
 			case PID_BLUEPRINT_DESERT_COMBAT_ARMOR: itemname = "plans for a Desert Combat Armor"; break;
 			case PID_BLUEPRINT_NCR_ARMOR: itemname = "plans for a NCR Ranger Combat Armor"; break;
 			case PID_BLUEPRINT_POWERED_ARMOR: itemname = "plans for a Power Armor"; break;
-			case PID_BLUEPRINT_HARDENED_POWER_ARMOR: itemname = "plans for a Hardened Power Armor"; break;
 			case PID_BLUEPRINT_ADVANCED_POWER_ARMOR: itemname = "plans for a Advanced Power Armor"; break;
-			case PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2: itemname = "plans for a Advanced Power Armor Mark II"; break;
 			case PID_BLUEPRINT_PID_HYPO: itemname = "Recipe for the Hypo"; break;
 			case PID_BLUEPRINT_JET_ANTIDOTE: itemname = "Recipe for the Jet Antidote"; break;
 			case PID_BLUEPRINT_SHOTGUN_DRAGON_BREATH_SHELLS: itemname = "plans for Gecko's Breath Shotgun Shells"; break;
@@ -1539,9 +1491,6 @@ uint e_SpecialItemEvent(array<uint>@ values)
 			case PID_BLUEPRINT_METAL_ARMOR_MK_II: itemname = "plans for Metal Armor Mark II"; break;
 			case PID_BLUEPRINT_TESLA_ARMOR: itemname = "plans for Tesla Armor"; break;
 			case PID_BLUEPRINT_COMBAT_ARMOR: itemname = "plans for Combat Armor"; break;
-			case PID_BLUEPRINT_METAL_HELMET_MK2: itemname = "plans for Metal Mask MkII"; break;
-			case PID_BLUEPRINT_TESLA_HELMET: itemname = "plans for Tesla Helmet"; break;
-			case PID_BLUEPRINT_COMBAT_HELMET: itemname = "plans for Combat Helmet"; break;
 			case PID_BLUEPRINT_SUPER_STIMPAK: itemname = "plans for Super Stimpak"; break;
 			case PID_BLUEPRINT_STIMPAK: itemname = "plans for Stimpak"; break;
 			case PID_BLUEPRINT_JET: itemname = "plans for Jet"; break;
@@ -2800,8 +2749,8 @@ uint[][] en1 = { { PID_LASER_RIFLE, 1 }, { PID_SMALL_ENERGY_CELL, 30 }};
 uint[][] en2 = { { PID_PLASMA_RIFLE, 1 }, { PID_RIPPER, 1 }, { PID_PLASMA_PISTOL, 1 }, { PID_POWER_FIST, 1 }, { PID_MICRO_FUSION_CELL, 150 }, { PID_PLASMA_GRENADE, 5 }, {PID_GEIGER_COUNTER,1}, {PID_MOTION_SENSOR,1}  };
 uint[][] en3 = {};
 
-uint[][] arm1 = { { PID_SAND_ROBE, 1 }, { PID_LEATHER_ARMOR, 1 }, { PID_LEATHER_ARMOR_MK_II, 1 }, { PID_CURED_LEATHER_ARMOR, 1 }, { PID_GECKO_PELT, 1 }, { PID_GOLDEN_GECKO_PELT, 1 }, { PID_BRAHMIN_HIDE, 1 }, {PID_COMBAT_LEATHER_JACKET_HELMET,1}, {PID_LEATHER_ARMOR_HELMET,1}, {PID_LEATHER_ARMOR_HELMET_MK2,1} };
-uint[][] arm2 = { { PID_TESLA_ARMOR, 1 }, { PID_COMBAT_ARMOR, 1 }, { PID_METAL_ARMOR, 1 }, { PID_METAL_ARMOR_MK_II, 1 }, { PID_COMBAT_ARMOR_MK_II, 1}, {PID_COMBAT_HELMET,1}, {PID_COMBAT_HELMET_MK_II,1}, {PID_METAL_HELMET,1}, {PID_METAL_HELMET_MK2,1}, {PID_TESLA_HELMET,1} };
+uint[][] arm1 = { { PID_SAND_ROBE, 1 }, { PID_LEATHER_ARMOR, 1 }, { PID_LEATHER_ARMOR_MK_II, 1 }, { PID_CURED_LEATHER_ARMOR, 1 }, { PID_GECKO_PELT, 1 }, { PID_GOLDEN_GECKO_PELT, 1 }, { PID_BRAHMIN_HIDE, 1 } };
+uint[][] arm2 = { { PID_TESLA_ARMOR, 1 }, { PID_COMBAT_ARMOR, 1 }, { PID_METAL_ARMOR, 1 }, { PID_METAL_ARMOR_MK_II, 1 }, { PID_COMBAT_ARMOR_MK_II, 1 } };
 uint[][] arm3 = {};
 
 uint[][] drug1 = { { PID_BUFFOUT, 1 }, { PID_MENTATS, 1 }, { PID_PSYCHO, 1 }, { PID_RADAWAY, 1 }, { PID_RAD_X, 1 }, {PID_JET,1} };

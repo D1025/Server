@@ -850,16 +850,6 @@
 {10410}{}{Short}
 {10411}{}{Medium}
 {10412}{}{Long}
-# Books
-{10450}{}{You read the book.}
-{10451}{}{You learn nothing new.}
-{10452}{}{You learn new science information.}
-{10453}{}{You learn a lot about repairing broken electronics.}
-{10454}{}{You learn new ways to heal injury.}
-{10455}{}{You learn how to handle your guns better.}
-{10456}{}{You learn how to handle your energy guns better.}
-{10457}{}{You learn a lot about wilderness survival.}
-{10458}{}{You learn a lot about art of trading.}
 # Use on
 {10500}{}{The supplies in the Doctor's Bag run out.}
 {10501}{}{The supplies in the First Aid Kit run out.}
@@ -1794,7 +1784,7 @@
 {103812}{}{You are more alert outdoors and enemies are less likely to sneak up on you.  With this Perk you get a +3 to your perception in random encounters when determining placement.}
 # PE_COMPREHENSION
 {103821}{}{Comprehension}
-{103822}{}{You pay much closer attention to the smaller details when reading.  You gain 50% more skill points when reading books.}
+{103822}{}{This perk is unavailable.}
 # PE_DEMOLITION_EXPERT
 {103831}{}{Demolition Expert}
 {103832}{}{You are an expert when it comes to the fine art of handling explosives.  They always go off when they're supposed to, deal 25% more damage and have a noticeably larger blast radius.}
@@ -1902,7 +1892,7 @@
 {104242}{}{You are able to spot the vulnerable points in enemies. You gain 10% critical chance.}
 # PE_RIGHT_BETWEEN_THE_EYES   (425)
 {104251}{}{Right Between the Eyes}
-{104252}{}{You are able to hit your target with unerring accuracy. Helmets are no protection against you! }
+{104252}{}{You are able to place precise shots against the most difficult targets, reducing their critical protection.}
 # PE_FAST_RELOAD              (426)
 {104261}{}{Fast Reload}
 {104262}{}{You are able to reload your weapon very quickly. It only takes you 1 AP.}
@@ -2171,9 +2161,9 @@
 # TRAIT_GIFTED
 {105571}{}{Gifted}
 {105572}{}{You have more innate abilities than most, so you have not spent as much time honing your skills.  You gain 7 primary attributes points, but you lose one perk.}
-# TRAIT_BLOODY_MESS
-{105581}{}{Bloody Mess}
-{105582}{}{By some strange twist of fate, people around you die violently.  You always see the worst way a person can die.}
+# TRAIT_ARMOR_TRAINING
+{105581}{}{Armor Training}
+{105582}{}{Years of moving in protective gear eliminate all movement speed penalties from worn armor. However, you cannot equip or use items in the Utility slot.}
 # TRAIT_BERSERKER
 {105591}{}{Berserker}
 {105592}{}{Below 50% HP, unleash a savage boost: +2 Action Points and 10% movement speed, but no Super Stimpaks. Above 50% HP, the rage fades, lowering Intelligence to 1. These shifts don’t impact perk selection. Embrace the fury, pay the price.}

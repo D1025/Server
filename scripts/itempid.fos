@@ -165,29 +165,6 @@ uint GroupNameToNames(string& groupName, array<string>& pidNames)
     return(realCount);
 }
 
-/***********
-* HELMETS *
-***********/
-
-uint PidList_Helmets(array<uint>& pids)
-{
-    uint count = 0;
-
-    count += PidList_LightHelmets(pids);
-    count += PidList_MetalHelmets(pids);
-    count += PidList_CombatHelmets(pids);
-    count += PidList_HeavyHelmets(pids);
-
-    return(count);
-}
-
-FUNCTION_IS(Helmet, Helmets);
-
-FUNCTIONS(LightHelmet,  LightHelmets,  "HelmetLight");
-FUNCTIONS(MetalHelmet,  MetalHelmets,  "HelmetMetal");
-FUNCTIONS(CombatHelmet, CombatHelmets, "HelmetCombat");
-FUNCTIONS(HeavyHelmet,  HeavyHelmets,  "HelmetHeavy");
-
 /**********
 * ARMORS *
 **********/

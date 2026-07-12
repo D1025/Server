@@ -651,7 +651,7 @@ bool IsArenaEquippedWeapon(Item@ item)
 
 bool IsArenaEquippedArmor(Item@ item)
 {
-    return valid(item) && (item.CritSlot == SLOT_ARMOR || item.CritSlot == SLOT_HEAD);
+    return valid(item) && item.CritSlot == SLOT_ARMOR;
 }
 
 int ArenaItemUpgradeSlotType(Item@ item)
@@ -766,7 +766,7 @@ bool ArenaCanHaveUniqueQuality(Item@ item)
     if(item.GetType() == ITEM_TYPE_WEAPON)
         return !item.IsStackable();
 
-    return item.GetType() == ITEM_TYPE_ARMOR && !UpgradeItemIsHelmet(item);
+    return item.GetType() == ITEM_TYPE_ARMOR;
 }
 
 void ArenaEnsureUniqueQuality(Item@ item)

@@ -583,12 +583,10 @@ void CreateSupplyCar(int mapPid, int base, int org, int wave, int factionId)
             if( Random(1, 100) <= 10*wave )
             {
                 bag.AddItem( PID_ENCLAVE_COMBAT_ARMOR, 1, 0 );
-                bag.AddItem( PID_ENCLAVE_COMBAT_HELMET, 1, 0 );
             }
             if( Random(1, 100) <= 10*wave )
             {
                 bag.AddItem( PID_KEEPBRIGE_ROBE, 1, 0 );
-                bag.AddItem( PID_ENCLAVE_COMBAT_HELMET_MK2, 1, 0 );
             }
         }
         else
@@ -596,12 +594,10 @@ void CreateSupplyCar(int mapPid, int base, int org, int wave, int factionId)
             if( Random(1, 100) <= 10*wave )
             {
                 bag.AddItem( PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0 );
-                bag.AddItem( PID_BROTHERHOOD_HELMET, 1, 0 );
             }
             if( Random(1, 100) <= 10*wave )
             {
                 bag.AddItem( PID_NCR_ARMOR, 1, 0 );
-                bag.AddItem( PID_NCR_HELMET, 1, 0 );
             }
         }
 
@@ -609,22 +605,14 @@ void CreateSupplyCar(int mapPid, int base, int org, int wave, int factionId)
         if( Random(1, 100) <= wave )
         {
             bag.AddItem( PID_POWERED_ARMOR, 1, 0 );
-            bag.AddItem( PID_POWER_HELMET, 1, 0 );
-        }
-        if( Random(1, 200) <= wave )
-        {
-            bag.AddItem( PID_HARDENED_POWER_ARMOR, 1, 0 );
-            bag.AddItem( PID_HARDENED_POWER_HELMET, 1, 0 );
         }
         if( Random(1, 100) <= 15*wave )
         {
             bag.AddItem( PID_DESERT_COMBAT_ARMOR, 1, 0 );
-            bag.AddItem( PID_DESERT_COMBAT_HELMET, 1, 0 );
         }
         if( Random(1, 100) <= 20*wave )
         {
             bag.AddItem( PID_COMBAT_ARMOR_MK_II, 1, 0 );
-            bag.AddItem( PID_COMBAT_HELMET_MK_II, 1, 0 );
         }
         
         //GUNS

@@ -916,13 +916,20 @@ void critter_init(Critter& npc, bool firstTime)
             PID_METAL_ARMOR,
             PID_METAL_ARMOR_MK_II
         };
-        uint16[] helmets =
+        uint16[] utilities =
         {
-            PID_LEATHER_JACKET_HELMET,
-            PID_LEATHER_ARMOR_HELMET,
-            PID_LEATHER_ARMOR_HELMET_MK2,
-            PID_METAL_HELMET,
-            PID_METAL_HELMET_MK2
+            PID_STEALTH_BOY,
+            PID_MOTION_SENSOR,
+            PID_BACKPACK,
+            PID_TALISMAN,
+            PID_RIOT_SHIELD,
+            PID_BOBBLEHEAD_STRENGTH,
+            PID_BOBBLEHEAD_PERCEPTION,
+            PID_BOBBLEHEAD_ENDURANCE,
+            PID_BOBBLEHEAD_CHARISMA,
+            PID_BOBBLEHEAD_INTELLIGENCE,
+            PID_BOBBLEHEAD_AGILITY,
+            PID_BOBBLEHEAD_LUCK
         };
         uint16[] weapon =
         {
@@ -988,8 +995,12 @@ void critter_init(Critter& npc, bool firstTime)
         npc.SkillBase[SK_OUTDOORSMAN] = Random(80, 150);
 
         npc.AddItem(random_from_array(armor), 1);
-        if(Random(0, 100) <= 40)
-            npc.AddItem(random_from_array(helmets), 1);
+        if(Random(0, 100) <= 15)
+        {
+            Item@ utility = npc.AddItem(random_from_array(utilities), 1);
+            if(valid(utility))
+                npc.MoveItem(utility.Id, utility.GetCount(), SLOT_UTILITY);
+        }
         Item@ _weapon = npc.AddItem(random_from_array(weapon), 1);
         npc.AddItem(random_from_array(weapon_backup1), Random(5, 10));
         if(Random(0, 1) == 0)
@@ -1013,32 +1024,16 @@ void critter_init(Critter& npc, bool firstTime)
     npc.SetEvent(CRITTER_EVENT_GLOBAL_PROCESS,     "_GlobalProcess");
 }
 
-Item@ WearBestHelmet(Critter& critter)
-{
-    return(WearBestArmor(critter, SLOT_HEAD));
-}
-
 Item@ WearBestArmor(Critter& critter)
 {
-    return(WearBestArmor(critter, SLOT_ARMOR));
-}
-
-Item@ WearBestArmor(Critter& critter, uint8 slot)   // it's "Any" not "Best" for now
-{
-    if(slot != SLOT_ARMOR && slot != SLOT_HEAD)
-    {
-        Report(critter, "Invalid slot for WearBestArmor: " + slot);
-        return(null);
-    }
-
     array<Item@> items;
     uint         count = critter.GetItems(SLOT_INV, items);
     for(uint i = 0; i < count; i++)
     {
-        if(items[i].GetType() == ITEM_TYPE_ARMOR && items[i].Proto.Slot == slot)
+        if(items[i].GetType() == ITEM_TYPE_ARMOR && items[i].Proto.Slot == SLOT_ARMOR)
         {
-            _CritMoveItem(critter, items[i], slot);
-            critter.SetFavoriteItem(slot, items[i].GetProtoId());
+            _CritMoveItem(critter, items[i], SLOT_ARMOR);
+            critter.SetFavoriteItem(SLOT_ARMOR, items[i].GetProtoId());
             return(items[i]);
         }
     }
@@ -1189,15 +1184,6 @@ bool CheckEquipment(Critter& npc)
         if(valid(WearBestArmor(npc)))
         {
             Report(npc, "WearBestArmor SLOT_ARMOR");
-            npc.Wait(_SECOND(2));
-            return(false);
-        }
-    }
-    if(!valid(npc.GetItem(0, SLOT_HEAD)))
-    {
-        if(valid(WearBestHelmet(npc)))
-        {
-            Report(npc, "WearBestHelmet SLOT_HEAD");
             npc.Wait(_SECOND(2));
             return(false);
         }

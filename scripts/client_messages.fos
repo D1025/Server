@@ -712,32 +712,6 @@ bool out_message(string& message, int& sayType)
         }
     }
 	
-	ItemCl@ headItem = chosen.GetItem( 0, SLOT_HEAD );
-	if( valid(headItem) && headItem.Proto.ProtoId == 470 ) // PID_BALL_GAG
-	{
-		if( sayType == SAY_SHOUT || sayType == SAY_SHOUT_ON_HEAD )
-			sayType += 2;
-
-		for( uint s=0, slen=message.rawLength(); s<slen; s++ )
-		{
-			uint rand = Random(1,100);
-			if( message.rawGet(s) == ' ' && rand >= 50 )
-				continue;
-
-		if( rand <= 20 )
-		{
-			if( Random( 1, 100 ) <= 35 )
-				message.rawSet( s, (Random(0,5)==0?'R':'r'));
-			else
-				message.rawSet(s, (Random(0,2)==0?'H':'h'));
-		}
-		else if( rand <= 30 )
-			message.rawSet(s, (Random(0,7)==0?'G':'g'));
-		else
-			message.rawSet(s, (Random(0,10)<=3?'M':'m'));
-	}
-	}
-
     bool result = false;
     for(uint i = 0, j = message.rawLength(); i < j; i++)
     {

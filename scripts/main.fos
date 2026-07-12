@@ -151,8 +151,6 @@ import void FixDrugs(Critter& cr) from "utils";
 
 import bool GuardNotLegit(Critter@ cr, Item@ item, bool deleteItem) from "cheats";
 import void RemoveNotLegit(Critter@ cr) from "cheats";
-import bool IsReadableBook(uint16 pid) from "books";
-import void TryReadBook(Critter& cr, Item& book) from "books";
 import void AddBonuses(Item@ item, string@ crafter) from "item_bonus";
 import uint BonusNumber(Item@ item) from "item_bonus";
 import void ResetUpgradeSlots(Item@ it, uint slotsCount) from "item_bonus";
@@ -302,7 +300,7 @@ bool start()
     SetSendParameter(-SLOT_HAND1, true, "Utils.dll@_AllowSlotHand1");
     SetSendParameter(-SLOT_HAND2, false);
     SetSendParameter(-SLOT_ARMOR, true, "Utils.dll@_AllowSlotHand1");
-    SetSendParameter(-SLOT_HEAD, true);
+    SetSendParameter(-SLOT_UTILITY, true);
 
     // Some flags for correct client working
     SetSendParameter(MODE_HIDE, true, "cheats@AllowParameterIfHidden");
@@ -1294,16 +1292,6 @@ bool critter_use_item(Critter& cr, Item& item, Critter@ targetCr, Item@ targetIt
 
     DLog("Using item with pid: " + item.GetProtoId());
 
-    // Book reading
-    // disabled
-    /*
-       if(useOnSelf && IsReadableBook(pid))
-       {
-            TryReadBook(cr,item);
-            return true;
-       }
-     */
-
     // Explosion
     if(OnUseExplode(cr, item, targetCr, targetItem, targetScen, param))
         return true;
@@ -1413,13 +1401,6 @@ bool critter_use_item(Critter& cr, Item& item, Critter@ targetCr, Item@ targetIt
         return UseProspectMap(cr, item);
     }
 	
-	// Book reading
-	if(useOnSelf && IsReadableBook(pid))
-	{
-		TryReadBook(cr,item);
-		return true;
-	}
-
     // Take process to engine
     return false;
 }
@@ -1807,9 +1788,7 @@ bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetIt
                     switch(armor.GetProtoId())
                     {
                     case PID_POWERED_ARMOR:
-                    case PID_HARDENED_POWER_ARMOR:
                     case PID_ADVANCED_POWER_ARMOR:
-                    case PID_ADVANCED_POWER_ARMOR_MK2:
                     {
                         cr.Say(SAY_NETMSG, "You can't sneak while wearing powered armor.");
                         return true;
@@ -2112,6 +2091,13 @@ bool MustInitWalkProcessing = true;                                             
 
 void critter_init(Critter& cr, bool firstTime)
 {
+	if(cr.Trait[TRAIT_ARMOR_TRAINING] != 0)
+	{
+		Item@ utility = cr.GetItem(0, SLOT_UTILITY);
+		if(valid(utility))
+			cr.MoveItem(utility.Id, utility.GetCount(), SLOT_INV);
+	}
+
 	speedboost(cr);
     cr.ClearExtEvents();
     CleanupDeploy(cr); // Deploy must never persist across a session/login
@@ -2384,12 +2370,11 @@ void critter_init(Critter& cr, bool firstTime)
                 cr.SetFavoriteItem(SLOT_ARMOR, cr.Stat[ST_DEFAULT_ARMOR_PID]);
             }
 
-            if(cr.Stat[ST_DEFAULT_HELMET_PID] != 0)
+            if(cr.Stat[ST_DEFAULT_UTILITY_PID] != 0)
             {
-                Item@ helmet = cr.AddItem(cr.Stat[ST_DEFAULT_HELMET_PID], 1);
-                if(valid(helmet))
-                    cr.MoveItem(helmet.Id, 1, SLOT_HEAD);
-                // cr.SetFavoriteItem(SLOT_HEAD,cr.Stat[ST_DEFAULT_HELMET_PID]);
+                Item@ utility = cr.AddItem(cr.Stat[ST_DEFAULT_UTILITY_PID], 1);
+                if(valid(utility))
+                    cr.MoveItem(utility.Id, 1, SLOT_UTILITY);
             }
 
             #define _AddTrophy                                                                                               \
@@ -2442,11 +2427,8 @@ void critter_init(Critter& cr, bool firstTime)
             if(valid(dogtag))
             {
                 dogtag.Cost = 50;
-                for(uint s = SLOT_HEAD; s >= SLOT_HAND1; s--)
+                for(uint s = SLOT_HAND2; s >= SLOT_HAND1; s--)
                 {
-                    if(s == SLOT_ARMOR)
-                        continue;
-
                     if(!valid(cr.GetItem(0, s)))
                     {
                         if(cr.MoveItem(dogtag.Id, dogtag.GetCount(), s))
@@ -2497,7 +2479,7 @@ void critter_init(Critter& cr, bool firstTime)
                 cr.ChangeCrType(crType);
         }
 
-        int[] slots = { SLOT_ARMOR, ITEM_PERK_ARMOR, SLOT_HEAD, ITEM_PERK_HELMET };
+        int[] slots = { SLOT_ARMOR, ITEM_PERK_ARMOR };
         for(uint s = 0, slen = slots.length(); s < slen; s += 2)
         {
             Item@ item = cr.GetItem(0, slots[s]);
@@ -3008,7 +2990,7 @@ void critter_dead(Critter& cr, Critter@ killer)
     // common item removal/damaging
     // retrieve all critters' items (armor, hand1, hand2, inv...)
     Item@ armor = cr.GetItem(0, SLOT_ARMOR);
-    Item@ helmet = cr.GetItem(0, SLOT_HEAD);
+    Item@ utility = cr.GetItem(0, SLOT_UTILITY);
     array<Item@> trophies;
     array<Item@> items;
 
@@ -3018,11 +3000,10 @@ void critter_dead(Critter& cr, Critter@ killer)
     cr.GetItems(SLOT_INV, items);
 
     bool isArmor = (valid(armor));
-    bool isHelmet = (valid(helmet));
     bool isTrophy = (trophies.length() > 0);
 
-    // remove armor/helmet/trophies on following death types
-    if((isArmor || isHelmet || isTrophy) &&
+    // Remove armor/trophies on following death types. Utility follows normal loot rules.
+    if((isArmor || isTrophy) &&
        (cr.Anim2Dead == ANIM2_DEAD_FUSED || cr.Anim2Dead == ANIM2_DEAD_PULSE_DUST || cr.Anim2Dead == ANIM2_DEAD_EXPLODE) &&
        _CritCanDropItemsOnDead(cr))
     {
@@ -3033,11 +3014,6 @@ void critter_dead(Critter& cr, Critter@ killer)
                 DeleteItem(armor);
                 isArmor = false;
             }
-            if(isHelmet)
-            {
-                DeleteItem(helmet);
-                isHelmet = false;
-            }
         }
         if(isTrophy && cr.Anim2Dead == ANIM2_DEAD_EXPLODE)
         {
@@ -3046,22 +3022,20 @@ void critter_dead(Critter& cr, Critter@ killer)
         }
     }
     // damage armor on other critical death types
-    if((isArmor || isHelmet) &&
+    if(isArmor &&
        (cr.Anim2Dead == ANIM2_DEAD_BURST ||  cr.Anim2Dead == ANIM2_DEAD_BLOODY_SINGLE || cr.Anim2Dead == ANIM2_DEAD_BLOODY_BURST ||
         cr.Anim2Dead == ANIM2_DEAD_PULSE || cr.Anim2Dead == ANIM2_DEAD_PULSE_DUST || cr.Anim2Dead == ANIM2_DEAD_LASER ||
         cr.Anim2Dead == ANIM2_DEAD_EXPLODE || cr.Anim2Dead == ANIM2_DEAD_FUSED || cr.Anim2Dead == ANIM2_DEAD_BURN || cr.Anim2Dead == ANIM2_DEAD_BURN_RUN)
        )
     {
         if(isArmor)
-            WearItem(cr, armor,  ((MAX_DETERIORATION - armor.Deterioration) / 5) * ((IsT4Item(armor) && cr.IsPlayer()) ? GetGvar(GVAR_deterioration_T4) : 1)); // 23-07-2013 Cubik: złagodzone psucie sie pancerzy i helmow podczas smierci z 50% na 20% na każda smierc
-        if(isHelmet)
-            WearItem(cr, helmet, ((MAX_DETERIORATION - helmet.Deterioration) / 5) * ((IsT4Item(helmet) && cr.IsPlayer()) ? GetGvar(GVAR_deterioration_T4) : 1));
+            WearItem(cr, armor, ((MAX_DETERIORATION - armor.Deterioration) / 5) * ((IsT4Item(armor) && cr.IsPlayer()) ? GetGvar(GVAR_deterioration_T4) : 1));
     }
 
     if(isArmor)
         items.insertLast(armor);
-    if(isHelmet)
-        items.insertLast(helmet);
+    if(valid(utility))
+        items.insertLast(utility);
 
     // move all armor items to inventory of npc. delete it if no drop.
     if(cr.Stat[ST_REPLICATION_TIME] < 0 && cr.IsNpc())
@@ -3086,7 +3060,7 @@ void critter_dead(Critter& cr, Critter@ killer)
                 DeleteItem(items[i]);
             }
         }
-        // drop all (armor/helmet/trophies was removed earlier)
+        // Drop all remaining equipment and inventory items.
         if(!(map.GetLocation().GetProtoId() == LOCATION_Hinkley && IsInsideArena(cr)))
             MoveItems(items, map, cr.HexX, cr.HexY);
     }
@@ -3427,16 +3401,16 @@ void map_critter_in(Map& map, Critter& cr)
             Item@ armor = _CritGetItemArmor(cr);
             Item@ hand1     = _CritGetItemHand(cr);
             Item@ hand2 = _CritGetItemHandExt(cr);
-            Item@ head  = _CritGetItemHead(cr);
+            Item@ utility = _CritGetItemUtility(cr);
 
-            if(valid(armor) || valid(hand1) || valid(hand2) || valid(head) || items.length() > 0)
+            if(valid(armor) || valid(hand1) || valid(hand2) || valid(utility) || items.length() > 0)
             {
                 Broadcast_Message(
                     "Player " + cr.Name + "(" + cr.Id + ") with gear [" +
                     (valid(armor) ? "A" : "") +
                     (valid(hand1) ? "H1" : "") +
                     (valid(hand2) ? "H2" : "") +
-                    (valid(head) ? "HE" : "") +
+                    (valid(utility) ? "U" : "") +
                     (items.length() > 0 ? "I" : "") +
                     "] entered respawn point (map " + map.Id + ")",
                     0, BROADCAST_FILTER_AUTHENTICATED, true

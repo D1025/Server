@@ -11,8 +11,8 @@ lang=engl
 2 2000 None 0 #
 3 2010 #
 4 2020 #
-2 2030 R _item p PID_COMBAT_ARMOR_MK_II + 1 R _item p PID_COMBAT_HELMET_MK_II + 1 #
-2 2040 R _item p PID_TESLA_ARMOR + 1 R _item p PID_TESLA_HELMET + 1 #
+2 2030 R _item p PID_COMBAT_ARMOR_MK_II + 1 #
+2 2040 R _item p PID_TESLA_ARMOR + 1 #
 2 2050 R _item p PID_CIGARETTES + 1 R _item p PID_LIGHTER + 1 R _item p PID_MENTATS + 1 R _item p PID_BEER + 1 R _item p PID_BUFFOUT + 1 R _item p PID_PSYCHO + 1 R _item p PID_JET + 1 R _item p PID_NUKA_COLA + 1 #
 0 2060 @
 3 3000 None 0 #
@@ -66,8 +66,8 @@ lang=engl
 {2000}{}{Hello there. What  do you need?}
 {2010}{}{Let me choose my weapon.}
 {2020}{}{Let my choose ammunition.}
-{2030}{}{Combat Armor and Helmet Mark II.}
-{2040}{}{Tesla Armor and Helmet.}
+{2030}{}{Combat Armor Mark II.}
+{2040}{}{Tesla Armor.}
 {2050}{}{A set of drugs.}
 {2060}{}{Nothing.}
 {3000}{}{What weapon do you need?}

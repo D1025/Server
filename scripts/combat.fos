@@ -52,6 +52,33 @@ import void MolotovBlast( Map& map, uint16 hexX, uint16 hexY, uint16 firePid, ui
 #define PERSISTENT_DOT_TICK_PERIOD   (REAL_SECOND(1))
 #define SILENT_HILL_LOW_LIFE_THRESHOLD_PERCENT (35)
 #define SILENT_HILL_PROTO_BONUS_PERCENT        (50)
+#define TALISMAN_COOLDOWN                       (REAL_MINUTE(1))
+#define TALISMAN_IMMUNITY                       (REAL_SECOND(3))
+
+int ApplyTalismanProtection(Critter& cr, int damage)
+{
+    if(damage <= 0 || cr.IsDead())
+        return damage;
+
+    if(cr.Mode[MODE_INVULNERABLE] != 0)
+        return 0;
+
+    if(cr.Timeout[TO_TALISMAN_IMMUNITY] > 0)
+        return 0;
+
+    int currentHp = cr.Stat[ST_CURRENT_HP];
+    if(currentHp < 1 || damage < currentHp || cr.Timeout[TO_UTILITY_COOLDOWN] > 0)
+        return damage;
+
+    Item@ utility = cr.GetItem(0, SLOT_UTILITY);
+    if(!valid(utility) || utility.GetProtoId() != PID_TALISMAN)
+        return damage;
+
+    _SetTimeout(cr, TO_UTILITY_COOLDOWN, TALISMAN_COOLDOWN);
+    _SetTimeout(cr, TO_TALISMAN_IMMUNITY, TALISMAN_IMMUNITY);
+    cr.Say(SAY_NETMSG, "The talisman saves you from a fatal blow. You are invulnerable for 3 seconds.");
+    return currentHp - 1;
+}
 
 // In towns, dungeons, base control maps (incl. Hawthorne), event boss arenas and the locations
 // listed below a disarmed NPC keeps its weapon: the crit still knocks it out of the hands, but it
@@ -93,7 +120,6 @@ class AttackStruct
     bool       IsLSW = false;
     bool       IsBozar = false;
     bool       IsFlamethrower = false;
-    bool       BloodyMess = false;
     bool       CombatMessage = false;
     bool       IsUnarmed = false;
     int        WeaponPerk = -1;
@@ -328,7 +354,6 @@ bool PerformSewingFollowUpHit(Critter& attacker, Critter& target, uint16 weaponP
     attack.Hy = attacker.HexY;
     attack.set_Aim(HIT_LOCATION_UNCALLED);
     attack.IsBurst = false;
-    attack.BloodyMess = attacker.Trait[TRAIT_BLOODY_MESS] != 0;
     attack.CombatMessage = true;
     attack.IsUnarmed = (weaponSubtype == WS_UNARMED);
     attack.WeaponPerk = (attack.IsUnarmed && protoWeapon.Weapon_UnarmedArmorPiercing) ? WEAPON_PERK_PENETRATE : protoWeapon.Weapon_Perk;
@@ -501,12 +526,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     // Now we change aim, if applicable
     if(aim == HIT_LOCATION_EYES && valid(cr) && (cr.Dir + 3) % 6 != target.Dir)
         aim = HIT_LOCATION_HEAD;
-    else if(aim == HIT_LOCATION_EYES && valid(target))
-    {
-        Item@ helmet = target.GetItem(0, SLOT_HEAD);
-        if(valid(helmet) && helmet.Proto.Armor_Perk == HELMET_PERK_PROTECT_EYES)
-            aim = HIT_LOCATION_HEAD;
-    }
 
 
     if(cr.Timeout[TO_BATTLE] < int(__TimeoutBattle))
@@ -550,7 +569,6 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     attack.IsBurst = isBurst;
     attack.IsLSW = isLSW;
     attack.IsBozar = isBozar;
-    attack.BloodyMess = cr.Trait[TRAIT_BLOODY_MESS] != 0;
     attack.CombatMessage = true;
     attack.IsUnarmed = (weaponSubtype == WS_UNARMED);
     attack.WeaponPerk = (isUnarmed && weapon.Weapon_UnarmedArmorPiercing) ? WEAPON_PERK_PENETRATE : (perkPenetrate ? WEAPON_PERK_PENETRATE : weaponPerk);
@@ -727,7 +745,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             if(isHthAttack && cr.Perk[PE_BONUS_HTH_DAMAGE_II] > 0)
                 chance += 15;
 				
-            Item@ usedArmor = _GetCritterArmor(target, attack.AimHead);
+            Item@ usedArmor = _GetCritterArmor(target);
             if(valid(usedArmor))
             {
                 int addchance = usedArmor.Proto.Armor_CMCritChance;
@@ -1183,7 +1201,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
                         toHit += 15;
                     toHit = CLAMP(toHit, 0, 100);
 
-                    uint areaAfter = ApplyCoverLoss(map, hx, hy, c.HexX, c.HexY, areaRounds);
+                    uint areaAfter = ApplyCoverLoss(map, hx, hy, c.HexX, c.HexY, c, areaRounds);
                     uint hits = 0;
                     for (uint k = 0; k < areaAfter; ++k)
                     {
@@ -1222,7 +1240,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
                 // Cover: an obstacle in the far half of the line eats part of the
                 // volley before it can reach this target.
-                uint effRounds = ApplyCoverLoss(map, hx, hy, currentTarget.HexX, currentTarget.HexY, volleyRounds);
+                uint effRounds = ApplyCoverLoss(map, hx, hy, currentTarget.HexX, currentTarget.HexY, currentTarget, volleyRounds);
 
                 uint curRounds = 0;
                 for (uint k = 0; k < effRounds; ++k)
@@ -1459,7 +1477,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
 void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCritical, bool intentionally, array<CombatRes>& results, int CriticalChance)
 {
-	Item@ usedArmor = _GetCritterArmor(target, attack.AimHead);
+	Item@ usedArmor = _GetCritterArmor(target);
 	
     int      dmgMul = attack.DmgMul;
     int      bt = target.Stat[ST_BODY_TYPE];
@@ -1470,7 +1488,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     Critter@ attacker = attack.Attacker;	
     bool     validAttacker = valid(attacker);
     Map@     map = target.GetMap();
-    bool     isBloodyMess = attack.BloodyMess;
     bool     isCombatText = attack.CombatMessage;
     Item@    realWeapon = attack.RealWeapon;
 	Item@    realWeaponTarget = _CritGetItemHand(target);
@@ -1555,6 +1572,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	}
 	
     if(target.IsDead() || !valid(map))
+        return;
+
+    if(target.Timeout[TO_TALISMAN_IMMUNITY] > 0)
         return;
 
     if(validAttacker && intentionally && target.Id != attack.TargetId)
@@ -1823,13 +1843,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	} 
 	// swing:thrust END	
     
-    int targetDR = target.GetDR(dmgType, attack.AimHead);
-    int targetDT = target.GetDT(dmgType, attack.AimHead);
+    int targetDR = target.GetDR(dmgType);
+    int targetDT = target.GetDT(dmgType);
 
-    int bypassPower = GetBypassPower(target, attack.AimHead);
+    int bypassPower = GetBypassPower(target);
 
-    int armorDR = target.GetArmorDR(dmgType, attack.AimHead) * bypassPower;
-    int armorDT = target.GetArmorDT(dmgType, attack.AimHead) * bypassPower;
+    int armorDR = target.GetArmorDR(dmgType) * bypassPower;
+    int armorDT = target.GetArmorDT(dmgType) * bypassPower;
 
 
 
@@ -2058,7 +2078,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             totalDmg = totalDmg + 125;
 
     if (attack.IsFlamethrower == false || isWeaponBluedgeoning == true) {
-        int ac = target.GetAC(false);
+        int ac = target.GetAC();
         ac = ac + attack.ACMod;
         ac = CLAMP(ac, 0, 95);
         totalDmg = totalDmg * (100 - ac) / 100;
@@ -2076,6 +2096,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         if(attacker.Trait[TRAIT_SUPPRESSOR] != 0 && targetIsPlayer && attacker.Id != target.Id)
             totalDmg /= 2;
     }
+
+    totalDmg = ApplyTalismanProtection(target, totalDmg);
 
     if(totalDmg > 0)
     {
@@ -2282,8 +2304,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         attackFront = false;
 
 
-    int   armorDr = target.GetDR(dmgType, attack.AimHead);
-    Item@ armor_ = _GetCritterArmor(target, attack.AimHead);
+    int   armorDr = target.GetDR(dmgType);
+    Item@ armor_ = _GetCritterArmor(target);
 	
     
 	if(valid(armor_) && targetIsPlayer)
@@ -2333,14 +2355,14 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             case DAMAGE_NORMAL:
                 if(burst)
                 {
-                    if(isCritical || isBloodyMess)
+                    if(isCritical)
                         anim2Dead = ANIM2_DEAD_BLOODY_BURST;
                     else
                         anim2Dead = ANIM2_DEAD_BURST;
                 }
                 else
                 {
-                    if(isCritical || isBloodyMess)
+                    if(isCritical)
                         anim2Dead = ANIM2_DEAD_BLOODY_SINGLE;
                 }
                 break;
@@ -2348,13 +2370,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 anim2Dead = ANIM2_DEAD_LASER;
                 break;
             case DAMAGE_FIRE:
-                if(isCritical || isBloodyMess)
-                {
-                    if(isBloodyMess || Random(0, 3) == 0)
-                        anim2Dead = ANIM2_DEAD_BURN_RUN;
-                    else
-                        anim2Dead = ANIM2_DEAD_BURN;
-                }
+                if(isCritical && Random(0, 3) == 0)
+                    anim2Dead = ANIM2_DEAD_BURN_RUN;
                 else
                     anim2Dead = ANIM2_DEAD_BURN;
                 break;
@@ -3030,10 +3047,10 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         int  dmgType = _WeaponDmgType(weapon, weaponUse);
 		if(ammoPid == PID_SHOTGUN_SHELLS_EMP) dmgType=DAMAGE_EMP; // jesli uzywane ammo typu EMP to zmien dmtype broni
 		if(ammoPid == PID_SHOTGUN_DRAGON_BREATH_SHELLS) dmgType=DAMAGE_FIRE; // jesli uzywane ammo typu FIRE to zmien dmtype broni
-        int  targetDT = cr.GetDT(dmgType, false);
-		int  targetDR = cr.GetDR(dmgType, false);
+        int  targetDT = cr.GetDT(dmgType);
+		int  targetDR = cr.GetDR(dmgType);
 
-		Item@ armor_ = _GetCritterArmor(cr, attack.AimHead);
+		Item@ armor_ = _GetCritterArmor(cr);
 		//if(dmgType==DAMAGE_EXPLODE)
 		//{
 			//targetDT += SelectArmorBonus(armor_, BONUS_ARMOR_EXPLODE_DT);
@@ -3048,9 +3065,9 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 	
         
 
-        int  bypassPower = GetBypassPower(cr, false);
-        int  armorDT = cr.GetArmorDT(dmgType, false) * bypassPower;
-		int  armorDR = cr.GetArmorDR(dmgType, false) * bypassPower;	
+        int  bypassPower = GetBypassPower(cr);
+        int  armorDT = cr.GetArmorDT(dmgType) * bypassPower;
+		int  armorDR = cr.GetArmorDR(dmgType) * bypassPower;
 		
 
         if(WeaponHasProtoPerk(weapon, WEAPON_PERK_PENETRATE))
@@ -3206,6 +3223,14 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         tookDamage = true;
     }
 
+    bool talismanImmune = cr.Timeout[TO_TALISMAN_IMMUNITY] > 0;
+    totalDmg = ApplyTalismanProtection(cr, totalDmg);
+    if(talismanImmune)
+    {
+        eff = 0;
+        tookDamage = false;
+    }
+
     if(FLAG(eff, MF_LOST_NEXT_TURN))
     {
         int lostAp = cr.Perk[PE_QUICK_RECOVERY] > 0 ? -(cr.Stat[ST_ACTION_POINTS] / 3) : -cr.Stat[ST_ACTION_POINTS];
@@ -3293,10 +3318,14 @@ void WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
 {
     // 'dmg' to obrazenia surowe (przed resistami). Redukcja odpornosciami fizycznymi
     // (DT/DR z armora), tak jak blok obrazen z broni (~combat.fos:1922).
-    dmg -= victim.GetDT(DAMAGE_NORMAL, false);
+    dmg -= victim.GetDT(DAMAGE_NORMAL);
     if(dmg <= 0)
         return;
-    dmg -= (dmg * CLAMP(victim.GetDR(DAMAGE_NORMAL, false), 0, 95)) / 100;
+    dmg -= (dmg * CLAMP(victim.GetDR(DAMAGE_NORMAL), 0, 95)) / 100;
+    if(dmg <= 0)
+        return;
+
+    dmg = ApplyTalismanProtection(victim, dmg);
     if(dmg <= 0)
         return;
 
@@ -3391,7 +3420,6 @@ void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attacker
     attack.Hy = hy;
     attack.set_Aim(HIT_LOCATION_UNCALLED);
     attack.IsBurst = false;
-    attack.BloodyMess = false;
     attack.CombatMessage = false;
     attack.WeaponPerk = -1;
     attack.WeaponSubtype = 0;
@@ -3620,9 +3648,9 @@ Critter@ ChooseRandomTarget(Map& map, Critter& cr, Critter& target, uint wpnMaxD
     return null;
 }
 
-int GetBypassPower(Critter& target, bool aimHead)
+int GetBypassPower(Critter& target)
 {
-    Item@ armor = _GetCritterArmor(target, aimHead);
+    Item@ armor = _GetCritterArmor(target);
     if(!valid(armor))
         return 1;
     int deterPercent = armor.Deterioration;
@@ -3772,6 +3800,7 @@ uint cte_PersistentDot(Critter& cr, int identifier, uint& rate)
 
     if(cr.Mode[MODE_INVULNERABLE] == 0 && tickDamage > 0)
     {
+        tickDamage = ApplyTalismanProtection(cr, tickDamage);
         cr.StatBase[ST_CURRENT_HP] -= tickDamage;
         int sourceAttackerId = cr.Stat[ST_PERSISTENT_DOT_LAST_ENEMY_ID];
         if(sourceAttackerId > 0)
@@ -3981,7 +4010,7 @@ void CascadeLineVolley(array<Critter@> &inout critsHit, array<uint> &inout crits
         if(!cur.IsKnockout())
             bl++;
 
-        uint effRounds = ApplyCoverLoss(map, hx, hy, cur.HexX, cur.HexY, volleyRounds);
+        uint effRounds = ApplyCoverLoss(map, hx, hy, cur.HexX, cur.HexY, cur, volleyRounds);
         uint curHits = 0;
         for(uint k = 0; k < effRounds; ++k)
         {
@@ -4018,10 +4047,26 @@ class CoverCounter : ITraceContext
     }
 }
 
+bool HasRiotShieldCover(Critter@ target)
+{
+    if(!valid(target) || target.IsDead() || target.IsKnockout())
+        return false;
+
+    Item@ utility = target.GetItem(0, SLOT_UTILITY);
+    if(!valid(utility) || utility.GetProtoId() != PID_RIOT_SHIELD || FLAG(utility.BrokenFlags, BI_BROKEN))
+        return false;
+
+    Item@ weapon = _CritGetItemHand(target);
+    if(!valid(weapon) || weapon.GetType() != ITEM_TYPE_WEAPON)
+        return true;
+    return !FLAG(weapon.Proto.Flags, ITEM_TWO_HANDS);
+}
+
 // Returns how many of `rounds` still reach the target after cover along the fire
 // line. Each counted obstacle eats COVER_ROUNDS_LOSS_PCT% of the rounds (min 1),
-// capped at COVER_MAX obstacles. No cover -> rounds unchanged.
-uint ApplyCoverLoss(Map@ map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, uint rounds)
+// capped at COVER_MAX obstacles. Riot Shield supplies one virtual obstacle while
+// its wearer is unarmed or uses a one-handed weapon. No cover -> rounds unchanged.
+uint ApplyCoverLoss(Map@ map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, Critter@ target, uint rounds)
 {
     if(rounds == 0)
         return 0;
@@ -4035,6 +4080,8 @@ uint ApplyCoverLoss(Map@ map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, uint r
     LineTracerHex(hx, hy, tx, ty, map, dist, ctx);
 
     uint cov = ctx.count;
+    if(HasRiotShieldCover(target) && cov < 1)
+        cov = 1;
     if(cov > COVER_MAX)
         cov = COVER_MAX;
     if(cov == 0)

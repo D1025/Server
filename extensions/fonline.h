@@ -711,7 +711,15 @@ struct ProtoItem
     // User data, binded with 'bindfield' pragma
     // Common
     const int    MagicPower;
-    const uint8  Unused[ 96 ];
+    const uint8  CommonUnused[ 42 ];
+    const uint16 Misc_ChargeStart;
+    const uint16 Misc_ChargeMax;
+    const uint16 Misc_ToolSkillNum;
+    const int    Misc_ToolSkillBonus;
+    const int    Utility_Param;
+    const int    Utility_Value;
+    const uint   Utility_Flags;
+    const uint8  UtilityUnused[ 32 ];
     // Armor, offset 100
     const uint   Armor_CrTypeMale;
     const uint   Armor_CrTypeFemale;

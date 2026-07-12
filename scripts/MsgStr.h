@@ -505,16 +505,6 @@
 #define STR_DRUG_USE_ON_SUCC            (10306)
 #define STR_DRUG_USE_ON_FAIL            (10307)
 #define STR_DRUG_USE_FAIL_SELF          (10308)
-// Books
-#define STR_BOOK_READ_SUCCESS           (10450)
-#define STR_BOOK_READ_FAIL              (10451)
-#define STR_BOOK_READ_SCIENCE           (10452)
-#define STR_BOOK_READ_REPAIR            (10453)
-#define STR_BOOK_READ_FISRT_AID         (10454)
-#define STR_BOOK_READ_SMALL_GUNS        (10455)
-#define STR_BOOK_READ_ENERGY_WEAPONS    (10456)
-#define STR_BOOK_READ_OUTDOORSMAN       (10457)
-
 // Caliber
 #define STR_CALIBER_(num)               (10900+(num))
 #define STR_CALIBER #(num)              (10900+(num))

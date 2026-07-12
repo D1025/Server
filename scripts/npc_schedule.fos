@@ -1332,7 +1332,7 @@ class CNpcTask : INpcTask
 
     INpcTask@ Wait_FavouriteItem(uint8 slot)
     {
-        if(slot >= SLOT_HEAD)
+        if(slot > SLOT_ARMOR)
         {
             _WLog("Invalid slot, ignoring", DEBUG_MESSAGE);
             return(this);

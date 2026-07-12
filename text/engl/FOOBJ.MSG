@@ -99,7 +99,7 @@
 {4600}{}{Bag}
 {4601}{}{An average sized bag. Made from weaved brahmin hairs.}
 {4700}{}{First Aid Kit}
-{4701}{}{A small kit containing basic medical equipment. Bandages, wraps, antiseptic spray, and more.}
+{4701}{}{A small kit containing basic medical equipment. Equip it as utility to gain +25 First Aid when using it.}
 {4800}{}{RadAway}
 {4801}{}{A chemical solution that bonds with radiation particles and passes them through your system. Takes time to work.}
 {4900}{}{Antidote}
@@ -113,7 +113,7 @@
 {5300}{}{Mentats}
 {5301}{}{A pillbox of mind-altering chems. Increases memory related functions, and speeds other mental processes. Highly addictive.}
 {5400}{}{Stealth Boy}
-{5401}{}{A RobCo Stealth Boy 3001 personal stealth device. Generates a modulating field that transmits the reflected light from one side of an object to the other.}
+{5401}{}{A RobCo Stealth Boy 3001 personal stealth device. Equip it as utility and use it to toggle its charged stealth field.}
 {5500}{}{Water Chip}
 {5501}{}{This is a Vault-Tec water chip. They are typically packaged in groups of five to a box.}
 {5600}{}{Dog Tags}
@@ -123,7 +123,7 @@
 {5800}{}{Tape}
 {5801}{}{A Wattz Electronics Holodisc tape. This particular tape looks to be into very poor condition.}
 {5900}{}{Motion Sensor}
-{5901}{}{A Wattz Electronics C-U model motion sensor. Detects the movement of biological material over a distance of few meters using a tuned radar device.}
+{5901}{}{A Wattz Electronics C-U motion sensor. Equip it as utility and use it to toggle charged movement detection.}
 {6000}{}{Bookcase}
 {6001}{}{A wooden bookcase.}
 {6100}{}{Bookcase}
@@ -151,13 +151,13 @@
 {7200}{}{Briefcase}
 {7201}{}{A briefcase, with a Made-in-the-USA label. Leather. Good condition, but the combination lock is broken.}
 {7300}{}{Big Book of Science}
-{7301}{}{A set of books, containing information about different scientific fields.}
+{7301}{}{A reference collection. While equipped in the utility slot, it increases Science by 30 points.}
 {7400}{}{Leather Jacket}
 {7401}{}{A black, heavy leather jacket.}
 {7500}{}{Tool}
 {7501}{}{A tool set, containing various useful tools, including pliers.}
 {7600}{}{Deans Electronics}
-{7601}{}{A study book on the field of electronics. A note on the cover says that it is for the "budding young electrician in everyone!"}
+{7601}{}{An electronics study book. While equipped in the utility slot, it increases Repair by 30 points.}
 {7700}{}{Electronic Lockpick}
 {7701}{}{A Wattz Electronics Micromanipulator FingerStuff electronic lockpick. For defeating electronic locks and security devices.}
 {7800}{}{Fuzzy Painting}
@@ -165,7 +165,7 @@
 {7900}{}{Flare (Orange)}
 {7901}{}{A flare. Creates light for a short period of time. The paper is a little worn, but otherwise it is in good condition. Twist the top to activate it.}
 {8000}{}{First Aid Book}
-{8001}{}{A study book on the concepts and practical use of first aid skills.}
+{8001}{}{A practical medical guide. While equipped in the utility slot, it increases First Aid by 30 points.}
 {8100}{}{Iguana-on-a-stick}
 {8101}{}{A cooked iguana, roasted in it's own skin.}
 {8200}{}{Key}
@@ -179,7 +179,7 @@
 {8500}{}{Plastic Explosives}
 {8501}{}{A chunk of Cordex, a military brand of plastic explosives. Highly stable, very destructive. Includes a timer.}
 {8600}{}{Scout Handbook}
-{8601}{}{A book on the methods and ideals of Scouting. Very practical information regarding outdoor life.}
+{8601}{}{A practical scouting guide. While equipped in the utility slot, it increases Outdoorsman by 30 points.}
 {8700}{}{Buffout}
 {8701}{}{Highly advanced steroids. While in effect, they increase strength and endurance. Very addictive.}
 {8800}{}{Watch}
@@ -187,9 +187,9 @@
 {8900}{}{Motor}
 {8901}{}{A 40-hp electric motor.}
 {9000}{}{Back Pack}
-{9001}{}{A basic backpack, with optional carrying straps.}
+{9001}{}{A sturdy backpack. While equipped in the utility slot, it increases Carry Weight by 50.}
 {9100}{}{Doctor's Bag}
-{9101}{}{This brown bag contains instruments and chems used by doctors in the application of their trade.}
+{9101}{}{A brown bag containing medical instruments and chems. Equip it as utility to gain +25 Doctor when using it.}
 {9200}{}{Scorpion Tail}
 {9201}{}{The severed tail of a radscorpion.}
 {9300}{}{Bag}
@@ -211,7 +211,7 @@
 {10100}{}{Lighter}
 {10101}{}{A silver butane lighter, in good condition.}
 {10200}{}{Guns and Bullets}
-{10201}{}{A gun rag. A magazine devoted to the practical use of firearms, and the occasional biased review.}
+{10201}{}{A firearms magazine. While equipped in the utility slot, it increases Pistols by 30 points.}
 {10300}{}{Iguana-on-a-stick}
 {10301}{}{Some charred meat and vegetables on a cooking stick.}
 {10400}{}{Tape Recorder}
@@ -414,12 +414,8 @@
 {20601}{}{A high explosive, consisting of nitroglycerin mixed with the absorbent substance kiselguhr. Includes a timer, which is ticking.}
 {20700}{}{Geiger Counter}
 {20701}{}{A Wattz Electronics C-Radz model Geiger Counter. Detects the presence and strength of radiation fields. It is on.}
-{20800}{}{Motion Sensor}
-{20801}{}{A Wattz Electronics C-U model motion sensor. Detects the movement of biological material over a distance of few meters using a tuned radar device. It is on.}
 {20900}{}{Plastic Explosives}
 {20901}{}{A chunk of Cordex, a military brand of plastic explosives. Highly stable, very destructive. Includes a timer, which is ticking.}
-{21000}{}{Stealth Boy}
-{21001}{}{A RobCo Stealth Boy 3001 personal stealth device. Generates a modulating field that transmits the reflected light from one side of an object to the other.}
 {21100}{}{Bones}
 {21101}{}{You see Ed. Ed's dead.}
 {21200}{}{Tandi}
@@ -460,8 +456,6 @@
 {23001}{}{A compendium of events and important recordings from a Vault computer system. Possibly damaged.}
 {23100}{}{Military Base Security Code}
 {23101}{}{ }
-{23200}{}{Hardened Power Armor}
-{23201}{}{A suit of T-51b Power Armor. The hardening process has improved the defensive capability of this high-tech armor system.}
 {23300}{}{Turbo Plasma Rifle}
 {23301}{}{A modified Winchester P94 plasma rifle. The plasma bolt chamber has been hotwired to accelerate the bolt formation process.}
 {23400}{}{Spiked Knuckles}
@@ -554,8 +548,6 @@
 {27701}{}{This is the dried and cured hide of a Golden Gecko.}
 {27800}{}{Flint}
 {27801}{}{A stone used to sharpen weapons.}
-{27900}{}{Neural Interface}
-{27901}{}{It appears to be a set of electrodes built into a head unit with a standard computer interface plug.}
 {28000}{}{Sharpened Spear}
 {28001}{}{A razor tipped polearm. The shaft is wooden, and the tip is sharpened steel.}
 {28100}{}{Dixon's Eye}
@@ -596,8 +588,6 @@
 {29801}{}{A standard key.}
 {29900}{}{Pipe Rifle}
 {29901}{}{This is a hand-made single shot rifle.}
-{30000}{}{Zip Gun}
-{30001}{}{A handmade single shot pistol.}
 {30100}{}{Clipboard}
 {30101}{}{This is a clipboard with the coolant report.}
 {30200}{}{Gecko Holodisk}
@@ -615,7 +605,7 @@
 {30800}{}{Super Tool Kit}
 {30801}{}{An impressive tool set made by "Snap-Off".}
 {30900}{}{Talisman}
-{30901}{}{A talisman which is worn by followers of The Brain.}
+{30901}{}{A talisman worn by followers of The Brain. While equipped as utility, it prevents a fatal blow, leaves the wearer at 1 HP and grants 3 seconds of invulnerability. This effect uses the shared 60-second Utility cooldown.}
 {31000}{}{Gamma Gulp Beer}
 {31001}{}{A bottle of Gamma Gulp beer. It glows in the dark!}
 {31100}{}{Roentgen Rum}
@@ -629,7 +619,7 @@
 {31500}{}{Condom (Green package)}
 {31501}{}{This is a Jimmy Hats brand condom, a very reliable brand. This one contains phosphorous green dye #2 and is slathered in spermicidal lubricant for added protection.}
 {31600}{}{Condom (Red Package)}
-{31601}{}{This is a Jimmy Hats brand condom, a very reliable brand. This one contains phosophorous red dye #5 and has a yummy cinnamon bun flavor... or so you heard.}
+{31601}{}{A package of Jimmy Hats brand condoms. Your best protection against disease. Jimmy Hats - They'll never know. This package is red.}
 {31700}{}{Cosmetics Case}
 {31701}{}{This is a genuine Mary May brand cosmetics case.}
 {31800}{}{Empty Hypodermic}
@@ -690,8 +680,6 @@
 {34700}{}{Gravesite}
 {34800}{}{Advanced Power Armor}
 {34801}{}{This powered armor is composed of lightweight metal alloys, reinforced with ceramic castings at key points. The motion-assist servo-motors appear to be high quality models as well.}
-{34900}{}{Adv. Power Armor MKII}
-{34901}{}{This powered armor appears to be composed of entirely of lightweight ceramic composites rather than the usual combination of metal and ceramic plates. It seems as though it should give even more protection than the standard Advanced Power Armor.}
 {35000}{}{Bozar}
 {35001}{}{The ultimate refinement of the sniper's art. Although, somewhat finicky and prone to jamming if not kept scrupulously clean, the big weapon's accuracy more than makes up for its extra maintenance requirements.}
 {35100}{}{FN FAL}
@@ -781,30 +769,18 @@
 {39601}{}{The YK32 is an electrical pulse weapon that was developed by the Yuma Flats Energy Consortium. Though powerful, the YK32 was never considered a practical weapon due to its inefficient energy usage and bulky design.}
 {39700}{}{YK42B Pulse Rifle}
 {39701}{}{The YK42B is an electrical pulse weapon that was developed by the Yuma Flats Energy Consortium. It is considered a far superior weapon to the YK32 pistol, having a greater charge capacity and range.}
-{39800}{}{.44 Magnum (Speed Load)}
-{39801}{}{A .44 Magnum Revolver with a speed loader.}
 {39900}{}{Super Cattle Prod}
 {39901}{}{A Farmer's Best Friend model cattle prod from Wattz Electronics. This model has been upgraded to increase the electrical discharge.}
 {40000}{}{Incinerator}
 {40001}{}{A Flambe 450 model flamethrower, varmiter variation. Fires a short spray of extremely hot, flamable liquid. Requires specialized fuel to work properly. This model has been modified to fire a hotter mixture which causes greater combustibility.}
-{40100}{}{Laser Rifle (Ext. Cap.)}
-{40101}{}{This Wattz 2000 laser rifle has had its recharging system upgraded and a special recycling chip installed that reduces the drain on the micro fusion cell by 50%}
 {40200}{}{Magneto-Laser Pistol}
 {40201}{}{This Wattz 1000 laser pistol has been upgraded with a magnetic field targeting system that tightens the laser emission, giving this pistol extra penetrating power.}
-{40300}{}{FN FAL (Night Sight)}
-{40301}{}{This rifle has been more widely used by armed forces than any other rifle in history. It's a reliable assault weapon for any terrain or tactical situation. This weapon has been equipped with a night sight for greater night accuracy.}
-{40400}{}{Desert Eagle (Exp. Mag.)}
-{40401}{}{An ancient Desert Eagle pistol, in .44 Magnum. Interest in late 20th century films made this one of the most popular handguns of all times. This one has been equipped with an expanded magazine for longer fun and games!}
-{40500}{}{Assault Rifle}
-{40501}{}{This Assault Rifle has an extended, military sized, ammunition clip. The expanded magazine capacity makes it more fun than ever to Spray-and-Pray.}
-{40600}{}{Plasma Pistol (Ext. Cap.)}
-{40601}{}{This Glock 86 Plasma Pistol has had its magnetic housing chamber realigned to reduce the drain on its energy cell. Its efficiency has doubled, allowing it to fire more shots before the battery is expended.}
 {40700}{}{Mega Power Fist}
 {40701}{}{A "Big Frigger" Power Fist from BeatCo. Considered by many to be the ultimate weapon to use in unarmed combat. This one has upgraded power servos for increased strength. Powered by small energy cells.}
 {40800}{}{Field Medic First Aid Kit}
-{40801}{}{A small kit containing basic emergency medical equipment. Bandages, wraps, antiseptic spray, and more.}
+{40801}{}{An emergency medical kit. Equip it as utility to gain +50 First Aid when using it.}
 {40900}{}{Paramedics Bag}
-{40901}{}{This bag contains instruments and chems used by paramedics in the field. The tools contained are specifically designed for high trauma and emergency cases.}
+{40901}{}{A field bag designed for high-trauma emergencies. Equip it as utility to gain +50 Doctor when using it.}
 {41000}{}{Expanded Lockpick Set}
 {41001}{}{A set of locksmith tools. Includes all the necessary picks and tension wrenches to open conventional pin and tumbler locks. This set also includes some special tools for more difficult mechanical locking mechanisms.}
 {41100}{}{Electronic Lockpick MKII}
@@ -978,7 +954,7 @@
 {49800}{}{Dual Plasma Cannon}
 {49801}{}{Only use for Gun Turret critter.}
 {49900}{}{Pip Boy Lingual Enhancer}
-{49901}{}{This Pip Boy lingual enhancer consists of a storage holodisk, a microfilament cord, headgear, and an optical sensor that is placed over the user's right eye. When used, an optical flash transmits an entire dictionary into the user's memory, permanently improving the user's speech skills.}
+{49901}{}{This Pip Boy add-on consists of a memory and a display upgrade. The Lingual Enhancer increases the users speech skill by showing possible replies during conversations. This one has a small note stuck to it saying: 'Keep it cool'. This item is used automatically from the inventory. Once used, the improvement is permanent. It cannot be used more than once.}
 {50000}{}{FN FAL HPFA}
 {50001}{}{The FN FAL HPFA variant. This model has been tinkered with to fire an entire magazine on burst. The resulting firepower makes the gun much more dangerous, to both the user and his target.}
 {50100}{}{Wall Safe}
@@ -1004,7 +980,7 @@
 {51400}{}{Pool Table}
 {51500}{}{Pool Table}
 {51600}{}{Pip Boy Medical Enhancer}
-{51601}{}{This Pip Boy medical enhancer consists of a storage holodisk, microfilament cord, headgear, and an optical sensor that is placed over the user's left eye. When used, an optical flash transmits a dictionary of physician skills and know-how into the user's memory, permanently improving the user's doctor skill.}
+{51601}{}{This Pip Boy add-on consists of a memory and a display upgrade. The Medical Enhancer increases the users doctor skill by storing a vast amount of medical information. This item is used automatically from the inventory. Once used, the improvement is permanent. It cannot be used more than once.}
 {51700}{}{"Little Jesus"}
 {51701}{}{This wicked looking blade once belonged to Lil' Jesus Mordino. It has numerous nicks and cuts along its surface, but its edge is razor sharp. On its handle is carved "Little Jesus."}
 {51800}{}{Dual Minigun}
@@ -1116,7 +1092,7 @@
 {56900}{}{Sandhole}
 {56901}{}{A hole in the ground. Better don't go too close.}
 {57000}{}{Goggles}
-{57001}{}{This is a pair of fashionable and deadly-looking goggles.}
+{57001}{}{A pair of practical goggles. While equipped as utility, they improve Traps by 15 points.}
 {57100}{}{Primitive Workbench}
 {57101}{}{A wooden board which serves as a primitive workbench.}
 {57200}{}{Gold Nugget}
@@ -1260,57 +1236,12 @@
 {71800}{}{Laser Pointer}
 {71801}{}{Prewar laser toy. An irreplaceable companion to a firearm during night operations.}
 #====================
-# New Armors! / HELMETS
+# New Armors!
 #====================
-{71900}{}{Strawhat}
-{71901}{}{It's a strawhat, made out of straw. Take care!}
-{72000}{}{Armin Cap}
-{72001}{}{A blue cap, that covers the head.}
-{72100}{}{Power Helmet}
-{72101}{}{A power helmet for use with the T-51b power armor. Build to bring the ultimate in pre-War protection. The power helmet has a tendency to dull the wearer's senses with its thick visor, layers of metal and polymer padding.}
-{72200}{}{Motorcycle Helmet}
-{72201}{}{An extraordinarily pristine motorcycle helmet. Good for protection against wide variety of punches, baseball bats and similar objects. Though it wasn't made to stop bullets, it will do in a pinch.}
 {72300}{}{Tibbets Prison Suit}
 {72301}{}{A generic prison suit.}
 {72400}{}{Vault Suit (deprecate me)}
 {72401}{}{A generic vault suit from a Vault-Tec vault.}
-{72500}{}{Combat Helmet}
-{72501}{}{Before The Great War, this combat helmet was standard-issue along with combat armor. Good overall protection with laser target designation and fancy shielding glass. The laser target designation isn't working anymore, though.}
-{72600}{}{Combat Helmet MkII}
-{72601}{}{This helmet is a sturdier version of its predecessor, the combat helmet. Shaded protection glasses and a working radio are just two of its minor, yet very useful upgrades.}
-{72700}{}{Brotherhood Helmet}
-{72701}{}{Brotherhood of Steel scribes managed to improve not only the standard Combat Armor, but also the Combat Helmet. Extra layers of high quality alloys provide even better protection than the old Combat Helmet.}
-{72800}{}{Leather Helmet}
-{72801}{}{These leather helmets are extremely popular throughout the known wasteland. Easy to make and also known as 'aviatior helmets', they fit perfectly to any leather jacket. Unfortunately, they provide quite limited head protection.}
-{72900}{}{Combat Leather Helmet}
-{72901}{}{With eye-protective goggles and an extra layer of sturdy leather, this helmet certainly provides better damage resistance for your skull than the regular one.}
-{73000}{}{Leather Armor Helmet}
-{73001}{}{Just like common leather armors, this helmet is based on pre-War armor designed for motorcycle riding, football, and other dangerous contact sports. The side slots can be upgraded with headphones for the Wattz Electronics 2043B Radio.}
-{73100}{}{Leather Armor Helmet MkII}
-{73101}{}{With an additional layer of sturdy leather and heat resistant welding goggles, this helmet is the best head protection gear wasteland armorers can make out of leather.}
-{73200}{}{Metal Mask}
-{73201}{}{Although somewhat heavy and impractical, this Metal Mask offers quite a solid protection and, as an extra effect, scares away annoying kids. Due to its composition, it offers no protection against electric shocks.}
-{73300}{}{Metal Mask MkII}
-{73301}{}{Substantially enhanced in several critical spots with high quality metal parts and polished with care, this metal mask will hardly break or get rusty over time.}
-{73400}{}{Tesla Helmet}
-{73401}{}{Just like Tesla Armor, this helmet with autonomous power supply uses electromagnetic field to keep hot plasma away from your head. Quite simple, yet unique design, based on some ancient pre-War experiments and blueprints.}
-{73500}{}{Advanced Power Armor Helmet}
-{73501}{}{As a substantial part of the Advanced Power Armor Suit, this helmet makes for an excellent head protection against all kinds of damages.}
-{73600}{}{Advanced Power Armor Helmet MkII}
-{73601}{}{High efficiency air filter, stronger bullet-proof glass, reinforced cables and ducts - those are just some of the numerous features of this improved helmet. It provides currently unmatched protection for your head.}
-{73700}{}{Hardened Power Helmet}
-{73701}{}{Processed with strange chemicals and coatings, this helmet occured through combination of the pre-War and the current technology. Some rumors say the first hardened power armor suit was made by an excentric engineer in Adytum.}
-{73800}{}{Enclave Combat Helmet}
-{73801}{}{This Enclave variant of a combat helmet offers a good overall protection with laser target designation and fancy shielding glass.}
-{73900}{}{Enclave Combat Helmet MkII}
-{73901}{}{This helmet is a sturdier version of the Enclave combat helmet. Shaded protection glasses with includet night vision optics and a working radio are just two of its minor, yet very useful upgrades.}
-{74000}{}{Desert Combat Helmet}
-{74001}{}{This combat helmet ensuring better protection against sand and dust during operations in the desert. Sand coloured hues for better camouflage.}
-{74100}{}{NCR Ranger Combat Helmet}
-{74101}{}{This helmet is a sturdier version of its predecessor, the combat helmet. Shaded protection glasses and a working radio are just two of its minor, yet very useful upgrades. This one is modified for the Rangers of the New California Republic.}
-#====================
-# New Armors!
-#====================
 {75000}{}{Robe}
 {75001}{}{A generic sand colored robe.}
 {75100}{}{UNUSED Enviromental Armor}
@@ -7472,8 +7403,6 @@ a58ew64v}
 {978701}{}{Manufacturing plans for a NCR Ranger Combat Armor.}
 {978800}{}{Armor Blueprints}
 {978801}{}{Manufacturing plans for a Power Armor.}
-{978900}{}{Armor Blueprints}
-{978901}{}{Manufacturing plans for a Hardened Power Armor.}
 #====================
 # Misc Blueprints
 #====================
@@ -7511,46 +7440,11 @@ a58ew64v}
 {980200}{}{Random Blueprints (high)}
 {980201}{}{This item should not be visible in game.}
 #====================
-# Helmet Blueprints
-#====================
-{981000}{}{Helmet Blueprints}
-{981001}{}{Manufacturing plans for a Metal Mask MkII.}
-{981100}{}{Helmet Blueprints}
-{981101}{}{Manufacturing plans for a Tesla Helmet.}
-{981200}{}{Helmet Blueprints}
-{981201}{}{Manufacturing plans for a Combat Helmet.}
-#====================
-# FOnline: Aftertimes
-# Helmet Blueprints
-#====================
-{981300}{}{Helmet Blueprints}
-{981301}{}{Manufacturing plans for a Combat Helmet Mark II.}
-{981400}{}{Helmet Blueprints}
-{981401}{}{Manufacturing plans for a Brotherhood Combat Helmet.}
-{981500}{}{Helmet Blueprints}
-{981501}{}{Manufacturing plans for an Enclave Combat Helmet.}
-{981600}{}{Helmet Blueprints}
-{981601}{}{Manufacturing plans for an Enclave Combat Helmet Mark II.}
-{981700}{}{Helmet Blueprints}
-{981701}{}{Manufacturing plans for a Desert Combat Helmet.}
-{981800}{}{Helmet Blueprints}
-{981801}{}{Manufacturing plans for a NCR Combat Helmet.}
-{981900}{}{Helmet Blueprints}
-{981901}{}{Manufacturing plans for a Power Helmet.}
-{982000}{}{Helmet Blueprints}
-{982001}{}{Manufacturing plans for a Hardened Power Helmet.}
-{982100}{}{Helmet Blueprints}
-{982101}{}{Manufacturing plans for a Advanced Power Helmet.}
-{982200}{}{Helmet Blueprints}
-{982201}{}{Manufacturing plans for a Advanced Power Helmet Mark II.}
-#====================
 # FOnline: Aftertimes
 # Armor Blueprints
 #====================
 {982300}{}{Armor Blueprints}
 {982301}{}{Manufacturing plans for a Advanced Power Armor.}
-{982400}{}{Armor Blueprints}
-{982401}{}{Manufacturing plans for a Advanced Power Armor Mark II.}
 #====================
 # FOnline: Aftertimes
 # Weapon Blueprints
@@ -7787,7 +7681,7 @@ a58ew64v}
 {2200700}{}{High Quality Chemical Components Pile}
 {2200701}{}{This is a small pile of high quality chemical components lying around. You can collect them.}
 {2205000}{}{Tales of Junktown Jerky Vendor}
-{2205001}{}{A collection of writings on the art of trading.}
+{2205001}{}{A collection of trading advice. While equipped in the utility slot, it increases Barter by 30 points.}
 {2205100}{}{Dermal Module}
 {2205101}{}{It is designed to improve the resistance to physical trauma and concussive damage.}
 {2205200}{}{Phoenix Module}
@@ -9291,8 +9185,6 @@ a58ew64v}
 {2519300}{}{Luke}
 {2519301}{}{Durable metal hatch.}
 {2519400}{}{Barrel}
-{2519500}{}{Railway Rifle}
-{2519501}{}{The railway rifle fires railroad spikes at high speed, great for crippling targets.}
 {2519600}{}{Graffiti}
 {2519700}{}{Desk}
 {2519701}{}{A wooden desk.}
@@ -9939,6 +9831,22 @@ a58ew64v}
 {2558301}{}{Technical sketch for applying the Adaptive Plating perk to a piece of armor. Use it on an armor item in your inventory.}
 {2558400}{}{Advanced Armor Blueprint: Deflector Lining}
 {2558401}{}{Technical sketch for applying the Deflector Lining perk to a piece of armor. Use it on an armor item in your inventory.}
+{2558500}{}{Bobblehead - Strength}
+{2558501}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Strength.}
+{2558600}{}{Bobblehead - Perception}
+{2558601}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Perception.}
+{2558700}{}{Bobblehead - Endurance}
+{2558701}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Endurance.}
+{2558800}{}{Bobblehead - Charisma}
+{2558801}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Charisma.}
+{2558900}{}{Bobblehead - Intelligence}
+{2558901}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Intelligence.}
+{2559000}{}{Bobblehead - Agility}
+{2559001}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Agility.}
+{2559100}{}{Bobblehead - Luck}
+{2559101}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Luck.}
+{2559200}{}{Riot Shield}
+{2559201}{}{A heavy improvised shield. While equipped as utility, it always provides cover against burst fire when unarmed or using a one-handed weapon. Placeholder artwork.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 {2999100}{}{Laboratory Keycard}

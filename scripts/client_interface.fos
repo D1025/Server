@@ -85,7 +85,7 @@ import uint GetBodyId() from "client_container_addons";
 
 import void DrawIcons() from "client_faction_icons";
 #define AW_COLOR_ARMOR          COLOR_DGREEN
-#define AW_COLOR_HEADGEAR       COLOR_DGREEN
+#define AW_COLOR_UTILITY        COLOR_DGREEN
 #define AW_COLOR_WEAPON         COLOR_LGREEN
 #define AW_COLOR_WEAPON_PERK    COLOR_RGB(0, 190, 180)
 #define AW_COLOR_INJURIES       COLOR_DRED
@@ -856,10 +856,10 @@ void render_iface(uint layer)
                             dy -= 10;
 
                             ItemCl@ armor = cr.GetItem(0, SLOT_ARMOR);
-                            ItemCl@ helmet = cr.GetItem(0, SLOT_HEAD);
+                            ItemCl@ utility = cr.GetItem(0, SLOT_UTILITY);
                             if(cr.IsPlayer() || cr.Stat[ST_BODY_TYPE] == BT_MEN   || cr.Stat[ST_BODY_TYPE] == BT_WOMEN || cr.Stat[ST_BODY_TYPE] == BT_CHILDREN ||
                                cr.Stat[ST_BODY_TYPE] == BT_GHOUL || cr.Stat[ST_BODY_TYPE] == BT_SUPER_MUTANT ||
-                               valid(armor) || valid(helmet))
+                               valid(armor) || valid(utility))
                             {
                                 
                                 if(valid(armor))
@@ -874,14 +874,14 @@ void render_iface(uint layer)
                                     dy -= 10;
                                 }
                                 
-                                if(valid(helmet))
+                                if(valid(utility))
                                 {
-                                    string _helmet = "No helmet";
-                                    if(IsLexem(helmet, "$-"))
-                                        _helmet = GetLexem(helmet, "$-");
+                                    string _utility = "";
+                                    if(IsLexem(utility, "$-"))
+                                        _utility += GetLexem(utility, "$-");
                                     else
-                                        _helmet = GetMsgStr(TEXTMSG_ITEM, STR_ITEM_INFO(helmet));
-                                    DrawText(_helmet, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, valid(helmet) && helmet.GetType() == ITEM_TYPE_ARMOR ? AW_COLOR_HEADGEAR : COLOR_GRAY, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                                        _utility += GetMsgStr(TEXTMSG_ITEM, STR_ITEM_INFO(utility));
+                                    DrawText(_utility, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, AW_COLOR_UTILITY, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
                                     dy -= 10;
                                 }
                             }
@@ -1052,7 +1052,6 @@ void render_iface(uint layer)
     }
 }
 
-#define _DescHead    ((ELAPSED_TIME / REAL_SECOND(3)) % 2 == 1)
 
 bool IsClientSewingWeaponPid(uint16 pid)
 {
@@ -1315,11 +1314,8 @@ string generic_description(int descType, int& offsX, int& offsY)
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_HP) + " ";
         result += chosen.Stat[ST_CURRENT_HP] + "/" + chosen.Stat[ST_MAX_LIFE] + "\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_AC) + " ";
-        result += chosen.GetAC(false) + "\n";
-        if(_DescHead)
-            result += "Headgear:\n";
-        else
-            result += "Body Armor:\n";
+        result += chosen.GetAC() + "\n";
+        result += "Armor:\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_NORMAL) + "\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_LASER) + "\n";
         result += GetMsgStr(TEXTMSG_GAME, STR_INV_FIRE) + "\n";
@@ -1331,12 +1327,12 @@ string generic_description(int descType, int& offsX, int& offsY)
     {
         offsX = 103;
         result += "\n\n\n\n\n";
-        result += chosen.GetDT(DAMAGE_NORMAL, _DescHead) + "/" + chosen.GetDR(DAMAGE_NORMAL, _DescHead) + "%\n";
-        result += chosen.GetDT(DAMAGE_LASER, _DescHead) + "/" + chosen.GetDR(DAMAGE_LASER, _DescHead) + "%\n";
-        result += chosen.GetDT(DAMAGE_FIRE, _DescHead) + "/" + chosen.GetDR(DAMAGE_FIRE, _DescHead) + "%\n";
-        result += chosen.GetDT(DAMAGE_PLASMA, _DescHead) + "/" + chosen.GetDR(DAMAGE_PLASMA, _DescHead) + "%\n";
-        result += chosen.GetDT(DAMAGE_ELECTR, _DescHead) + "/" + chosen.GetDR(DAMAGE_ELECTR, _DescHead) + "%\n";
-        result += chosen.GetDT(DAMAGE_EXPLODE, _DescHead) + "/" + chosen.GetDR(DAMAGE_EXPLODE, _DescHead) + "%";
+        result += chosen.GetDT(DAMAGE_NORMAL) + "/" + chosen.GetDR(DAMAGE_NORMAL) + "%\n";
+        result += chosen.GetDT(DAMAGE_LASER) + "/" + chosen.GetDR(DAMAGE_LASER) + "%\n";
+        result += chosen.GetDT(DAMAGE_FIRE) + "/" + chosen.GetDR(DAMAGE_FIRE) + "%\n";
+        result += chosen.GetDT(DAMAGE_PLASMA) + "/" + chosen.GetDR(DAMAGE_PLASMA) + "%\n";
+        result += chosen.GetDT(DAMAGE_ELECTR) + "/" + chosen.GetDR(DAMAGE_ELECTR) + "%\n";
+        result += chosen.GetDT(DAMAGE_EXPLODE) + "/" + chosen.GetDR(DAMAGE_EXPLODE) + "%";
     }
 
     return result;
@@ -1357,7 +1353,7 @@ string generic_description(int descType, int& offsX, int& offsY)
 // While Alt is held on an item screen, DrawCompareWindow (render_iface,
 // layer 3) polls GetMonitorContItem() every frame - the item under the cursor
 // with no LMenu delay - and shows a floating side-by-side table: the hovered
-// armor/weapon vs the equipped counterpart (armor/helmet vs the worn piece in
+// armor/weapon vs the equipped counterpart (armor vs the worn piece in
 // the matching slot, weapon vs main hand). Armor rows use the classic
 // "damage type: DT/DR%" layout. Hovered values are green where better, red
 // where worse; the equipped column is gray. All values include upgrade-slot
@@ -1487,14 +1483,7 @@ void CollectArmorCompare(ItemCl@ item, CritterCl@ chosen)
     if(!valid(item) || !valid(chosen))
         return;
 
-    uint16 pid = item.GetProtoId();
-    bool   isHelmet = UpgradeProtoIsHelmet(item.Proto) || (pid >= 719 && pid <= 749);
-
-    ItemCl@ equipped;
-    if(isHelmet)
-        @equipped = chosen.GetItem(0, SLOT_HEAD);
-    else
-        @equipped = chosen.GetItem(0, SLOT_ARMOR);
+    ItemCl@ equipped = chosen.GetItem(0, SLOT_ARMOR);
 
     if(!valid(equipped) || equipped.GetType() != ITEM_TYPE_ARMOR || equipped.Id == item.Id)
         return;
@@ -1697,7 +1686,7 @@ string item_description(ItemCl& item, int lookType)
     {
         if( valid( chosen ) && item.CritId == chosen.Id )
         {
-            if( item.CritSlot>=SLOT_HAND1 && item.CritSlot<=SLOT_ARMOR || item.CritSlot>=SLOT_HAND1 && item.CritSlot<=SLOT_HEAD)
+            if(item.CritSlot >= SLOT_HAND1 && item.CritSlot <= SLOT_UTILITY)
             {
                 array< uint > action = { CHOSEN_MOVE_ITEM, item.Id, item.GetCount(), SLOT_INV, 0, 0, 0 };
                 SetChosenActions( action );
@@ -1706,12 +1695,15 @@ string item_description(ItemCl& item, int lookType)
             else if (item.CritSlot==SLOT_INV)
             {
                 uint8 toSlot=SLOT_HAND2;    
-                if (item.Proto.Type==ITEM_TYPE_ARMOR)
+				if(item.Proto.Slot == SLOT_UTILITY)
 				{
-					if( (item.GetProtoId() >= 719) && (item.GetProtoId() <= 749) ) // helmets
-						toSlot=SLOT_HEAD;
-					else 
-						toSlot=SLOT_ARMOR;
+					toSlot = SLOT_UTILITY;
+					array<uint> action = { CHOSEN_MOVE_ITEM, item.Id, item.GetCount(), toSlot, 0, 0, 0 };
+					SetChosenActions(action);
+				}
+                else if (item.Proto.Type==ITEM_TYPE_ARMOR)
+				{
+					toSlot=SLOT_ARMOR;
 						
 					array< uint > action = { CHOSEN_MOVE_ITEM, item.Id, item.GetCount(), toSlot, 0, 0, 0 };
 					SetChosenActions( action );
@@ -1722,13 +1714,7 @@ string item_description(ItemCl& item, int lookType)
 					array< uint > action = { CHOSEN_MOVE_ITEM, item.Id, item.GetCount(), toSlot, 0, 0, 0 };
 					SetChosenActions( action );
 				}
-				else if( (item.Proto.Type == ITEM_TYPE_DRUG) || 
-					(item.GetProtoId() == PID_BIG_BOOK_OF_SCIENCE ||
-					item.GetProtoId() == PID_DEANS_ELECTRONICS ||
-					item.GetProtoId() == PID_FIRST_AID_BOOK ||
-					item.GetProtoId() == PID_SCOUT_HANDBOOK ||
-					item.GetProtoId() == PID_GUNS_AND_BULLETS ||
-					item.GetProtoId() == PID_BARTER_BOOK) )
+				else if(item.Proto.Type == ITEM_TYPE_DRUG)
 				{
 					array<uint> action = {CHOSEN_USE_ITEM, item.Id, item.GetProtoId(), TARGET_SELF, chosen.Id, ITEM_MODE_USE, 0};
 					SetChosenActions(action);
@@ -2032,6 +2018,15 @@ string item_description(ItemCl& item, int lookType)
                     result += "\n" + str + " bonus: " + item.Proto.Misc_ToolSkillBonus + ".";
                 }
             }
+
+            if(item.Proto.Utility_Value != 0)
+            {
+                string utilityParam = GetMsgStr(TEXTMSG_GAME, STR_SKILL_NAME(item.Proto.Utility_Param));
+                string utilityValue = item.Proto.Utility_Value > 0 ? "+" + item.Proto.Utility_Value : "" + item.Proto.Utility_Value;
+                result += "\nEquipped utility bonus: " + utilityValue + " " + utilityParam + ".";
+            }
+            if(FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_STEALTH | UTILITY_FLAG_MOTION_SENSOR) && item.Proto.Misc_ChargeMax > 0)
+                result += "\nCharge: " + item.Charge + "/" + item.Proto.Misc_ChargeMax + ".";
 
             // Key id
             else if(item.GetType() == ITEM_TYPE_KEY)
@@ -2338,9 +2333,6 @@ return result;
 
 string showItemBonusesStacked(ItemCl& it)
 {
-    if(UpgradeItemIsHelmet(it))
-        return "";
-
     int[] mergedTypes;
     int[] mergedValues;
     int[] mergedStacks;
@@ -2393,15 +2385,12 @@ string showPrefix(ItemCl@ it)
 			return result;
 		}
 
-        if(!UpgradeItemIsHelmet(it))
-        {
-            int quality = UpgradeBaseQualitySlots(it);
-		    if(quality >= 5)	result +="|" + COLOR_SAND + " Unique " + "|" + COLOR_TEXT + " ";
-		    else if(quality == 4)	result +="|" + COLOR_GREEN_RED + " Advanced " + "|" + COLOR_TEXT + " ";
-		    else if(quality == 3)	result +="|" + COLOR_WHITE + " Superior " + "|" + COLOR_TEXT + " ";
-		    else if(quality == 2)	result +="|" + COLOR_LGRAY + " Improved " + "|" + COLOR_TEXT + " ";
-		    else if(quality == 1) result +="|" + COLOR_GRAY + " Quality " + "|" + COLOR_TEXT + " ";
-        }
+        int quality = UpgradeBaseQualitySlots(it);
+		if(quality >= 5)	result +="|" + COLOR_SAND + " Unique " + "|" + COLOR_TEXT + " ";
+		else if(quality == 4)	result +="|" + COLOR_GREEN_RED + " Advanced " + "|" + COLOR_TEXT + " ";
+		else if(quality == 3)	result +="|" + COLOR_WHITE + " Superior " + "|" + COLOR_TEXT + " ";
+		else if(quality == 2)	result +="|" + COLOR_LGRAY + " Improved " + "|" + COLOR_TEXT + " ";
+		else if(quality == 1) result +="|" + COLOR_GRAY + " Quality " + "|" + COLOR_TEXT + " ";
 	}
 	
 	return result;
@@ -2841,10 +2830,7 @@ string critter_description(CritterCl& cr, int lookType)
             armVisible = false;
     }
 
-    bool    headVisible = true;
-    ItemCl@ helmet = cr.GetItem(0, SLOT_HEAD);
-    if(valid(helmet))
-        headVisible = false;
+    bool headVisible = true;
 
     if(lookType == CRITTER_LOOK_FULL && cr.Param[KARMA_SLAVER] > 0)
     {

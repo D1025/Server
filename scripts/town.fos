@@ -1805,12 +1805,11 @@ class CTown : ITown
 				case 4: 	{ cont.AddItem(PID_PK12_GAUSS_PISTOL, 1, 0); cont.AddItem(PID_2MM_EC_AMMO, 20, 0); break;}
 				case 5: 	{ cont.AddItem(PID_YK32_PULSE_PISTOL, 1, 0);break;}
 				case 6: 	{ cont.AddItem(PID_YK42B_PULSE_RIFLE, 1, 0);break;}
-				case 7: 	{ cont.AddItem(PID_NCR_ARMOR, 1, 0); cont.AddItem(PID_NCR_HELMET, 1, 0);  break;}
+				case 7: 	{ cont.AddItem(PID_NCR_ARMOR, 1, 0);  break;}
 				case 8: 	{ cont.AddItem(PID_NCR_ARMOR, 1, 0); cont.AddItem(PID_MIRROR_SHADES, 1, 0);  break;}
-				case 9: 	{ cont.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); cont.AddItem(PID_BROTHERHOOD_HELMET, 1, 0); break;}
+				case 9: 	{ cont.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}
 				case 10: 	{ cont.AddItem(PID_KEEPBRIGE_ROBE, 1, 0); break;}
-				case 11: 	{ cont.AddItem(PID_HARDENED_POWER_ARMOR, 1, 0); cont.AddItem(PID_HARDENED_POWER_HELMET, 1, 0); break;}
-				case 12: 	{ cont.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); cont.AddItem(PID_ENCLAVE_COMBAT_HELMET, 1, 0); break;} 
+				case 12: 	{ cont.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
 				default: break;
 			}
 		}
@@ -1829,7 +1828,7 @@ class CTown : ITown
 		uint losuj_ilosc=Random(1, 3); 
 		switch (Random(1,1))
 			{
-				case 1: 	{ cont.AddItem(PID_COMBAT_ARMOR_MK_II, losuj_ilosc, 0); cont.AddItem(PID_COMBAT_HELMET_MK_II, losuj_ilosc, 0); break;}
+				case 1: 	{ cont.AddItem(PID_COMBAT_ARMOR_MK_II, losuj_ilosc, 0); break;}
 				default: break;
 			}
 		}

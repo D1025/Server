@@ -59,6 +59,7 @@ EXPORT int getParam_Charisma(CritterMutual& cr, uint);
 EXPORT int getParam_Intellegence(CritterMutual& cr, uint);
 EXPORT int getParam_Agility(CritterMutual& cr, uint);
 EXPORT int getParam_Luck(CritterMutual& cr, uint);
+EXPORT int getParam_Skill(CritterMutual& cr, uint index);
 EXPORT int getParam_Level(CritterMutual& cr, uint);
 EXPORT int getParam_Hp(CritterMutual& cr, uint);
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint);
@@ -82,9 +83,11 @@ EXPORT int getParam_Reputation(CritterMutual& cr, uint index);
 EXPORT int getParam_Timeout(CritterMutual& cr, uint index);
 //EXPORT void changedParam_Reputation(CritterMutual& cr, uint index, int oldValue);
 
-EXPORT int Critter_GetAC(CritterMutual& cr, bool head);
-EXPORT int Critter_GetDT(CritterMutual& cr, uint dmg_type, bool head);
-EXPORT int Critter_GetDR(CritterMutual& cr, uint dmg_type, bool head);
+EXPORT int Critter_GetAC(CritterMutual& cr);
+EXPORT int Critter_GetDT(CritterMutual& cr, uint dmg_type);
+EXPORT int Critter_GetDR(CritterMutual& cr, uint dmg_type);
+EXPORT int Critter_GetArmorDR(CritterMutual& cr, uint dmg_type);
+EXPORT int Critter_GetArmorDT(CritterMutual& cr, uint dmg_type);
 
 // Extended methods
 EXPORT bool Critter_IsInjured(CritterMutual& cr);
@@ -111,10 +114,28 @@ uint GetAimHit(int hitLocation);
 uint GetMultihex(CritterMutual& cr);
 int GetArmoredDR(CritterMutual& cr, int dmgType, const Item* armor);
 int GetArmoredDT(CritterMutual& cr, int dmgType, const Item* armor);
-const Item* GetHeadArmor(CritterMutual& cr);
 bool IsRunning(CritterMutual& cr);
 int GetArmorDR(CritterMutual& cr, int dmgType, const Item* armor);
 int GetArmorDT(CritterMutual& cr, int dmgType, const Item* armor);
+
+const Item* GetEquippedUtility(CritterMutual& cr)
+{
+    for(ItemVecIt it = cr.InvItems.begin(), end = cr.InvItems.end(); it != end; ++it)
+    {
+        const Item* item = *it;
+        if(item && item->Proto && item->AccCritter.Slot == SLOT_UTILITY && item->Proto->Slot == SLOT_UTILITY)
+            return item;
+    }
+    return NULL;
+}
+
+int GetUtilityParamBonus(CritterMutual& cr, uint param)
+{
+    const Item* utility = GetEquippedUtility(cr);
+    if(!utility || FLAG(utility->Data.BrokenFlags, BI_BROKEN) || utility->Proto->Utility_Param != (int)param)
+        return 0;
+    return utility->Proto->Utility_Value;
+}
 
 static bool IsHealingItemWithExtraApCost(const Item& item)
 {
@@ -272,9 +293,9 @@ EXPORT int getParam_Strength(CritterMutual& cr, uint)
 	// plus any strength upgrades installed in the suit's slots. This ignores base Strength and the
 	// perk's own ST_STRENGTH_EXT bonus (kept symmetric in item_perks.fos, masked here).
 	if(getArmorPerkStacks(armor, ARMOR_PERK_POWERED) > 0)
-		return CLAMP(13 + armorStr, 1, 30);
+		return CLAMP(13 + armorStr + GetUtilityParamBonus(cr, ST_STRENGTH), 1, 30);
 
-	val += armorStr;
+	val += armorStr + GetUtilityParamBonus(cr, ST_STRENGTH);
 	return CLAMP(val, 1, 30);
 }
 
@@ -288,6 +309,7 @@ EXPORT int getParam_Perception(CritterMutual& cr, uint)
 
 	const Item* armor=cr.ItemSlotArmor;
 	val += checkBonus(armor, BONUS_ARMOR_PERCEPTION);
+	val += GetUtilityParamBonus(cr, ST_PERCEPTION);
 
 	return CLAMP(val, 1, 30);
 }
@@ -298,6 +320,7 @@ EXPORT int getParam_Endurance(CritterMutual& cr, uint)
 
 	const Item* armor=cr.ItemSlotArmor;
 	val += checkBonus(armor, BONUS_ARMOR_ENDURANCE);
+	val += GetUtilityParamBonus(cr, ST_ENDURANCE);
 
 	return CLAMP(val, 1, 30);
 }
@@ -308,6 +331,7 @@ EXPORT int getParam_Charisma(CritterMutual& cr, uint)
 
 	const Item* armor=cr.ItemSlotArmor;
 	val += checkBonus(armor, BONUS_ARMOR_CHARISMA);
+	val += GetUtilityParamBonus(cr, ST_CHARISMA);
 
 	return CLAMP(val, 1, 30);
 }
@@ -322,6 +346,7 @@ EXPORT int getParam_Intellegence(CritterMutual& cr, uint)
 
 	const Item* armor=cr.ItemSlotArmor;
 	val += checkBonus(armor, BONUS_ARMOR_INTELLIGENCE);
+	val += GetUtilityParamBonus(cr, ST_INTELLECT);
 
 	return CLAMP(val, 1, 30);
 }
@@ -332,6 +357,7 @@ EXPORT int getParam_Agility(CritterMutual& cr, uint)
 
 	const Item* armor=cr.ItemSlotArmor;
 	val += checkBonus(armor, BONUS_ARMOR_AGILITY);
+	val += GetUtilityParamBonus(cr, ST_AGILITY);
 
 	return CLAMP(val,1,30);
 }
@@ -342,8 +368,14 @@ EXPORT int getParam_Luck(CritterMutual& cr, uint)
 
 	const Item* armor=cr.ItemSlotArmor;
 	val += checkBonus(armor, BONUS_ARMOR_LUCK);
+	val += GetUtilityParamBonus(cr, ST_LUCK);
 
 	return CLAMP(val, 1, 30);
+}
+
+EXPORT int getParam_Skill(CritterMutual& cr, uint index)
+{
+	return cr.Params[index] + GetUtilityParamBonus(cr, index);
 }
 
 EXPORT int getParam_Hp(CritterMutual& cr, uint)
@@ -424,7 +456,7 @@ EXPORT int getParam_MoveAp(CritterMutual& cr, uint)
 
 EXPORT int getParam_MaxWeight(CritterMutual& cr, uint)
 {
-	return 400000;
+	return 400000 + GetUtilityParamBonus(cr, ST_CARRY_WEIGHT) * 1000;
 	int val = max(cr.Params[ST_CARRY_WEIGHT] + cr.Params[ST_CARRY_WEIGHT_EXT], 0);
 	val += CONVERT_GRAMM(25 + getParam_Strength(cr, 0) * (25 - cr.Params[TRAIT_SMALL_FRAME] * 10));
 	if(cr.Params[PE_PACK_RAT])
@@ -480,7 +512,7 @@ EXPORT int getParam_MaxCritical(CritterMutual& cr, uint)
 	return CLAMP(val, -100, 100);
 }
 
-int GetRunningAc(CritterMutual& cr, bool head)
+int GetRunningAc(CritterMutual& cr)
 {
 	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT];
 	val += getParam_Agility(cr, 0);
@@ -499,7 +531,7 @@ int GetRunningAc(CritterMutual& cr, bool head)
 			val += 15;
 	}
 
-	const Item* armor = head ? GetHeadArmor(cr) : cr.ItemSlotArmor;
+	const Item* armor = cr.ItemSlotArmor;
 	if(armor->GetId() && armor->IsArmor()) val += armor->Proto->Armor_AC + checkBonus(armor, BONUS_ARMOR_AC);
 
 	return CLAMP(val, 0, 95);
@@ -509,11 +541,11 @@ EXPORT int getParam_Ac(CritterMutual& cr, uint)
 {
 	if(!IsRunning(cr))
 	{
-		int StandingAC = (GetRunningAc(cr,false));
+		int StandingAC = GetRunningAc(cr);
 		return StandingAC; // todo: turn based
 	}
 	// if(!IsRunning(cr)) return 0; // todo: turn based
-	return GetRunningAc(cr,false) + (cr.Params[PE_LIVEWIRE] ? getParam_Agility(cr, 0) : 0);
+	return GetRunningAc(cr) + (cr.Params[PE_LIVEWIRE] ? getParam_Agility(cr, 0) : 0);
 }
 
 EXPORT int getParam_DamageResistance(CritterMutual& cr, uint index)
@@ -643,36 +675,36 @@ EXPORT bool Critter_IsOverweight(CritterMutual& cr)
 	return w > (uint)getParam_MaxWeight(cr, 0);
 }
 
-EXPORT int Critter_GetAC(CritterMutual& cr, bool head)
+EXPORT int Critter_GetAC(CritterMutual& cr)
 {
 	if(!IsRunning(cr))
 	{
-		int StandingAC = (GetRunningAc(cr,head));
+		int StandingAC = GetRunningAc(cr);
 		return StandingAC; // todo: turn based
 	}
 	
 	// if(!IsRunning(cr)) return 0; // todo: turn based
-	return GetRunningAc(cr,head);
+	return GetRunningAc(cr);
 }
 
-EXPORT int Critter_GetDR(CritterMutual& cr, uint dmgType, bool head)
+EXPORT int Critter_GetDR(CritterMutual& cr, uint dmgType)
 {
-	return GetArmoredDR(cr, dmgType, head ? GetHeadArmor(cr) : cr.ItemSlotArmor);
+	return GetArmoredDR(cr, dmgType, cr.ItemSlotArmor);
 }
 
-EXPORT int Critter_GetDT(CritterMutual& cr, uint dmgType, bool head)
+EXPORT int Critter_GetDT(CritterMutual& cr, uint dmgType)
 {
-	return GetArmoredDT(cr, dmgType, head ? GetHeadArmor(cr) : cr.ItemSlotArmor);
+	return GetArmoredDT(cr, dmgType, cr.ItemSlotArmor);
 }
 
-EXPORT int Critter_GetArmorDR(CritterMutual& cr, uint dmgType, bool head)
+EXPORT int Critter_GetArmorDR(CritterMutual& cr, uint dmgType)
 {
-	return GetArmorDR(cr, dmgType, head ? GetHeadArmor(cr) : cr.ItemSlotArmor);
+	return GetArmorDR(cr, dmgType, cr.ItemSlotArmor);
 }
 
-EXPORT int Critter_GetArmorDT(CritterMutual& cr, uint dmgType, bool head)
+EXPORT int Critter_GetArmorDT(CritterMutual& cr, uint dmgType)
 {
-	return GetArmorDT(cr, dmgType, head ? GetHeadArmor(cr) : cr.ItemSlotArmor);
+	return GetArmorDT(cr, dmgType, cr.ItemSlotArmor);
 }
 
 EXPORT bool Item_Weapon_IsHtHAttack(Item& item, uint8 mode)
@@ -990,21 +1022,6 @@ int GetArmoredDT(CritterMutual& cr, int dmgType, const Item* armor)
 	}
 
 	return CLAMP(val, 0, 999);
-}
-
-const Item* GetHeadArmor(CritterMutual& cr)
-{
-	// A power armor (ARMOR_PERK_POWERED == 1) protects the head too, ignoring any worn helmet.
-	const Item* body = cr.ItemSlotArmor;
-	if(body && body->Proto &&
-	   (body->Proto->Armor_Perk == 1 || body->Proto->Armor_Perk_2 == 1 || body->Proto->Armor_Perk_3 == 1))
-		return body;
-
-	for(ItemVecIt it=cr.InvItems.begin(),end=cr.InvItems.end();it!=end;++it)
-	{
-		if((*it)->AccCritter.Slot==SLOT_HEAD) return *it;
-	}
-	return cr.DefItemSlotArmor;
 }
 
 int GetArmorDR(CritterMutual& cr, int dmgType, const Item* armor)

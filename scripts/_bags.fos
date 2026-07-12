@@ -46,7 +46,7 @@
 #define BAG_All_MShiners_ToughMaleThug              (156) // Tough Male Thug w/ Shotgun and Shells
 #define BAG_All_MShiners_ToughMaleThug2             (156) // Tough Male Thug w/ Shotgun and Shells
 #define BAG_All_MShiners_ToughFemaleThug            (157) // Tough Female Thug w/ Desert Eagle
-#define BAG_All_MShiners_FemaleCombatSlave          (158) // Female Combat Slave w/ Zip Gun
+#define BAG_All_MShiners_FemaleCombatSlave          (158) // Female Combat Slave w/ 10mm Pistol
 #define BAG_All_MShiners_MaleCombatSlave            (159) // Male Combat Slave w/ Switchblade
 
 #define BAG_Redding_HSteaders_HomesteaderMale       (160) // Homesteader male w/ Grease Gun

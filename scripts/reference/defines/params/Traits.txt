@@ -13,7 +13,7 @@
 #define TRAIT_KAMIKAZE              (555)
 #define TRAIT_GRAPPLER          (556)
 #define TRAIT_FAST_SHOT             (557) // Used in engine
-#define TRAIT_BLOODY_MESS           (558)
+#define TRAIT_ARMOR_TRAINING        (558)
 #define TRAIT_BERSERKER                (559)
 #define TRAIT_VAMPIRISM             (560)
 #define TRAIT_CHEM_RELIANT          (561)

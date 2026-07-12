@@ -9,8 +9,6 @@
 //     upgrades all apply automatically through the normal armor machinery (full stats),
 //   - the body armor you were wearing is set aside into the SLOT_POWER_STASH ghost slot (shown
 //     next to the armor slot) so it is kept, visible, and restored when you leave the suit,
-//   - the helmet stays in its own slot; the DLL (parameters.cpp GetHeadArmor) already routes head
-//     resists to the equipped power armor, so the helmet's protection is overridden while powered.
 // Leaving the suit (exit keybind / Traps on self / dropping it from the armor slot / death) drops
 // it on the ground and re-equips the stashed body armor. The suit can never be carried in the
 // inventory: picking it up always (re-)enters it instead.
@@ -21,7 +19,7 @@
 
 bool IsPoweredArmorItem(Item@ item)   // Export
 {
-    // Only body armor (SLOT_ARMOR) counts as a wearable power suit; power helmets keep the perk but are normal head gear.
+    // Only body armor in SLOT_ARMOR counts as a wearable power suit.
     return valid(item) && item.GetType() == ITEM_TYPE_ARMOR && item.Proto.Slot == SLOT_ARMOR
            && ArmorHasProtoPerk(item.Proto, ARMOR_PERK_POWERED);
 }

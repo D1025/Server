@@ -93,23 +93,6 @@ lang=engl
 21 19000 None 0 #
 20 19010 #
 2 19020 @
-22 20000 None 0 #
-18 20010 #
-2 20020 D _item n PID_LEATHER_JACKET_HELMET > 0 R _script follower@r_SetHelmet 1 728 #
-2 20030 D _item n PID_COMBAT_LEATHER_JACKET_HELMET > 0 R _script follower@r_SetHelmet 1 729 #
-2 20040 D _item n PID_LEATHER_ARMOR_HELMET > 0 R _script follower@r_SetHelmet 1 730 #
-2 20050 D _item n PID_LEATHER_ARMOR_HELMET_MK2 > 0 R _script follower@r_SetHelmet 1 731 #
-2 20060 D _item n PID_METAL_HELMET > 0 R _script follower@r_SetHelmet 1 732 #
-2 20070 D _item n PID_METAL_HELMET_MK2 > 0 R _script follower@r_SetHelmet 1 733 #
-2 20080 D _item n PID_TESLA_HELMET > 0 R _script follower@r_SetHelmet 1 734 #
-2 20090 D _item n PID_COMBAT_HELMET > 0 R _script follower@r_SetHelmet 1 725 #
-2 20100 D _item n PID_COMBAT_HELMET_MK_II > 0 R _script follower@r_SetHelmet 1 726 #
-2 20110 D _item n PID_BROTHERHOOD_HELMET > 0 R _script follower@r_SetHelmet 1 727 #
-2 20120 D _item n PID_ENCLAVE_COMBAT_HELMET > 0 R _script follower@r_SetHelmet 1 738 #
-2 20130 D _item n PID_DESERT_COMBAT_HELMET > 0 R _script follower@r_SetHelmet 1 740 #
-2 20140 D _item n PID_NCR_HELMET > 0 R _script follower@r_SetHelmet 1 741 #
-2 20150 R _script follower@r_RemoveHelmet 0  #
-2 20160 @
 23 21000 follower@dlg_GiveFollower 0 #
 0 21010 @
 100 22000 None 0 @
@@ -183,7 +166,6 @@ lang=engl
 {15030}{}{At a faction base.}
 {15040}{}{Nevermind, I forgot what to say.}
 {16000}{}{Which armor do you think I should wear?}
-{16010}{}{I think you should rather change your helmet.}
 {16020}{}{Robes.}
 {16030}{}{Sand Robes.}
 {16040}{}{Bridgekeeper's Robes.}
@@ -215,23 +197,6 @@ lang=engl
 {19000}{}{Thanks, that's delicious!@@Yum yum!@@You have a great taste when it comes to food!}
 {19010}{}{Want some more?}
 {19020}{}{Let's see now...}
-{20000}{}{Which helmet do you think i should use?}
-{20010}{}{Let's talk about your armor again.}
-{20020}{}{Leather Helmet.}
-{20030}{}{Combat Leather Helmet.}
-{20040}{}{Leather Armor Helmet.}
-{20050}{}{Leather Armor Helmet Mark II.}
-{20060}{}{Metal Mask.}
-{20070}{}{Metal Mask Mark II.}
-{20080}{}{Tesla Helmet.}
-{20090}{}{Combat Helmet.}
-{20100}{}{Combat Helmet Mark II.}
-{20110}{}{Brotherhood Helmet.}
-{20120}{}{Enclave Helmet.}
-{20130}{}{Desert Helmet.}
-{20140}{}{NCR Helmet.}
-{20150}{}{Remove your current helmet.}
-{20160}{}{Nevermind.}
 {21000}{}{Well, okay, if that is what you want.. So, who is it?}
 {21010}{}{I've changed my mind, let's get going.}
 {22000}{}{Let's get going.}

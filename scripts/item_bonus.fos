@@ -100,9 +100,6 @@ void ResetUpgradeSlots(Item@ it, uint slotsCount)
 {
     if(valid(it))
     {
-        if(UpgradeItemIsHelmet(it))
-            slotsCount = 0;
-
         uint baseSlots = slotsCount;
         int extraSlots = UpgradeExtraSlotsFromProto(it.Proto);
         if(extraSlots > 0)
@@ -264,9 +261,6 @@ bool TryApplyPerk(Item@ it, int perkType, int perkValue, uint slotCost)
     if(!valid(it) || perkType == 0 || slotCost == 0)
         return false;
 
-    if(UpgradeItemIsHelmet(it))
-        return false;
-
     bool isWeaponUpgrade = IsWeaponUpgradePerk(perkType);
 
     if(UpgradeFreeSlots(it) < int(slotCost))
@@ -410,27 +404,9 @@ int[] ArmorPerkPool =
     BONUS_ARMOR_AC
 };
 
-int[] HelmetPerkPool =
-{
-    BONUS_ARMOR_NORMAL_DT,
-    BONUS_ARMOR_LASER_DT,
-    BONUS_ARMOR_FIRE_DT,
-    BONUS_ARMOR_PLASMA_DT,
-    BONUS_ARMOR_EXPLODE_DT,
-    BONUS_ARMOR_NORMAL_DR,
-    BONUS_ARMOR_LASER_DR,
-    BONUS_ARMOR_FIRE_DR,
-    BONUS_ARMOR_PLASMA_DR,
-    BONUS_ARMOR_EXPLODE_DR,
-    BONUS_ARMOR_ALL_DR,
-    BONUS_ARMOR_CRIT_POWER
-};
-
 int PickArmorPerkType(Item@ it)
 {
     int[]@ pool = @ArmorPerkPool;
-    if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
-        @pool = @HelmetPerkPool;
 
     if(pool.length() == 0)
         return 0;
@@ -485,8 +461,6 @@ uint UpgradePerkRollWeight(uint cost)
 int PickUniformArmorPerkType(Item@ it)
 {
     int[]@ pool = @ArmorPerkPool;
-    if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
-        @pool = @HelmetPerkPool;
 
     if(pool.length() == 0)
         return 0;
@@ -515,8 +489,6 @@ int PickUniformArmorPerkType(Item@ it)
 int PickWeightedArmorPerkType(Item@ it)
 {
     int[]@ pool = @ArmorPerkPool;
-    if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
-        @pool = @HelmetPerkPool;
 
     if(pool.length() == 0)
         return 0;
@@ -595,8 +567,6 @@ uint NormalizePerkMask(uint mask, uint count)
 int PickUniformArmorPerkTypeFromMask(Item@ it, uint mask)
 {
     int[]@ pool = @ArmorPerkPool;
-    if(it.GetProtoId() >= 725 && it.GetProtoId() <= 741)
-        @pool = @HelmetPerkPool;
 
     if(pool.length() == 0)
         return 0;
@@ -1253,8 +1223,6 @@ bool ApplyWeaponUpgradePerk(Item@ it, int perkType)
 bool ApplyArmorUpgradePerk(Item@ it, int perkType, int value)
 {
     if(!valid(it) || it.GetType() != ITEM_TYPE_ARMOR)
-        return false;
-    if(UpgradeItemIsHelmet(it))
         return false;
     if(!IsArmorBonusType(perkType))
         return false;

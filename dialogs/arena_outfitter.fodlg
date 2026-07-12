@@ -67,14 +67,14 @@ lang=engl
 3 9030 R _item n PID_FAKE_SPEAR + 5 R _script arena@r_TransferItems 0  #
 3 9040 R _item n PID_FAKE_THROWING_KNIFE + 8 R _script arena@r_TransferItems 0  @
 10 10000 None 0 #
-3 10010 R _item n PID_LEATHER_ARMOR_MK_II + 1 R _item n PID_LEATHER_ARMOR_HELMET_MK2 + 1 R _script arena@r_TransferItems 0  #
-3 10020 R _item n PID_CURED_LEATHER_ARMOR + 1 R _item n PID_COMBAT_LEATHER_JACKET_HELMET + 1 R _script arena@r_TransferItems 0  #
-3 10030 R _item n PID_METAL_ARMOR_MK_II + 1 R _item n PID_METAL_HELMET_MK2 + 1 R _script arena@r_TransferItems 0  #
-3 10040 R _item n PID_TESLA_ARMOR + 1 R _item n PID_TESLA_HELMET + 1 R _script arena@r_TransferItems 0  #
-3 10050 R _item n PID_COMBAT_ARMOR + 1 R _item n PID_COMBAT_HELMET + 1 R _script arena@r_TransferItems 0  #
-3 10060 R _item n PID_COMBAT_ARMOR_MK_II + 1 R _item n PID_COMBAT_HELMET_MK_II + 1 R _script arena@r_TransferItems 0  #
-3 10070 R _item n PID_DESERT_COMBAT_ARMOR + 1 R _item n PID_DESERT_COMBAT_HELMET + 1 R _script arena@r_TransferItems 0  #
-3 10080 R _item n PID_SAND_ROBE + 1 R _item n PID_COMBAT_HELMET_MK_II + 1 R _script arena@r_TransferItems 0  @
+3 10010 R _item n PID_LEATHER_ARMOR_MK_II + 1 R _script arena@r_TransferItems 0  #
+3 10020 R _item n PID_CURED_LEATHER_ARMOR + 1 R _script arena@r_TransferItems 0  #
+3 10030 R _item n PID_METAL_ARMOR_MK_II + 1 R _script arena@r_TransferItems 0  #
+3 10040 R _item n PID_TESLA_ARMOR + 1 R _script arena@r_TransferItems 0  #
+3 10050 R _item n PID_COMBAT_ARMOR + 1 R _script arena@r_TransferItems 0  #
+3 10060 R _item n PID_COMBAT_ARMOR_MK_II + 1 R _script arena@r_TransferItems 0  #
+3 10070 R _item n PID_DESERT_COMBAT_ARMOR + 1 R _script arena@r_TransferItems 0  #
+3 10080 R _item n PID_SAND_ROBE + 1 R _script arena@r_TransferItems 0  @
 11 11000 None 0 #
 0 11010 &
 

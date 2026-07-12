@@ -102,8 +102,7 @@ bool isInArmor(Critter& player)
 	|| protoid == PID_METAL_ARMOR_MK_II || protoid == PID_METAL_ARMOR_MK_III
 	|| protoid == PID_COMBAT_ARMOR || protoid == PID_BROTHERHOOD_COMBAT_ARMOR
 	|| protoid == PID_COMBAT_ARMOR_MK_II || protoid == PID_ENCLAVE_COMBAT_ARMOR
-	|| protoid == PID_POWERED_ARMOR || protoid == PID_HARDENED_POWER_ARMOR
-	|| protoid == PID_ADVANCED_POWER_ARMOR || protoid == PID_ADVANCED_POWER_ARMOR_MK2 
+	|| protoid == PID_POWERED_ARMOR || protoid == PID_ADVANCED_POWER_ARMOR
 	|| protoid == PID_NCR_ARMOR || protoid == PID_DESERT_COMBAT_ARMOR;
 }
 
@@ -120,20 +119,12 @@ uint e_SpawnHigh(array<uint>@ values)
 			{
 			case 1: 	{SpawnBuffItem(item, PID_TESLA_ARMOR); break;}
 			case 2: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR); break;}
-			case 3: 	{SpawnBuffItem(item, PID_COMBAT_HELMET); break;}			
 			case 4: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR_MK_II); break;}
-			case 5: 	{SpawnBuffItem(item, PID_COMBAT_HELMET_MK_II); break;}
-			case 6: 	{SpawnBuffItem(item, PID_METAL_HELMET_MK2); break;}
 			case 7: 	{SpawnBuffItem(item, PID_METAL_ARMOR_MK_II); break;}
-			case 8: 	{SpawnBuffItem(item, PID_TESLA_HELMET); break;}			
 			case 9: 	{item.AddItem(PID_DESERT_COMBAT_ARMOR, 1, 0); break;}
-			case 10: 	{item.AddItem(PID_DESERT_COMBAT_HELMET, 1, 0); break;}
 			case 11: 	{item.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}	
-			case 12: 	{item.AddItem(PID_BROTHERHOOD_HELMET, 1, 0); break;}
 			case 13: 	{item.AddItem(PID_NCR_ARMOR, 1, 0); break;}			
-			case 14: 	{item.AddItem(PID_NCR_HELMET, 1, 0); break;}				
 			case 15: 	{item.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}			
-			case 16: 	{item.AddItem(PID_ENCLAVE_COMBAT_HELMET, 1, 0); break;}
 			}
 		}
 	else
@@ -172,10 +163,8 @@ uint e_SpawnHigh(array<uint>@ values)
 		{
 		switch (Random(1,16))
 			{
-			case 1: 	{item.AddItem(PID_HARDENED_POWER_ARMOR, 1, 0); break;}
+			case 1: 	{item.AddItem(PID_POWERED_ARMOR, 1, 0); break;}
 			case 2: 	{item.AddItem(PID_POWERED_ARMOR, 1, 0); break;}
-			case 3: 	{item.AddItem(PID_POWER_HELMET, 1, 0); break;}	
-			case 4: 	{item.AddItem(PID_HARDENED_POWER_HELMET, 1, 0); break;}
 			case 5: 	{item.AddItem(PID_KEEPBRIGE_ROBE, 1, 0); break;}			
 			case 6: 	{item.AddItem(PID_TURBO_PLASMA_RIFLE, 1, 0); break;}				
 			case 7: 	{item.AddItem(PID_ALIEN_LASER_PISTOL, 1, 0); break;}			
@@ -202,7 +191,6 @@ uint e_SpawnHigh(array<uint>@ values)
 			case 5: 	{item.AddItem(PID_BLUEPRINT_METAL_ARMOR_MK_III, 1, 0); break;}			
 			case 6: 	{item.AddItem(PID_BLUEPRINT_PULSE_GRENADE, 1, 0); break;}				
 			case 7: 	{item.AddItem(PID_BLUEPRINT_GATLING_LASER, 1, 0); break;}			
-			case 8: 	{item.AddItem(PID_BLUEPRINT_COMBAT_HELMET_MK_II, 1, 0); break;}		
 			case 9: 	{item.AddItem(PID_BLUEPRINT_PID_HYPO, 1, 0); break;}
 			case 10: 	{item.AddItem(PID_BLUEPRINT_JET_ANTIDOTE, 1, 0); break;}	
 			case 11: 	{item.AddItem(PID_BLUEPRINT_COMBAT_ARMOR_MK_II, 1, 0); break;}
@@ -211,7 +199,7 @@ uint e_SpawnHigh(array<uint>@ values)
 			case 14: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_ARMOR, 1, 0); break;}			
 			case 15: 	{item.AddItem(PID_BLUEPRINT_NCR_ARMOR, 1, 0); break;}			
 			case 16: 	{item.AddItem(PID_BLUEPRINT_POWERED_ARMOR, 1, 0); break;}
-			case 17: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 1, 0); break;}
+			case 17: 	{item.AddItem(PID_BLUEPRINT_POWERED_ARMOR, 1, 0); break;}
 			case 18: 	{item.AddItem(PID_BLUEPRINT_TURBO_PLASMA_RIFLE, 1, 0); break;}
 			case 19: 	{item.AddItem(PID_BLUEPRINT_INDEPENDENT, 1, 0); break;}	
 			case 20: 	{item.AddItem(PID_BLUEPRINT_AVENGER_MINIGUN, 1, 0); break;}
@@ -219,17 +207,8 @@ uint e_SpawnHigh(array<uint>@ values)
 			case 22: 	{item.AddItem(PID_BLUEPRINT_M203, 1, 0); break;}				
 			case 23: 	{item.AddItem(PID_BLUEPRINT_VINDICATOR_MINIGUN, 1, 0); break;}			
 			case 24: 	{item.AddItem(PID_BLUEPRINT_YK42B_PULSE_RIFLE, 1, 0); break;}
-			case 25: 	{item.AddItem(PID_BLUEPRINT_BROTHERHOOD_HELMET, 1, 0); break;}			
-			case 26: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET, 1, 0); break;}				
-			case 27: 	{item.AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_HELMET_MK_II, 1, 0); break;}			
-			case 28: 	{item.AddItem(PID_BLUEPRINT_DESERT_COMBAT_HELMET, 1, 0); break;}		
-			case 29: 	{item.AddItem(PID_BLUEPRINT_NCR_HELMET, 1, 0); break;}
-			case 30: 	{item.AddItem(PID_BLUEPRINT_POWER_HELMET, 1, 0); break;}	
-			case 31: 	{item.AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 1, 0); break;}
-			case 32: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET, 1, 0); break;}			
-			case 33: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2, 1, 0); break;}
 			case 34: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}			
-			case 35: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}			
+			case 35: 	{item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}
 			case 36: 	{item.AddItem(PID_BLUEPRINT_HK_G11, 1, 0); break;}
 			case 37: 	{item.AddItem(PID_BLUEPRINT_HK_G11E, 1, 0); break;}
 			case 38: 	{item.AddItem(PID_BLUEPRINT_YK32_PULSE_PISTOL, 1, 0); break;}
@@ -271,20 +250,12 @@ uint e_SpawnLow(array<uint>@ values)
 			{
 			case 1: 	{SpawnBuffItem(item, PID_TESLA_ARMOR); break;}
 			case 2: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR); break;}
-			case 3: 	{SpawnBuffItem(item, PID_COMBAT_HELMET); break;}			
 			case 4: 	{SpawnBuffItem(item, PID_COMBAT_ARMOR_MK_II); break;}
-			case 5: 	{SpawnBuffItem(item, PID_COMBAT_HELMET_MK_II); break;}
-			case 6: 	{SpawnBuffItem(item, PID_METAL_HELMET_MK2); break;}
 			case 7: 	{SpawnBuffItem(item, PID_METAL_ARMOR_MK_II); break;}
-			case 8: 	{SpawnBuffItem(item, PID_TESLA_HELMET); break;}			
 			case 9: 	{item.AddItem(PID_DESERT_COMBAT_ARMOR, 1, 0); break;}
-			case 10: 	{item.AddItem(PID_DESERT_COMBAT_HELMET, 1, 0); break;}
 			case 11: 	{item.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}	
-			case 12: 	{item.AddItem(PID_BROTHERHOOD_HELMET, 1, 0); break;}
 			case 13: 	{item.AddItem(PID_NCR_ARMOR, 1, 0); break;}			
-			case 14: 	{item.AddItem(PID_NCR_HELMET, 1, 0); break;}				
 			case 15: 	{item.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}			
-			case 16: 	{item.AddItem(PID_ENCLAVE_COMBAT_HELMET, 1, 0); break;}
 			}
 		}
 	else

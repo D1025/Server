@@ -12,6 +12,25 @@ using namespace std;
 #define ARMOR_PERK_RATTLING (6)
 #endif
 
+static const Item* GetEquippedUtility(const Critter& cr)
+{
+	for(ItemVecIt it = cr.InvItems.begin(), end = cr.InvItems.end(); it != end; ++it)
+	{
+		const Item* item = *it;
+		if(item && item->Proto && item->AccCritter.Slot == SLOT_UTILITY && item->Proto->Slot == SLOT_UTILITY)
+			return item;
+	}
+	return NULL;
+}
+
+static int GetUtilityParamBonus(const Critter& cr, uint param)
+{
+	const Item* item = GetEquippedUtility(cr);
+	if(item && !FLAG(item->Data.BrokenFlags, BI_BROKEN) && item->Proto->Utility_Param == (int)param)
+		return item->Proto->Utility_Value;
+	return 0;
+}
+
 // TODO: multihex bonus to look distance (once multihex works properly)
 
 bool isCompiler=false;
@@ -133,7 +152,9 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 	int dist = GetDistantion(cx, cy, ox, oy);
 	if(dist>60) return false;
 
-	if(dist<=cr.ItemSlotExt->Proto->MagicPower || dist<=cr.ItemSlotMain->Proto->MagicPower) return true;
+	const Item* utility = GetEquippedUtility(cr);
+	int utilityReveal = utility && !FLAG(utility->Data.BrokenFlags, BI_BROKEN) && utility->Data.ScriptValues[1] == 1 ? utility->Proto->MagicPower : 0;
+	if(dist<=utilityReveal || dist<=cr.ItemSlotExt->Proto->MagicPower || dist<=cr.ItemSlotMain->Proto->MagicPower) return true;
 
 	// min range - always visible
 	if(dist <= (int)(FOnline->LookMinimum)) return true;
@@ -143,7 +164,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 
 	bool isWeaponScoped = cr.ItemSlotMain->Proto->WeaponHasPerk( WEAPON_PERK_SCOPE_RANGE );
 
-    int front_range=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]),1,30));
+    int front_range=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]+GetUtilityParamBonus(cr, ST_PERCEPTION)),1,30));
 	if(cr.Params[PE_SHARPSHOOTER]) front_range+=2*cr.Params[PE_SHARPSHOOTER];
     front_range*=3;
     front_range+= cr.Params[ST_BONUS_LOOK];
@@ -203,7 +224,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 			if(dist > max_range) return false;
 		}
 
-		int sk = opponent.Params[SK_SNEAK] + opponent.Params[ST_EXT_SNEAK];
+		int sk = opponent.Params[SK_SNEAK] + opponent.Params[ST_EXT_SNEAK] + GetUtilityParamBonus(opponent, SK_SNEAK);
 
 		// bonuses before clamp
 
@@ -307,7 +328,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 
 int GetEngineLook(Critter& cr)
 {
-	int look=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]),1,30));
+	int look=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]+GetUtilityParamBonus(cr, ST_PERCEPTION)),1,30));
     look*=3;
     look+= cr.Params[ST_BONUS_LOOK];
 	look+=(int)(FOnline->LookNormal);
@@ -319,8 +340,8 @@ int GetEngineLook(Critter& cr)
 EXPORT bool check_trap_look(Map& map, Critter& cr, Item& trap)
 {
 	int dist=GetDistantion(cr.HexX,cr.HexY,trap.AccHex.HexX,trap.AccHex.HexY);
-	int perception=CLAMP(cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT],1,30);
-	int skilldiff=cr.Params[SK_TRAPS]-trap.TrapGetValue();
+	int perception=CLAMP(cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]+GetUtilityParamBonus(cr, ST_PERCEPTION),1,30);
+	int skilldiff=cr.Params[SK_TRAPS] + GetUtilityParamBonus(cr, SK_TRAPS) - trap.TrapGetValue();
 	return dist<=perception/2 + skilldiff/50;
 }
 

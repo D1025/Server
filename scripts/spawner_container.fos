@@ -357,9 +357,7 @@ void ItemSpawnInit() // export
 				//Ammo		
 				//Weapons			
 				//Armors
-				AddItem(PID_LEATHER_JACKET                , 26 ).
-				//helmets
-				AddItem(PID_LEATHER_JACKET_HELMET         , 40 )	
+				AddItem(PID_LEATHER_JACKET                , 26 )
 				);
 				
     ADD_ITEMSPAWNER(FAT_PROTECTED_TOWN_CONTAINER_1,
@@ -447,13 +445,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_CURED_LEATHER_ARMOR           , 23 ).				
 				AddItem(PID_LEATHER_ARMOR                 , 20 ).
 				AddItem(PID_LEATHER_ARMOR_MK_II           , 17 ).
-				AddItem(PID_METAL_ARMOR                   , 14 ).				
-				//helmets
-				AddItem(PID_LEATHER_JACKET_HELMET         , 40 ).	
-				AddItem(PID_COMBAT_LEATHER_JACKET_HELMET  , 35 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET          , 30 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET_MK2      , 25 ).
-				AddItem(PID_METAL_HELMET                  , 20 )		
+				AddItem(PID_METAL_ARMOR                   , 14 )
 				);
 				
     ADD_ITEMSPAWNER(FAT_ENCOUNTER_STATIC_CONTAINER_2,
@@ -564,13 +556,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_CURED_LEATHER_ARMOR           , 23 ).				
 				AddItem(PID_LEATHER_ARMOR                 , 20 ).
 				AddItem(PID_LEATHER_ARMOR_MK_II           , 17 ).
-				AddItem(PID_METAL_ARMOR                   , 14 ).
-				//helmets
-				AddItem(PID_LEATHER_JACKET_HELMET         , 40 ).	
-				AddItem(PID_COMBAT_LEATHER_JACKET_HELMET  , 35 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET          , 30 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET_MK2      , 25 ).
-				AddItem(PID_METAL_HELMET                  , 20 )
+				AddItem(PID_METAL_ARMOR                   , 14 )
 				);
 				
     ADD_ITEMSPAWNER(FAT_TOWN_CONTAINER_3,
@@ -667,13 +653,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_CURED_LEATHER_ARMOR           , 23 ).				
 				AddItem(PID_LEATHER_ARMOR                 , 20 ).
 				AddItem(PID_LEATHER_ARMOR_MK_II           , 17 ).
-				AddItem(PID_METAL_ARMOR                   , 14 ).
-				//helmets
-				AddItem(PID_LEATHER_JACKET_HELMET         , 40 ).	
-				AddItem(PID_COMBAT_LEATHER_JACKET_HELMET  , 35 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET          , 30 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET_MK2      , 25 ).
-				AddItem(PID_METAL_HELMET                  , 20 )
+				AddItem(PID_METAL_ARMOR                   , 14 )
 				);					
 				
     ADD_ITEMSPAWNER(FAT_VAULT_LOCKER_4, SpawnTime(60, 120).Lock(0, 50).SetBonusOrNot(true).AddDungeonUpgradeBlueprintsLow(). 			//Vault's entrances lockers (low)
@@ -698,7 +678,6 @@ void ItemSpawnInit() // export
 				AddItem(PID_10MM_PISTOL                  	, 30 ).
 				AddItem(PID_10MM_SMG                  		, 10 )				
 				//Armors
-				//helmets
 				);
 				
     ADD_ITEMSPAWNER(FAT_BOOKCASE_5, SpawnTime(30, 60).Lock(100, 150).AddDungeonUpgradeBlueprintsLow().  			//bookcase abbey, wh
@@ -727,7 +706,6 @@ void ItemSpawnInit() // export
 				//Ammo
 				//Weapons
 				//Armors
-				//helmets
 				);
 				
     ADD_ITEMSPAWNER(FAT_CRAFT_LOW_6, SpawnTime(30, 60).Lock(100, 150).AddDungeonUpgradeBlueprintsLow().		//low 
@@ -766,7 +744,6 @@ void ItemSpawnInit() // export
 				//Ammo
 				//Weapons
 				//Armors
-				//helmets
 				);
 				
 	ADD_ITEMSPAWNER(FAT_CRAFT_HIGH_7, SpawnTime(60, 120).Lock(150, 250).AddDungeonUpgradeBlueprintsHigh().   		//high tier
@@ -797,7 +774,6 @@ void ItemSpawnInit() // export
 				//Ammo
 				//Weapons
 				//Armors
-				//helmets
 				);
 				
     /*2*/ ADD_ITEMSPAWNER(FAT_MED_LOW_8, SpawnTime(90, 120).Lock(100, 150).AddDungeonUpgradeBlueprintsLow().					//Meds
@@ -891,12 +867,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_METAL_ARMOR, 10).
 				AddItem(PID_METAL_ARMOR_MK_II, 9).
 				AddItem(PID_TESLA_ARMOR, 7).
-				AddItem(PID_COMBAT_ARMOR, 1).
-				//helmet
-                AddItem(PID_COMBAT_HELMET, 7).
-				AddItem(PID_COMBAT_HELMET_MK_II, 5).
-				AddItem(PID_TESLA_HELMET, 7).
-				AddItem(PID_METAL_HELMET_MK2, 10)
+				AddItem(PID_COMBAT_ARMOR, 1)
                     );
 
     ADD_ITEMSPAWNER(encounter_container_med_11,
@@ -944,7 +915,6 @@ void ItemSpawnInit() // export
 					AddItem(PID_LOUISVILLE_SLUGGER, 3).
 					//Armors
 					AddItem(PID_LEATHER_ARMOR, 13)
-					//helmets
                     );
 
     ADD_ITEMSPAWNER(encounter_container_high_12,
@@ -988,11 +958,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_NCR_ARMOR, 1).
 					AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1).
 					AddItem(PID_KEEPBRIGE_ROBE, 1).
-					//helmets
 					AddItem(PID_GOGGLES,8).
-					AddItem(PID_NCR_HELMET, 1).
-                    AddItem(PID_BROTHERHOOD_HELMET, 1).
-					AddItem(PID_ENCLAVE_COMBAT_HELMET, 1).
                     // Clothes:
                     AddItem(PID_CLOTHES_SCIENTIST1, 1, 1, 1).
                     AddItem(PID_CLOTHES_SCIENTIST2, 1, 1, 1).
@@ -1368,21 +1334,17 @@ void ItemSpawnInit() // export
 					//Armors
                     AddItem(PID_LEATHER_JACKET, 50).
                     AddItem(PID_LEATHER_ARMOR, 30).
-                    AddItem(PID_CURED_LEATHER_ARMOR, 30).
-					//helmets
-                    AddItem(PID_LEATHER_JACKET_HELMET, 50).
-                    AddItem(PID_COMBAT_LEATHER_JACKET_HELMET, 30).
-                    AddItem(PID_LEATHER_ARMOR_HELMET, 30)
+                    AddItem(PID_CURED_LEATHER_ARMOR, 30)
 
                     // Clothes:
-                 // AddItem(PID_WORN_ROBE, 10, 1, 1).
-                 // AddItem(PID_BLUE_ROBE, 10, 1, 1).
-                 // AddItem(PID_RED_ROBE, 10, 1, 1).
-                 // AddItem(PID_GRAY_ROBE, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_GENERIC1, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_GENERIC2, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_RAGS, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_DWARF, 10, 1, 1).
+                 // AddItem(PID_WORN_ROBE, 10, 1, 1)
+                 // AddItem(PID_BLUE_ROBE, 10, 1, 1)
+                 // AddItem(PID_RED_ROBE, 10, 1, 1)
+                 // AddItem(PID_GRAY_ROBE, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_GENERIC1, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_GENERIC2, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_RAGS, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_DWARF, 10, 1, 1)
                  // AddItem(PID_CLOTHES_GRAY_SHIRT, 10, 1, 1)
                     );
 
@@ -1391,25 +1353,21 @@ void ItemSpawnInit() // export
 					//Armors
                     AddItem(PID_LEATHER_ARMOR_MK_II, 50).
                     AddItem(PID_METAL_ARMOR, 30).
-                    AddItem(PID_METAL_ARMOR_MK_II, 40).
-					//helmets
-                    AddItem(PID_LEATHER_ARMOR_HELMET_MK2, 50).
-                    AddItem(PID_METAL_HELMET, 30).
-                    AddItem(PID_METAL_HELMET_MK2, 40)
+                    AddItem(PID_METAL_ARMOR_MK_II, 40)
 
                     // Clothes:
-                 // AddItem(PID_WORN_ROBE, 10, 1, 1).
-                 // AddItem(PID_BLUE_ROBE, 10, 1, 1).
-                 // AddItem(PID_RED_ROBE, 10, 1, 1).
-                 // AddItem(PID_GRAY_ROBE, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_GENERIC1, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_GENERIC2, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_SCIENTIST1, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_RAGS, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_DWARF, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_DOCTOR, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_GRAY_SHIRT, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_BOXER, 10, 1, 1).
+                 // AddItem(PID_WORN_ROBE, 10, 1, 1)
+                 // AddItem(PID_BLUE_ROBE, 10, 1, 1)
+                 // AddItem(PID_RED_ROBE, 10, 1, 1)
+                 // AddItem(PID_GRAY_ROBE, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_GENERIC1, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_GENERIC2, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_SCIENTIST1, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_RAGS, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_DWARF, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_DOCTOR, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_GRAY_SHIRT, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_BOXER, 10, 1, 1)
                  // AddItem(PID_CLOTHES_GENERIC3, 10, 1, 1)
                     );
 
@@ -1418,24 +1376,20 @@ void ItemSpawnInit() // export
 					//Armors
                     AddItem(PID_TESLA_ARMOR, 40).
                     AddItem(PID_COMBAT_ARMOR, 50).
-                    AddItem(PID_COMBAT_ARMOR_MK_II, 20).
-					//helmets
-                    AddItem(PID_TESLA_HELMET, 40).
-                    AddItem(PID_COMBAT_HELMET, 50).
-                    AddItem(PID_COMBAT_HELMET_MK_II, 20)
+                    AddItem(PID_COMBAT_ARMOR_MK_II, 20)
 
                     // Clothes:
-                 // AddItem(PID_MOBSTER_BLUE, 10, 1, 1).
-                 // AddItem(PID_MOBSTER_GRAY, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_SCIENTIST1, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_SCIENTIST2, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_ELEGANT_SUIT, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_DWARF, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_RED_SHIRT, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_DOCTOR, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_FAT1, 10, 1, 1).
-                 // AddItem(PID_CLOTHES_BOXER, 10, 1, 1).
-                 // AddItem(PID_SF_COMBAT_JACKET, 10, 1, 1).
+                 // AddItem(PID_MOBSTER_BLUE, 10, 1, 1)
+                 // AddItem(PID_MOBSTER_GRAY, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_SCIENTIST1, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_SCIENTIST2, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_ELEGANT_SUIT, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_DWARF, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_RED_SHIRT, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_DOCTOR, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_FAT1, 10, 1, 1)
+                 // AddItem(PID_CLOTHES_BOXER, 10, 1, 1)
+                 // AddItem(PID_SF_COMBAT_JACKET, 10, 1, 1)
                  // AddItem(PID_MORDINO_METAL_JACKET, 10, 1, 1)
                     );
 
@@ -1692,7 +1646,6 @@ void ItemSpawnInit() // export
 					AddItem(PID_LIGHT_SUPPORT_WEAPON, 5).
 					AddItem(PID_MINIGUN, 15)
 					//Armors
-					//helmets
                     );
 
     ADD_ITEMSPAWNER(FAT_DESK_58,													//low shit biurka (bez armorow)
@@ -1729,7 +1682,6 @@ void ItemSpawnInit() // export
                     AddItem(PID_GREASE_GUN, 10).
                     AddItem(PID_TOMMY_GUN, 1)
 					//Armors
-					//helmets
                     );
 
     ADD_ITEMSPAWNER(FAT_FURNITURE_59,										//shity + armory
@@ -1769,13 +1721,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_LEATHER_JACKET				, 30).
 					AddItem(PID_LEATHER_ARMOR				, 20).
 					AddItem(PID_LEATHER_ARMOR_MK_II			, 15).
-					AddItem(PID_METAL_ARMOR					, 30).
-					//helmets
-					AddItem(PID_LEATHER_JACKET_HELMET		, 20).
-					AddItem(PID_COMBAT_LEATHER_JACKET_HELMET, 20).
-					AddItem(PID_LEATHER_ARMOR_HELMET		, 20).
-					AddItem(PID_LEATHER_ARMOR_HELMET_MK2	, 20).
-					AddItem(PID_METAL_HELMET				, 20)
+					AddItem(PID_METAL_ARMOR					, 30)
                     );
 
     ADD_ITEMSPAWNER(FAT_FOOD_60,
@@ -1800,7 +1746,6 @@ void ItemSpawnInit() // export
                     AddItem(PID_POWER_FIST, 30).					
 					AddItem(PID_THROWING_KNIFE, 30, 1, 2)
 					//Armors
-					//helmets
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_HTH_61,											//( Hth + random stuff)
@@ -1836,10 +1781,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_THROWING_KNIFE, 30, 5, 10).
 					//Armors
 					AddItem(PID_TESLA_ARMOR, 7).
-					AddItem(PID_METAL_ARMOR_MK_II, 9).
-					//helmets
-					AddItem(PID_TESLA_HELMET, 7).
-					AddItem(PID_METAL_HELMET_MK2, 10)
+					AddItem(PID_METAL_ARMOR_MK_II, 9)
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_SG_62,																		//sg + shity
@@ -1889,10 +1831,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_HK_CAWS, 50).
 					//Armors
 					AddItem(PID_TESLA_ARMOR, 10).
-					AddItem(PID_METAL_ARMOR_MK_II, 15).
-					//helmets
-					AddItem(PID_TESLA_HELMET, 10).
-					AddItem(PID_METAL_HELMET_MK2, 15)
+					AddItem(PID_METAL_ARMOR_MK_II, 15)
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_BG_63,
@@ -1937,12 +1876,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_COMBAT_ARMOR_MK_II, 5).
 					AddItem(PID_COMBAT_ARMOR, 10).
 					AddItem(PID_TESLA_ARMOR, 20).
-					AddItem(PID_METAL_ARMOR_MK_II, 30).
-					//helmets
-					AddItem(PID_COMBAT_HELMET_MK_II, 5).
-					AddItem(PID_COMBAT_HELMET, 10).
-					AddItem(PID_TESLA_HELMET, 20).
-					AddItem(PID_METAL_HELMET_MK2, 30)
+					AddItem(PID_METAL_ARMOR_MK_II, 30)
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_EW_64,
@@ -1982,12 +1916,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_COMBAT_ARMOR_MK_II, 1).
 					AddItem(PID_COMBAT_ARMOR, 5).
 					AddItem(PID_TESLA_ARMOR, 30).
-					AddItem(PID_METAL_ARMOR_MK_II, 30).
-					//helmets
-					AddItem(PID_COMBAT_HELMET_MK_II, 1).
-					AddItem(PID_COMBAT_HELMET, 5).
-					AddItem(PID_TESLA_HELMET, 30).
-					AddItem(PID_METAL_HELMET_MK2, 30)
+					AddItem(PID_METAL_ARMOR_MK_II, 30)
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_DRUGS_65,
@@ -2026,10 +1955,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_FRAG_GRENADE, 10, 1, 10).
 					//Armors
 					AddItem(PID_TESLA_ARMOR, 30).
-					AddItem(PID_METAL_ARMOR_MK_II, 30).
-					//helmets
-					AddItem(PID_TESLA_HELMET, 30).
-					AddItem(PID_METAL_HELMET_MK2, 30)           
+					AddItem(PID_METAL_ARMOR_MK_II, 30)
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_ARMORS_66,
@@ -2052,12 +1978,7 @@ void ItemSpawnInit() // export
 					AddItem(PID_COMBAT_ARMOR_MK_II, 10).
 					AddItem(PID_COMBAT_ARMOR, 20).
 					AddItem(PID_TESLA_ARMOR, 40).
-					AddItem(PID_METAL_ARMOR_MK_II, 45).
-					//helmets
-					AddItem(PID_COMBAT_HELMET_MK_II, 10).
-					AddItem(PID_COMBAT_HELMET, 20).
-					AddItem(PID_TESLA_HELMET, 40).
-					AddItem(PID_METAL_HELMET_MK2, 45)      
+					AddItem(PID_METAL_ARMOR_MK_II, 45)
                     );
 
     ADD_ITEMSPAWNER(FAT_MIX_AMMO_67,
@@ -2085,7 +2006,6 @@ void ItemSpawnInit() // export
 					AddItem(PID_MICRO_FUSION_CELL			, 55, 30, 200)
 					//Weapons
 					//Armors
-					//helmets
                     );
 					
     ADD_ITEMSPAWNER(ghost_town_high_68,
@@ -2115,14 +2035,10 @@ void ItemSpawnInit() // export
                     AddItem(PID_HK_G11E, 5).
                     AddItem(PID_PLASMA_RIFLE, 5).
                     AddItem(PID_NCR_ARMOR, 5).
-					AddItem(PID_NCR_HELMET, 5).
 					AddItem(PID_MIRROR_SHADES, 1).					
                     AddItem(PID_COMBAT_ARMOR_MK_II, 5).
                     AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 5).
                     AddItem(PID_ENCLAVE_COMBAT_ARMOR, 5).
-                    AddItem(PID_COMBAT_HELMET_MK_II, 5).
-                    AddItem(PID_BROTHERHOOD_HELMET, 5).
-                    AddItem(PID_ENCLAVE_COMBAT_HELMET_MK2, 5).
                     AddItem(PID_JET_ANTIDOTE, 1).
                     AddItem(PID_POWERED_ARMOR, 1).
                     AddItem(PID_ADVANCED_POWER_ARMOR, 1).
@@ -2133,7 +2049,7 @@ void ItemSpawnInit() // export
                     AddItem(PID_ALIEN_LASER_PISTOL, 1).
                     AddItem(PID_SOLAR_SCORCHER, 1).
                     AddItem(PID_LOUISVILLE_SLUGGER, 1)
-                    // AddItem(PID_PLASMA_TORCH, 1).
+                    // AddItem(PID_PLASMA_TORCH, 1)
                     // AddItem(PID_HOLY_HAND_GRENADE, 1)
                     );
 
@@ -2230,29 +2146,15 @@ void ItemSpawnInit() // export
     ADD_ITEMSPAWNER(GM_BASE_ARMOR_CONTAINER_74,
 	SpawnTime(1, 2).SetSeparate(true).SetClearAtSpawn(true).Lock(0, 0).
 					
-					AddItem(PID_COMBAT_HELMET_MK_II , 95).
 					AddItem(PID_COMBAT_ARMOR_MK_II , 95).
-					AddItem(PID_DESERT_COMBAT_HELMET , 95).
 					AddItem(PID_DESERT_COMBAT_ARMOR , 95).
-					AddItem(PID_COMBAT_HELMET  , 95).
 					AddItem(PID_COMBAT_ARMOR, 95).
-					AddItem(PID_ENCLAVE_COMBAT_HELMET , 95).
-					AddItem(PID_ENCLAVE_COMBAT_HELMET_MK2 , 95).
 					AddItem(PID_ENCLAVE_COMBAT_ARMOR , 95).
-					AddItem(PID_POWER_HELMET , 95).
 					AddItem(PID_POWERED_ARMOR , 95).
-					AddItem(PID_HARDENED_POWER_HELMET , 95).
-					AddItem(PID_HARDENED_POWER_ARMOR , 95).
-					AddItem(PID_APA_HELMET  , 95).
 					AddItem(PID_ADVANCED_POWER_ARMOR , 95).
-					AddItem(PID_APA_HELMET_MK2 , 95).
-					AddItem(PID_ADVANCED_POWER_ARMOR_MK2 , 95).
 					AddItem(PID_METAL_ARMOR_MK_II , 95).
-					AddItem(PID_TESLA_HELMET, 95).
 					AddItem(PID_TESLA_ARMOR , 95).
-					AddItem(PID_BROTHERHOOD_HELMET, 95).
 					AddItem(PID_BROTHERHOOD_COMBAT_ARMOR , 95).
-					AddItem(PID_NCR_HELMET , 95).
 					AddItem(PID_NCR_ARMOR  , 95)
 					);
 					
@@ -2315,29 +2217,15 @@ void ItemSpawnInit() // export
     ADD_ITEMSPAWNER(GM_BASE_ARMOR_CONTAINER_BONUS_LOW_79,
 	SpawnTime(1, 2).SetBonusLow(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0, 0).
 					
-					AddItem(PID_COMBAT_HELMET_MK_II , 95).
 					AddItem(PID_COMBAT_ARMOR_MK_II , 95).
-					AddItem(PID_DESERT_COMBAT_HELMET , 95).
 					AddItem(PID_DESERT_COMBAT_ARMOR , 95).
-					AddItem(PID_COMBAT_HELMET  , 95).
 					AddItem(PID_COMBAT_ARMOR, 95).
-					AddItem(PID_ENCLAVE_COMBAT_HELMET , 95).
-					AddItem(PID_ENCLAVE_COMBAT_HELMET_MK2 , 95).
 					AddItem(PID_ENCLAVE_COMBAT_ARMOR , 95).
-					AddItem(PID_POWER_HELMET , 95).
 					AddItem(PID_POWERED_ARMOR , 95).
-					AddItem(PID_HARDENED_POWER_HELMET , 95).
-					AddItem(PID_HARDENED_POWER_ARMOR , 95).
-					AddItem(PID_APA_HELMET  , 95).
 					AddItem(PID_ADVANCED_POWER_ARMOR , 95).
-					AddItem(PID_APA_HELMET_MK2 , 95).
-					AddItem(PID_ADVANCED_POWER_ARMOR_MK2 , 95).
 					AddItem(PID_METAL_ARMOR_MK_II , 95).
-					AddItem(PID_TESLA_HELMET, 95).
 					AddItem(PID_TESLA_ARMOR , 95).
-					AddItem(PID_BROTHERHOOD_HELMET, 95).
 					AddItem(PID_BROTHERHOOD_COMBAT_ARMOR , 95).
-					AddItem(PID_NCR_HELMET , 95).
 					AddItem(PID_NCR_ARMOR  , 95)
 					);
 					
@@ -2400,29 +2288,15 @@ void ItemSpawnInit() // export
     ADD_ITEMSPAWNER(GM_BASE_ARMOR_CONTAINER_BONUS_HI_84,
 	SpawnTime(1, 2).SetBonus(true).SetSeparate(true).SetClearAtSpawn(true).Lock(0, 0).
 					
-					AddItem(PID_COMBAT_HELMET_MK_II , 95).
 					AddItem(PID_COMBAT_ARMOR_MK_II , 95).
-					AddItem(PID_DESERT_COMBAT_HELMET , 95).
 					AddItem(PID_DESERT_COMBAT_ARMOR , 95).
-					AddItem(PID_COMBAT_HELMET  , 95).
 					AddItem(PID_COMBAT_ARMOR, 95).
-					AddItem(PID_ENCLAVE_COMBAT_HELMET , 95).
-					AddItem(PID_ENCLAVE_COMBAT_HELMET_MK2 , 95).
 					AddItem(PID_ENCLAVE_COMBAT_ARMOR , 95).
-					AddItem(PID_POWER_HELMET , 95).
 					AddItem(PID_POWERED_ARMOR , 95).
-					AddItem(PID_HARDENED_POWER_HELMET , 95).
-					AddItem(PID_HARDENED_POWER_ARMOR , 95).
-					AddItem(PID_APA_HELMET  , 95).
 					AddItem(PID_ADVANCED_POWER_ARMOR , 95).
-					AddItem(PID_APA_HELMET_MK2 , 95).
-					AddItem(PID_ADVANCED_POWER_ARMOR_MK2 , 95).
 					AddItem(PID_METAL_ARMOR_MK_II , 95).
-					AddItem(PID_TESLA_HELMET, 95).
 					AddItem(PID_TESLA_ARMOR , 95).
-					AddItem(PID_BROTHERHOOD_HELMET, 95).
 					AddItem(PID_BROTHERHOOD_COMBAT_ARMOR , 95).
-					AddItem(PID_NCR_HELMET , 95).
 					AddItem(PID_NCR_ARMOR  , 95)
 					);					
 					
@@ -2490,7 +2364,6 @@ void ItemSpawnInit() // export
 					AddItem(PID_COMBAT_ARMOR_MK_II , 95).
 					AddItem(PID_METAL_ARMOR_MK_II , 95).
 					AddItem(PID_DESERT_COMBAT_ARMOR , 95).
-					AddItem(PID_COMBAT_HELMET_MK_II , 95).
 					AddItem(PID_LEATHER_ARMOR_MK_II , 95)
 					);
 	
@@ -2538,10 +2411,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_LASER_PISTOL                  , 30 ).				
 				//Armors
 				AddItem(PID_LEATHER_ARMOR                 , 20 ).
-				AddItem(PID_LEATHER_ARMOR_MK_II           , 17 ).			
-				//helmets
-				AddItem(PID_LEATHER_ARMOR_HELMET          , 15 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET_MK2      , 10 )					
+				AddItem(PID_LEATHER_ARMOR_MK_II           , 17 )
 				);										
 
  ADD_ITEMSPAWNER(FAT_TECH_93,
@@ -2569,7 +2439,6 @@ void ItemSpawnInit() // export
 				AddItem(PID_PULSE_GRENADE, 30 , 1 , 3 ).
                 AddItem(PID_PLASMA_GRENADE, 50, 5, 15)				
 				//Armors			
-				//helmets			
 				);										
 
  ADD_ITEMSPAWNER(FAT_MED_94,
@@ -2590,7 +2459,6 @@ void ItemSpawnInit() // export
 				//Ammo
 				//Weapons			
 				//Armors			
-				//helmets					
 				);														
 	
 	//oil rig
@@ -2666,14 +2534,11 @@ void ItemSpawnInit() // export
 				AddItem(PID_BLUEPRINT_GATLING_LASER, 100).	
 				AddItem(PID_BLUEPRINT_2MM_EC_AMMO, 100).
 				AddItem(PID_BLUEPRINT_4_7MM_CASELESS, 100).		
-				AddItem(PID_BLUEPRINT_POWER_HELMET, 75).	
-				AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 40).	
 				AddItem(PID_BLUEPRINT_NCR_ARMOR, 100).
 				AddItem(PID_BLUEPRINT_DESERT_COMBAT_ARMOR, 100).		
 				AddItem(PID_BLUEPRINT_ENCLAVE_COMBAT_ARMOR, 100).	
 				AddItem(PID_BLUEPRINT_BROTHERHOOD_COMBAT_ARMOR, 100).	
 				//AddItem(PID_BLUEPRINT_BOZAR, 100).
-				//AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 100).	
 				AddItem(PID_BLUEPRINT_SOLAR_SCORCHER, 100)
 				);
 				
@@ -2789,13 +2654,7 @@ void ItemSpawnInit() // export
 				AddItem(PID_CURED_LEATHER_ARMOR           , 23 ).				
 				AddItem(PID_LEATHER_ARMOR                 , 20 ).
 				AddItem(PID_LEATHER_ARMOR_MK_II           , 17 ).
-				AddItem(PID_METAL_ARMOR                   , 14 ).				
-				//helmets
-				AddItem(PID_LEATHER_JACKET_HELMET         , 40 ).	
-				AddItem(PID_COMBAT_LEATHER_JACKET_HELMET  , 35 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET          , 30 ).
-				AddItem(PID_LEATHER_ARMOR_HELMET_MK2      , 25 ).
-				AddItem(PID_METAL_HELMET                  , 20 )		
+				AddItem(PID_METAL_ARMOR                   , 14 )
 				);
 				
     #ifdef __DEBUG__

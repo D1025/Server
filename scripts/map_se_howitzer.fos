@@ -29,9 +29,9 @@ void _MapInit(Map& map, bool firstTime)
 		{		
 			switch (Random(1,4))
 			{
-				case 1: 	{ skrzynka1.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); skrzynka1.AddItem(PID_BROTHERHOOD_HELMET, 1, 0); break;}
-				case 2: 	{ skrzynka1.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); skrzynka1.AddItem(PID_ENCLAVE_COMBAT_HELMET, 1, 0); break;}
-				case 3: 	{ skrzynka1.AddItem(PID_NCR_ARMOR, 1, 0); skrzynka1.AddItem(PID_NCR_HELMET, 1, 0); break;}
+				case 1: 	{ skrzynka1.AddItem(PID_BROTHERHOOD_COMBAT_ARMOR, 1, 0); break;}
+				case 2: 	{ skrzynka1.AddItem(PID_ENCLAVE_COMBAT_ARMOR, 1, 0); break;}
+				case 3: 	{ skrzynka1.AddItem(PID_NCR_ARMOR, 1, 0); break;}
 				case 4: 	{ skrzynka1.AddItem(PID_NCR_ARMOR, 1, 0); skrzynka1.AddItem(PID_MIRROR_SHADES, 1, 0); break;}
 				
 				default: break;

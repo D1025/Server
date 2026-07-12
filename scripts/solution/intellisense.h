@@ -577,6 +577,9 @@ class ProtoItem
 	const uint16 Misc_ChargeMax;
 	const uint16 Misc_ToolSkillNum;
 	const int Misc_ToolSkillBonus;
+	const int Utility_Param;
+	const int Utility_Value;
+	const uint Utility_Flags;
 	const uint Armor_CrTypeMale;
 	const uint Armor_CrTypeFemale;
 	const int Armor_AC;
@@ -1091,11 +1094,11 @@ class Critter
 	bool IsDmgTwoArm();
 	bool IsAddicted();
 	bool IsOverweight();
-	int GetAC(bool);
-	int GetDR(uint, bool);
-	int GetDT(uint, bool);
-	int GetArmorDR(uint, bool);
-	int GetArmorDT(uint, bool);
+	int GetAC();
+	int GetDR(uint);
+	int GetDT(uint);
+	int GetArmorDR(uint);
+	int GetArmorDT(uint);
 	int GetSocket();
 	int GetScore(uint8);
 	int GetUID(uint8);

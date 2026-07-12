@@ -398,11 +398,8 @@ void DrawMsFov() // export
     if(!valid(chosen) || __GmapActive || GetCurrentMapPid() == 0)
         return;
 
-    ItemCl@ item1 = chosen.GetItem(0, SLOT_HAND1);
-    ItemCl@ item2 = chosen.GetItem(0, SLOT_HAND2);
-
-    if( (valid(item1)?item1.GetProtoId() != PID_ACTIVE_MOTION_SENSOR:true)
-     && (valid(item2)?item2.GetProtoId() != PID_ACTIVE_MOTION_SENSOR:true))
+    ItemCl@ sensor = chosen.GetItem(0, SLOT_UTILITY);
+    if(!valid(sensor) || sensor.GetProtoId() != PID_MOTION_SENSOR || sensor.Val1 != 1)
         return;
 
     array<uint16> msFovVert =

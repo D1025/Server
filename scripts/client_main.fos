@@ -579,7 +579,7 @@ void items_collection(int collection, array<ItemCl@>& items)
 
     if(collection == ITEMS_USE && RepairPid != 0)
     {
-        if(RepairPid == PID_MOTION_SENSOR || RepairPid == PID_ACTIVE_MOTION_SENSOR || RepairPid == PID_TESLA_ARMOR)
+        if(RepairPid == PID_MOTION_SENSOR || RepairPid == PID_TESLA_ARMOR)
         {
             for(uint i = 0, j = items.length(); i < j; i++)
                 if(items[i].GetProtoId() != PID_SEC &&

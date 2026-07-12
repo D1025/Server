@@ -204,6 +204,8 @@ void InitializeGame()                  // Export
     SetParameterGetBehaviour(ST_INTELLECT, dllName + "getParam_Intellegence");
     SetParameterGetBehaviour(ST_AGILITY, dllName + "getParam_Agility");
     SetParameterGetBehaviour(ST_LUCK, dllName + "getParam_Luck");
+    for(uint i = SKILL_BEGIN; i <= SKILL_END; i++)
+        SetParameterGetBehaviour(i, dllName + "getParam_Skill");
     SetParameterGetBehaviour(ST_CURRENT_HP, dllName + "getParam_Hp");
     SetParameterGetBehaviour(ST_HP_HEAD, dllName + "getParam_HpHead");
     SetParameterGetBehaviour(ST_HP_LA, dllName + "getParam_HpLa");
@@ -284,7 +286,8 @@ void InitializeGame()                  // Export
     # endif    // PLAYERS_3D
 
     // New slots
-    AllowSlot(SLOT_HEAD, "InvHead");
+    // Reuse the existing inventory rectangle so utility occupies the exact former slot position.
+    AllowSlot(SLOT_UTILITY, "InvHead");
 
     // Power-armor stash slot: shows next to the armor slot and keeps the body armor
     // you were wearing while a power suit is worn (both client and server must allow it).

@@ -1106,7 +1106,7 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
         {
             int base =
                 npc.Skill[skill] -
-                MAX(0, target.GetAC(false) + (valid(ammo) ? ammo.Ammo_AcMod : 0)) +
+                MAX(0, target.GetAC() + (valid(ammo) ? ammo.Ammo_AcMod : 0)) +
                 (target.IsKnockout() ? 40 : 0) -
                 (_CritDamaged(npc, DAMAGE_EYE) ? 25 : 0);
 
@@ -1179,7 +1179,7 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
             }
 
             int base = npc.Skill[skill] -
-                       MAX(0, target.GetAC(false) + (valid(ammo) ? ammo.Ammo_AcMod : 0)) +
+                       MAX(0, target.GetAC() + (valid(ammo) ? ammo.Ammo_AcMod : 0)) +
                        (target.IsKnockout() ? 40 : 0) -
                        (_CritDamaged(npc, DAMAGE_EYE) ? 25 : 0) + (perkAccurate ? 20 : 0);
 

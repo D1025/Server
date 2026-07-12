@@ -95,7 +95,6 @@ void init_reward1(Item& item, bool firstTime)
 		case 2: {SpawnBuffItem(item, PID_POWERED_ARMOR); break;}
 		case 3: {SpawnBuffItem(item, PID_ADVANCED_POWER_ARMOR); break;}
 		case 4: {SpawnBuffItem(item, PID_M72_GAUSS_RIFLE); item.AddItem(PID_2MM_EC_AMMO,Random(5,40),0); break;}
-		case 5: {SpawnBuffItem(item, PID_APA_HELMET); break;}
 		case 6: {SpawnBuffItem(item, PID_HK_G11E); item.AddItem(PID_4_7MM_CASELESS,Random(50,250),0); break;}
 		case 7: {SpawnBuffItem(item, PID_VINDICATOR_MINIGUN); item.AddItem(PID_4_7MM_CASELESS,Random(120,460),0); break;}
 		case 8: {SpawnBuffItem(item, PID_BOZAR); item.AddItem(PID_223_FMJ,Random(120,150),0); break;}
@@ -108,12 +107,10 @@ void init_reward2(Item& item, bool firstTime)
 {
 	for( int i =1; i <= 5; i++ )
 		{
-		switch(Random(1,4)) //tier IV
+		switch(Random(1,2)) //tier IV
 			{
 			case 1: {item.AddItem(PID_POWERED_ARMOR, 1, 0); break;}
-			case 2: {item.AddItem(PID_HARDENED_POWER_ARMOR, 1, 0); break;}
-			case 3: {item.AddItem(PID_ADVANCED_POWER_ARMOR, 1, 0); break;}
-			case 4: {item.AddItem(PID_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}
+			case 2: {item.AddItem(PID_ADVANCED_POWER_ARMOR, 1, 0); break;}
 			}
 	}
 }
@@ -127,16 +124,14 @@ void init_reward3(Item& item, bool firstTime)
 		case 1: {item.AddItem(PID_BLUEPRINT_SAIGA_12, 1, 0); break;}
 		case 2: {item.AddItem(PID_BLUEPRINT_METAL_ARMOR_MK_III, 1, 0); break;}
 		case 3: {item.AddItem(PID_BLUEPRINT_M72_GAUSS_RIFLE, 1, 0); break;}
-		case 4: {item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR_MK2, 1, 0); break;}
+		case 4: {item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}
 		case 5: {item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_ARMOR, 1, 0); break;}
-		case 6: {item.AddItem(PID_BLUEPRINT_ADVANCED_POWER_HELMET_MK2, 1, 0); break;}
-		case 7: {item.AddItem(PID_BLUEPRINT_HARDENED_POWER_HELMET, 1, 0); break;}
 		case 8: {item.AddItem(PID_BLUEPRINT_YK42B_PULSE_RIFLE, 1, 0); break;}
 		case 9: {item.AddItem(PID_BLUEPRINT_TURBO_PLASMA_RIFLE, 1, 0); break;}
 		case 10: {item.AddItem(PID_BLUEPRINT_VINDICATOR_MINIGUN, 1, 0); break;}
 		case 11: {item.AddItem(PID_BLUEPRINT_M203, 1, 0); break;}
 		case 12: {item.AddItem(PID_BLUEPRINT_BOZAR, 1, 0); break;}
-		case 13: {item.AddItem(PID_BLUEPRINT_HARDENED_POWER_ARMOR, 1, 0); break;}
+		case 13: {item.AddItem(PID_BLUEPRINT_POWERED_ARMOR, 1, 0); break;}
 		case 14: {item.AddItem(PID_BLUEPRINT_SOLAR_SCORCHER, 1, 0); break;}
 		
 		}
@@ -1170,7 +1165,5 @@ uint e_waveboss(array<uint>@ values)
 
 }
 //I lrean a lot when making this, thanks for using it in Your project.
-
-
 
 

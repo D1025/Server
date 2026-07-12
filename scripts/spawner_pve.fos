@@ -194,9 +194,6 @@ void SpawnGuaranteedLoadout(Item& container, bool highTier)
     Item@ armor = container.AddItem(armorPid, 1, 0);
     ApplyRewardQuality(armor, highTier);
 
-    uint16 helmetPid = HelmetForArmor(armorPid);
-    Item@ helmet = container.AddItem(helmetPid, 1, 0);
-    ApplyRewardQuality(helmet, highTier);
 }
 
 void ApplyRewardQuality(Item@ it, bool highTier)
@@ -227,8 +224,17 @@ void TryAddUtility(Item& container)
     if(Random(1, 100) > 5)
         return;
 
-    uint16 pid = Random(0, 1) == 0 ? PID_STEALTH_BOY : PID_MOTION_SENSOR;
-    container.AddItem(pid, 1, 0);
+    uint16[] utilityPids =
+    {
+        PID_STEALTH_BOY, PID_MOTION_SENSOR, PID_BACKPACK,
+        PID_GOGGLES, PID_TALISMAN, PID_RIOT_SHIELD,
+        PID_BOBBLEHEAD_STRENGTH, PID_BOBBLEHEAD_PERCEPTION, PID_BOBBLEHEAD_ENDURANCE,
+        PID_BOBBLEHEAD_CHARISMA, PID_BOBBLEHEAD_INTELLIGENCE,
+        PID_BOBBLEHEAD_AGILITY, PID_BOBBLEHEAD_LUCK,
+        PID_BIG_BOOK_OF_SCIENCE, PID_DEANS_ELECTRONICS, PID_FIRST_AID_BOOK,
+        PID_SCOUT_HANDBOOK, PID_GUNS_AND_BULLETS, PID_BARTER_BOOK
+    };
+    container.AddItem(utilityPids[Random(0, utilityPids.length() - 1)], 1, 0);
 }
 
 void TryAddNewEraHolotape(Item& container, int chancePercent)
@@ -356,29 +362,6 @@ uint16 RandomArmorPid()
     case 15: return PID_DESERT_COMBAT_ARMOR;
     }
     return PID_COMBAT_ARMOR;
-}
-
-uint16 HelmetForArmor(uint16 armorPid)
-{
-    switch(armorPid)
-    {
-    case PID_LEATHER_JACKET: return PID_LEATHER_JACKET_HELMET;
-    case PID_LEATHER_ARMOR_MK_II: return PID_LEATHER_ARMOR_HELMET_MK2;
-    case PID_CURED_LEATHER_ARMOR: return PID_LEATHER_ARMOR_HELMET;
-    case PID_METAL_ARMOR_MK_II: return PID_METAL_HELMET_MK2;
-    case PID_TESLA_ARMOR: return PID_TESLA_HELMET;
-    case PID_COMBAT_ARMOR: return PID_COMBAT_HELMET;
-    case PID_COMBAT_ARMOR_MK_II: return PID_COMBAT_HELMET_MK_II;
-    case PID_BROTHERHOOD_COMBAT_ARMOR: return PID_BROTHERHOOD_HELMET;
-    case PID_NCR_ARMOR: return PID_NCR_HELMET;
-    case PID_ENVIROMENTAL_ARMOR: return PID_METAL_HELMET;
-    case PID_ENCLAVE_COMBAT_ARMOR: return PID_ENCLAVE_COMBAT_HELMET;
-    case PID_VAULT_13_SUIT: return PID_MOTORCYCLE_HELMET;
-    case PID_VAULT_SUIT: return PID_MOTORCYCLE_HELMET;
-    case PID_SF_COMBAT_JACKET: return PID_COMBAT_LEATHER_JACKET_HELMET;
-    case PID_DESERT_COMBAT_ARMOR: return PID_DESERT_COMBAT_HELMET;
-    }
-    return PID_COMBAT_HELMET;
 }
 
 uint16 RandomSpecialImplantPid()

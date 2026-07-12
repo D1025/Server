@@ -116,13 +116,13 @@ EXPORT void OnlineStats_CharSave( Critter& player, int settings, ScriptString& d
 		if( FLAG( settings,OS_SPECIAL ) || FLAG( settings,OS_ALL ))
 		{
 			fprintf( f, "@special = %d %d %d %d %d %d %d;\n",
-				player.Params[ST_STRENGTH],
-				player.Params[ST_PERCEPTION],
-				player.Params[ST_ENDURANCE],
-				player.Params[ST_CHARISMA],
-				player.Params[ST_INTELLECT],
-				player.Params[ST_AGILITY],
-				player.Params[ST_LUCK] );
+				getParam_Strength( player, ST_STRENGTH ),
+				getParam_Perception( player, ST_PERCEPTION ),
+				getParam_Endurance( player, ST_ENDURANCE ),
+				getParam_Charisma( player, ST_CHARISMA ),
+				getParam_Intellegence( player, ST_INTELLECT ),
+				getParam_Agility( player, ST_AGILITY ),
+				getParam_Luck( player, ST_LUCK ) );
 		};
 
 		if( FLAG( settings,OS_XP ) || FLAG( settings,OS_ALL ))
@@ -150,7 +150,7 @@ EXPORT void OnlineStats_CharSave( Critter& player, int settings, ScriptString& d
 		if( FLAG( settings,OS_STATS ) || FLAG( settings,OS_ALL ))
 		{
 			fprintf( f, "@stats = %d %d %d %d %d %d %d %d %d %d;\n",
-				GetRunningAc( player, false ),
+				GetRunningAc( player ),
 				getParam_MaxAp( player, -1 ),
 				getParam_MaxWeight( player, -1 ),
 				getParam_MeleeDmg( player, -1 ),
@@ -177,7 +177,7 @@ EXPORT void OnlineStats_CharSave( Critter& player, int settings, ScriptString& d
 						break;
 					};
 				};
-				fprintf( f, "%s%d ", tagged ? "+" : "", player.Params[skill] );
+				fprintf( f, "%s%d ", tagged ? "+" : "", getParam_Skill( player, skill ) );
 			};
 			fprintf( f, "%d;\n", player.Params[ST_UNSPENT_SKILL_POINTS] );
 		};

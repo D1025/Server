@@ -14,44 +14,6 @@
  */
 
 /***********
-* HELMETS *
-***********/
-
-enum HelmetLight
-{
-    PID_MOTORCYCLE_HELMET                           = 722,
-    PID_LEATHER_JACKET_HELMET                       = 728,
-    PID_COMBAT_LEATHER_JACKET_HELMET        = 729,
-    PID_LEATHER_ARMOR_HELMET                        = 730,
-    PID_LEATHER_ARMOR_HELMET_MK2            = 731
-};
-
-enum HelmetMetal // -> HelmetMedium
-{
-    PID_METAL_HELMET                                        = 732,
-    PID_METAL_HELMET_MK2                            = 733,
-    PID_TESLA_HELMET                                        = 734
-};
-enum HelmetCombat // -> HelmetMedium
-{
-    PID_COMBAT_HELMET                                       = 725,
-    PID_COMBAT_HELMET_MK_II                         = 726,
-    PID_BROTHERHOOD_HELMET                          = 727,
-    PID_ENCLAVE_COMBAT_HELMET                       = 738,
-    PID_ENCLAVE_COMBAT_HELMET_MK2           = 739,
-	PID_DESERT_COMBAT_HELMET				= 740,
-	PID_NCR_HELMET							= 741
-};
-
-enum HelmetHeavy
-{
-    PID_POWER_HELMET                                        = 721,
-    PID_APA_HELMET                                          = 735,
-    PID_APA_HELMET_MK2                                      = 736,
-    PID_HARDENED_POWER_HELMET                       = 737
-};
-
-/***********
 * CLOTHES *
 ***********/
 
@@ -124,16 +86,12 @@ enum ArmorCombat // -> ArmorMedium
 enum ArmorHeavy
 {
     PID_POWERED_ARMOR                                       = 3,
-    PID_HARDENED_POWER_ARMOR                        = 232,
-    PID_ADVANCED_POWER_ARMOR                        = 348,
-    PID_ADVANCED_POWER_ARMOR_MK2            = 349
+    PID_ADVANCED_POWER_ARMOR                        = 348
 };
 
 /*
    enum ArmorWaitFor3d
    {
-        PID_STRAWHAT						= 719,
-        PID_ARMIN_CAP						= 720,
         PID_TIBBETS_PRISON					= 723,
         PID_VAULT_SUIT2						= 724
  */
@@ -148,12 +106,9 @@ enum WeaponPistol // -> WeaponSmallGuns
     PID_14MM_PISTOL                     = 22,
     PID_9MM_MAUSER                      = 122,
     PID_223_PISTOL                      = 241,
-    PID_ZIP_GUN                         = 300,
     PID_44_MAGNUM_REVOLVER              = 313,
-    PID_44_MAGNUM_SPEEDLOADER           = 398,
     PID_NEEDLER_PISTOL                  = 388,          // HN Needler
-    PID_PK12_GAUSS_PISTOL               = 394,          // 2mm EC
-    PID_DESERT_EAGLE_EXT_MAG            = 404
+    PID_PK12_GAUSS_PISTOL               = 394           // 2mm EC
 };
 
 enum WeaponRifle // -> WeaponSmallGuns
@@ -169,8 +124,6 @@ enum WeaponRifle // -> WeaponSmallGuns
     PID_FN_FAL                                                      = 351,
     PID_INDEPENDENT                                         = 353,
     PID_M72_GAUSS_RIFLE                                     = 392,      // 2mm EC
-    PID_FN_FAL_NIGHT_SCOPE                          = 403,
-    PID_ASSAULT_RIFLE_EXT_MAG                       = 405,
     PID_FN_FAL_HPFA                                         = 500
 };
 
@@ -223,7 +176,6 @@ enum WeaponLaser // -> WeaponEnergy
     PID_LASER_RIFLE                                         = 118,
     PID_ALIEN_LASER_PISTOL                          = 120,
     PID_SOLAR_SCORCHER                                      = 390, // No ammo
-    PID_LASER_RIFLE_EXT_CAP                         = 401,
     PID_MAGNETO_LASER_PISTOL                        = 402,
     PID_DUAL_LASER_CANNON                           = 9659         // Vault City Gun Turret
 };
@@ -233,7 +185,6 @@ enum WeaponPlasma                                                  // -> WeaponE
     PID_PLASMA_RIFLE                                        = 15,
     PID_PLASMA_PISTOL                                       = 24,
     PID_TURBO_PLASMA_RIFLE                          = 233,
-    PID_PLASMA_PISTOL_EXT_CART                      = 406,
 	PID_PLASMA_GATLING                              = 25452
 };
 
@@ -758,13 +709,6 @@ import uint   NameToPid(string& name) from "itempid";
 import string PidToGroupName(uint pid) from "itempid";
 import uint   GroupNameToPids(string& name, array<uint>& pids) from "itempid";
 import uint   GroupNameToNames(string& name, array<string>& pidNames) from "itempid";
-
-IMPORTS(Helmet, Helmets);
-
-IMPORTS(LightHelmet,  LightHelmets);
-IMPORTS(MetalHelmet,  MetalHelmets);
-IMPORTS(CombatHelmet, CombatHelmets);
-IMPORTS(HeavyHelmet,  HeavyHelmets);
 
 IMPORTS(Armor, Armors);
 

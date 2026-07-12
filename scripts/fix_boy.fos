@@ -158,7 +158,7 @@ uint16 ArmorUpgradeBlueprintPidByPerk(int perkType)
 
 void CollectScienceUpgradeBlueprintCandidates(Item& item, array<uint16>& candidates)
 {
-    if(item.IsStackable() || UpgradeItemIsHelmet(item))
+    if(item.IsStackable())
         return;
 
     if(item.GetType() == ITEM_TYPE_WEAPON)
@@ -1035,9 +1035,7 @@ bool ReverseItemGeneric(Critter& cr, Item& item, bool isMassScience)
             added = Add(cr, pids, value, sk);
             break;
         case PID_POWERED_ARMOR:
-        case PID_HARDENED_POWER_ARMOR:
         case PID_ADVANCED_POWER_ARMOR:
-        case PID_ADVANCED_POWER_ARMOR_MK2:
             pids.insertLast(PID_PUMP_PARTS);
             pids.insertLast(PID_METAL_PARTS);
             pids.insertLast(PID_ALLOYS);

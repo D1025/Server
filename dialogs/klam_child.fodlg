@@ -7,7 +7,6 @@ lang=engl
 [dialog]
 &
 1 1000 None 0 #
-5 1010 D _script dialog@d_IsWearingScaryHelmet 0  R _script dialog@r_RunAway 2 15 30 #
 500 1020 D _script perks@d_PerkCheck 1 397 #
 2 1030 D _param p KARMA_SLAVER > 0 #
 3 1040 D _param p ST_KARMA > -1 #

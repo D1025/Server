@@ -77,6 +77,15 @@ public:
      */
     uint8 Slot;
 
+    /** Parameter affected by an equipped utility's flat bonus. */
+    const int Utility_Param;
+
+    /** Flat SPECIAL or skill bonus granted while this utility is equipped. */
+    const int Utility_Value;
+
+    /** Utility category flags (active device, medical kit, backpack). */
+    const uint Utility_Flags;
+
     //@}
 
     /**

@@ -37,7 +37,6 @@ lang=engl
 [engl]
 {100}{}{Construction Worker}
 {200}{}{You see a construction worker.}
-{210}{}{He wears worn out workwear and a yellow protective helmet.}
 {1000}{}{Predialogue installations}
 {1010}{}{We're on site, and you are the leader of the faction}
 {1020}{}{I belong to you}

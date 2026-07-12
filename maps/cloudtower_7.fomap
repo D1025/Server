@@ -17504,16 +17504,6 @@ MapX                 119
 MapY                 98
 
 MapObjType           1
-ProtoId              729
-MapX                 123
-MapY                 105
-
-MapObjType           1
-ProtoId              731
-MapX                 122
-MapY                 94
-
-MapObjType           1
 ProtoId              128
 MapX                 138
 MapY                 83
@@ -20427,5 +20417,4 @@ MapObjType           2
 ProtoId              2067
 MapX                 108
 MapY                 162
-
 

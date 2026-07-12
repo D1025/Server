@@ -56,12 +56,10 @@ void critter_init(Critter& cr, bool firstTime)
             uint16 protoid = armor.GetProtoId();
 
             // PA*
-            if(protoid == PID_ADVANCED_POWER_ARMOR ||
-               protoid == PID_ADVANCED_POWER_ARMOR_MK2)
+            if(protoid == PID_ADVANCED_POWER_ARMOR)
                 dogtag_chance += Random(10, 15);
 
-            else if(protoid == PID_POWERED_ARMOR ||
-                    protoid == PID_HARDENED_POWER_ARMOR)
+            else if(protoid == PID_POWERED_ARMOR)
                 dogtag_chance += Random(5, 10);
 
             // CA*
@@ -79,11 +77,8 @@ void critter_init(Critter& cr, bool firstTime)
             Item@ dogtag = DogTag(cr);
             if(valid(dogtag))
             {
-                for(uint s = SLOT_HEAD; s >= SLOT_HAND1; s--)
+                for(uint s = SLOT_HAND2; s >= SLOT_HAND1; s--)
                 {
-                    if(s == SLOT_ARMOR)
-                        continue;
-
                     if(!valid(cr.GetItem(0, s)))
                     {
                         if(cr.MoveItem(dogtag.Id, dogtag.GetCount(), s))
