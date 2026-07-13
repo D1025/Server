@@ -1,0 +1,461 @@
+// Smoke/gas grenade cloud logic. Cloud = PID_SMOKE_HEX or PID_GAS_HEX items
+// spread in rings (fire_hexes.fos pattern). Both cloud types share the whole
+// lifecycle (spread, corridor, dispel, cover, LOS); a gas cloud additionally
+// damages and poisons critters standing inside it each tick, unless they wear
+// a gas mask (PID_GAS_MASK in SLOT_UTILITY). Line-of-sight math lives in
+// check_look.dll (Smoke.cpp) and is hex-based, so gas hexes screen vision
+// exactly like smoke; this module owns the item lifecycle and keeps the DLL
+// hex registry in sync through _SmokeInit/_SmokeFinish. See also combat.fos
+// hooks: CommenceExplosion (blast + dispel), ApplyCoverLoss (smoke = 1 cover
+// unit), CombatAttack/FireIntoEmptyAir (shot corridor).
+
+#include "_macros.fos"
+#include "linetracer_h.fos"
+
+import void InjureCritter( Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId ) from "combat";
+import void AffectPoison( Critter& cr, int value ) from "poison";
+
+#define SMOKE_MAX_RADIUS       ( 3 )    // final cloud radius, rings 0..3
+#define SMOKE_SPREAD_STEPS     ( 6 )    // spread ticks: more than rings, gaps fill gradually
+#define SMOKE_SPREAD_STEP_MS   ( 3000 ) // one spread tick per 3 s -> cloud settles at ~18 s
+#define SMOKE_LIFETIME_MS      ( 45000 )// landing -> innermost hexes gone
+#define SMOKE_RING_FADE_MS     ( 1500 ) // dissipation: later-placed (outer) batches die first
+#define SMOKE_CORRIDOR_MS      ( 2000 ) // shot-dispersal corridor lifetime
+#define SMOKE_TICK_MS          ( 1000 ) // maintenance tick: stillness transitions
+#define SMOKE_REFRESH_RADIUS   ( 40 )   // RefreshVisible radius on cloud changes
+
+#define GAS_DAMAGE_MIN         ( 12 )   // HP hit per tick standing in gas
+#define GAS_DAMAGE_MAX         ( 21 )
+#define GAS_POISON_EVERY_TICKS ( 3 )    // poison application interval (avoids message spam)
+#define GAS_POISON_MIN         ( 6 )    // AffectPoison amount, reduced by poison resist
+#define GAS_POISON_MAX         ( 12 )
+
+// Native smoke registry in check_look.dll (Smoke.cpp)
+#pragma bindfunc "void Map::SmokeAdd(uint16,uint16) -> check_look.dll Map_SmokeAdd"
+#pragma bindfunc "void Map::SmokeRemove(uint16,uint16) -> check_look.dll Map_SmokeRemove"
+#pragma bindfunc "bool Map::SmokeCorridor(uint16,uint16,uint16,uint16,uint) -> check_look.dll Map_SmokeCorridor"
+#pragma bindfunc "bool Map::SmokeOnLine(uint16,uint16,uint16,uint16) -> check_look.dll Map_SmokeOnLine"
+
+// Cloud creation, called from combat.fos CommenceExplosion.
+// Each cloud rolls a random shape seed: per hex-direction sector a 0..2 weight
+// (2 bits each), so some clouds drift sideways, some stay lopsided blobs -
+// they never settle into a perfect ball.
+
+// Active cloud registry: lets an explosion near the core kill the whole cloud,
+// including stopping its spread events. Dead slots get reused; after a server
+// restart the array is empty, so leftover time events see a dead cloud and stop
+// (matching the _SmokeInit leftover-item cleanup).
+class SmokeCloudInfo
+{
+    uint   mapId;
+    uint16 centerX;
+    uint16 centerY;
+    bool   alive;
+    uint   expireSecond; // absolute game time the cloud dissolves at
+    uint16 hexPid;       // PID_SMOKE_HEX or PID_GAS_HEX
+    uint   ownerId;      // thrower, credited for gas damage kills
+}
+array<SmokeCloudInfo> Clouds;
+
+uint RegisterCloud( uint mapId, uint16 centerX, uint16 centerY, uint16 hexPid, uint ownerId )
+{
+    SmokeCloudInfo info;
+    info.mapId = mapId;
+    info.centerX = centerX;
+    info.centerY = centerY;
+    info.alive = true;
+    info.expireSecond = __FullSecond + REAL_MS( SMOKE_LIFETIME_MS );
+    info.hexPid = hexPid;
+    info.ownerId = ownerId;
+    for( uint i = 0, l = Clouds.length(); i < l; i++ )
+    {
+        if( !Clouds[ i ].alive )
+        {
+            Clouds[ i ] = info;
+            return i;
+        }
+    }
+    Clouds.insertLast( info );
+    return Clouds.length() - 1;
+}
+
+bool CloudAlive( uint idx )
+{
+    return idx < Clouds.length() && Clouds[ idx ].alive;
+}
+
+void SmokeBlast( Map& map, uint16 hexX, uint16 hexY, uint ownerId )
+{
+    CloudBlast( map, hexX, hexY, ownerId, PID_SMOKE_HEX );
+}
+
+void GasBlast( Map& map, uint16 hexX, uint16 hexY, uint ownerId )
+{
+    CloudBlast( map, hexX, hexY, ownerId, PID_GAS_HEX );
+}
+
+void CloudBlast( Map& map, uint16 hexX, uint16 hexY, uint ownerId, uint16 hexPid )
+{
+    uint shape = 0;
+    for( uint s = 0; s < 6; s++ )
+        shape |= uint( Random( 0, 2 ) ) << ( s * 2 );
+
+    uint cloudIdx = RegisterCloud( map.Id, hexX, hexY, hexPid, ownerId );
+
+    uint[] values = { map.Id, hexX, hexY, 0, shape, cloudIdx };
+    CreateTimeEvent( __FullSecond, "e_SmokeSpread", values, false );
+
+    uint[] tickValues = { map.Id, hexX, hexY, ( SMOKE_LIFETIME_MS / SMOKE_TICK_MS ) + 2, cloudIdx };
+    CreateTimeEvent( AFTER( REAL_MS( SMOKE_TICK_MS ) ), "e_SmokeTick", tickValues, false );
+}
+
+// Volumetric spread: each tick sweeps all rings up to MIN(step, MAX_RADIUS) and
+// rolls a chance per empty hex. Per-cloud shape seed weights each of the 6
+// direction sectors (weak sectors mostly stay empty, strong ones fill out), the
+// frontier creeps in thinner than the backfill, and there is no final
+// fill-all-holes pass - clouds end up lopsided, drifting sideways or just
+// weird, never a perfect ball. AddSmoke skips occupied hexes, so re-sweeping
+// never duplicates. Later-placed batches die earlier (LIFETIME - step*FADE from
+// landing), so the cloud also dissolves chaotically from the edges inward.
+uint e_SmokeSpread( uint[] @ values )
+{
+    Map@ map = GetMap( values[ 0 ] );
+    if( !valid( map ) )
+        return 0;
+    uint16 centerX = values[ 1 ];
+    uint16 centerY = values[ 2 ];
+    uint8  step = values[ 3 ];
+    uint   shape = values[ 4 ];
+    if( step > SMOKE_SPREAD_STEPS || !CloudAlive( values[ 5 ] ) )
+        return 0;
+    uint16 hexPid = Clouds[ values[ 5 ] ].hexPid;
+
+    uint[] ids;
+    if( step == 0 )
+        AddSmoke( map, centerX, centerY, ids, hexPid );
+    else
+    {
+        uint maxRing = MIN( step, SMOKE_MAX_RADIUS );
+        for( uint r = 1; r <= maxRing; r++ )
+        {
+            uint16 hexX = centerX;
+            uint16 hexY = centerY;
+            map.MoveHexByDir( hexX, hexY, 4, r );
+            for( uint i = 0; i < 6; i++ )
+            {
+                int sectorChance = 25 + 25 * int( ( shape >> ( i * 2 ) ) & 3 );  // 25 / 50 / 75 per sector
+                for( uint j = 0; j < r; j++ )
+                {
+                    map.MoveHexByDir( hexX, hexY, i, 1 );
+                    int chance = sectorChance;
+                    if( r == step )
+                        chance = chance * 60 / 100;  // frontier creeps in thin
+                    if( r == 1 )
+                        chance += 25;                // inner ring always decent - it screens the thrower
+                    if( Random( 1, 100 ) <= chance )
+                        AddSmoke( map, hexX, hexY, ids, hexPid );
+                }
+            }
+        }
+    }
+
+    if( ids.length() > 0 )
+    {
+        uint delayMs = SMOKE_LIFETIME_MS - step * ( SMOKE_RING_FADE_MS + SMOKE_SPREAD_STEP_MS );
+        CreateTimeEvent( AFTER( REAL_MS( delayMs ) ), "e_DeleteSmokeRing", ids, true );
+    }
+
+    RefreshArea( map, centerX, centerY, SMOKE_REFRESH_RADIUS );
+    values[ 3 ]++;
+    return REAL_MS( SMOKE_SPREAD_STEP_MS );
+}
+
+// One smoke/gas hex; smothers ground fire on the spot (see fire_hexes.fos)
+void AddSmoke( Map@ map, uint16 hexX, uint16 hexY, uint[]& ids, uint16 hexPid )
+{
+    if( !valid( map ) )
+        return;
+    if( !( map.IsHexPassed( hexX, hexY ) || valid( map.GetCritter( hexX, hexY ) ) ) )
+        return;
+    if( valid( map.GetItem( hexX, hexY, PID_SMOKE_HEX ) ) || valid( map.GetItem( hexX, hexY, PID_GAS_HEX ) ) )
+        return;
+
+    Item@ fire = map.GetItem( hexX, hexY, PID_FIRE_HEX );
+    if( valid( fire ) )
+        DeleteItem( fire );
+
+    Item@ item = map.AddItem( hexX, hexY, hexPid, 1 );
+    if( valid( item ) )
+    {
+        ids.insertLast( item.Id );
+        item.SetScript( "_SmokeInit" );
+    }
+}
+
+void _SmokeInit( Item& item, bool firstTime )
+{
+    if( !firstTime )
+    {
+        // Server restart: DLL registry starts empty, drop stale clouds
+        DeleteItem( item );
+        return;
+    }
+    SETFLAG( item.Flags, ITEM_NO_BLOCK );
+    SETFLAG( item.Flags, ITEM_SHOOT_THRU );
+    item.SetEvent( ITEM_EVENT_FINISH, "_SmokeFinish" );
+    Map@ map = GetMap( item.MapId );
+    if( valid( map ) )
+        map.SmokeAdd( item.HexX, item.HexY );
+}
+
+// Single DLL-sync point for every deletion path (ring fade, explosion dispel,
+// restart cleanup, map teardown)
+void _SmokeFinish( Item& item, bool deleted )
+{
+    Map@ map = GetMap( item.MapId );
+    if( valid( map ) )
+        map.SmokeRemove( item.HexX, item.HexY );
+}
+
+uint e_DeleteSmokeRing( uint[] @ values )
+{
+    Map@ map = null;
+    uint16 hexX = 0;
+    uint16 hexY = 0;
+    for( uint i = 0, l = values.length(); i < l; i++ )
+    {
+        if( values[ i ] == 0 )
+            continue;
+        Item@ item = GetItem( values[ i ] );
+        if( valid( item ) )
+        {
+            @map = GetMap( item.MapId );
+            hexX = item.HexX;
+            hexY = item.HexY;
+            DeleteItem( item );
+        }
+    }
+    if( valid( map ) )
+        RefreshArea( map, hexX, hexY, SMOKE_REFRESH_RADIUS );
+    return 0;
+}
+
+// Gas mask in the utility slot makes the wearer immune to gas cloud effects
+bool GasProtected( Critter& cr )
+{
+    Item@ mask = cr.GetItem( 0, SLOT_UTILITY );
+    return valid( mask ) && mask.GetProtoId() == PID_GAS_MASK && !FLAG( mask.BrokenFlags, BI_BROKEN );
+}
+
+// Stillness transitions (>= 1 s standing in smoke -> invisible) have no
+// engine trigger, so refresh critters standing in smoke every tick.
+// Gas clouds additionally damage everyone standing in a gas hex (poison in
+// larger intervals, so the poison messages don't spam every second).
+// Also frees the cloud registry slot once the lifetime runs out.
+uint e_SmokeTick( uint[] @ values )
+{
+    Map@ map = GetMap( values[ 0 ] );
+    if( !valid( map ) || !CloudAlive( values[ 4 ] ) )
+        return 0;
+    if( values[ 3 ] == 0 )
+    {
+        Clouds[ values[ 4 ] ].alive = false;
+        return 0;
+    }
+    values[ 3 ]--;
+
+    uint16 hexPid = Clouds[ values[ 4 ] ].hexPid;
+    uint   ownerId = Clouds[ values[ 4 ] ].ownerId;
+    bool   isGas = ( hexPid == PID_GAS_HEX );
+    bool   applyPoison = isGas && ( values[ 3 ] % GAS_POISON_EVERY_TICKS == 0 );
+
+    array<Critter@> critters;
+    map.GetCrittersHex( values[ 1 ], values[ 2 ], SMOKE_MAX_RADIUS + 1, FIND_LIFE_AND_KO, critters );
+    for( uint i = 0, l = critters.length(); i < l; i++ )
+    {
+        if( !valid( critters[ i ] ) || !valid( map.GetItem( critters[ i ].HexX, critters[ i ].HexY, hexPid ) ) )
+            continue;
+        critters[ i ].RefreshVisible();
+
+        if( !isGas )
+            continue;
+        Critter@ cr = critters[ i ];
+        if( cr.Mode[ MODE_INVULNERABLE ] != 0 || GasProtected( cr ) )
+            continue;
+        InjureCritter( cr, Random( GAS_DAMAGE_MIN, GAS_DAMAGE_MAX ), DAMAGE_NORMAL, 0, ownerId );
+        if( applyPoison && cr.IsLife() )
+            AffectPoison( cr, Random( GAS_POISON_MIN, GAS_POISON_MAX ) );
+    }
+    return REAL_MS( SMOKE_TICK_MS );
+}
+
+// Collects and deletes smoke items along the corridor (line hexes + their
+// neighbors), so players see exactly which part of the cloud is inactive.
+// _SmokeFinish unregisters each hex from the DLL, so the gap is real:
+// no vision block and no cover there until it refills.
+class SmokeGapTracer : ITraceContext
+{
+    uint[] hexes; // packed hx,hy pairs of torn-out smoke
+
+    bool Exec( Map& map, uint16 hx, uint16 hy )
+    {
+        TearOut( map, hx, hy );
+        for( uint dir = 0; dir < 6; dir++ )
+        {
+            uint16 nx = hx;
+            uint16 ny = hy;
+            map.MoveHexByDir( nx, ny, dir, 1 );
+            TearOut( map, nx, ny );
+        }
+        return false;
+    }
+
+    void TearOut( Map& map, uint16 hx, uint16 hy )
+    {
+        Item@ smoke = map.GetItem( hx, hy, PID_SMOKE_HEX );
+        if( !valid( smoke ) )
+            @smoke = map.GetItem( hx, hy, PID_GAS_HEX );
+        if( !valid( smoke ) )
+            return;
+        DeleteItem( smoke );
+        hexes.insertLast( hx );
+        hexes.insertLast( hy );
+    }
+}
+
+// Called from combat.fos on every gun shot; returns true when the fire line
+// crossed smoke and a vision corridor was opened
+bool RegisterShotCorridor( Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, uint16 toHy )
+{
+    if( !map.SmokeCorridor( fromHx, fromHy, toHx, toHy, SMOKE_CORRIDOR_MS ) )
+        return false;
+
+    // tear the corridor out of the cloud for its duration
+    SmokeGapTracer tracer;
+    tracer.Exec( map, fromHx, fromHy ); // LineTracerHex skips the start hex
+    uint dist = GetDistantion( fromHx, fromHy, toHx, toHy );
+    if( dist > 0 )
+        LineTracerHex( fromHx, fromHy, toHx, toHy, map, dist, tracer );
+
+    RefreshCorridorArea( map, fromHx, fromHy, toHx, toHy );
+
+    uint[] values = { map.Id, fromHx, fromHy, toHx, toHy };
+    for( uint i = 0, l = tracer.hexes.length(); i < l; i++ )
+        values.insertLast( tracer.hexes[ i ] );
+    CreateTimeEvent( AFTER( REAL_MS( SMOKE_CORRIDOR_MS + 100 ) ), "e_CorridorExpired", values, true );
+    return true;
+}
+
+// Corridor closes: smoke seeps back into the gap wherever its cloud is still
+// alive (the refill dies together with that cloud), then visibility updates
+uint e_CorridorExpired( uint[] @ values )
+{
+    Map@ map = GetMap( values[ 0 ] );
+    if( !valid( map ) )
+        return 0;
+
+    uint[] ids;
+    uint   expireSecond = 0;
+    for( uint i = 5, l = values.length(); i + 1 < l; i += 2 )
+    {
+        uint16 hx = uint16( values[ i ] );
+        uint16 hy = uint16( values[ i + 1 ] );
+        int    cloudIdx = CloudCovering( map.Id, hx, hy );
+        if( cloudIdx < 0 )
+            continue; // owning cloud died or dissolved meanwhile - the gap stays
+        AddSmoke( map, hx, hy, ids, Clouds[ cloudIdx ].hexPid );
+        if( Clouds[ cloudIdx ].expireSecond > expireSecond )
+            expireSecond = Clouds[ cloudIdx ].expireSecond;
+    }
+    if( ids.length() > 0 && expireSecond > __FullSecond )
+        CreateTimeEvent( expireSecond, "e_DeleteSmokeRing", ids, true );
+
+    RefreshCorridorArea( map, uint16( values[ 1 ] ), uint16( values[ 2 ] ), uint16( values[ 3 ] ), uint16( values[ 4 ] ) );
+    return 0;
+}
+
+// Index of an alive cloud covering the hex, -1 when none does
+int CloudCovering( uint mapId, uint16 hx, uint16 hy )
+{
+    for( uint i = 0, l = Clouds.length(); i < l; i++ )
+    {
+        if( Clouds[ i ].alive && Clouds[ i ].mapId == mapId
+            && GetDistantion( hx, hy, Clouds[ i ].centerX, Clouds[ i ].centerY ) <= SMOKE_MAX_RADIUS )
+            return int( i );
+    }
+    return -1;
+}
+
+// Corridor open/close changes vision for everyone around the line - both
+// critters inside the smoke and observers whose curtain just opened/closed
+void RefreshCorridorArea( Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, uint16 toHy )
+{
+    uint16 midX = uint16( ( uint( fromHx ) + uint( toHx ) ) / 2 );
+    uint16 midY = uint16( ( uint( fromHy ) + uint( toHy ) ) / 2 );
+    RefreshArea( map, midX, midY, SMOKE_REFRESH_RADIUS );
+}
+
+// Explosions blow the smoke away, called from combat.fos CommenceExplosion.
+// The shockwave tears smoke well past the damage radius, and a blast reaching
+// a cloud's core kills that cloud completely: every hex gone and its spread
+// events stopped (via the Clouds registry).
+void SmokeDispelArea( Map& map, uint16 hexX, uint16 hexY, uint radius )
+{
+    uint wipeRadius = radius + 2;
+
+    array<uint16> killedX;
+    array<uint16> killedY;
+    for( uint i = 0, l = Clouds.length(); i < l; i++ )
+    {
+        if( Clouds[ i ].alive && Clouds[ i ].mapId == map.Id
+            && GetDistantion( hexX, hexY, Clouds[ i ].centerX, Clouds[ i ].centerY ) <= radius + 1 )
+        {
+            Clouds[ i ].alive = false;
+            killedX.insertLast( Clouds[ i ].centerX );
+            killedY.insertLast( Clouds[ i ].centerY );
+        }
+    }
+
+    array<Item@> items;
+    map.GetItems( PID_SMOKE_HEX, items );
+    map.GetItems( PID_GAS_HEX, items );
+    if( items.length() == 0 )
+        return;
+
+    bool removedAny = false;
+    for( uint i = 0, l = items.length(); i < l; i++ )
+    {
+        if( !valid( items[ i ] ) )
+            continue;
+        bool wipe = GetDistantion( hexX, hexY, items[ i ].HexX, items[ i ].HexY ) <= wipeRadius;
+        for( uint k = 0, kl = killedX.length(); !wipe && k < kl; k++ )
+            wipe = GetDistantion( killedX[ k ], killedY[ k ], items[ i ].HexX, items[ i ].HexY ) <= SMOKE_MAX_RADIUS + 1;
+        if( wipe )
+        {
+            DeleteItem( items[ i ] );
+            removedAny = true;
+        }
+    }
+    if( removedAny )
+        RefreshArea( map, hexX, hexY, SMOKE_REFRESH_RADIUS );
+}
+
+// Cover check for combat.fos ApplyCoverLoss (ignores corridors: a 1.5 s
+// vision lane does not remove the physical screening)
+bool SmokeOnFireLine( Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, uint16 toHy )
+{
+    return map.SmokeOnLine( fromHx, fromHy, toHx, toHy );
+}
+
+void RefreshArea( Map@ map, uint16 hexX, uint16 hexY, uint radius )
+{
+    if( !valid( map ) )
+        return;
+    array<Critter@> critters;
+    map.GetCrittersHex( hexX, hexY, radius, FIND_LIFE_AND_KO, critters );
+    for( uint i = 0, l = critters.length(); i < l; i++ )
+    {
+        if( valid( critters[ i ] ) )
+            critters[ i ].RefreshVisible();
+    }
+}

@@ -474,8 +474,8 @@ CraftLevel=2
 [Proto]
 ProtoId=524
 Type=1
-PicMap=art\items\robe.frm
-PicInv=art\inven\robeinv.frm
+PicMap=art\items\robe_bridgekeeper.png
+PicInv=art\inven\robe_bridgekeeper.png
 Flags=134217758
 DisableEgg=1
 Deteriorable=1

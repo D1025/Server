@@ -154,6 +154,8 @@
 #define PID_FRAG_GRENADE                    (25) //Grouped
 #define PID_PLASMA_GRENADE                  (26) //Grouped
 #define PID_PULSE_GRENADE                   (27) //Grouped
+#define PID_SMOKE_GRENADE                   (577) //Grouped, smoke screen, see smoke_hexes.fos
+#define PID_GAS_GRENADE                     (580) //Grouped, toxic gas cloud (smoke screen + damage/poison), see smoke_hexes.fos
     //Other
 #define PID_FLARE                           (79) //Grouped
 #define PID_ACTIVE_FLARE                    (205) //Active
@@ -610,6 +612,8 @@
 #define PID_ACTIVE_GEIGER_COUNTER           (207) //Active
 #define PID_STEALTH_BOY                     (54)
 #define PID_MOTION_SENSOR                   (59)
+#define PID_IR_GOGGLES                      (579) //Infrared goggles utility, sees through smoke, see item_stealth.fos
+#define PID_GAS_MASK                        (582) //Utility, immune to gas clouds, +20 poison/radiation resist (parameters.dll)
 #define PID_WATER_BAG                       (605)
 
 //Books
@@ -1192,6 +1196,10 @@
 
 // Fire
 #define PID_FIRE_HEX                        (608) //Fire hex from flamer and molotovs
+
+// Smoke
+#define PID_SMOKE_HEX                       (578) //Smoke cloud hex, see smoke_hexes.fos
+#define PID_GAS_HEX                         (581) //Toxic gas cloud hex, see smoke_hexes.fos
 
 
 // 

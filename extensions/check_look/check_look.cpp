@@ -1,6 +1,7 @@
 #include <cmath>
 #include "Move.h"
 #include "WallDist.h"
+#include "Smoke.h"
 #include "../../scripts/_animation.fos"
 #include <sstream>
 #include <string>
@@ -155,6 +156,37 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 	const Item* utility = GetEquippedUtility(cr);
 	int utilityReveal = utility && !FLAG(utility->Data.BrokenFlags, BI_BROKEN) && utility->Data.ScriptValues[1] == 1 ? utility->Proto->MagicPower : 0;
 	if(dist<=utilityReveal || dist<=cr.ItemSlotExt->Proto->MagicPower || dist<=cr.ItemSlotMain->Proto->MagicPower) return true;
+
+	// smoke cloud rules (Smoke.cpp, synced from smoke_hexes.fos). Placed before
+	// the LookMinimum return so smoke works inside the always-visible range too;
+	// dist<=1 stays a hard visibility floor. Teammates ignore smoke entirely.
+	if(AnySmoke && MapHasSmoke(map.Data.MapId))
+	{
+		bool teammates = (cr.Params[ST_TEAM_ID] == opponent.Params[ST_TEAM_ID] && cr.Params[ST_TEAM_ID] >= 200);
+
+		// active IR goggles in the utility slot: the observer sees through
+		// smoke as if it wasn't there (works from inside the cloud too)
+		const Item* irUtility = GetEquippedUtility(cr);
+		bool irActive = irUtility != NULL && irUtility->Proto->ProtoId == PID_IR_GOGGLES
+			&& !FLAG(irUtility->Data.BrokenFlags, BI_BROKEN) && irUtility->Data.ScriptValues[1] == 1;
+
+		if(!teammates && !irActive && dist > 1)
+		{
+			SmokeCtx smoke;
+			ComputeSmokeCtx(map, cx, cy, ox, oy, dist, smoke);
+			// observer inside the cloud sees nothing beyond 1 hex, unless a shot
+			// corridor runs through his position
+			if(smoke.crIn && !smoke.corridorAtObserver) return false;
+			// observer at the cloud edge sees only 1 hex deep into the smoke
+			if(smoke.crAdjacent && smoke.oppIn && smoke.effCount > 1) return false;
+			// standing still >=1s inside smoke -> invisible (corridor over the
+			// target's hex reveals them)
+			if(smoke.oppIn && !smoke.corridorAtOpp && MsSinceMove(opponent) >= SMOKE_STILL_MS) return false;
+			// smoke curtain: a target (not in smoke) up to SMOKE_HIDE_BEHIND_DIST
+			// hexes past the cloud is hidden; farther targets are unaffected
+			if(!smoke.oppIn && smoke.effCount > 0 && smoke.distBeyond <= SMOKE_HIDE_BEHIND_DIST) return false;
+		}
+	}
 
 	// min range - always visible
 	if(dist <= (int)(FOnline->LookMinimum)) return true;

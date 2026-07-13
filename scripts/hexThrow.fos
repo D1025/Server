@@ -312,7 +312,7 @@ int  LastCursor = 0;
 int  itemPos = 0;
 uint availableCnt = 0;
 array<ItemCl@> availableItems;
-bool isPlasma, isFrag, isDynacord, isMolotov, isPulse;
+bool isPlasma, isFrag, isDynacord, isMolotov, isPulse, isSmoke, isGas;
 uint16 lastH = 0, lastM = 0, lastS = 0, lastMS = 0;
 
 void _UpdateWeapons(int param1, int param2, int param3, string@ param4, array<int>@ param5) 
@@ -330,11 +330,11 @@ bool FindAvailableWeapons()
 
     int count = chosen.GetItems(-1, allItems);
 
-    isPlasma = isFrag = isDynacord = isMolotov = isPulse = false;
+    isPlasma = isFrag = isDynacord = isMolotov = isPulse = isSmoke = isGas = false;
     availableCnt = 0;
     availableItems.resize(0);
-    // 5 = plasma, frag, dynacord, molotov, pulse
-    availableItems.resize(5);
+    // 7 = plasma, frag, dynacord, molotov, pulse, smoke, gas
+    availableItems.resize(7);
     for(int i=0; i < count; ++i)
     {
         if(valid(allItems[i]))
@@ -373,6 +373,18 @@ bool FindAvailableWeapons()
                 availableItems.insertAt(4, allItems[i]);
                 ++availableCnt;
             break;
+            case PID_SMOKE_GRENADE:
+                isSmoke = true;
+                availableItems.removeAt(5);
+                availableItems.insertAt(5, allItems[i]);
+                ++availableCnt;
+            break;
+            case PID_GAS_GRENADE:
+                isGas = true;
+                availableItems.removeAt(6);
+                availableItems.insertAt(6, allItems[i]);
+                ++availableCnt;
+            break;
             }
         }
     }
@@ -399,54 +411,75 @@ bool FindAvailableWeapons()
             break;
             case 4:
                 next = isPulse;
-            break;   
+            break;
+            case 5:
+                next = isSmoke;
+            break;
+            case 6:
+                next = isGas;
+            break;
             }
             if(!next)
-                itemPos = (itemPos+1)%5;
+                itemPos = (itemPos+1)%7;
         }while(!next);
-        return true;    
+        return true;
     }
     else
         return false;
+}
+
+void CycleGrenade(int dir)
+{
+    if(availableCnt == 0)
+    {
+        itemPos = 0;
+        return;
+    }
+    bool next = false;
+    do
+    {
+        itemPos = (itemPos+7+dir)%7;
+        switch(itemPos)
+        {
+            case 0:
+                next = isPlasma;
+            break;
+            case 1:
+                next = isFrag;
+            break;
+            case 2:
+                next = isDynacord;
+            break;
+            case 3:
+                next = isMolotov;
+            break;
+            case 4:
+                next = isPulse;
+            break;
+            case 5:
+                next = isSmoke;
+            break;
+            case 6:
+                next = isGas;
+            break;
+        }
+    }while(!next);
 }
 
 bool HexThrowingMouseDown(int click)
 {
     if(!IsHexThrowingActive())
         return false;
-    if(click == MOUSE_CLICK_RIGHT)
+    if(click == MOUSE_CLICK_RIGHT || click == MOUSE_CLICK_WHEEL_UP)
     {
-        if(availableCnt > 0)
-        {
-            bool next = false;
-            do
-            {
-                itemPos = (itemPos+1)%5;
-                switch(itemPos)
-                {
-                    case 0:
-                        next = isPlasma;
-                    break;
-                    case 1:
-                        next = isFrag;
-                    break;
-                    case 2:
-                        next = isDynacord;
-                    break;
-                    case 3:
-                        next = isMolotov;
-                    break;
-                    case 4:
-                        next = isPulse;
-                    break;   
-                }
-            }while(!next);
-        }
-        else
-            itemPos = 0;
+        CycleGrenade(1);
         //Message("pos "+itemPos);
     }
-    else
+    else if(click == MOUSE_CLICK_WHEEL_DOWN)
+    {
+        CycleGrenade(-1);
+    }
+    else if(click == MOUSE_CLICK_LEFT)
     {
         CritterCl@ chosen = GetChosen();
 
@@ -557,9 +590,11 @@ void RenderHexThrowing() // export
         return;
 
     //splash indicator
-    uint splashRadius = 2;    
+    uint splashRadius = 2;
     if(item.GetProtoId() == PID_DYNACORD)
         splashRadius = 4;
+    if(item.GetProtoId() == PID_SMOKE_GRENADE || item.GetProtoId() == PID_GAS_GRENADE)
+        splashRadius = 3;   // final smoke/gas cloud radius, see smoke_hexes.fos
 
 	CritterCl@ crTarget = GetMonitorCritter(__MouseX, __MouseY);
 			

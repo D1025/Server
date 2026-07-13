@@ -1105,6 +1105,18 @@
 {57501}{}{Shotgun slug ammunition. Designed to penetrate armors. The ammo is marked: "12-gauge slug shells, not for use by children under the age of 3."}
 {57600}{}{12 ga. EMP Shotgun Shells}
 {57601}{}{Shotgun EMP ammunition. Effective against robotic enemies.}
+{57700}{}{Smoke Grenade}
+{57701}{}{A canister grenade that slowly releases a thick cloud of gray smoke, screening movement from view. The smoke smothers open flames and disperses on its own after a while.}
+{57800}{}{Smoke}
+{57801}{}{A thick cloud of smoke. Hard to see anything through it.}
+{57900}{}{IR Goggles}
+{57901}{}{Bulky thermal-imaging goggles strapped to a combat helmet frame. While powered, the wearer sees warm silhouettes right through smoke - though not clearly enough to recognize faces. Recharge with energy cells.}
+{58000}{}{Gas Grenade}
+{58001}{}{A canister grenade that slowly releases a churning cloud of sickly green gas. The gas screens vision like smoke, but eats at the lungs and skin of anyone caught inside - unless they wear a gas mask.}
+{58100}{}{Toxic Gas}
+{58101}{}{A thick cloud of sickly green gas. Hard to see anything through it, and you'd rather not breathe it in.}
+{58200}{}{Gas Mask}
+{58201}{}{A pre-war rubber mask with a replaceable charcoal filter. Worn on the head, it makes the toxic fumes of gas clouds harmless and filters out some airborne poison and radioactive dust (+20 poison and radiation resistance).}
 {60000}{}{Old Shovel}
 {60001}{}{This is an old shovel for digging ditches and stuff.}
 {60100}{}{Strange Iguana-on-a-stick}

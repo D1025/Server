@@ -14,6 +14,7 @@ import bool IsGMTEnabled() from "client_main";
 import int stringReplaceText(string& s, string@ f, string@ t) from "config_file";
 import int GUI_GetActiveMainScreen() from "client_gui";
 import int GUI_GetActiveScreen() from "client_gui";
+import bool IsHexInSmoke(uint16 hexX, uint16 hexY) from "client_interface";
 
 array<CritterCl@> crs;
 
@@ -45,6 +46,17 @@ void DrawCritterOnHead()	//export
 
 	for(uint  i = 0, imax = crs.length(); i < imax; i ++)
 	{
+		// Players standing in smoke stay anonymous: the silhouette is visible
+		// (IR goggles / adjacency), but no nickname or awareness info.
+		// Own team and GMs still see names.
+		if(crs[i].IsPlayer() && valid(chosen) && crs[i].Id != chosen.Id && !(IsGM())
+		   && !(chosen.Stat[ST_TEAM_ID] != 0 && crs[i].Stat[ST_TEAM_ID] == chosen.Stat[ST_TEAM_ID])
+		   && IsHexInSmoke(crs[i].HexX, crs[i].HexY))
+		{
+			crs[i].NameOnHead = " ";
+			continue;
+		}
+
 		//OnHeadAwareness
 		uint   dialog = crs[i].Stat[ST_DIALOG_ID];
         uint16 pid = crs[i].Pid;

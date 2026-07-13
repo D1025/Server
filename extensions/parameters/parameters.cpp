@@ -44,6 +44,8 @@
 #define BONUS_ARMOR_ALL_DR						(124)
 #define BONUS_ARMOR_FAST_RELOAD					(125)
 #define BONUS_ARMOR_AC							(126)
+#define PID_GAS_MASK							(582) // utility slot, +20 poison/rad resist (see ITEMPID.H)
+#define GAS_MASK_RESIST_BONUS					(20)
 #ifndef UPGRADE_MAX_SLOTS
 #define UPGRADE_MAX_SLOTS                       (7)
 #endif
@@ -568,6 +570,10 @@ EXPORT int getParam_RadiationResist(CritterMutual& cr, uint)
 	const Item* armor=cr.ItemSlotArmor;
 	val+=checkBonus(armor, BONUS_ARMOR_RAD_RES);
 
+	const Item* utility = GetEquippedUtility(cr);
+	if(utility && !FLAG(utility->Data.BrokenFlags, BI_BROKEN) && utility->Proto->ProtoId == PID_GAS_MASK)
+		val += GAS_MASK_RESIST_BONUS;
+
 	return CLAMP(val, -95, 95);
 }
 
@@ -579,6 +585,10 @@ EXPORT int getParam_PoisonResist(CritterMutual& cr, uint)
 
 	const Item* armor=cr.ItemSlotArmor;
 	val+=checkBonus(armor, BONUS_ARMOR_POISON_RES);
+
+	const Item* utility = GetEquippedUtility(cr);
+	if(utility && !FLAG(utility->Data.BrokenFlags, BI_BROKEN) && utility->Proto->ProtoId == PID_GAS_MASK)
+		val += GAS_MASK_RESIST_BONUS;
 
 	return CLAMP(val, -95, 95);
 }

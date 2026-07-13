@@ -327,6 +327,13 @@
 {4903}{}{Motion sensor charged.}
 {4904}{}{Motion sensor charge will last for another @lex time@.}
 
+# IR goggles
+{4910}{}{IR goggles have no charges left.}
+{4911}{}{IR goggles are on. Thermal vision cuts through smoke.}
+{4912}{}{IR goggles are off.}
+{4913}{}{IR goggles charged.}
+{4914}{}{IR goggles charge will last for another @lex time@.}
+
 # Toggle switch
 {4920}{}{*click* *click* Nothing happens. It looks like you are too far away from the explosives.}
 

@@ -38,6 +38,7 @@ import void ThrowingKeyDown(uint8 key, string& keyText) from "throwing";
 import void ThrowingKeyUp(uint8 key, string& keyText) from "throwing";
 import void ThrowingInputLost() from "throwing";
 import bool ThrowingMouseDown(int click) from "throwing";
+import bool GrenadeHexThrowMouseDown(int click) from "throwing";
 
 import void HexShotingKeyDown(uint8 key, string& keyText) from "hexShot";
 import void HexShotingKeyUp(uint8 key, string& keyText) from "hexShot";
@@ -346,6 +347,11 @@ bool mouse_down(int click)
         // Cascade "fire into the air": Ctrl + click sprays the forward cone at the
         // aimed hex. Handle before the Ctrl-based menus so it isn't stolen by them.
         if(LeftCtrl && !AltPressed && CascadeAirShotMouseDown(click))
+            return true;
+
+        // Grenade in hand + Ctrl: throw at the aimed hex (no critter target needed).
+        // Same early slot as the Cascade air shot so the Ctrl menus can't steal it.
+        if(LeftCtrl && !AltPressed && GrenadeHexThrowMouseDown(click))
             return true;
 
         if(IsGMTEnabled() && GMToolsMenu() && LeftCtrl && !AltPressed)           // show gmtools menu

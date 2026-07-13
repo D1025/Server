@@ -5,7 +5,7 @@
 // item_stealth.fos
 //
 
-// Stealth boy and motion sensor
+// Stealth boy, motion sensor and IR goggles
 
 #include "_macros.fos"
 #include "MsgStr.h"
@@ -26,6 +26,12 @@
 #define STR_SENSOR_OFF             (4902)
 #define STR_SENSOR_CHARGED         (4903)
 #define STR_SENSOR_CHARGES_LEFT    (4904)
+
+#define STR_IRGOGGLES_DEPLETED     (4910)
+#define STR_IRGOGGLES_ON           (4911)
+#define STR_IRGOGGLES_OFF          (4912)
+#define STR_IRGOGGLES_CHARGED      (4913)
+#define STR_IRGOGGLES_CHARGES_LEFT (4914)
 
 #define MOTION_SENSOR_SEC_TIME     (12) // in real seconds
 #define MOTION_SENSOR_MFC_TIME     (30) // in real seconds
@@ -312,6 +318,144 @@ void OnMotionSensorOff(Item& item)
     }
 }
 
+// IR goggles: see through smoke as if it wasn't there (check_look.dll reads
+// Val1 == 1 on the equipped utility). vals: 1 - on/off, 3 - event id
+void _IRGogglesInit(Item& item, bool firstTime)
+{
+    if(firstTime && item.Proto.Misc_ChargeMax > 0)
+        item.Charge = MIN(item.Proto.Misc_ChargeStart, item.Proto.Misc_ChargeMax);
+
+    item.SetEvent(ITEM_EVENT_USE, "_IRGogglesUse");
+    item.SetEvent(ITEM_EVENT_USE_ON_ME, "_IRGogglesUseOnMe");
+    item.SetEvent(ITEM_EVENT_SKILL, "_IRGogglesSkill");
+}
+
+bool _IRGogglesUse(Item& item, Critter& crit, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)
+{
+    if(valid(onCritter) || valid(onItem) || valid(onScenery))
+        return false;
+    if(item.Accessory != ACCESSORY_CRITTER || item.CritId != crit.Id || item.CritSlot != SLOT_UTILITY)
+    {
+        crit.Say(SAY_NETMSG, "Equip the IR goggles in the utility slot first.");
+        return true;
+    }
+    if(item.Val1 == 1)
+    {
+        EraseTimeEvent(item.Val3);
+        OnIRGogglesOff(item);
+        crit.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_OFF);
+        return true;
+    }
+    if(item.Charge == 0)
+    {
+        crit.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_DEPLETED);
+        return true;
+    }
+    array<uint> eventData = { item.Id, crit.Id };
+    item.Val3 = CreateTimeEvent(AFTER(REAL_SECOND(1)), "e_IRGoggles", eventData, true);
+    OnIRGogglesOn(item);
+    crit.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_ON);
+    return true;
+}
+
+bool _IRGogglesUseOnMe(Item& item, Critter& cr, Item@ usedItem)
+{
+    if(!valid(usedItem))
+        return false;
+    uint16 itemPid = usedItem.GetProtoId();
+    if((int(itemPid) == PID_SMALL_ENERGY_CELL || int(itemPid) == PID_MICRO_FUSION_CELL) && item.Charge < item.Proto.Misc_ChargeMax)
+    {
+        uint needCharge = item.Proto.Misc_ChargeMax - item.Charge;
+        uint charge = (itemPid == PID_SMALL_ENERGY_CELL ? MOTION_SENSOR_SEC_TIME : MOTION_SENSOR_MFC_TIME);
+        uint needItems = needCharge / charge;
+        if((needCharge % charge) != 0)
+            needItems++;
+        if(needItems > usedItem.GetCount())
+            needItems = usedItem.GetCount();
+        item.Charge += CLAMP(needItems * charge, 0, item.Proto.Misc_ChargeMax - item.Charge);
+        item.Update();
+        _SubItem(usedItem, needItems);
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_CHARGED);
+        return true;
+    }
+    return false;
+}
+
+bool _IRGogglesSkill(Item& goggles, Critter& cr, int skill)
+{
+    if(skill == SK_SCIENCE)
+    {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_CHARGES_LEFT, "$time" + goggles.Charge + (goggles.Charge != 1 ? " seconds" : " second"));
+        return true;
+    }
+    if(skill == SK_REPAIR)
+    {
+        TryRechargeItem(cr, goggles);
+        return true;
+    }
+    return false;
+}
+
+uint e_IRGoggles(array<uint>@ values)
+{
+    if(!valid(values))
+        return 0;
+    Item@ item = GetItem(values[0]);
+    if(!valid(item))
+    {
+        if(values.length() > 1)
+        {
+            Critter@ cr = GetCritter(values[1]);
+            if(valid(cr))
+                cr.RefreshVisible();
+        }
+        return 0;
+    }
+    if(item.Accessory != ACCESSORY_CRITTER || item.CritSlot != SLOT_UTILITY || item.Val1 != 1 || item.Charge == 0)
+    {
+        OnIRGogglesOff(item);
+        return 0;
+    }
+    if(--item.Charge == 0)
+    {
+        OnIRGogglesOff(item);
+        return 0;
+    }
+    if(item.Charge % 10 == 0)
+        item.Update();
+    return REAL_SECOND(1);
+}
+
+void OnIRGogglesOn(Item& item)
+{
+    item.Val1 = 1;
+    item.Update();
+    if(item.Accessory == ACCESSORY_CRITTER)
+    {
+        Critter@ cr = GetCritter(item.CritId);
+        if(valid(cr))
+            cr.RefreshVisible();
+    }
+}
+
+void OnIRGogglesOff(Item& item)
+{
+    item.Val1 = 0;
+    item.Val3 = 0;
+    item.Update();
+    if(item.Accessory == ACCESSORY_CRITTER)
+    {
+        Critter@ cr = GetCritter(item.CritId);
+        if(valid(cr))
+        {
+            if(valid(cr.GetMap()))
+                cr.RefreshVisible();
+            if(item.Charge == 0)
+                cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_DEPLETED);
+        }
+    }
+}
+
 void OnUtilitySlotChanged(Critter& cr, Item& item, uint8 fromSlot, uint8 toSlot)
 {
     if(fromSlot == SLOT_UTILITY && toSlot != SLOT_UTILITY && item.GetProtoId() == PID_STEALTH_BOY && item.Val1 == 1)
@@ -326,6 +470,11 @@ void OnUtilitySlotChanged(Critter& cr, Item& item, uint8 fromSlot, uint8 toSlot)
     {
         EraseTimeEvent(item.Val3);
         OnMotionSensorOff(item);
+    }
+    else if(fromSlot == SLOT_UTILITY && toSlot != SLOT_UTILITY && item.GetProtoId() == PID_IR_GOGGLES && item.Val1 == 1)
+    {
+        EraseTimeEvent(item.Val3);
+        OnIRGogglesOff(item);
     }
 
     // A direct slot replacement can move the previous item without a separate
@@ -347,6 +496,11 @@ void OnUtilitySlotChanged(Critter& cr, Item& item, uint8 fromSlot, uint8 toSlot)
             {
                 EraseTimeEvent(other.Val3);
                 OnMotionSensorOff(other);
+            }
+            else if(other.GetProtoId() == PID_IR_GOGGLES)
+            {
+                EraseTimeEvent(other.Val3);
+                OnIRGogglesOff(other);
             }
         }
     }

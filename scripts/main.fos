@@ -75,6 +75,10 @@ import bool UseSkillOnCar(Critter& cr, Item& car, int skill) from "car";
 import bool UseSkillOnLocker(Critter& cr, Item& locker, int skill) from "lockers";
 import bool WantedSignSet(Item& wantedSign, string& name, uint cost) from "wanted";
 import void InjureCritter( Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId ) from "combat";
+import bool SmokeOnFireLine(Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, uint16 toHy) from "smoke_hexes";
+import bool GasProtected(Critter& cr) from "smoke_hexes";
+import void CommenceThrowing(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty) from "throwing";
+import bool IsThrowableThere(Critter& cr, Item@ item, uint16 tx, uint16 ty) from "throwing";
 
 import int    GetCarTrunkComplexity(Item@ item) from "car";
 import uint   GetRandomDeathAnimation() from "cheats";
@@ -1082,6 +1086,96 @@ void TryAllyHeal(Critter& wounded)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// AfterTimes tactic "smoke screen": a hurt ranged NPC carrying a smoke grenade (PID 577) lobs it
+// a couple hexes toward its attacker, screening the fall-back the tactical block in
+// main_planes.fos already performs below 40% HP. Works for any NPC with the grenade in inventory;
+// one throw per SMOKE_SCREEN_CD_MS, reset on server restart. Tune the knobs below.
+#define SMOKE_SCREEN_HP_PCT      (40)       // trigger below this HP%, matches the fall-back threshold
+#define SMOKE_SCREEN_MIN_DIST    (5)        // no point screening an enemy already in your face
+#define SMOKE_SCREEN_CD_MS       (60000)    // per-NPC throw cooldown, real time
+#define SMOKE_SCREEN_THROW_HEXES (2)        // cloud center this far toward the enemy (radius-3 cloud still swallows the thrower)
+
+uint[] SmokeCdIds;
+uint[] SmokeCdUntil;    // absolute __FullSecond; expired entries pruned on scan
+
+bool SmokeThrowOnCooldown(uint id)
+{
+    for(uint i = 0; i < SmokeCdIds.length();)
+    {
+        if(SmokeCdUntil[i] <= __FullSecond)
+        {
+            SmokeCdIds.removeAt(i);
+            SmokeCdUntil.removeAt(i);
+            continue;
+        }
+        if(SmokeCdIds[i] == id)
+            return true;
+        i++;
+    }
+    return false;
+}
+
+void TrySmokeScreen(Critter& cr)
+{
+    if(cr.Timeout[TO_BATTLE] == 0 || !cr.IsLife() || cr.IsBusy())
+        return;
+    if(cr.Stat[ST_INTELLECT] < 5)
+        return;                                                  // smart enough to use equipment tactically
+    int maxHp = GetActualMaxHp(cr);
+    if(maxHp <= 0 || cr.Stat[ST_CURRENT_HP] * 100 >= maxHp * SMOKE_SCREEN_HP_PCT)
+        return;
+    Item@ nade = cr.GetItem(PID_SMOKE_GRENADE, -1);
+    if(!valid(nade))
+        return;
+    if(SmokeThrowOnCooldown(cr.Id))
+        return;
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+        return;
+
+    Critter@ foe = null;
+    NpcPlane@ plane = cr.GetCurPlane();
+    if(valid(plane) && plane.Type == AI_PLANE_ATTACK)
+        @foe = GetCritter(plane.Attack_TargId);
+    if(!valid(foe))
+    {
+        array<NpcPlane@> planes;
+        if(cr.GetPlanes(AI_PLANE_ATTACK, planes) > 0)
+            @foe = GetCritter(planes[0].Attack_TargId);
+    }
+    if(!valid(foe) || !foe.IsLife() || foe.GetMapId() != map.Id)
+        return;
+    if(GetDistantion(cr.HexX, cr.HexY, foe.HexX, foe.HexY) < SMOKE_SCREEN_MIN_DIST)
+        return;
+
+    // already screened? standing in a cloud or smoke on the fire line both count
+    if(valid(map.GetItem(cr.HexX, cr.HexY, PID_SMOKE_HEX)) || valid(map.GetItem(cr.HexX, cr.HexY, PID_GAS_HEX)))
+        return;
+    if(SmokeOnFireLine(map, cr.HexX, cr.HexY, foe.HexX, foe.HexY))
+        return;
+
+    // land the grenade toward the enemy, falling back to closer hexes when blocked
+    uint8  dir = GetDirection(cr.HexX, cr.HexY, foe.HexX, foe.HexY);
+    uint16 tx = 0, ty = 0;
+    for(int step = SMOKE_SCREEN_THROW_HEXES; step >= 0; step--)
+    {
+        tx = cr.HexX;
+        ty = cr.HexY;
+        map.MoveHexByDir(tx, ty, dir, step);
+        if(map.IsHexPassed(tx, ty) || step == 0)
+            break;                                               // step 0 = pop it underfoot, always allowed
+    }
+    if(!IsThrowableThere(cr, nade, tx, ty))
+        return;                                                  // AP or range says no
+
+    CommenceThrowing(cr, map, nade, tx, ty);                     // deliberate lob: skip the ThrowingToHit scatter roll
+    SmokeCdIds.insertLast(cr.Id);
+    SmokeCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_SCREEN_CD_MS));
+    if(Random(0, 2) == 0)
+        cr.Say(SAY_NORM_ON_HEAD, "Smoke out!");
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Called after the critter gets any damage.
 void PostDamage(Critter& cr)
 {
@@ -1091,6 +1185,7 @@ void PostDamage(Critter& cr)
         return;
 
     TryAllyHeal(cr);
+    TrySmokeScreen(cr);
     if(cr.IsInjured())
     {
         if(cr.Timeout[TO_SK_DOCTOR] <= 0)
@@ -2718,10 +2813,81 @@ void TryClearDeployLine(Critter& cr)
     }
 }
 
+// AfterTimes tactic "smoke evade": an NPC standing inside a smoke cloud is blind beyond 1 hex
+// (check_look.dll), so a ranged NPC in combat steps 2-4 hexes out of the cloud, preferring the
+// exit farthest from its target; melee NPCs stay - smoke is their friend. Gas is a health hazard:
+// any unmasked NPC leaves it, combat or not. Same PLANE_WANDER dodge and ~one-idle-tick latency
+// as TryClearDeployLine above; won't stack a second dodge.
+void TrySmokeEvade(Critter& cr)
+{
+    if(!cr.IsNpc() || cr.IsDead() || cr.IsKnockout() || !cr.IsCanWalk())
+        return;
+    if(cr.Param[ST_DEPLOYED] != 0)
+        return;                                                  // deployed gunners hold the position
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+        return;
+    bool inGas = valid(map.GetItem(cr.HexX, cr.HexY, PID_GAS_HEX));
+    if(!inGas && !valid(map.GetItem(cr.HexX, cr.HexY, PID_SMOKE_HEX)))
+        return;
+
+    if(!(inGas && !GasProtected(cr)))                            // gas without a mask: always flee
+    {
+        if(cr.Timeout[TO_BATTLE] == 0)
+            return;                                              // harmless smoke, no fight - stay put
+        uint8      mode = 0;
+        ProtoItem@ weapon = cr.GetSlotProto(SLOT_HAND1, mode);
+        int        use = _WeaponModeUse(mode);
+        if(!valid(weapon) || _WeaponSkill(weapon, use) == SK_CLOSE_COMBAT || _WeaponMaxDist(weapon, use) <= 2)
+            return;                                              // melee profits from the cover, keep pressing
+    }
+
+    array<NpcPlane@> pending;                                    // don't stack a second dodge
+    cr.GetPlanes(PLANE_WANDER, pending);
+    if(pending.length() > 0)
+        return;
+
+    Critter@ foe = null;
+    NpcPlane@ plane = cr.GetCurPlane();
+    if(valid(plane) && plane.Type == AI_PLANE_ATTACK)
+        @foe = GetCritter(plane.Attack_TargId);
+
+    // first cloud-free passable hex per direction; among those keep range from the target
+    int    bestScore = -1;
+    uint16 bestX = 0, bestY = 0;
+    for(uint dir = 0; dir < 6; dir++)
+    {
+        for(uint step = 2; step <= 4; step++)
+        {
+            uint16 hx = cr.HexX, hy = cr.HexY;
+            map.MoveHexByDir(hx, hy, dir, step);
+            if(!map.IsHexPassed(hx, hy))
+                continue;
+            if(valid(map.GetItem(hx, hy, PID_SMOKE_HEX)) || valid(map.GetItem(hx, hy, PID_GAS_HEX)))
+                continue;
+            int score = (valid(foe) ? int(GetDistantion(hx, hy, foe.HexX, foe.HexY)) : 1);
+            if(score > bestScore)
+            {
+                bestScore = score;
+                bestX = hx;
+                bestY = hy;
+            }
+            break;
+        }
+    }
+    if(bestScore < 0)
+        return;                                                  // boxed in, keep fighting blind
+
+    AddWalkPlane(cr, AI_PLANE_ATTACK_PRIORITY + 5, PLANE_WANDER, 0, bestX, bestY, 6, true, 0);
+    if(Random(0, 3) == 0)
+        cr.Say(SAY_NORM_ON_HEAD, "Can't see a damn thing!");
+}
+
 void critter_idle(Critter& cr)
 {
 	speedboost(cr);
     TryClearDeployLine(cr);
+    TrySmokeEvade(cr);
     int actualMaxHp = GetActualMaxHp(cr);
     if(cr.Stat[ST_CURRENT_HP] > actualMaxHp)
         cr.StatBase[ST_CURRENT_HP] = actualMaxHp;

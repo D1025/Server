@@ -44,6 +44,11 @@ import int  GetActualMaxHp(Critter@ cr) from "utils";
 
 
 import void MolotovBlast( Map& map, uint16 hexX, uint16 hexY, uint16 firePid, uint ownerId ) from "fire_hexes";
+import void SmokeBlast( Map& map, uint16 hexX, uint16 hexY, uint ownerId ) from "smoke_hexes";
+import void GasBlast( Map& map, uint16 hexX, uint16 hexY, uint ownerId ) from "smoke_hexes";
+import void SmokeDispelArea( Map& map, uint16 hexX, uint16 hexY, uint radius ) from "smoke_hexes";
+import bool SmokeOnFireLine( Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, uint16 toHy ) from "smoke_hexes";
+import bool RegisterShotCorridor( Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, uint16 toHy ) from "smoke_hexes";
 #define BURN_DAMAGE               ( Random(1,2) ) // Fire stuffy
 #define MAX_BURN_STACK           (2) //for adjust, default 12
 #define MAX_BURN_DURATION      (4) //for adjust, default 3
@@ -555,6 +560,11 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
     // Add event, always
     target.EventAttacked(cr);
+
+    // Gun shot through smoke opens a two-way vision corridor along the fire line
+    // (throwing/melee excluded by design, flamethrower too short-ranged to matter)
+    if(weaponSubtype == WS_GUN && !isFlamethrower)
+        RegisterShotCorridor(map, hx, hy, tx, ty);
 
     // Essential part starts here
 
@@ -2757,6 +2767,19 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Critter@ target, uint weapPid, bool isCritical, uint intentionallyId, bool isRocket, array<CombatRes>& results, bool isExplodeRocket)
 {
+    // Smoke/gas grenade: no blast damage, no knockback - just pop the cloud
+    // (smoke_hexes.fos; the gas cloud deals its damage per tick instead)
+    if(weapPid == PID_SMOKE_GRENADE || weapPid == PID_GAS_GRENADE)
+    {
+        map.RunEffect(PID_EXPLODE_EMP, tx, ty, 1);
+        map.PlaySound("WHN1XXX1.ACM", tx, ty, 30);
+        if(weapPid == PID_GAS_GRENADE)
+            GasBlast(map, tx, ty, (valid(attack.Attacker) ? attack.Attacker.Id : 0));
+        else
+            SmokeBlast(map, tx, ty, (valid(attack.Attacker) ? attack.Attacker.Id : 0));
+        return;
+    }
+
     ProtoItem@ proto = GetProtoItem(weapPid);
     int protoBlastPerkStacks = WeaponProtoPerkStacks(proto, WEAPON_PERK_BLAST);
     int upgradeBlastPerkStacks = UpgradePerkStacks(attack.RealWeapon, UPGRADE_WEAPON_PERK_BLAST);
@@ -2828,6 +2851,9 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
     if(valid(proto))
         soundName.rawSet( 2, proto.Weapon_SoundId_0 );
     map.PlaySound(soundName, tx, ty, 50);
+
+    // Blast wave blows the smoke away
+    SmokeDispelArea(map, tx, ty, effectRadius);
 
     array<Critter@> critsHit;
     map.GetCrittersHex(tx, ty, radius, FIND_LIFE_AND_KO, critsHit);
@@ -4065,7 +4091,8 @@ bool HasRiotShieldCover(Critter@ target)
 // Returns how many of `rounds` still reach the target after cover along the fire
 // line. Each counted obstacle eats COVER_ROUNDS_LOSS_PCT% of the rounds (min 1),
 // capped at COVER_MAX obstacles. Riot Shield supplies one virtual obstacle while
-// its wearer is unarmed or uses a one-handed weapon. No cover -> rounds unchanged.
+// its wearer is unarmed or uses a one-handed weapon. Smoke on the line adds one
+// more unit on top of the cap. No cover -> rounds unchanged.
 uint ApplyCoverLoss(Map@ map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, Critter@ target, uint rounds)
 {
     if(rounds == 0)
@@ -4084,6 +4111,10 @@ uint ApplyCoverLoss(Map@ map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, Critte
         cov = 1;
     if(cov > COVER_MAX)
         cov = COVER_MAX;
+    // Smoke screen on the fire line: exactly one extra unit on top of the capped
+    // physical cover, regardless of how many smoke hexes the line crosses
+    if(SmokeOnFireLine(map, hx, hy, tx, ty))
+        cov += 1;
     if(cov == 0)
         return rounds;
 
@@ -4104,6 +4135,9 @@ void FireIntoEmptyAir(Critter& cr, Map@ map, uint16 tx, uint16 ty, ProtoItem& we
     uint16 hy = cr.HexY;
     Item@  realWeapon = _CritGetItemHand(cr);
     uint16 ammoRound = _WeaponRound(weapon, use);
+
+    // Blind fire into a smoke cloud opens a two-way vision corridor along the line
+    RegisterShotCorridor(map, hx, hy, tx, ty);
 
     // Play the burst animation + fire sound (shooter and observers), same as a
     // normal attack - there is no target critter to drive it otherwise.

@@ -2025,7 +2025,7 @@ string item_description(ItemCl& item, int lookType)
                 string utilityValue = item.Proto.Utility_Value > 0 ? "+" + item.Proto.Utility_Value : "" + item.Proto.Utility_Value;
                 result += "\nEquipped utility bonus: " + utilityValue + " " + utilityParam + ".";
             }
-            if(FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_STEALTH | UTILITY_FLAG_MOTION_SENSOR) && item.Proto.Misc_ChargeMax > 0)
+            if(FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_STEALTH | UTILITY_FLAG_MOTION_SENSOR | UTILITY_FLAG_IR_GOGGLES) && item.Proto.Misc_ChargeMax > 0)
                 result += "\nCharge: " + item.Charge + "/" + item.Proto.Misc_ChargeMax + ".";
 
             // Key id
@@ -3566,15 +3566,53 @@ void critter_out(CritterCl& cr)
 {}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Smoke/gas cloud items currently on the map. Used to hide nicknames of players
+// standing in smoke (see client_critter_onhead.fos). Entries self-clean in
+// IsHexInSmoke when items disappear without an out event (e.g. map change).
+array<uint> SmokeItemIds;
+
+bool IsSmokeCloudPid(uint16 pid)
+{
+    return pid == PID_SMOKE_HEX || pid == PID_GAS_HEX;
+}
+
+bool IsHexInSmoke(uint16 hexX, uint16 hexY)   // export
+{
+    for(uint i = 0; i < SmokeItemIds.length();)
+    {
+        ItemCl@ smoke = GetItem(SmokeItemIds[i]);
+        if(!valid(smoke) || !IsSmokeCloudPid(smoke.GetProtoId()))
+        {
+            SmokeItemIds.removeAt(i);
+            continue;
+        }
+        if(smoke.HexX == hexX && smoke.HexY == hexY)
+            return true;
+        i++;
+    }
+    return false;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Called on something item in/changed/out map.
 void item_map_in(ItemCl& item)
-{}
+{
+    if(IsSmokeCloudPid(item.GetProtoId()))
+        SmokeItemIds.insertLast(item.Id);
+}
 
 void item_map_changed(ItemCl& itemNow, ItemCl& itemBefore)
 {}
 
 void item_map_out(ItemCl& item)
-{}
+{
+    if(IsSmokeCloudPid(item.GetProtoId()))
+    {
+        int idx = SmokeItemIds.find(item.Id);
+        if(idx >= 0)
+            SmokeItemIds.removeAt(idx);
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Called on something critter in/out chosen inventory.

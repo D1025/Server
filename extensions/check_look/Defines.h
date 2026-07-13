@@ -40,6 +40,10 @@
 #define BONUS_ACTIVE_EXPLOSIVES		(-72)
 #define BONUS_RUNNING				(-60)
 
+// smoke cloud (see Smoke.cpp and scripts/smoke_hexes.fos)
+#define SMOKE_HIDE_BEHIND_DIST		(10)   // targets up to this many hexes past the smoke are hidden; farther ones visible again
+#define SMOKE_STILL_MS				(1000) // standing this long inside smoke -> invisible from outside
+
 //#define VOLUME #(proto)		(proto.Volume == 0 ? 50 : proto.Volume)
 #define OCCLUDER_DIST (2) // 2 only, no reason to be more overkill
 

@@ -158,6 +158,15 @@ bool IsThrowableThere(CritterMutual& cr, ItemMutual@ item, uint16 tx, uint16 ty)
     // todo: wall tracing on the client side
 }
 
+bool IsGrenade(ItemMutual& item)
+{
+    if(!IsThrowingWeapon(item))
+        return false;
+    uint8 use = _WeaponModeUse(item.Mode);
+    uint8 dmgType = _WeaponDmgType(item.Proto, use);
+    return dmgType == DAMAGE_PLASMA || dmgType == DAMAGE_EMP || dmgType == DAMAGE_EXPLODE;
+}
+
 #ifdef __SERVER
 
 import void CommenceExplosionEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, Critter@ target, uint weapPid, bool isCritical, uint intentionallyId, bool isRocket, bool isExplodeRocket) from "combat";
@@ -215,15 +224,6 @@ void unsafe_Throw(Critter& player, int px, int py, int p2, string@ param3, array
 
 }
 
-bool IsGrenade(Item& item)
-{
-    if(!IsThrowingWeapon(item))
-        return false;
-    uint8 use = _WeaponModeUse(item.Mode);
-    uint8 dmgType = _WeaponDmgType(item.Proto, use);
-    return dmgType == DAMAGE_PLASMA || dmgType == DAMAGE_EMP || dmgType == DAMAGE_EXPLODE;
-}
-
 void CommenceThrowing(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty)
 {
     uint8 dir = GetDirection(cr.HexX, cr.HexY, tx, ty);
@@ -273,14 +273,66 @@ uint e_Explode(array<uint>@ values)     // map id, tx, ty, pid, attacker id
 #ifdef __CLIENT
 
 bool Active = false;
+bool CtrlActive = false;
 int  LastCursor = 0;
 
 bool ThrowingMouseDown(int click)
 {
     if(!IsThrowingActive())
         return false;
+    if(click != MOUSE_CLICK_LEFT)
+        return false;
     TryThrow();
     return true;
+}
+
+// Ctrl + left-click with a grenade in the active hand lobs it at the aimed hex
+// instead of requiring a critter target. Called early in client_io (before the
+// Ctrl-based GM/dev menus), same as CascadeAirShotMouseDown; the caller gates on
+// Ctrl being held. Reuses the grave-key server path (throwing@unsafe_Throw).
+bool GrenadeHexThrowMouseDown(int click)
+{
+    if(click != MOUSE_CLICK_LEFT)
+        return false;
+    if(::GetCurrentCursor() != CURSOR_USE_WEAPON)
+        return false;
+
+    CritterCl@ chosen = GetChosen();
+    if(!valid(chosen))
+        return false;
+
+    ItemCl@ item = chosen.GetItem(0, SLOT_HAND1);
+    if(!valid(item) || !IsGrenade(item))
+        return false;
+
+    // Rate limit like a normal attack: previous throw animation has to end first.
+    if(chosen.IsAnimPlaying() || chosen.IsBusy())
+        return true;
+
+    uint16 hx = 0, hy = 0;
+    uint8 brofBonus = (chosen.Perk[PE_BONUS_RATE_OF_FIRE]>0)?1:0;
+    if(GetMonitorHex(__MouseX, __MouseY, hx, hy)
+       && GetDistantion(chosen.HexX, chosen.HexY, hx, hy) > 0
+       && IsThrowableThere(chosen, item, hx, hy)
+       && ActionPointsCost(item, brofBonus) <= chosen.Stat[ST_CURRENT_AP])
+    {
+        RunServerScriptUnsafe("throwing@unsafe_Throw", hx, hy, 0, null, null);
+    }
+
+    return true;   // consume the Ctrl+click throw gesture
+}
+
+// True while Ctrl is held with a grenade in hand and the weapon cursor active -
+// used to draw the same aim indicator as the grave-key throwing mode.
+bool IsCtrlGrenadeAiming()
+{
+    if(!CtrlActive || ::GetCurrentCursor() != CURSOR_USE_WEAPON)
+        return false;
+    CritterCl@ chosen = GetChosen();
+    if(!valid(chosen))
+        return false;
+    ItemCl@ item = chosen.GetItem(0, SLOT_HAND1);
+    return valid(item) && IsGrenade(item);
 }
 
 bool IsThrowingActive() // export?
@@ -292,17 +344,22 @@ void ThrowingKeyDown(uint8 key, string& keyText)   // export
 {
     if(key == DIK_GRAVE && !__ConsoleActive)
         SetThrowing(true);
+    if(key == DIK_LCONTROL && !__ConsoleActive)
+        CtrlActive = true;
 }
 
 void ThrowingKeyUp(uint8 key, string& keyText)   // export
 {
     if(key == DIK_GRAVE)
         SetThrowing(false);
+    if(key == DIK_LCONTROL)
+        CtrlActive = false;
 }
 
 void ThrowingInputLost() // export
 {
     SetThrowing(false);
+    CtrlActive = false;
 }
 
 void SetThrowing(bool enabled)
@@ -322,7 +379,7 @@ void SetThrowing(bool enabled)
 
 void RenderThrowing() // export
 {
-    if(!IsThrowingActive())
+    if(!IsThrowingActive() && !IsCtrlGrenadeAiming())
         return;
     CritterCl@ chosen = GetChosen();
     if(!valid(chosen))
