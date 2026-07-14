@@ -19,11 +19,20 @@
 //    locker) as bonus loot next to the gold/caps. Quality is rolled Normal..Unique
 //    on the crafting curve, with random upgrades per the loot upgrade rules.
 //    Spawns once per map regen.
+//  - Reserve defenders share attackers with nearby allies. The map loop keeps the
+//    current alarm target in their enemy stacks so losing sight for a moment does
+//    not make them abandon the fight.
+//  - Static defenders accidentally spawned on a non-rakeable hex are moved to the
+//    nearest free adjacent hex. The engine tests the target hex for bullet blocking
+//    before it tests the critter, making such an NPC impossible to shoot until it
+//    moves on its own.
 //
 
 #include "_macros.fos"
+#include "npc_planes_h.fos"
 
 import bool IsKeyAviable(Critter& cr, uint lockerId) from "lockers";
+import bool LockerClose(Item& item) from "lockers";
 import void StatDungeonReward(Item@ it) from "item_bonus";
 
 // Bonus reward dropped on the vault floor once the reserve is cleared.
@@ -40,9 +49,30 @@ import void StatDungeonReward(Item@ it) from "item_bonus";
 // Uses a script-private map data slot (>= 20 are free for map scripts); reset on regen.
 #define GRESERVE_MDATA_REWARD_DONE  (20)
 
+// Shared alarm state. Team 5 is used by the reserve defenders in the map file.
+// Reinforcements are local instead of pulling the entire dungeon through every
+// closed door at once; further rooms join as the fight reaches them.
+#define GRESERVE_DEFENDER_TEAM       (5)
+#define GRESERVE_DEFENDER_COUNT      (31)
+#define GRESERVE_RESPAWN_MINUTES     (30)
+#define GRESERVE_REINFORCE_RADIUS    (45)
+#define GRESERVE_AGGRO_RADIUS        (55)
+#define GRESERVE_MDATA_ALARM_TARGET  (21)
+#define GRESERVE_MDATA_WAVE_CLEARED  (22)
+#define GRESERVE_MDATA_RESET_PENDING (23)
+#define GRESERVE_AI_LOOP_MS          (1500)
+#define GRESERVE_TACTIC_COOLDOWN_MS  (5500)
+#define GRESERVE_TACTIC_PRIORITY     (AI_PLANE_ATTACK_PRIORITY + 6)
+
+uint[] GReserveTacticIds;
+uint[] GReserveTacticUntil;
+
 void map_init(Map& map, bool firstTime)
 {
     map.SetEvent(MAP_EVENT_CRITTER_DEAD, "_GReserveCritterDead");
+    map.SetEvent(MAP_EVENT_IN_CRITTER, "_GReserveCritterIn");
+    map.SetEvent(MAP_EVENT_LOOP_0, "_GReserveAiLoop");
+    map.SetLoopTime(0, GRESERVE_AI_LOOP_MS);
 
     // (Re)attach the vault-locker gate on every map load - runtime item events do
     // not survive a server restart.
@@ -57,6 +87,576 @@ void map_init(Map& map, bool firstTime)
         if(cont.LockerId != 0)
             cont.SetEvent(ITEM_EVENT_SKILL, "_GReserveLocker");
     }
+
+    _GReserveSetupDefenders(map, true);
+}
+
+bool _GReserveIsDefender(Critter@ cr)
+{
+    return valid(cr) && cr.IsNpc() && cr.Stat[ST_TEAM_ID] == GRESERVE_DEFENDER_TEAM &&
+           !_CritHasExtMode(cr, MODE_EXT_FOLLOWER) && !_CritHasExtMode(cr, MODE_EXT_SLAVE);
+}
+
+// Fix only impossible target hexes. Ordinary cover remains untouched: a valid
+// shoot-through target hex behind a wall is not moved by this function.
+void _GReserveRepairBlockedHex(Map& map, Critter& npc)
+{
+    if(map.IsHexRaked(npc.HexX, npc.HexY))
+        return;
+
+    uint16 originX = npc.HexX;
+    uint16 originY = npc.HexY;
+    for(uint step = 1; step <= 2; step++)
+    {
+        for(uint8 dir = 0; dir < 6; dir++)
+        {
+            uint16 hx = originX;
+            uint16 hy = originY;
+            map.MoveHexByDir(hx, hy, dir, step);
+            if(map.IsHexPassed(hx, hy) && map.IsHexRaked(hx, hy) && !valid(map.GetCritter(hx, hy)))
+            {
+                npc.TransitToHex(hx, hy, npc.Dir);
+                return;
+            }
+        }
+    }
+}
+
+void _GReserveSetupDefender(Map& map, Critter& npc, bool repairHex)
+{
+    if(!_GReserveIsDefender(npc))
+        return;
+
+    npc.StatBase[ST_REPLICATION_TIME] = REPLICATION_MINUTE(GRESERVE_RESPAWN_MINUTES);
+    npc.SetEvent(CRITTER_EVENT_ATTACKED, "_GReserveDefenderAttacked");
+    npc.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_GReserveDefenderShowCritter");
+    if(repairHex && !npc.IsDead())
+        _GReserveRepairBlockedHex(map, npc);
+}
+
+void _GReserveSetupDefenders(Map& map, bool repairHex)
+{
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_ALL, npcs);
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ npc = npcs[i];
+        if(valid(npc))
+            _GReserveSetupDefender(map, npc, repairHex);
+    }
+}
+
+void _GReserveCritterIn(Map& map, Critter& cr)
+{
+    if(cr.IsNpc())
+        _GReserveSetupDefender(map, cr, true);
+}
+
+bool _GReserveHasEnemy(Critter& npc, uint enemyId)
+{
+    array<uint> enemies;
+    npc.GetEnemyStack(enemies);
+    for(uint i = 0; i < enemies.length(); i++)
+    {
+        if(enemies[i] == enemyId)
+            return true;
+    }
+    return false;
+}
+
+void _GReserveEngage(Critter& defender, Critter& attacker)
+{
+    defender.AddEnemyInStack(attacker.Id);
+
+    // A higher-priority tactical walk can temporarily be the current plane.
+    // Inspect the full queue so the alarm loop does not add duplicate attacks.
+    array<NpcPlane@> planes;
+    defender.GetPlanes(planes);
+    for(uint i = 0; i < planes.length(); i++)
+    {
+        if(valid(planes[i]) && planes[i].Type == AI_PLANE_ATTACK &&
+           planes[i].Attack_TargId == attacker.Id)
+            return;
+    }
+    AddAttackPlane(defender, 0, attacker);
+}
+
+void _GReserveCallReinforcements(Map& map, Critter& caller, Critter& attacker)
+{
+    array<Critter@> npcs;
+    uint count = map.GetCrittersHex(caller.HexX, caller.HexY, GRESERVE_REINFORCE_RADIUS,
+                                   FIND_ONLY_NPC | FIND_LIFE, npcs);
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ defender = npcs[i];
+        if(_GReserveIsDefender(defender))
+            _GReserveEngage(defender, attacker);
+    }
+}
+
+bool _GReserveRestoreLock(Item& item)
+{
+    uint lockId = 0;
+    int complexity = 0;
+
+    if(item.GetType() == ITEM_TYPE_DOOR)
+    {
+        // Doors controlled by the reserve's keys.
+        if((item.HexX == 100 && item.HexY == 153) ||
+           (item.HexX == 98  && item.HexY == 153) ||
+           (item.HexX == 90  && item.HexY == 142))
+            lockId = 666111;
+        else if(item.HexX == 90 && item.HexY == 85)
+            lockId = 666123;
+        else if(item.HexX == 90 && item.HexY == 80)
+            lockId = 666321;
+
+        if(lockId != 0)
+            complexity = 100;
+    }
+    else if(item.GetType() == ITEM_TYPE_CONTAINER)
+    {
+        // Six vault lockers around the gold stash.
+        if(item.HexX == 90 && item.HexY == 74)
+            lockId = 6661;
+        else if(item.HexX == 88 && item.HexY == 74)
+            lockId = 6662;
+        else if(item.HexX == 86 && item.HexY == 74)
+            lockId = 6663;
+        else if(item.HexX == 85 && item.HexY == 76)
+            lockId = 6664;
+        else if(item.HexX == 85 && item.HexY == 77)
+            lockId = 6665;
+        else if(item.HexX == 85 && item.HexY == 78)
+            lockId = 6666;
+
+        if(lockId != 0)
+            complexity = 150;
+    }
+
+    if(lockId == 0)
+        return true; // unrelated door/container
+
+    item.LockerId = lockId;
+    item.LockerComplexity = complexity;
+    if(item.GetType() == ITEM_TYPE_CONTAINER)
+        item.SetEvent(ITEM_EVENT_SKILL, "_GReserveLocker");
+
+    if(_LockerIsOpen(item))
+        return LockerClose(item); // may fail while a doorway is occupied; the loop retries
+    return true;
+}
+
+bool _GReserveRestoreLocks(Map& map)
+{
+    bool restored = true;
+    array<Item@> items;
+
+    uint count = map.GetItemsByType(ITEM_TYPE_DOOR, items);
+    for(uint i = 0; i < count; i++)
+    {
+        if(valid(items[i]) && !_GReserveRestoreLock(items[i]))
+            restored = false;
+    }
+
+    items.resize(0);
+    count = map.GetItemsByType(ITEM_TYPE_CONTAINER, items);
+    for(uint i = 0; i < count; i++)
+    {
+        if(valid(items[i]) && !_GReserveRestoreLock(items[i]))
+            restored = false;
+    }
+    return restored;
+}
+
+bool _GReserveAllDefendersAlive(Map& map)
+{
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+    uint defenders = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        if(_GReserveIsDefender(npcs[i]))
+            defenders++;
+    }
+    return defenders >= GRESERVE_DEFENDER_COUNT;
+}
+
+void _GReserveProcessRespawnCycle(Map& map)
+{
+    if(map.GetData(GRESERVE_MDATA_WAVE_CLEARED) != 0 && _GReserveAllDefendersAlive(map))
+        map.SetData(GRESERVE_MDATA_RESET_PENDING, 1);
+
+    if(map.GetData(GRESERVE_MDATA_RESET_PENDING) == 0)
+        return;
+
+    // A complete living roster starts a new reward/lock cycle. If a doorway is
+    // occupied, keep retrying its close operation on following map loops.
+    map.SetData(GRESERVE_MDATA_REWARD_DONE, 0);
+    map.SetData(GRESERVE_MDATA_ALARM_TARGET, 0);
+    if(_GReserveRestoreLocks(map))
+    {
+        map.SetData(GRESERVE_MDATA_WAVE_CLEARED, 0);
+        map.SetData(GRESERVE_MDATA_RESET_PENDING, 0);
+    }
+}
+
+// Returning false matches the normal alert handlers: the hit proceeds, while the
+// custom event only spreads and records the attacker.
+bool _GReserveDefenderAttacked(Critter& defender, Critter& attacker)
+{
+    if(!_GReserveIsDefender(defender) || !valid(attacker) || attacker.IsDead())
+        return false;
+    if(_GReserveIsDefender(attacker))
+        return false; // never turn accidental reserve friendly fire into an alarm
+
+    Map@ map = defender.GetMap();
+    if(!valid(map))
+        return false;
+
+    map.SetData(GRESERVE_MDATA_ALARM_TARGET, attacker.Id);
+    _GReserveCallReinforcements(map, defender, attacker);
+    return false;
+}
+
+// LA Gold is a dungeon: reserve defenders attack every living player they spot,
+// regardless of NCR faction standing or reputation.
+void _GReserveDefenderShowCritter(Critter& defender, Critter& target)
+{
+    if(!_GReserveIsDefender(defender) || !target.IsPlayer() || target.IsDead())
+        return;
+
+    Map@ map = defender.GetMap();
+    if(!valid(map))
+        return;
+
+    map.SetData(GRESERVE_MDATA_ALARM_TARGET, target.Id);
+    _GReserveEngage(defender, target);
+    _GReserveCallReinforcements(map, defender, target);
+}
+
+bool _GReserveTacticOnCooldown(uint id)
+{
+    for(uint i = 0; i < GReserveTacticIds.length();)
+    {
+        if(GReserveTacticUntil[i] <= __FullSecond)
+        {
+            GReserveTacticIds.removeAt(i);
+            GReserveTacticUntil.removeAt(i);
+            continue;
+        }
+        if(GReserveTacticIds[i] == id)
+            return true;
+        i++;
+    }
+    return false;
+}
+
+void _GReserveSetTacticCooldown(uint id)
+{
+    GReserveTacticIds.insertLast(id);
+    GReserveTacticUntil.insertLast(__FullSecond + REAL_MS(GRESERVE_TACTIC_COOLDOWN_MS));
+}
+
+bool _GReserveWeaponProfile(Critter& npc, bool& ranged, bool& burst, bool& cascade, uint& maxDist)
+{
+    uint8 mode = 0;
+    ProtoItem@ weapon = npc.GetSlotProto(SLOT_HAND1, mode);
+    if(!valid(weapon))
+        return false;
+
+    int use = _WeaponModeUse(mode);
+    ranged = _WeaponSkill(weapon, use) != SK_CLOSE_COMBAT && _WeaponMaxDist(weapon, use) > 2;
+    maxDist = _WeaponMaxDist(weapon, use);
+    burst = false;
+    for(int u = 0; u < 3; u++)
+    {
+        if((weapon.Weapon_ActiveUses & (1 << u)) != 0 && _WeaponRound(weapon, u) > 1)
+        {
+            burst = true;
+            if(_WeaponMaxDist(weapon, u) > int(maxDist))
+                maxDist = _WeaponMaxDist(weapon, u);
+        }
+    }
+    cascade = burst && WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE);
+    return true;
+}
+
+bool _GReserveHasFireLine(Map& map, uint16 hx, uint16 hy, Critter& target)
+{
+    uint dist = GetDistantion(hx, hy, target.HexX, target.HexY);
+    if(dist == 0)
+        return true;
+    uint16 tx = target.HexX;
+    uint16 ty = target.HexY;
+    map.GetHexCoord(hx, hy, tx, ty, 0.0f, dist);
+    return tx == target.HexX && ty == target.HexY;
+}
+
+bool _GReserveHasNearCover(Map& map, uint16 hx, uint16 hy, Critter& target)
+{
+    if(hx == target.HexX && hy == target.HexY)
+        return false;
+    uint16 cx = hx;
+    uint16 cy = hy;
+    map.MoveHexByDir(cx, cy, GetDirection(hx, hy, target.HexX, target.HexY), 1);
+    return map.IsHexRaked(cx, cy) && !map.IsHexPassed(cx, cy);
+}
+
+uint _GReserveCrowdAt(Map& map, Critter& self, uint16 hx, uint16 hy)
+{
+    array<Critter@> nearby;
+    uint count = map.GetCrittersHex(hx, hy, 2, FIND_ONLY_NPC | FIND_LIFE, nearby);
+    uint crowd = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        if(valid(nearby[i]) && nearby[i].Id != self.Id && _GReserveIsDefender(nearby[i]))
+            crowd++;
+    }
+    return crowd;
+}
+
+uint _GReserveReservationsNear(uint16[]& reservedX, uint16[]& reservedY, uint16 hx, uint16 hy)
+{
+    uint count = 0;
+    for(uint i = 0; i < reservedX.length(); i++)
+    {
+        if(GetDistantion(hx, hy, reservedX[i], reservedY[i]) <= 1)
+            count++;
+    }
+    return count;
+}
+
+bool _GReserveInFriendlyBurstLane(Map& map, Critter& mover, Critter& target, uint16 hx, uint16 hy)
+{
+    array<Critter@> allies;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, allies);
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ gunner = allies[i];
+        if(!_GReserveIsDefender(gunner) || gunner.Id == mover.Id)
+            continue;
+
+        bool ranged = false, burst = false, cascade = false;
+        uint maxDist = 0;
+        if(!_GReserveWeaponProfile(gunner, ranged, burst, cascade, maxDist) || !ranged || !burst)
+            continue;
+
+        array<NpcPlane@> planes;
+        gunner.GetPlanes(planes);
+        bool attacksTarget = false;
+        for(uint p = 0; p < planes.length(); p++)
+        {
+            if(valid(planes[p]) && planes[p].Type == AI_PLANE_ATTACK &&
+               planes[p].Attack_TargId == target.Id)
+            {
+                attacksTarget = true;
+                break;
+            }
+        }
+        if(!attacksTarget)
+            continue;
+
+        uint toTarget = GetDistantion(gunner.HexX, gunner.HexY, target.HexX, target.HexY);
+        uint toHex = GetDistantion(gunner.HexX, gunner.HexY, hx, hy);
+        if(toHex == 0 || toHex >= toTarget || toHex > maxDist)
+            continue;
+
+        uint hexToTarget = GetDistantion(hx, hy, target.HexX, target.HexY);
+        if(toHex + hexToTarget <= toTarget + 1)
+            return true; // straight burst lane
+
+        if(cascade)
+        {
+            int d1 = GetDirection(gunner.HexX, gunner.HexY, target.HexX, target.HexY);
+            int d2 = GetDirection(gunner.HexX, gunner.HexY, hx, hy);
+            int delta = ABS(d1 - d2);
+            if(delta > 3)
+                delta = 6 - delta;
+            if(delta <= 1)
+                return true; // wide cascade cone
+        }
+    }
+    return false;
+}
+
+bool _GReserveTacticalReposition(Map& map, Critter& npc, Critter& target,
+                                 uint16[]& reservedX, uint16[]& reservedY)
+{
+    if(_GReserveTacticOnCooldown(npc.Id))
+        return false;
+    // Throttle both successful moves and evaluations that decide the current
+    // position is already good; pathfinding candidates are intentionally costly.
+    _GReserveSetTacticCooldown(npc.Id);
+    if(!npc.IsCanWalk() || npc.IsBusy() || npc.IsKnockout() || npc.Param[ST_DEPLOYED] != 0)
+        return false;
+
+    array<NpcPlane@> pending;
+    npc.GetPlanes(PLANE_WANDER, pending);
+    if(pending.length() > 0)
+        return false;
+
+    bool ranged = false, burst = false, cascade = false;
+    uint maxDist = 0;
+    if(!_GReserveWeaponProfile(npc, ranged, burst, cascade, maxDist))
+        return false;
+
+    int bestScore = -100000;
+    uint16 bestX = npc.HexX;
+    uint16 bestY = npc.HexY;
+    int currentScore = -100000;
+
+    if(ranged)
+    {
+        int preferred = CLAMP(int(maxDist) / 2, 4, 10);
+        if(preferred > int(maxDist))
+            preferred = int(maxDist);
+
+        int currentDist = int(GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY));
+        if(_GReserveHasFireLine(map, npc.HexX, npc.HexY, target))
+        {
+            currentScore = 100 - ABS(currentDist - preferred) * 12 -
+                           int(_GReserveCrowdAt(map, npc, npc.HexX, npc.HexY)) * 35;
+            if(_GReserveHasNearCover(map, npc.HexX, npc.HexY, target))
+                currentScore += 35;
+        }
+
+        uint seedDir = npc.Id % 6;
+        for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
+        {
+            uint dir = (seedDir + dirOffset) % 6;
+            for(uint variant = 0; variant < 3; variant++)
+            {
+                int radius = preferred + int((npc.Id + dir + variant) % 3) - 1;
+                radius = CLAMP(radius, 3, int(maxDist));
+                uint16 hx = target.HexX;
+                uint16 hy = target.HexY;
+                map.MoveHexByDir(hx, hy, dir, uint(radius));
+                if(variant == 1)
+                    map.MoveHexByDir(hx, hy, (dir + 2) % 6, 1);
+                else if(variant == 2)
+                    map.MoveHexByDir(hx, hy, (dir + 4) % 6, 1);
+
+                if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) || valid(map.GetCritter(hx, hy)))
+                    continue;
+                uint dist = GetDistantion(hx, hy, target.HexX, target.HexY);
+                if(dist < 3 || dist > maxDist || !_GReserveHasFireLine(map, hx, hy, target))
+                    continue;
+                uint path = map.GetPathLength(npc, hx, hy, 0);
+                if(path == 0)
+                    continue;
+
+                int score = 100 - ABS(int(dist) - preferred) * 12 -
+                            int(_GReserveCrowdAt(map, npc, hx, hy)) * 35 -
+                            int(_GReserveReservationsNear(reservedX, reservedY, hx, hy)) * 55 -
+                            int(MIN(path, 30));
+                if(_GReserveHasNearCover(map, hx, hy, target))
+                    score += 35;
+                if(dirOffset == 0)
+                    score += 8; // deterministic sector assignment spreads the squad
+                if(score > bestScore)
+                {
+                    bestScore = score;
+                    bestX = hx;
+                    bestY = hy;
+                }
+            }
+        }
+    }
+    else
+    {
+        bool currentLane = _GReserveInFriendlyBurstLane(map, npc, target, npc.HexX, npc.HexY);
+        uint currentDist = GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY);
+        if(!currentLane)
+            currentScore = 100 - ABS(int(currentDist) - 1) * 18 -
+                           int(_GReserveCrowdAt(map, npc, npc.HexX, npc.HexY)) * 25;
+
+        uint seedDir = npc.Id % 6;
+        for(uint ring = 1; ring <= 2; ring++)
+        {
+            for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
+            {
+                uint dir = (seedDir + dirOffset) % 6;
+                uint16 hx = target.HexX;
+                uint16 hy = target.HexY;
+                map.MoveHexByDir(hx, hy, dir, ring);
+                if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) || valid(map.GetCritter(hx, hy)))
+                    continue;
+                if(_GReserveInFriendlyBurstLane(map, npc, target, hx, hy))
+                    continue;
+                uint path = map.GetPathLength(npc, hx, hy, 0);
+                if(path == 0)
+                    continue;
+
+                int score = 100 - int(ring - 1) * 18 -
+                            int(_GReserveCrowdAt(map, npc, hx, hy)) * 25 -
+                            int(_GReserveReservationsNear(reservedX, reservedY, hx, hy)) * 55 -
+                            int(MIN(path, 30));
+                if(dirOffset == 0)
+                    score += 8;
+                if(score > bestScore)
+                {
+                    bestScore = score;
+                    bestX = hx;
+                    bestY = hy;
+                }
+            }
+        }
+    }
+
+    if(bestScore <= currentScore + 10 || (bestX == npc.HexX && bestY == npc.HexY))
+        return false;
+    if(!AddWalkPlane(npc, GRESERVE_TACTIC_PRIORITY, PLANE_WANDER, target.Id,
+                     bestX, bestY, GetDirection(bestX, bestY, target.HexX, target.HexY), true, 0))
+        return false;
+
+    reservedX.insertLast(bestX);
+    reservedY.insertLast(bestY);
+    return true;
+}
+
+// Re-add the alarm target when standard AI drops it after a short loss of sight.
+// Already-engaged defenders remain engaged even just outside the support radius;
+// nearby idle defenders join as the attacker advances through the reserve.
+void _GReserveAiLoop(Map& map)
+{
+    _GReserveSetupDefenders(map, false); // also covers replicated NPCs after regen
+    _GReserveProcessRespawnCycle(map);
+
+    uint targetId = map.GetData(GRESERVE_MDATA_ALARM_TARGET);
+    if(targetId == 0)
+        return;
+
+    Critter@ attacker = GetCritter(targetId);
+    if(!valid(attacker) || attacker.IsDead() || attacker.GetMapId() != map.Id)
+    {
+        map.SetData(GRESERVE_MDATA_ALARM_TARGET, 0);
+        return;
+    }
+
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+    uint16[] reservedX;
+    uint16[] reservedY;
+    uint tacticChecks = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ defender = npcs[i];
+        if(!_GReserveIsDefender(defender))
+            continue;
+
+        bool nearby = GetCrittersDistantion(defender, attacker) <= GRESERVE_AGGRO_RADIUS;
+        if(nearby || _GReserveHasEnemy(defender, attacker.Id))
+        {
+            _GReserveEngage(defender, attacker);
+            // Spread expensive path searches over several 1.5 s map ticks.
+            if(tacticChecks < 6 && !_GReserveTacticOnCooldown(defender.Id))
+            {
+                _GReserveTacticalReposition(map, defender, attacker, reservedX, reservedY);
+                tacticChecks++;
+            }
+        }
+    }
 }
 
 // Opens every door matched by a key carried by an NPC at the moment of death.
@@ -66,6 +666,11 @@ void _GReserveCritterDead(Map& map, Critter& cr, Critter@ killer)
 {
     if(!cr.IsNpc())
         return;
+
+    // The next reward and door reset are armed only by a complete clear. They
+    // execute later, after every one of the 31 defenders has respawned.
+    if(_GReserveIsDefender(cr) && ReserveCleared(map))
+        map.SetData(GRESERVE_MDATA_WAVE_CLEARED, 1);
 
     array<Item@> keys;
     uint keyCount = cr.GetItemsByType(ITEM_TYPE_KEY, keys);
@@ -86,16 +691,17 @@ void _GReserveCritterDead(Map& map, Critter& cr, Critter@ killer)
             if(!valid(door) || door.LockerId != key.LockerId)
                 continue;
 
-            door.LockerId = 0;
-            door.LockerComplexity = 0;
+            // Keep the lock identity. The door opens because its carrier died,
+            // then closes and becomes locked again with the next full respawn.
             if(_LockerIsClose(door))
                 door.LockerOpen();
         }
     }
 }
 
-// True when no hostile NPC is left alive or knocked out on the map. Players'
-// companions/slaves are ignored so they can never keep the vault sealed.
+// True when no reserve defender is left alive or knocked out on the map.
+// Neutral NPCs (including the dog outside) do not guard the vault; companions
+// and slaves are already excluded by _GReserveIsDefender.
 bool ReserveCleared(Map@ map)
 {
     if(!valid(map))
@@ -108,9 +714,8 @@ bool ReserveCleared(Map@ map)
         Critter@ npc = npcs[i];
         if(!valid(npc))
             continue;
-        if(_CritHasExtMode(npc, MODE_EXT_FOLLOWER) || _CritHasExtMode(npc, MODE_EXT_SLAVE))
-            continue;
-        return false; // a defender still stands
+        if(_GReserveIsDefender(npc))
+            return false; // an NCR reserve defender still stands
     }
     return true;
 }

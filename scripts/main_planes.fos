@@ -21,6 +21,7 @@
 
 
 import int  RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, ProtoItem@ ammo) from "combat";
+import uint ApplyCoverLoss(Map@ map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, Critter@ target, uint rounds) from "combat";
 import uint GetKeyId(Critter& cr, uint lockerId) from "lockers";
 import bool IsKeyAviable(Critter& cr, uint lockerId) from "lockers";
 import bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetItem, Scenery@ targetScen) from "main";   // ugly
@@ -1394,7 +1395,9 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
 // TODO more general version, this will cover all our weapons though
 bool CogitateFiring(Critter& cr, uint& mode, uint& aim)   // in: targetId, 0; out: mode, aim
 {
-    if(Random(1, 10) > cr.Stat[ST_INTELLECT])
+    Map@ cognitionMap = cr.GetMap();
+    bool tacticalReserve = valid(cognitionMap) && cognitionMap.GetProtoId() == MAP_NCRLAGoldReserve;
+    if(!tacticalReserve && Random(1, 10) > cr.Stat[ST_INTELLECT])
         return false;                                     // too stupid to think about this
 
     Critter@ target = GetCritter(mode);
@@ -1598,14 +1601,23 @@ Critter@ TraceFirstCritter(uint16 hx, uint16 hy, uint16 tx, uint16 ty, Map& map,
 
 bool ValidateBurst(Critter& cr, Critter& target, ProtoItem@ weapon, uint mode)
 {
-    // cr.Say(SAY_NORM, "validating burst, ap: "+cr.Stat[ST_CURRENT_AP]+" of "+cr.Stat[ST_ACTION_POINTS]+", needed "+weapon.Weapon_ApCost);
-    if(Random(0, 2) == 0)
-        return false;                 // force normal shot, for a little diversity
     Map@ map = cr.GetMap();
-    if(uint(map.IsTurnBasedAvailability() ? cr.Stat[ST_CURRENT_AP] : cr.Stat[ST_ACTION_POINTS]) < _WeaponApCost(weapon, mode))
+    if(!valid(map))
         return false;
 
-    uint     maxDist = _WeaponMaxDist(weapon, mode);
+    bool tacticalReserve = map.GetProtoId() == MAP_NCRLAGoldReserve;
+    if(!tacticalReserve && Random(0, 2) == 0)
+        return false;                 // retain the ordinary NPC shot diversity
+
+    // CogitateFiring receives the target id in `mode`. The burst offered by
+    // this branch is the weapon's secondary use, not that temporary input value.
+    const uint burstUse = 1;
+    if(!_WeaponIsSecondaryAviable(weapon) || _WeaponRound(weapon, burstUse) <= 1)
+        return false;
+    if(uint(map.IsTurnBasedAvailability() ? cr.Stat[ST_CURRENT_AP] : cr.Stat[ST_ACTION_POINTS]) < _WeaponApCost(weapon, burstUse))
+        return false;
+
+    uint     maxDist = _WeaponMaxDist(weapon, burstUse);
 
     uint16   hx = cr.HexX;
     uint16   hy = cr.HexY;
@@ -1621,7 +1633,7 @@ bool ValidateBurst(Critter& cr, Critter& target, ProtoItem@ weapon, uint mode)
     uint16 sx = hx;
     uint16 sy = hy;
     uint16 ex = tx;
-    uint16 ey = hy;
+    uint16 ey = ty;
     uint8  dir = GetOffsetDir(hx, hy, tx, ty, 89.0f);
     map.MoveHexByDir(sx, sy, dir, 1);
     map.MoveHexByDir(ex, ey, dir, 1);
@@ -1635,7 +1647,7 @@ bool ValidateBurst(Critter& cr, Critter& target, ProtoItem@ weapon, uint mode)
     sx = hx;
     sy = hy;
     ex = tx;
-    ey = hy;
+    ey = ty;
     dir = GetOffsetDir(hx, hy, tx, ty, -89.0f);
     map.MoveHexByDir(sx, sy, dir, 1);
     map.MoveHexByDir(ex, ey, dir, 1);
@@ -1644,6 +1656,30 @@ bool ValidateBurst(Critter& cr, Critter& target, ProtoItem@ weapon, uint mode)
     {
         /*blocker.Say(SAY_NORM, "I blocked the burst check");*/
         return false;
+    }
+
+    if(tacticalReserve)
+    {
+        // Compare expected hit volume per AP after physical/smoke cover has
+        // absorbed part of the burst. This deliberately keeps a profitable
+        // burst instead of rejecting it merely because cover is present.
+        uint rounds = _WeaponRound(weapon, burstUse);
+        Item@ hand = cr.GetItem(0, SLOT_HAND1);
+        if(valid(hand) && weapon.Weapon_MaxAmmoCount > 0 && cr.Mode[MODE_UNLIMITED_AMMO] == 0)
+            rounds = MIN(rounds, hand.AmmoCount);
+        uint effectiveRounds = ApplyCoverLoss(map, hx, hy, tx, ty, target, rounds);
+        if(effectiveRounds <= 1)
+            return false;
+
+        ProtoItem@ ammo = valid(hand) && hand.AmmoPid != 0 ? GetProtoItem(hand.AmmoPid) : null;
+        int singleHit = CLAMP(RawToHit(cr, target, weapon, 0, ammo), 5, 95);
+        int burstHit = CLAMP(RawToHit(cr, target, weapon, burstUse, ammo), 5, 95);
+        uint singleAp = MAX(1, _WeaponApCost(weapon, 0));
+        uint burstAp = MAX(1, _WeaponApCost(weapon, burstUse));
+
+        int burstValue = int(effectiveRounds) * burstHit * int(singleAp);
+        int singleValue = singleHit * int(burstAp);
+        return burstValue * 100 >= singleValue * 110; // require a real, not marginal, gain
     }
 
     return true;

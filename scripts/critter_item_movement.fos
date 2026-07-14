@@ -293,6 +293,16 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
     // with it. Applied/removed here on hand changes; the armor block below transfers the same
     // lock when the suit goes on/off while the weapon stays in hand. Runs AFTER the forced
     // ExitDeploy above, so the deploy locks are already torn down when this adjusts.
+    //
+    // The engine reports a HAND2 -> HAND1 swap twice for the incoming item and never reports
+    // the item displaced from HAND1. Account for that displaced weapon explicitly after the
+    // swap has completed, otherwise its deploy carry lock remains stuck forever.
+    if(toSlot == SLOT_HAND1 && fromSlot == SLOT_HAND2)
+    {
+        Item@ swappedOut = cr.GetItem(0, SLOT_HAND2);
+        if(_IsDeployWeapon(swappedOut) && !IsInPowerArmor(cr) && cr.ModeBase[MODE_NO_RUN] > 0)
+            cr.ModeBase[MODE_NO_RUN] -= 1;
+    }
     if(_IsDeployWeapon(item))
     {
         if(toSlot == SLOT_HAND1 && !IsInPowerArmor(cr))
