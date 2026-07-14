@@ -80,6 +80,121 @@ void _Charge(Item& item, bool firstTime)
     }
 }
 
+#define MEDICAL_SUPPLIES_STACKS    (1)
+#define BIO_GEL_STACKS             (2)
+
+// Val8 marks medical utilities migrated to the persistent stack counter. It prevents depleted
+// legacy items from refilling on every server start while giving existing pre-migration items
+// their initial stacks once.
+void _MedicalCharge(Item& item, bool firstTime)
+{
+    item.SetEvent(ITEM_EVENT_USE_ON_ME, "_MedicalChargeUseOnMe");
+    item.SetEvent(ITEM_EVENT_SKILL, "_MedicalChargeSkill");
+
+    if(!FLAG(item.Flags, ITEM_CAN_USE))
+    {
+        SETFLAG(item.Flags, ITEM_CAN_USE);
+        item.Update();
+    }
+
+    if(!firstTime && item.Val8 != 0)
+        return;
+
+    _Charge(item, true);
+    item.Val8 = 1;
+    item.Update();
+}
+
+void _MedicalSuppliesInit(Item& item, bool firstTime)
+{
+    if(!FLAG(item.Flags, ITEM_CAN_USE_ON_SMTH))
+    {
+        SETFLAG(item.Flags, ITEM_CAN_USE_ON_SMTH);
+        item.Update();
+    }
+}
+
+bool RestockMedicalUtility(Critter& cr, Item@ item, Item@ usedItem)
+{
+    if(!valid(item) || !valid(usedItem) ||
+       !FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_MEDICAL) || item.Proto.Misc_ChargeMax == 0)
+        return false;
+
+    uint stacksPerItem = 0;
+    switch(usedItem.GetProtoId())
+    {
+    case PID_MEDICAL_SUPPLIES:
+        stacksPerItem = MEDICAL_SUPPLIES_STACKS;
+        break;
+    case PID_BIO_GEL:
+        stacksPerItem = BIO_GEL_STACKS;
+        break;
+    default:
+        return false;
+    }
+
+    if(item.Accessory != ACCESSORY_CRITTER || usedItem.Accessory != ACCESSORY_CRITTER ||
+       item.CritId != cr.Id || usedItem.CritId != cr.Id)
+        return false;
+
+    if(item.Charge >= item.Proto.Misc_ChargeMax)
+    {
+        cr.Say(SAY_NETMSG, "This medical utility is already fully stocked.");
+        return true;
+    }
+
+    uint missingStacks = item.Proto.Misc_ChargeMax - item.Charge;
+    uint neededItems = (missingStacks + stacksPerItem - 1) / stacksPerItem;
+    neededItems = MIN(neededItems, usedItem.GetCount());
+    uint restoredStacks = MIN(neededItems * stacksPerItem, missingStacks);
+
+    item.Charge += restoredStacks;
+    item.Update();
+    _SubItem(usedItem, neededItems);
+    cr.Say(SAY_NETMSG, "Medical utility restocked: +" + restoredStacks + " stacks (" +
+                       item.Charge + "/" + item.Proto.Misc_ChargeMax + ").");
+    return true;
+}
+
+bool _MedicalChargeUseOnMe(Item& item, Critter& cr, Item@ usedItem)
+{
+    return RestockMedicalUtility(cr, item, usedItem);
+}
+
+bool _MedicalChargeSkill(Item& item, Critter& cr, int skill)
+{
+    if(skill != SK_REPAIR)
+        return false;
+
+    if(item.Accessory != ACCESSORY_CRITTER || item.CritId != cr.Id)
+    {
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+        return true;
+    }
+
+    if(item.Charge >= item.Proto.Misc_ChargeMax)
+    {
+        cr.Say(SAY_NETMSG, "This medical utility is already fully stocked.");
+        return true;
+    }
+
+    cr.RunClientScript("client_interface@_RepairSession", item.GetProtoId(), item.Id, 0, null, null);
+    cr.StatBase[ST_VAR0] = item.Id;
+    cr.ShowScreen(SCREEN_BAG, 0, "_MedicalRechargeCallback");
+    return true;
+}
+
+void _MedicalRechargeCallback(Critter& cr, uint itemId, string& text)
+{
+    Item@ medicalUtility = GetItem(cr.Stat[ST_VAR0]);
+    Item@ chemical = GetItem(itemId);
+    if(!valid(medicalUtility) || !valid(chemical))
+        return;
+
+    if(!RestockMedicalUtility(cr, medicalUtility, chemical))
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+}
+
 uint16[] NpcSkinArmors =
 {
     PID_WORN_ROBE,

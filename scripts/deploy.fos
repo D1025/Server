@@ -85,14 +85,18 @@ bool EnterDeploy(Critter& cr)   // Export
             cr.Say(SAY_NETMSG, "You need a deployable weapon in your hands.");
         return false;
     }
-    if(cr.Stat[ST_CURRENT_AP] < DEPLOY_AP_COST)
+    // NPCs deploy for free: the engine charges the attack's AP (Act_Attack SubAp) BEFORE the
+    // critter_attack script runs, so by the time the deploy gate calls EnterDeploy the NPC is
+    // already drained and an AP check here would fail nearly every time (= NPCs never deploy).
+    if(cr.IsPlayer())
     {
-        if(cr.IsPlayer())
+        if(cr.Stat[ST_CURRENT_AP] < DEPLOY_AP_COST)
+        {
             cr.Say(SAY_NETMSG, "Not enough action points to deploy.");
-        return false;
+            return false;
+        }
+        cr.StatBase[ST_CURRENT_AP] = 100 * (cr.Stat[ST_CURRENT_AP] - DEPLOY_AP_COST);
     }
-
-    cr.StatBase[ST_CURRENT_AP] = 100 * (cr.Stat[ST_CURRENT_AP] - DEPLOY_AP_COST);
     if(CanDeployMobile(cr))
     {
         // Powered Bipod + power armor: may still walk while deployed, but never run.

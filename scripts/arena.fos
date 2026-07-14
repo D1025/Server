@@ -859,9 +859,76 @@ bool ArenaEditorAccessible(Critter& player)
     return valid(map) && map.GetProtoId() == MAP_Arena;
 }
 
+// Event outfitter gear (SPECIAL_ITEM_UNIQ_OUTFIT) shares the arena upgrade
+// editor window, but the loadout is written straight into the item's upgrade
+// slots instead of the per-player arena lvars, and it works on any map.
+bool IsUniqOutfitItem(Item@ item)
+{
+    return valid(item) && item.Val9 == SPECIAL_ITEM_UNIQ_OUTFIT;
+}
+
+void UniqCollectItemPerks(Item@ item, int slotType, array<int>@ perks)
+{
+    perks.resize(0);
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT; i++)
+    {
+        int type = UpgradeSlotType(item, uint(i));
+        if(type == 0 || UpgradeIsSlotMarker(type))
+            continue;
+        if(ArenaPerkTypeValidForSlotType(slotType, type))
+            perks.insertLast(type);
+    }
+}
+
+void UniqRebuildItemPerks(Item@ item, int slotType, array<int>@ perks)
+{
+    int total = UpgradeQualitySlots(item);
+    for(int i = 0; i < ARENA_UPGRADE_RAW_SLOT_COUNT; i++)
+        ArenaSetItemUpgradeRaw(item, i, i < total ? UPGRADE_SLOT_EMPTY : 0);
+
+    int cursor = 0;
+    for(uint i = 0; i < perks.length(); i++)
+    {
+        int perkType = perks[i];
+        uint cost = ArenaUpgradePerkCost(slotType, perkType);
+        if(cost == 0)
+            continue;
+        if(cursor + int(cost) > total)
+            break;
+
+        ArenaSetItemUpgradeRaw(item, cursor, ArenaPackPerkRaw(perkType));
+        cursor++;
+        for(uint k = 1; k < cost; k++)
+        {
+            ArenaSetItemUpgradeRaw(item, cursor, UPGRADE_SLOT_USED);
+            cursor++;
+        }
+    }
+    item.Update();
+}
+
+bool UniqItemAddPerk(Item@ item, int slotType, int perkType)
+{
+    if(!ArenaPerkTypeValidForSlotType(slotType, perkType))
+        return false;
+
+    uint cost = ArenaUpgradePerkCost(slotType, perkType);
+    if(cost == 0 || int(cost) > UpgradeFreeSlots(item))
+        return false;
+
+    array<int> perks;
+    UniqCollectItemPerks(item, slotType, perks);
+    perks.insertLast(perkType);
+    UniqRebuildItemPerks(item, slotType, perks);
+    return true;
+}
+
 void SendArenaUpgradeState(Critter& player, int slotType)
 {
-    CompactArenaUpgradeStorage(player, slotType);
+    Item@ uniqItem = ArenaGetEquippedForSlotType(player, slotType);
+    bool  uniq = IsUniqOutfitItem(uniqItem);
+    if(!uniq)
+        CompactArenaUpgradeStorage(player, slotType);
 
     int[]@ pool = @ArenaWeaponEditorPerks;
     if(slotType == 3)
@@ -876,7 +943,10 @@ void SendArenaUpgradeState(Critter& player, int slotType)
     }
 
     array<int> current;
-    ArenaCollectStoredPerks(player, slotType, current);
+    if(uniq)
+        UniqCollectItemPerks(uniqItem, slotType, current);
+    else
+        ArenaCollectStoredPerks(player, slotType, current);
     data.insertLast(int(current.length()));
     for(uint i = 0; i < current.length(); i++)
     {
@@ -884,11 +954,21 @@ void SendArenaUpgradeState(Critter& player, int slotType)
         data.insertLast(int(ArenaUpgradePerkCost(slotType, current[i])));
     }
 
-    int freeSlots = ARENA_UPGRADE_SLOT_COUNT - int(ArenaStoredUsedSlots(player, slotType));
-    if(freeSlots < 0)
-        freeSlots = 0;
+    int totalSlots = ARENA_UPGRADE_SLOT_COUNT;
+    int freeSlots = 0;
+    if(uniq)
+    {
+        totalSlots = UpgradeQualitySlots(uniqItem);
+        freeSlots = UpgradeFreeSlots(uniqItem);
+    }
+    else
+    {
+        freeSlots = ARENA_UPGRADE_SLOT_COUNT - int(ArenaStoredUsedSlots(player, slotType));
+        if(freeSlots < 0)
+            freeSlots = 0;
+    }
 
-    player.RunClientScript("client_arena_upgrades@OpenWindow", slotType, freeSlots, ARENA_UPGRADE_SLOT_COUNT, null, data);
+    player.RunClientScript("client_arena_upgrades@OpenWindow", slotType, freeSlots, totalSlots, null, data);
 }
 
 Item@ ArenaGetEquippedForSlotType(Critter& player, int slotType)
@@ -901,7 +981,7 @@ Item@ ArenaGetEquippedForSlotType(Critter& player, int slotType)
     else if(slotType == 3)
         @item = player.GetItem(0, SLOT_ARMOR);
 
-    if(!valid(item) || item.Val9 != SPECIAL_ITEM_ARENA)
+    if(!valid(item) || (item.Val9 != SPECIAL_ITEM_ARENA && item.Val9 != SPECIAL_ITEM_UNIQ_OUTFIT))
         return null;
     if(ArenaItemUpgradeSlotType(item) != slotType)
         return null;
@@ -911,7 +991,7 @@ Item@ ArenaGetEquippedForSlotType(Critter& player, int slotType)
 void ArenaApplyLoadoutToEquipped(Critter& player, int slotType)
 {
     Item@ item = ArenaGetEquippedForSlotType(player, slotType);
-    if(!valid(item))
+    if(!valid(item) || IsUniqOutfitItem(item))
         return;
 
     ClearArenaUpgradeData(item);
@@ -943,7 +1023,7 @@ void r_ConfigureUpgrades(Critter& player, Critter@ npc, int slotType)
 
     if(slotType == 0)
     {
-        player.Say(SAY_NETMSG, "Equip the arena gear you want to tune first.");
+        player.Say(SAY_NETMSG, "Equip the gear you want to tune first.");
         return;
     }
 
@@ -952,9 +1032,13 @@ void r_ConfigureUpgrades(Critter& player, Critter@ npc, int slotType)
 
 void unsafe_ArenaLoadoutShow(Critter& player, int slotType, int param1, int param2, string@ param3, array<int>@ param4)
 {
-    if(!ArenaEditorAccessible(player) || slotType < 1 || slotType > 3)
+    if(slotType < 1 || slotType > 3)
         return;
-    if(!valid(ArenaGetEquippedForSlotType(player, slotType)))
+
+    Item@ item = ArenaGetEquippedForSlotType(player, slotType);
+    if(!valid(item))
+        return;
+    if(!IsUniqOutfitItem(item) && !ArenaEditorAccessible(player))
         return;
 
     SendArenaUpgradeState(player, slotType);
@@ -962,7 +1046,19 @@ void unsafe_ArenaLoadoutShow(Critter& player, int slotType, int param1, int para
 
 void unsafe_ArenaLoadoutPick(Critter& player, int slotType, int perkType, int param2, string@ param3, array<int>@ param4)
 {
-    if(!ArenaEditorAccessible(player) || slotType < 1 || slotType > 3)
+    if(slotType < 1 || slotType > 3)
+        return;
+
+    Item@ item = ArenaGetEquippedForSlotType(player, slotType);
+    if(IsUniqOutfitItem(item))
+    {
+        if(!UniqItemAddPerk(item, slotType, perkType))
+            player.Say(SAY_NETMSG, "Not enough free upgrade slots.");
+        SendArenaUpgradeState(player, slotType);
+        return;
+    }
+
+    if(!ArenaEditorAccessible(player))
         return;
 
     if(!ArenaAddStoredPerk(player, slotType, perkType))
@@ -974,7 +1070,19 @@ void unsafe_ArenaLoadoutPick(Critter& player, int slotType, int perkType, int pa
 
 void unsafe_ArenaLoadoutClear(Critter& player, int slotType, int param1, int param2, string@ param3, array<int>@ param4)
 {
-    if(!ArenaEditorAccessible(player) || slotType < 1 || slotType > 3)
+    if(slotType < 1 || slotType > 3)
+        return;
+
+    Item@ item = ArenaGetEquippedForSlotType(player, slotType);
+    if(IsUniqOutfitItem(item))
+    {
+        array<int> empty;
+        UniqRebuildItemPerks(item, slotType, empty);
+        SendArenaUpgradeState(player, slotType);
+        return;
+    }
+
+    if(!ArenaEditorAccessible(player))
         return;
 
     ClearArenaRawUpgradeStorage(player, slotType);
@@ -2092,6 +2200,44 @@ void r_TransferItems(Critter& player, Critter@ npc)
     }
 
     ArenaTrackGearClaim(player);
+}
+
+// Event outfitter handout: NPC-held items go to the player fully repaired,
+// loaded, with unique quality (5+ empty upgrade slots) and the
+// SPECIAL_ITEM_UNIQ_OUTFIT marker so the upgrade editor accepts them anywhere.
+// No claim limit, no arena cleanup script.
+void r_UniqTransferItems(Critter& player, Critter@ npc)
+{
+    array<Item@> items;
+    npc.GetItems(-1, items);
+    for(uint i = 0; i < items.length();)
+    {
+        if(FLAG(items[i].Flags, ITEM_NO_LOOT))
+        {
+            items.removeAt(i);
+            continue;
+        }
+        items[i].Val9 = SPECIAL_ITEM_UNIQ_OUTFIT;
+        i++;
+    }
+    MoveItems(items, player);
+    for(uint i = 0; i < items.length(); i++)
+    {
+        Item@ item = items[i];
+        if(!valid(item))
+            continue;
+        if(item.IsDeteriorable())
+        {
+            CompleteRepair(item);
+            SetMinWear(item, 1);
+        }
+        if(item.GetType() == ITEM_TYPE_WEAPON)
+            item.AmmoCount = item.Proto.Weapon_MaxAmmoCount;
+        if(item.GetProtoId() == PID_TESLA_ARMOR)
+            item.Charge = item.Proto.Misc_ChargeMax;
+        ArenaEnsureUniqueQuality(item);
+        item.Update();
+    }
 }
 
 void ArenaTrackGearClaim(Critter& player)

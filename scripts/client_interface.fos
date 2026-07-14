@@ -857,6 +857,8 @@ void render_iface(uint layer)
 
                             ItemCl@ armor = cr.GetItem(0, SLOT_ARMOR);
                             ItemCl@ utility = cr.GetItem(0, SLOT_UTILITY);
+                            bool personalShieldReady = valid(utility) && utility.GetProtoId() == PID_PERSONAL_SHIELD_GENERATOR &&
+                                                       cr.Timeout[TO_UTILITY_COOLDOWN] <= 0;
                             if(cr.IsPlayer() || cr.Stat[ST_BODY_TYPE] == BT_MEN   || cr.Stat[ST_BODY_TYPE] == BT_WOMEN || cr.Stat[ST_BODY_TYPE] == BT_CHILDREN ||
                                cr.Stat[ST_BODY_TYPE] == BT_GHOUL || cr.Stat[ST_BODY_TYPE] == BT_SUPER_MUTANT ||
                                valid(armor) || valid(utility))
@@ -891,7 +893,10 @@ void render_iface(uint layer)
                                 int curHp = cr.Param[ST_CURRENT_HP];
                                 int maxHp = cr.Param[ST_MAX_LIFE];
                                 int green = CLAMP(CLAMP(curHp, -999, maxHp) * 0xff / maxHp, 0, 0xff);
-                                DrawText("HP: " + curHp, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(255 - green, green, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                                string hpText = "" + curHp;
+                                if(personalShieldReady)
+                                    hpText = "[" + hpText + "]";
+                                DrawText("HP: " + hpText, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(255 - green, green, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
 
                                 dy -= 10;
                             }
@@ -899,7 +904,10 @@ void render_iface(uint layer)
                             {
                                 int curHp = cr.Param[ST_CURRENT_HP];
                                 int maxHp = cr.Param[ST_MAX_LIFE];
-                                DrawText((curHp + "/" + maxHp), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0xff - (0xff * curHp) / maxHp, (0xff * curHp) / maxHp, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                                string hpText = curHp + "/" + maxHp;
+                                if(personalShieldReady)
+                                    hpText = "[" + hpText + "]";
+                                DrawText(hpText, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, cr.IsDead() ? COLOR_BLACK : (curHp < 1 ? COLOR_GRAY : COLOR_RGB(0xff - (0xff * curHp) / maxHp, (0xff * curHp) / maxHp, 0)), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
 
                                 dy -= 10;
                             }
@@ -2025,6 +2033,27 @@ string item_description(ItemCl& item, int lookType)
                 string utilityValue = item.Proto.Utility_Value > 0 ? "+" + item.Proto.Utility_Value : "" + item.Proto.Utility_Value;
                 result += "\nEquipped utility bonus: " + utilityValue + " " + utilityParam + ".";
             }
+            if(FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_MEDICAL))
+            {
+                switch(item.GetProtoId())
+                {
+                case PID_FIRST_AID_KIT:
+                    result += "\nPassive First Aid: +25 healing, -8 seconds cooldown.";
+                    break;
+                case PID_DOCTORS_BAG:
+                    result += "\nPassive Doctor: +25 healing, -8 seconds cooldown.";
+                    break;
+                case PID_FIELD_MEDIC_KIT:
+                    result += "\nPassive First Aid: +50 healing, -4 seconds cooldown.";
+                    break;
+                case PID_PARAMEDICS_BAG:
+                    result += "\nPassive Doctor: +50 healing, -4 seconds cooldown.";
+                    break;
+                }
+                result += "\nCapacity: " + item.Charge + "/" + item.Proto.Misc_ChargeMax + ".";
+            }
+            if(FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_PERSONAL_SHIELD))
+                result += "\nPassive: blocks the next instance of damage, then recharges for 1 minute. Ready shields are shown with bracketed HP.";
             if(FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_STEALTH | UTILITY_FLAG_MOTION_SENSOR | UTILITY_FLAG_IR_GOGGLES) && item.Proto.Misc_ChargeMax > 0)
                 result += "\nCharge: " + item.Charge + "/" + item.Proto.Misc_ChargeMax + ".";
 

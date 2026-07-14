@@ -36,12 +36,61 @@
 #define MOTION_SENSOR_SEC_TIME     (12) // in real seconds
 #define MOTION_SENSOR_MFC_TIME     (30) // in real seconds
 
+bool _RechargeElectronicUtility(Item& item, Critter& cr, Item@ usedItem)
+{
+    if(!valid(usedItem) || item.Proto.Misc_ChargeMax == 0 || item.Charge >= item.Proto.Misc_ChargeMax)
+        return false;
+
+    uint16 itemPid = usedItem.GetProtoId();
+    if(int(itemPid) != PID_SMALL_ENERGY_CELL && int(itemPid) != PID_MICRO_FUSION_CELL)
+        return false;
+
+    if(item.Accessory != ACCESSORY_CRITTER || usedItem.Accessory != ACCESSORY_CRITTER ||
+       item.CritId != cr.Id || usedItem.CritId != cr.Id)
+        return false;
+
+    uint needCharge = item.Proto.Misc_ChargeMax - item.Charge;
+    uint charge = (itemPid == PID_SMALL_ENERGY_CELL ? MOTION_SENSOR_SEC_TIME : MOTION_SENSOR_MFC_TIME);
+    uint needItems = (needCharge + charge - 1) / charge;
+    needItems = MIN(needItems, usedItem.GetCount());
+    item.Charge += MIN(needItems * charge, needCharge);
+    item.Update();
+    _SubItem(usedItem, needItems);
+    return true;
+}
+
 // stealth boy
 void _StealthBoyInit(Item& item, bool firstTime)
 {
     if(firstTime && item.Proto.Misc_ChargeMax > 0)
         item.Charge = MIN(item.Proto.Misc_ChargeStart, item.Proto.Misc_ChargeMax);
     item.SetEvent(ITEM_EVENT_USE, "_StealthBoyUse");
+    item.SetEvent(ITEM_EVENT_USE_ON_ME, "_StealthBoyUseOnMe");
+    item.SetEvent(ITEM_EVENT_SKILL, "_StealthBoySkill");
+}
+
+bool _StealthBoyUseOnMe(Item& item, Critter& cr, Item@ usedItem)
+{
+    if(!_RechargeElectronicUtility(item, cr, usedItem))
+        return false;
+
+    cr.Say(SAY_NETMSG, "Stealth Boy charged.");
+    return true;
+}
+
+bool _StealthBoySkill(Item& item, Critter& cr, int skill)
+{
+    if(skill == SK_SCIENCE)
+    {
+        cr.Say(SAY_NETMSG, "Stealth Boy charge: " + item.Charge + " seconds.");
+        return true;
+    }
+    if(skill == SK_REPAIR)
+    {
+        TryRechargeItem(cr, item);
+        return true;
+    }
+    return false;
 }
 
 bool _StealthBoyUse(Item& item, Critter& crit, Critter@ onCritter, Item@ onItem, Scenery@ onScenery)
@@ -185,25 +234,11 @@ bool _MotionSensorUse(Item& item, Critter& crit, Critter@ onCritter, Item@ onIte
 
 bool _MotionSensorUseOnMe(Item& item, Critter& cr, Item@ usedItem)
 {
-    if(!valid(usedItem))
+    if(!_RechargeElectronicUtility(item, cr, usedItem))
         return false;
-    uint16 itemPid = usedItem.GetProtoId();
-    if((int(itemPid) == PID_SMALL_ENERGY_CELL || int(itemPid) == PID_MICRO_FUSION_CELL) && item.Charge < item.Proto.Misc_ChargeMax)
-    {
-        uint needCharge = item.Proto.Misc_ChargeMax - item.Charge;
-        uint charge = (itemPid == PID_SMALL_ENERGY_CELL ? MOTION_SENSOR_SEC_TIME : MOTION_SENSOR_MFC_TIME);
-        uint needItems = needCharge / charge;
-        if((needCharge % charge) != 0)
-            needItems++;
-        if(needItems > usedItem.GetCount())
-            needItems = usedItem.GetCount();
-        item.Charge += CLAMP(needItems * charge, 0, item.Proto.Misc_ChargeMax - item.Charge);
-        item.Update();
-        _SubItem(usedItem, needItems);
-        cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_SENSOR_CHARGED);
-        return true;
-    }
-    return false;
+
+    cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_SENSOR_CHARGED);
+    return true;
 }
 
 bool _MotionSensorSkill(Item& geiger, Critter& cr, int skill)
@@ -251,10 +286,22 @@ void RechargeCallback(Critter& cr, uint n, string& s)
        item.CritId != cr.Id || with_item.CritId != cr.Id)
         return;
 
-    if(!_MotionSensorUseOnMe(item, cr, with_item))
+    bool recharged = false;
+    switch(item.GetProtoId())
     {
-        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
+    case PID_STEALTH_BOY:
+        recharged = _StealthBoyUseOnMe(item, cr, with_item);
+        break;
+    case PID_MOTION_SENSOR:
+        recharged = _MotionSensorUseOnMe(item, cr, with_item);
+        break;
+    case PID_IR_GOGGLES:
+        recharged = _IRGogglesUseOnMe(item, cr, with_item);
+        break;
     }
+
+    if(!recharged)
+        cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_USE_NOTHING);
 }
 
 uint e_MotionSensor(array<uint>@ values)
@@ -360,25 +407,11 @@ bool _IRGogglesUse(Item& item, Critter& crit, Critter@ onCritter, Item@ onItem, 
 
 bool _IRGogglesUseOnMe(Item& item, Critter& cr, Item@ usedItem)
 {
-    if(!valid(usedItem))
+    if(!_RechargeElectronicUtility(item, cr, usedItem))
         return false;
-    uint16 itemPid = usedItem.GetProtoId();
-    if((int(itemPid) == PID_SMALL_ENERGY_CELL || int(itemPid) == PID_MICRO_FUSION_CELL) && item.Charge < item.Proto.Misc_ChargeMax)
-    {
-        uint needCharge = item.Proto.Misc_ChargeMax - item.Charge;
-        uint charge = (itemPid == PID_SMALL_ENERGY_CELL ? MOTION_SENSOR_SEC_TIME : MOTION_SENSOR_MFC_TIME);
-        uint needItems = needCharge / charge;
-        if((needCharge % charge) != 0)
-            needItems++;
-        if(needItems > usedItem.GetCount())
-            needItems = usedItem.GetCount();
-        item.Charge += CLAMP(needItems * charge, 0, item.Proto.Misc_ChargeMax - item.Charge);
-        item.Update();
-        _SubItem(usedItem, needItems);
-        cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_CHARGED);
-        return true;
-    }
-    return false;
+
+    cr.SayMsg(SAY_NETMSG, TEXTMSG_TEXT, STR_IRGOGGLES_CHARGED);
+    return true;
 }
 
 bool _IRGogglesSkill(Item& goggles, Critter& cr, int skill)

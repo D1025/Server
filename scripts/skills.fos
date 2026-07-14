@@ -61,12 +61,66 @@ void ApplyHealingPowderSkillApPenalty(Critter& cr)
     cr.StatBase[ST_CURRENT_AP] = 100 * MAX(0, currentAp - 2);
 }
 
-Item@ SelectSkillItem(Critter& cr, Item@ item, uint16 skill)
+Item@ GetMedicalUtility(Critter& cr, uint16 skill)
 {
-    Item@ handItem = _CritGetItemHand(cr);
-    if(valid(handItem) && handItem.Proto.Misc_ToolSkillNum == skill)
-        return handItem;
-    return item;
+    Item@ utility = cr.GetItem(0, SLOT_UTILITY);
+    if(!valid(utility) || !FLAG(utility.Proto.Utility_Flags, UTILITY_FLAG_MEDICAL) ||
+       utility.Proto.Utility_Param != skill || utility.Charge == 0)
+        return null;
+    return utility;
+}
+
+int GetMedicalUtilityHealingBonus(Item@ utility)
+{
+    if(!valid(utility))
+        return 0;
+
+    switch(utility.GetProtoId())
+    {
+    case PID_FIRST_AID_KIT:
+        return 25;
+    case PID_DOCTORS_BAG:
+        return 25;
+    case PID_FIELD_MEDIC_KIT:
+        return 50;
+    case PID_PARAMEDICS_BAG:
+        return 50;
+    default:
+        return 0;
+    }
+    return 0;
+}
+
+uint ApplyMedicalUtilityCooldownBonus(Item@ utility, uint cooldown)
+{
+    if(!valid(utility))
+        return cooldown;
+
+    uint reduction = 0;
+    switch(utility.GetProtoId())
+    {
+    case PID_FIRST_AID_KIT:
+    case PID_DOCTORS_BAG:
+        reduction = REAL_SECOND(8);
+        break;
+    case PID_FIELD_MEDIC_KIT:
+    case PID_PARAMEDICS_BAG:
+        reduction = REAL_SECOND(4);
+        break;
+    default:
+        return cooldown;
+    }
+
+    return cooldown > reduction ? cooldown - reduction : 1;
+}
+
+void ConsumeMedicalUtilityStack(Item@ utility)
+{
+    if(!valid(utility) || utility.Charge == 0)
+        return;
+
+    utility.Charge--;
+    utility.Update();
 }
 
 bool _CritAtLeastOneLimbNotOnFull(Critter& cr)
@@ -114,14 +168,11 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self && cr.Param[MODE_HIDE] != 0 && cr.GetAccess() < ACCESS_TESTER)
         cr.ParamBase[MODE_HIDE] = 0;
 
-	int toolBonus = 0;
-	
-    @item = SelectSkillItem(cr, item, SK_FIRST_AID);
-    if(valid(item))
-        toolBonus = item.Proto.Misc_ToolSkillBonus;
+    Item@ medicalUtility = GetMedicalUtility(cr, SK_FIRST_AID);
+    int utilityHealBonus = GetMedicalUtilityHealingBonus(medicalUtility);
     int intelligence = cr.Stat[ST_INTELLECT];
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
-    int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
+    int heal = cr.Skill[SK_FIRST_AID] + healerBonus + utilityHealBonus;
 
     heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL]*4/10,0,100)))) / 100;
     if(is_self)
@@ -145,8 +196,9 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         targetCr.Say(SAY_NETMSG, "Hit Points +" + realHeal);
 
     int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 2 * intelligence : 0);
-    uint firstAidCooldown = REAL_SECOND(MAX(1, 100 - intelligence - medicBonus - (toolBonus > 0 ? 5 : 0)));
-    _SetTimeout(cr, TO_SK_FIRST_AID, ApplyHealingPowderCooldownBonus(cr, firstAidCooldown));
+    uint firstAidCooldown = REAL_SECOND(MAX(1, 100 - intelligence - medicBonus));
+    firstAidCooldown = ApplyHealingPowderCooldownBonus(cr, firstAidCooldown);
+    _SetTimeout(cr, TO_SK_FIRST_AID, ApplyMedicalUtilityCooldownBonus(medicalUtility, firstAidCooldown));
 
     cr.StatBase[ST_EXPERIENCE] += realHeal * 3*(GetGvar(GVAR_experience_multipler));
     if(_IsTrueNpc(targetCr) && cr.Id != targetCr.Id && IsHumanoid(targetCr) && !IsCurrentEnemy(targetCr, cr.Id))
@@ -164,6 +216,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
     ApplyHealingPowderSkillApPenalty(cr);
+    ConsumeMedicalUtilityStack(medicalUtility);
 
     return true;
 }
@@ -207,15 +260,12 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         cr.ParamBase[MODE_HIDE] = 0;
 
     int sk = cr.Skill[SK_DOCTOR];
-    int toolBonus = 0;
-
-    @item = SelectSkillItem(cr, item, SK_DOCTOR);
-    if(valid(item))
-        toolBonus += item.Proto.Misc_ToolSkillBonus;
-    sk += toolBonus;
+    Item@ medicalUtility = GetMedicalUtility(cr, SK_DOCTOR);
+    int utilityHealBonus = GetMedicalUtilityHealingBonus(medicalUtility);
+    sk += utilityHealBonus;
     int intelligence = cr.Stat[ST_INTELLECT];
     int healerBonus = cr.Perk[PE_HEALER] > 0 ? 15*intelligence : 7*intelligence;
-    int heal = cr.Skill[SK_FIRST_AID] + healerBonus + toolBonus;
+    int heal = cr.Skill[SK_FIRST_AID] + healerBonus + utilityHealBonus;
     heal = (heal * ((100 - CLAMP(targetCr.Stat[ST_POISONING_LEVEL]*4/10,0,100)))) / 100;
     if(is_self)
         heal = ApplyVampirismSelfHealingPenalty(targetCr, heal);
@@ -249,8 +299,9 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
 
 	//druto
     int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 2 * intelligence : 0);
-    uint doctorCooldown = REAL_SECOND(MAX(1, 90 - intelligence - medicBonus - (toolBonus > 0 ? 5 : 0)));
-	_SetTimeout(cr, TO_SK_DOCTOR, ApplyHealingPowderCooldownBonus(cr, doctorCooldown));
+    uint doctorCooldown = REAL_SECOND(MAX(1, 90 - intelligence - medicBonus));
+    doctorCooldown = ApplyHealingPowderCooldownBonus(cr, doctorCooldown);
+	_SetTimeout(cr, TO_SK_DOCTOR, ApplyMedicalUtilityCooldownBonus(medicalUtility, doctorCooldown));
 
     if(uninjured > 0)
     {
@@ -289,6 +340,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     }
 
     ApplyHealingPowderSkillApPenalty(cr);
+    ConsumeMedicalUtilityStack(medicalUtility);
 
     return true;
 }

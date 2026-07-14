@@ -28,6 +28,7 @@ import void MilitiaMoveToFreeHex(Critter& cr) from "town_militia";
 import void SetWear(Item& item, int wearProcent) from "repair";
 import void MoveMobToFreeHex(Critter& mob) from "mob_dynamic";
 import int  _AbominationMinionAim(Critter& npc, Critter& target) from "eventboss";
+import bool NpcSmokeAggroHold(Critter& npc, Critter@ target) from "main";
 
 //companion SF overstack
 //import void MoveCompToFreeHex(Critter& cr) from "companions";
@@ -855,6 +856,12 @@ bool npc_plane_end(Critter& npc, NpcPlane& plane, int reason, Critter@ someCr, I
         break;
     case REASON_NO_UNARMED:
         return PlaneEndNoArmed(npc, plane);
+    case REASON_TARGET_DISAPPEARED:
+        // Smoke stole the sight line: keep the attack plane queued and fight the cloud
+        // (grenade dispel / blind burst) instead of forgetting the enemy - main.fos.
+        if(NpcSmokeAggroHold(npc, someCr))
+            return false;
+        break;
     }
 
     return true;

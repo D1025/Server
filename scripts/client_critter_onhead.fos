@@ -183,11 +183,17 @@ void DrawCritterOnHead()	//export
 		{
 			if(valid(chosen) && __ConfigOnHeadAwareness == 1)
 			{
+			    ItemCl@ utility = crs[i].GetItem(0, SLOT_UTILITY);
+			    bool personalShieldReady = valid(utility) && utility.GetProtoId() == PID_PERSONAL_SHIELD_GENERATOR &&
+			                               crs[i].Timeout[TO_UTILITY_COOLDOWN] <= 0;
 
 			    if (crs[i].IsNpc()) {
 			        int maxHp = crs[i].Param[ST_MAX_LIFE];
 			        int green = CLAMP(CLAMP(crs[i].Param[ST_CURRENT_HP], -999, maxHp) * 0xff / maxHp, 0, 0xff);
-			        hp = "|" + COLOR_RGB(255-green, green, 0) + " HP: " + crs[i].Param[ST_CURRENT_HP];
+			        string hpText = "" + crs[i].Param[ST_CURRENT_HP];
+			        if(personalShieldReady)
+			            hpText = "[" + hpText + "]";
+			        hp = "|" + COLOR_RGB(255-green, green, 0) + " HP: " + hpText;
 			    } else {
 			    				int maxhp = crs[i].Param[ST_MAX_LIFE];
                 				color_g = (255*crs[i].Param[ST_CURRENT_HP])/maxhp;
@@ -197,7 +203,10 @@ void DrawCritterOnHead()	//export
                 					color_g = 0;
                 				color_r = 255 - color_g;
 
-                				hp = "|" + COLOR_RGB(color_r, color_g, color_b) + " " + crs[i].Param[ST_CURRENT_HP] + "/" + maxhp;
+                                string hpText = crs[i].Param[ST_CURRENT_HP] + "/" + maxhp;
+                                if(personalShieldReady)
+                                    hpText = "[" + hpText + "]";
+                                hp = "|" + COLOR_RGB(color_r, color_g, color_b) + " " + hpText;
 			    }
 			}
 			else

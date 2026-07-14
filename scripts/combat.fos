@@ -59,14 +59,23 @@ import bool RegisterShotCorridor( Map& map, uint16 fromHx, uint16 fromHy, uint16
 #define SILENT_HILL_PROTO_BONUS_PERCENT        (50)
 #define TALISMAN_COOLDOWN                       (REAL_MINUTE(1))
 #define TALISMAN_IMMUNITY                       (REAL_SECOND(3))
+#define PERSONAL_SHIELD_COOLDOWN                (REAL_MINUTE(1))
 
-int ApplyTalismanProtection(Critter& cr, int damage)
+int ApplyUtilityProtection(Critter& cr, int damage)
 {
     if(damage <= 0 || cr.IsDead())
         return damage;
 
     if(cr.Mode[MODE_INVULNERABLE] != 0)
         return 0;
+
+    Item@ utility = cr.GetItem(0, SLOT_UTILITY);
+    if(valid(utility) && utility.GetProtoId() == PID_PERSONAL_SHIELD_GENERATOR && cr.Timeout[TO_UTILITY_COOLDOWN] <= 0)
+    {
+        _SetTimeout(cr, TO_UTILITY_COOLDOWN, PERSONAL_SHIELD_COOLDOWN);
+        cr.Say(SAY_NETMSG, "Your personal shield absorbs the damage. Recharging for 1 minute.");
+        return 0;
+    }
 
     if(cr.Timeout[TO_TALISMAN_IMMUNITY] > 0)
         return 0;
@@ -75,7 +84,6 @@ int ApplyTalismanProtection(Critter& cr, int damage)
     if(currentHp < 1 || damage < currentHp || cr.Timeout[TO_UTILITY_COOLDOWN] > 0)
         return damage;
 
-    Item@ utility = cr.GetItem(0, SLOT_UTILITY);
     if(!valid(utility) || utility.GetProtoId() != PID_TALISMAN)
         return damage;
 
@@ -2107,7 +2115,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             totalDmg /= 2;
     }
 
-    totalDmg = ApplyTalismanProtection(target, totalDmg);
+    totalDmg = ApplyUtilityProtection(target, totalDmg);
 
     if(totalDmg > 0)
     {
@@ -3250,7 +3258,7 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
     }
 
     bool talismanImmune = cr.Timeout[TO_TALISMAN_IMMUNITY] > 0;
-    totalDmg = ApplyTalismanProtection(cr, totalDmg);
+    totalDmg = ApplyUtilityProtection(cr, totalDmg);
     if(talismanImmune)
     {
         eff = 0;
@@ -3351,7 +3359,7 @@ void WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
     if(dmg <= 0)
         return;
 
-    dmg = ApplyTalismanProtection(victim, dmg);
+    dmg = ApplyUtilityProtection(victim, dmg);
     if(dmg <= 0)
         return;
 
@@ -3826,7 +3834,7 @@ uint cte_PersistentDot(Critter& cr, int identifier, uint& rate)
 
     if(cr.Mode[MODE_INVULNERABLE] == 0 && tickDamage > 0)
     {
-        tickDamage = ApplyTalismanProtection(cr, tickDamage);
+        tickDamage = ApplyUtilityProtection(cr, tickDamage);
         cr.StatBase[ST_CURRENT_HP] -= tickDamage;
         int sourceAttackerId = cr.Stat[ST_PERSISTENT_DOT_LAST_ENEMY_ID];
         if(sourceAttackerId > 0)

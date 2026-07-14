@@ -130,7 +130,7 @@ Utility_Value=1
 ProtoId=25592
 Type=5
 PicMap=art\items\smalbox2.frm
-PicInv=art\inven\beny.frm
+PicInv=art\inven\riot_shield.png
 Flags=134217758
 DisableEgg=1
 Stackable=0
@@ -142,6 +142,23 @@ Cost=1200
 Material=1
 LightColor=-16777216
 Utility_Flags=64
+
+[Proto]
+ProtoId=25593
+Type=5
+PicMap=art\items\box2.frm
+PicInv=art\inven\hymgpart.frm
+Flags=134217758
+DisableEgg=1
+Stackable=0
+Slot=4
+Weight=4535
+Volume=2
+SoundId=48
+Cost=5000
+Material=1
+LightColor=-16777216
+Utility_Flags=256
 
 [Proto]
 ProtoId=570

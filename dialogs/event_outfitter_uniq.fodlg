@@ -1,0 +1,215 @@
+[comment]
+
+
+[data]
+lang=engl
+
+[dialog]
+&
+1 1000 None 0 #
+2 1010 @
+2 2000 None 0 #
+3 2010 #
+4 2020 #
+5 2030 #
+6 2040 #
+7 2050 #
+8 2060 #
+9 2070 #
+10 2080 #
+0 2090 R _script arena@r_ConfigureUpgrades 1 1 #
+0 2100 @
+3 3000 None 0 #
+3 3010 R _item n PID_14MM_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+3 3020 R _item n PID_223_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+3 3030 R _item n PID_FN_FAL_HPFA + 1 R _script arena@r_UniqTransferItems 0  #
+3 3040 R _item n PID_ASSAULT_RIFLE + 1 R _script arena@r_UniqTransferItems 0  #
+3 3050 R _item n PID_HK_P90C + 1 R _script arena@r_UniqTransferItems 0  #
+3 3060 R _item n PID_PANCOR_JACKHAMMER + 1 R _script arena@r_UniqTransferItems 0  #
+3 3070 R _item n PID_HK_CAWS + 1 R _script arena@r_UniqTransferItems 0  #
+3 3080 R _item n PID_COMBAT_SHOTGUN + 1 R _script arena@r_UniqTransferItems 0  #
+3 3090 R _item n PID_SNIPER_RIFLE + 1 R _script arena@r_UniqTransferItems 0  #
+3 3100 R _item n PID_SCOPED_HUNTING_RIFLE + 1 R _script arena@r_UniqTransferItems 0  #
+3 3110 R _item n PID_INDEPENDENT + 1 R _script arena@r_UniqTransferItems 0  #
+3 3120 R _item n PID_NEEDLER_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+3 3130 R _item n PID_GRENADE_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+3 3140 R _item n PID_GRENADE_LAUNCHER + 1 R _script arena@r_UniqTransferItems 0  #
+2 3150 @
+4 4000 None 0 #
+4 4010 R _item n PID_AVENGER_MINIGUN + 1 R _script arena@r_UniqTransferItems 0  #
+4 4020 R _item n PID_FLAMER + 1 R _script arena@r_UniqTransferItems 0  #
+4 4030 R _item n PID_LIGHT_SUPPORT_WEAPON + 1 R _script arena@r_UniqTransferItems 0  #
+4 4040 R _item n PID_IMPROVED_FLAMETHROWER + 1 R _script arena@r_UniqTransferItems 0  #
+4 4050 R _item n PID_M60 + 1 R _script arena@r_UniqTransferItems 0  #
+4 4060 R _item n PID_MINIGUN + 1 R _script arena@r_UniqTransferItems 0  #
+4 4070 R _item n PID_ROCKET_LAUNCHER + 1 R _script arena@r_UniqTransferItems 0  #
+2 4080 @
+5 5000 None 0 #
+5 5010 R _item n PID_LASER_RIFLE + 1 R _script arena@r_UniqTransferItems 0  #
+5 5020 R _item n PID_PLASMA_RIFLE + 1 R _script arena@r_UniqTransferItems 0  #
+5 5030 R _item n PID_GATLING_LASER + 1 R _script arena@r_UniqTransferItems 0  #
+5 5040 R _item n PID_LASER_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+5 5050 R _item n PID_PLASMA_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+5 5060 R _item n PID_MAGNETO_LASER_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+5 5070 R _item n PID_YK32_PULSE_PISTOL + 1 R _script arena@r_UniqTransferItems 0  #
+2 5080 @
+6 6000 None 0 #
+6 6010 R _item n PID_SUPER_CATTLE_PROD + 1 R _script arena@r_UniqTransferItems 0  #
+6 6020 R _item n PID_MEGA_POWER_FIST + 1 R _script arena@r_UniqTransferItems 0  #
+6 6030 R _item n PID_RIPPER + 1 R _script arena@r_UniqTransferItems 0  #
+6 6040 R _item n PID_SUPER_SLEDGE + 1 R _script arena@r_UniqTransferItems 0  #
+6 6050 R _item n PID_WAKIZASHI_BLADE + 1 R _script arena@r_UniqTransferItems 0  #
+6 6060 R _item n PID_LIL_JESUS_WEAPON + 1 R _script arena@r_UniqTransferItems 0  #
+6 6070 R _item n PID_LOUISVILLE_SLUGGER + 1 R _script arena@r_UniqTransferItems 0  #
+2 6080 @
+7 7000 None 0 #
+7 7010 R _item n PID_LEATHER_ARMOR_MK_II + 1 R _script arena@r_UniqTransferItems 0  #
+7 7020 R _item n PID_CURED_LEATHER_ARMOR + 1 R _script arena@r_UniqTransferItems 0  #
+7 7030 R _item n PID_METAL_ARMOR_MK_II + 1 R _script arena@r_UniqTransferItems 0  #
+7 7040 R _item n PID_TESLA_ARMOR + 1 R _script arena@r_UniqTransferItems 0  #
+7 7050 R _item n PID_COMBAT_ARMOR + 1 R _script arena@r_UniqTransferItems 0  #
+7 7060 R _item n PID_COMBAT_ARMOR_MK_II + 1 R _script arena@r_UniqTransferItems 0  #
+7 7070 R _item n PID_DESERT_COMBAT_ARMOR + 1 R _script arena@r_UniqTransferItems 0  #
+7 7080 R _item n PID_BROTHERHOOD_COMBAT_ARMOR + 1 R _script arena@r_UniqTransferItems 0  #
+2 7090 @
+8 8000 None 0 #
+8 8010 R _item p PID_10MM_JHP + 200 R _item p PID_10MM_AP + 200 #
+8 8020 R _item p PID_SHOTGUN_SHELLS + 150 R _item p PID_SHOTGUN_SHELLS_SLUG + 150 R _item p PID_SHOTGUN_SHELLS_FLECHETTE + 150 #
+8 8030 R _item p PID_223_FMJ + 200 #
+8 8040 R _item p PID_5MM_JHP + 400 R _item p PID_5MM_AP + 400 #
+8 8050 R _item p PID_7_62MM_AMMO + 200 #
+8 8060 R _item p PID_40MM_GRENADE + 20 #
+8 8070 R _item p PID_EXPLOSIVE_ROCKET + 20 R _item p PID_ROCKET_AP + 20 #
+8 8080 R _item p PID_FLAMETHROWER_FUEL_MK_II + 50 #
+8 8090 R _item p PID_SMALL_ENERGY_CELL + 200 R _item p PID_MICRO_FUSION_CELL + 200 #
+8 8100 R _item p PID_HN_NEEDLER_CARTRIDGE + 100 R _item p PID_HN_AP_NEEDLER_CARTRIDGE + 100 #
+2 8110 @
+9 9000 None 0 #
+9 9010 R _item p PID_FRAG_GRENADE + 25 #
+9 9020 R _item p PID_PLASMA_GRENADE + 25 #
+9 9030 R _item p PID_DYNACORD + 25 #
+9 9040 R _item p PID_SMOKE_GRENADE + 25 #
+9 9050 R _item p PID_THROWING_KNIFE + 25 #
+9 9060 R _item p PID_SUPER_STIMPAK + 10 #
+9 9070 R _item p PID_STIMPAK + 10 #
+9 9080 R _item p PID_CIGARETTES + 1 R _item p PID_MENTATS + 1 R _item p PID_BUFFOUT + 1 R _item p PID_PSYCHO + 1 R _item p PID_JET + 3 R _item p PID_NUKA_COLA + 2 R _item p PID_RADAWAY + 5 R _item p PID_RAD_X + 1 R _item p PID_ANTIDOTE + 3 R _item p PID_JET_ANTIDOTE + 2 #
+9 9090 R _item p PID_MEDICAL_SUPPLIES + 10 #
+2 9100 @
+10 10000 None 0 #
+10 10010 R _item p PID_MOTION_SENSOR + 1 #
+10 10020 R _item p PID_STEALTH_BOY + 1 #
+10 10030 R _item p PID_RIOT_SHIELD + 1 #
+10 10040 R _item p PID_PERSONAL_SHIELD_GENERATOR + 1 #
+10 10050 R _item p PID_GAS_MASK + 1 #
+10 10060 R _item p PID_TALISMAN + 1 #
+10 10070 R _item p PID_FIRST_AID_KIT + 1 #
+10 10080 R _item p PID_DOCTORS_BAG + 1 #
+10 10090 R _item p PID_FIELD_MEDIC_KIT + 1 #
+10 10100 R _item p PID_PARAMEDICS_BAG + 1 #
+10 10110 R _item p PID_BACKPACK + 1 #
+2 10120 &
+
+[engl]
+{100}{}{Outfitter}
+{1000}{}{Preddialogue settings}
+{1010}{}{ }
+{2000}{}{Hello there. Everything I hand out is top-shelf, unique quality - and there's no limit. What do you need?}
+{2010}{}{A small gun.}
+{2020}{}{A big gun.}
+{2030}{}{An energy weapon.}
+{2040}{}{Something for close combat.}
+{2050}{}{A body armor.}
+{2060}{}{Ammunition.}
+{2070}{}{Explosives and meds.}
+{2080}{}{Trinkets and utility gear.}
+{2090}{}{I'd like to tune the upgrades on my gear.}
+{2100}{}{Nothing.}
+{3000}{}{What gun would that be?}
+{3010}{}{A 14mm Pistol.}
+{3020}{}{A .223 Pistol.}
+{3030}{}{An FN FAL HPFA.}
+{3040}{}{An Assault Rifle.}
+{3050}{}{A P90c submachinegun.}
+{3060}{}{A Pancor Jackhammer.}
+{3070}{}{A CAWS Shotgun.}
+{3080}{}{A Combat Shotgun.}
+{3090}{}{A Sniper Rifle.}
+{3100}{}{A Scoped Hunting Rifle.}
+{3110}{}{An XL70E3.}
+{3120}{}{A Needler Pistol.}
+{3130}{}{An FN 69A1 Grenade Pistol.}
+{3140}{}{An M79 Grenade Launcher.}
+{3150}{}{Back.}
+{4000}{}{Which one?}
+{4010}{}{An Avenger Minigun.}
+{4020}{}{A Flamer.}
+{4030}{}{A Light Support Weapon.}
+{4040}{}{An Incinerator.}
+{4050}{}{An M60.}
+{4060}{}{A Minigun.}
+{4070}{}{A Rocket Launcher.}
+{4080}{}{Back.}
+{5000}{}{Take your pick.}
+{5010}{}{A Laser Rifle.}
+{5020}{}{A Plasma Rifle.}
+{5030}{}{A Gatling Laser.}
+{5040}{}{A Laser Pistol.}
+{5050}{}{A Plasma Pistol.}
+{5060}{}{A Magneto Laser Pistol.}
+{5070}{}{A YK32 Pulse Pistol.}
+{5080}{}{Back.}
+{6000}{}{By all means, suit yourself.}
+{6010}{}{A Super Cattle Prod.}
+{6020}{}{A Mega Power Fist.}
+{6030}{}{A Ripper.}
+{6040}{}{A Super Sledgehammer.}
+{6050}{}{A Wakizashi Blade.}
+{6060}{}{A Lil' Jesus.}
+{6070}{}{A Louisville Slugger.}
+{6080}{}{Back.}
+{7000}{}{What kind of armor?}
+{7010}{}{A Leather Armor Mark II.}
+{7020}{}{A Combat Leather Jacket.}
+{7030}{}{A Metal Armor Mark II.}
+{7040}{}{A Tesla Armor.}
+{7050}{}{A Combat Armor.}
+{7060}{}{A Combat Armor Mark II.}
+{7070}{}{A Desert Combat Armor.}
+{7080}{}{A Brotherhood Combat Armor.}
+{7090}{}{Back.}
+{8000}{}{Choose ammunition.}
+{8010}{}{10mm JHP + AP, 200 each.}
+{8020}{}{Shotgun Shells: regular, slug and flechette, 150 each.}
+{8030}{}{.223 FMJ x200.}
+{8040}{}{5mm JHP + AP, 400 each.}
+{8050}{}{7.62mm ammo x200.}
+{8060}{}{40mm Grenades x20.}
+{8070}{}{Explosive + AP Rockets, 20 each.}
+{8080}{}{Flamethrower Fuel Mark II x50.}
+{8090}{}{Small Energy Cells + Micro Fusion Cells, 200 each.}
+{8100}{}{HN Needler Cartridges, regular + AP, 100 each.}
+{8110}{}{Back.}
+{9000}{}{What do you need?}
+{9010}{}{Frag Grenades x25.}
+{9020}{}{Plasma Grenades x25.}
+{9030}{}{Dynacords x25.}
+{9040}{}{Smoke Grenades x25.}
+{9050}{}{Throwing Knives x25.}
+{9060}{}{Super Stimpaks x10.}
+{9070}{}{Stimpaks x10.}
+{9080}{}{A set of drugs.}
+{9090}{}{A medical supplies x10}
+{9100}{}{Back.}
+{10000}{}{Pick your trinkets and utility gear.}
+{10010}{}{A Motion Sensor.}
+{10020}{}{A Stealth Boy.}
+{10030}{}{A Riot Shield.}
+{10040}{}{A Personal Shield Generator.}
+{10050}{}{A Gas Mask.}
+{10060}{}{A Talisman.}
+{10070}{}{A First Aid Kit.}
+{10080}{}{A Doctor's Bag.}
+{10090}{}{A Field Medic Kit.}
+{10100}{}{A Paramedic's Bag.}
+{10110}{}{A Backpack.}
+{10120}{}{Back.}

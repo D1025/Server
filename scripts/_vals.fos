@@ -82,6 +82,7 @@
 #define SPECIAL_ITEM_DOOR_NPC_SCRIPT    (400)   // Scripted doors openable by NPCs (by default doors with script block NPCs)
 #define SPECIAL_ITEM_TRAIN_BLOCKER      (1234)
 #define SPECIAL_ITEM_ARENA              (1337)
+#define SPECIAL_ITEM_UNIQ_OUTFIT        (7331)  // event outfitter gear with unique quality, editable via the arena upgrade editor
 #define SPECIAL_ITEM_FOART              (36278)
 #define SPECIAL_ITEM_AURA               (2872)
 #define SPECIAL_ITEM_DYNAMIC            (3661783)

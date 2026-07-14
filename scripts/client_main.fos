@@ -586,6 +586,14 @@ void items_collection(int collection, array<ItemCl@>& items)
                    items[i].GetProtoId() != PID_MFC)
                     @items[i] = null;
         }
+        else if(RepairPid == PID_FIRST_AID_KIT || RepairPid == PID_DOCTORS_BAG ||
+                RepairPid == PID_FIELD_MEDIC_KIT || RepairPid == PID_PARAMEDICS_BAG)
+        {
+            for(uint i = 0, j = items.length(); i < j; i++)
+                if(items[i].GetProtoId() != PID_MEDICAL_SUPPLIES &&
+                   items[i].GetProtoId() != PID_BIO_GEL)
+                    @items[i] = null;
+        }
         else
         {
             for(uint i = 0, j = items.length(); i < j; i++)

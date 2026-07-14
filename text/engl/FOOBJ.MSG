@@ -99,7 +99,7 @@
 {4600}{}{Bag}
 {4601}{}{An average sized bag. Made from weaved brahmin hairs.}
 {4700}{}{First Aid Kit}
-{4701}{}{A small kit containing basic medical equipment. Equip it as utility to gain +25 First Aid when using it.}
+{4701}{}{A basic medical utility. Capacity: 10. While equipped, each First Aid treatment uses one capacity point, adds 25 healing and reduces its cooldown by 8 seconds.}
 {4800}{}{RadAway}
 {4801}{}{A chemical solution that bonds with radiation particles and passes them through your system. Takes time to work.}
 {4900}{}{Antidote}
@@ -189,7 +189,7 @@
 {9000}{}{Back Pack}
 {9001}{}{A sturdy backpack. While equipped in the utility slot, it increases Carry Weight by 50.}
 {9100}{}{Doctor's Bag}
-{9101}{}{A brown bag containing medical instruments and chems. Equip it as utility to gain +25 Doctor when using it.}
+{9101}{}{A medical utility. Capacity: 10. While equipped, each Doctor treatment uses one capacity point, adds 25 healing and reduces its cooldown by 8 seconds.}
 {9200}{}{Scorpion Tail}
 {9201}{}{The severed tail of a radscorpion.}
 {9300}{}{Bag}
@@ -778,9 +778,9 @@
 {40700}{}{Mega Power Fist}
 {40701}{}{A "Big Frigger" Power Fist from BeatCo. Considered by many to be the ultimate weapon to use in unarmed combat. This one has upgraded power servos for increased strength. Powered by small energy cells.}
 {40800}{}{Field Medic First Aid Kit}
-{40801}{}{An emergency medical kit. Equip it as utility to gain +50 First Aid when using it.}
+{40801}{}{An advanced medical utility. Capacity: 20. While equipped, each First Aid treatment uses one capacity point, adds 50 healing and reduces its cooldown by 4 seconds.}
 {40900}{}{Paramedics Bag}
-{40901}{}{A field bag designed for high-trauma emergencies. Equip it as utility to gain +50 Doctor when using it.}
+{40901}{}{An advanced medical utility. Capacity: 20. While equipped, each Doctor treatment uses one capacity point, adds 50 healing and reduces its cooldown by 4 seconds.}
 {41000}{}{Expanded Lockpick Set}
 {41001}{}{A set of locksmith tools. Includes all the necessary picks and tension wrenches to open conventional pin and tumbler locks. This set also includes some special tools for more difficult mechanical locking mechanisms.}
 {41100}{}{Electronic Lockpick MKII}
@@ -817,7 +817,7 @@
 {42601}{}{A chunk of Uranium Ore, unrefined.}
 {42700}{}{Flame Breath}
 {42800}{}{Medical Supplies}
-{42801}{}{A box of assorted medical supplies. Nothing you can make use of though.}
+{42801}{}{A box of assorted medical supplies. Use it on an equipped medical utility to restore 1 stack. Restocking costs 3 AP.}
 {42900}{}{Gold Tooth}
 {42901}{}{This gold tooth used to belong to someone else, but it's yours now.}
 {43000}{}{Howitzer Shell}
@@ -9859,6 +9859,8 @@ a58ew64v}
 {2559101}{}{A collectible Vault Boy bobblehead. While equipped as utility, it grants +1 Luck.}
 {2559200}{}{Riot Shield}
 {2559201}{}{A heavy improvised shield. While equipped as utility, it always provides cover against burst fire when unarmed or using a one-handed weapon. Placeholder artwork.}
+{2559300}{}{Personal Shield Generator}
+{2559301}{}{A compact defensive field generator. While equipped as utility, it completely blocks one instance of damage, then recharges for one minute. Bracketed hit points indicate that the shield is ready.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 {2999100}{}{Laboratory Keycard}

@@ -31,6 +31,7 @@ void speedboost_forget(Critter& cr)
 #endif
 
 #ifdef __CLIENT
+# include "chosen_actions_h.fos"
 # define Critter    CritterCl
 # define Item       ItemCl
 #endif
@@ -113,6 +114,34 @@ bool critter_check_move_item(Critter& cr, Item& item, uint8 toSlot, Item@ itemSw
 
     // Utility is a strictly single-item equipment slot. Reject malformed/future
     // stackable prototypes here as well as declaring every current utility non-stackable.
+    // Dropping a compatible refill onto an equipped utility is translated into a
+    // normal use-item action. The engine handles its animation and configured 3 AP
+    // cost before ITEM_EVENT_USE_ON_ME performs the actual refill.
+    bool medicalRefill = valid(itemSwap) &&
+                         (item.GetProtoId() == PID_MEDICAL_SUPPLIES || item.GetProtoId() == PID_BIO_GEL) &&
+                         FLAG(itemSwap.Proto.Utility_Flags, UTILITY_FLAG_MEDICAL);
+    bool electronicRefill = valid(itemSwap) &&
+                            (item.GetProtoId() == PID_SMALL_ENERGY_CELL || item.GetProtoId() == PID_MICRO_FUSION_CELL) &&
+                            FLAG(itemSwap.Proto.Utility_Flags, UTILITY_FLAG_STEALTH | UTILITY_FLAG_MOTION_SENSOR | UTILITY_FLAG_IR_GOGGLES);
+    if(toSlot == SLOT_UTILITY && (medicalRefill || electronicRefill))
+    {
+        #ifdef __CLIENT
+        // This callback runs while CHOSEN_MOVE_ITEM is still at the front of the
+        // engine queue. Replacing the queue here would make the engine erase the
+        // newly queued use action when it finishes processing the rejected move.
+        // Keep the current action and insert the refill immediately behind it.
+        array<uint> actions;
+        if(GetChosenActions(actions) != 0 && actions.length() >= 7)
+        {
+            array<uint> refillAction = { CHOSEN_USE_ITEM, item.Id, item.GetProtoId(), TARGET_SELF_ITEM, itemSwap.Id, ITEM_MODE_USE, 0 };
+            for(uint i = 0; i < refillAction.length(); i++)
+                actions.insertAt(7 + i, refillAction[i]);
+            SetChosenActions(actions);
+        }
+        #endif
+        return false;
+    }
+
     if(toSlot == SLOT_UTILITY && cr.Trait[TRAIT_ARMOR_TRAINING] != 0)
         return false;
 
@@ -268,13 +297,16 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
     {
         if(toSlot == SLOT_HAND1 && !IsInPowerArmor(cr))
             cr.ModeBase[MODE_NO_RUN] += 1;
-        if(fromSlot == SLOT_HAND1 && !IsInPowerArmor(cr))
+        if(fromSlot == SLOT_HAND1 && !IsInPowerArmor(cr) && cr.ModeBase[MODE_NO_RUN] > 0)     // >0 guard: a negative counter would still block running (engine treats != 0 as locked)
             cr.ModeBase[MODE_NO_RUN] -= 1;                                                    // mustn't put else here
     }
     if(_IsPoweredBodyArmor(item) && (toSlot == SLOT_ARMOR || fromSlot == SLOT_ARMOR) && _IsDeployWeapon(cr.GetItem(0, SLOT_HAND1)))
     {
         if(toSlot == SLOT_ARMOR)               // suit on: the power armor lifts the carry lock
-            cr.ModeBase[MODE_NO_RUN] -= 1;
+        {
+            if(cr.ModeBase[MODE_NO_RUN] > 0)   // same >0 guard as above - never drive the counter negative
+                cr.ModeBase[MODE_NO_RUN] -= 1;
+        }
         else                                   // suit off: the carry lock returns
             cr.ModeBase[MODE_NO_RUN] += 1;
     }

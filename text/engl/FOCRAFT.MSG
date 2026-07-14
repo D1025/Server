@@ -143,6 +143,7 @@
 {186}{}{PID_MULTI_TOOL@A tool set, containing various useful tools, including pliers.@@SK_REPAIR 150@PID_FLINT 1&PID_PUMP_PARTS 3&PID_METAL_PARTS 1@PID_WORKBENCH 1|PID_ADVANCED_BENCH 1@PID_MULTI_TOOL 1@exp 120 script fix_boy@fix_Generic}
 {187}{}{PID_TUBE@A long, hollow, steel tube.@@SK_REPAIR 75@PID_METAL_PARTS 1&PID_ALLOYS 1@PID_WORKBENCH 1|PID_ADVANCED_BENCH 1@PID_TUBE 1@exp 10 script fix_boy@fix_Generic}
 {188}{}{PID_BACKPACK@A sturdy backpack that increases Carry Weight by 50 while equipped in the utility slot.@@SK_OUTDOORSMAN 75@PID_BRAHMIN_HIDE 4&PID_FIBER 2&PID_ROPE 1@PID_WORKBENCH 1|PID_ADVANCED_BENCH 1@PID_BACKPACK 1@exp 150 script fix_boy@fix_Generic}
+{189}{}{PID_MEDICAL_SUPPLIES@A box of assorted materials used to restock medical utilities.@@SK_DOCTOR 80@PID_CHEMICALS 1&PID_BROC_FLOWER 2&PID_XANDER_ROOT 2@PID_ADVANCED_BENCH 1|PID_MED_MACHINE 1@PID_MEDICAL_SUPPLIES 5@exp 75 script fix_boy@fix_Generic}
 {203}{}{PID_MOVABLE_AMMO_BOX_L1@A wooden crate used to store ammo.@@@PID_FIREWOOD 20&PID_FIBER 5&PID_METAL_PARTS2 4@PID_ADVANCED_BENCH 1@PID_MOVABLE_AMMO_BOX_L1 1@exp 32 script fix_boy@fix_Generic}
 {204}{}{PID_MOVABLE_AMMO_BOX_S1@A wooden crate used to store ammo.@@@PID_FIREWOOD 10&PID_FIBER 2&PID_METAL_PARTS2 2@PID_ADVANCED_BENCH 1@PID_MOVABLE_AMMO_BOX_S1 1@exp 16 script fix_boy@fix_Generic}
 {205}{}{PID_MOVABLE_POOR_BOX@A small box used to collect money for the poor.@@@PID_FIREWOOD 5&PID_FIBER 3@PID_ADVANCED_BENCH 1@PID_MOVABLE_POOR_BOX 1@exp 5 script fix_boy@fix_Generic}
