@@ -56,8 +56,10 @@ import void StatDungeonReward(Item@ it) from "item_bonus";
 #define GRESERVE_DEFENDER_TEAM       (5)
 #define GRESERVE_DEFENDER_COUNT      (31)
 #define GRESERVE_RESPAWN_MINUTES     (30)
-#define GRESERVE_REINFORCE_RADIUS    (45)
-#define GRESERVE_AGGRO_RADIUS        (55)
+#define GRESERVE_REINFORCE_RADIUS    (uint(20))
+#define GRESERVE_AGGRO_RADIUS        (uint(20))
+#define GRESERVE_MAX_ATTACKERS       (uint(5))
+#define GRESERVE_MIN_WEAPON_SKILL    (180)
 #define GRESERVE_MDATA_ALARM_TARGET  (21)
 #define GRESERVE_MDATA_WAVE_CLEARED  (22)
 #define GRESERVE_MDATA_RESET_PENDING (23)
@@ -98,6 +100,54 @@ bool _GReserveIsDefender(Critter@ cr)
            !_CritHasExtMode(cr, MODE_EXT_FOLLOWER) && !_CritHasExtMode(cr, MODE_EXT_SLAVE);
 }
 
+bool _GReserveHasRegularWeapon(Critter& npc)
+{
+    array<Item@> weapons;
+    uint count = npc.GetItemsByType(ITEM_TYPE_WEAPON, weapons);
+    for(uint i = 0; i < count; i++)
+    {
+        Item@ item = weapons[i];
+        if(!valid(item) || item.GetProtoId() == PID_SMOKE_GRENADE ||
+           item.GetProtoId() == PID_FRAG_GRENADE)
+            continue;
+        return true;
+    }
+    return false;
+}
+
+void _GReserveEnsureEquipment(Critter& npc)
+{
+    uint smokeCount = npc.CountItem(PID_SMOKE_GRENADE);
+    if(smokeCount > uint(0))
+    {
+        npc.DeleteItem(PID_SMOKE_GRENADE, smokeCount);
+        npc.AddItem(PID_FRAG_GRENADE, smokeCount);
+    }
+    if(npc.CountItem(PID_FRAG_GRENADE) == uint(0))
+        npc.AddItem(PID_FRAG_GRENADE, 1);
+
+    if(_GReserveHasRegularWeapon(npc))
+        return;
+
+    Item@ pistol = npc.AddItem(PID_10MM_PISTOL, 1);
+    if(!valid(pistol))
+        return;
+    pistol.AmmoPid = PID_10MM_JHP;
+    pistol.AmmoCount = pistol.Proto.Weapon_MaxAmmoCount;
+    npc.AddItem(PID_10MM_JHP, 60);
+    npc.SetFavoriteItem(SLOT_HAND1, PID_10MM_PISTOL);
+    npc.MoveItem(pistol.Id, 1, SLOT_HAND1);
+}
+
+void _GReserveEnsureWeaponSkill(Critter& npc)
+{
+    for(int skill = SK_PISTOLS; skill <= SK_THROWING; skill++)
+    {
+        if(npc.SkillBase[skill] < GRESERVE_MIN_WEAPON_SKILL)
+            npc.SkillBase[skill] = GRESERVE_MIN_WEAPON_SKILL;
+    }
+}
+
 // Fix only impossible target hexes. Ordinary cover remains untouched: a valid
 // shoot-through target hex behind a wall is not moved by this function.
 void _GReserveRepairBlockedHex(Map& map, Critter& npc)
@@ -129,6 +179,9 @@ void _GReserveSetupDefender(Map& map, Critter& npc, bool repairHex)
         return;
 
     npc.StatBase[ST_REPLICATION_TIME] = REPLICATION_MINUTE(GRESERVE_RESPAWN_MINUTES);
+    if(repairHex)
+        _GReserveEnsureEquipment(npc);
+    _GReserveEnsureWeaponSkill(npc);
     npc.SetEvent(CRITTER_EVENT_ATTACKED, "_GReserveDefenderAttacked");
     npc.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_GReserveDefenderShowCritter");
     if(repairHex && !npc.IsDead())
@@ -165,21 +218,114 @@ bool _GReserveHasEnemy(Critter& npc, uint enemyId)
     return false;
 }
 
+bool _GReserveHasAttackPlane(Critter& npc, uint targetId)
+{
+    array<NpcPlane@> planes;
+    npc.GetPlanes(planes);
+    for(uint i = 0; i < planes.length(); i++)
+    {
+        if(valid(planes[i]) && planes[i].Type == AI_PLANE_ATTACK &&
+           planes[i].Attack_TargId == targetId)
+            return true;
+    }
+    return false;
+}
+
+bool _GReserveIsEngagedWith(Critter& npc, uint targetId)
+{
+    return _GReserveHasEnemy(npc, targetId) || _GReserveHasAttackPlane(npc, targetId);
+}
+
 void _GReserveEngage(Critter& defender, Critter& attacker)
 {
     defender.AddEnemyInStack(attacker.Id);
 
     // A higher-priority tactical walk can temporarily be the current plane.
     // Inspect the full queue so the alarm loop does not add duplicate attacks.
-    array<NpcPlane@> planes;
-    defender.GetPlanes(planes);
-    for(uint i = 0; i < planes.length(); i++)
-    {
-        if(valid(planes[i]) && planes[i].Type == AI_PLANE_ATTACK &&
-           planes[i].Attack_TargId == attacker.Id)
-            return;
-    }
+    if(_GReserveHasAttackPlane(defender, attacker.Id))
+        return;
     AddAttackPlane(defender, 0, attacker);
+}
+
+uint _GReserveCountAttackers(Map& map, Critter& attacker)
+{
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+    uint active = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        if(_GReserveIsDefender(npcs[i]) && _GReserveIsEngagedWith(npcs[i], attacker.Id))
+            active++;
+    }
+    return active;
+}
+
+void _GReserveDisengage(Critter& defender, Critter& attacker)
+{
+    EraseAttackPlane(defender, 0, attacker.Id);
+    defender.EraseEnemyFromStack(attacker.Id);
+    // Cancel a tactical destination selected specifically for this engagement.
+    defender.ErasePlane(AI_PLANE_WALK, true);
+}
+
+Critter@ _GReserveFarthestAttacker(Map& map, Critter& attacker, uint exceptId)
+{
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+    Critter@ farthest = null;
+    uint farthestDist = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ npc = npcs[i];
+        if(!_GReserveIsDefender(npc) || npc.Id == exceptId ||
+           !_GReserveIsEngagedWith(npc, attacker.Id))
+            continue;
+        uint dist = GetCrittersDistantion(npc, attacker);
+        if(!valid(farthest) || dist > farthestDist)
+        {
+            @farthest = npc;
+            farthestDist = dist;
+        }
+    }
+    return farthest;
+}
+
+void _GReserveTrimAttackers(Map& map, Critter& attacker)
+{
+    uint active = _GReserveCountAttackers(map, attacker);
+    while(active > GRESERVE_MAX_ATTACKERS)
+    {
+        Critter@ excess = _GReserveFarthestAttacker(map, attacker, 0);
+        if(!valid(excess))
+            return;
+        _GReserveDisengage(excess, attacker);
+        active--;
+    }
+}
+
+bool _GReserveTryEngage(Map& map, Critter& defender, Critter& attacker, bool force)
+{
+    if(_GReserveIsEngagedWith(defender, attacker.Id))
+    {
+        _GReserveEngage(defender, attacker);
+        return true;
+    }
+
+    uint active = _GReserveCountAttackers(map, attacker);
+    if(active >= GRESERVE_MAX_ATTACKERS)
+    {
+        if(!force)
+            return false;
+        // A directly attacked defender must react. It replaces the farthest
+        // reinforcement so the total pool still remains capped at five.
+        Critter@ replaced = _GReserveFarthestAttacker(map, attacker, defender.Id);
+        if(!valid(replaced))
+            return false;
+        _GReserveDisengage(replaced, attacker);
+    }
+
+    _GReserveEngage(defender, attacker);
+    return true;
 }
 
 void _GReserveCallReinforcements(Map& map, Critter& caller, Critter& attacker)
@@ -187,11 +333,28 @@ void _GReserveCallReinforcements(Map& map, Critter& caller, Critter& attacker)
     array<Critter@> npcs;
     uint count = map.GetCrittersHex(caller.HexX, caller.HexY, GRESERVE_REINFORCE_RADIUS,
                                    FIND_ONLY_NPC | FIND_LIFE, npcs);
-    for(uint i = 0; i < count; i++)
+    uint active = _GReserveCountAttackers(map, attacker);
+    while(active < GRESERVE_MAX_ATTACKERS)
     {
-        Critter@ defender = npcs[i];
-        if(_GReserveIsDefender(defender))
-            _GReserveEngage(defender, attacker);
+        Critter@ closest = null;
+        uint closestScore = 0;
+        for(uint i = 0; i < count; i++)
+        {
+            Critter@ defender = npcs[i];
+            if(!_GReserveIsDefender(defender) || _GReserveIsEngagedWith(defender, attacker.Id))
+                continue;
+            uint score = GetCrittersDistantion(defender, caller) +
+                         GetCrittersDistantion(defender, attacker);
+            if(!valid(closest) || score < closestScore)
+            {
+                @closest = defender;
+                closestScore = score;
+            }
+        }
+        if(!valid(closest))
+            return;
+        _GReserveEngage(closest, attacker);
+        active++;
     }
 }
 
@@ -316,6 +479,7 @@ bool _GReserveDefenderAttacked(Critter& defender, Critter& attacker)
         return false;
 
     map.SetData(GRESERVE_MDATA_ALARM_TARGET, attacker.Id);
+    _GReserveTryEngage(map, defender, attacker, true);
     _GReserveCallReinforcements(map, defender, attacker);
     return false;
 }
@@ -332,7 +496,7 @@ void _GReserveDefenderShowCritter(Critter& defender, Critter& target)
         return;
 
     map.SetData(GRESERVE_MDATA_ALARM_TARGET, target.Id);
-    _GReserveEngage(defender, target);
+    _GReserveTryEngage(map, defender, target, false);
     _GReserveCallReinforcements(map, defender, target);
 }
 
@@ -609,7 +773,8 @@ bool _GReserveTacticalReposition(Map& map, Critter& npc, Critter& target,
         }
     }
 
-    if(bestScore <= currentScore + 10 || (bestX == npc.HexX && bestY == npc.HexY))
+    int requiredGain = ranged ? 30 : 10;
+    if(bestScore <= currentScore + requiredGain || (bestX == npc.HexX && bestY == npc.HexY))
         return false;
     if(!AddWalkPlane(npc, GRESERVE_TACTIC_PRIORITY, PLANE_WANDER, target.Id,
                      bestX, bestY, GetDirection(bestX, bestY, target.HexX, target.HexY), true, 0))
@@ -641,6 +806,44 @@ void _GReserveAiLoop(Map& map)
 
     array<Critter@> npcs;
     uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+    _GReserveTrimAttackers(map, attacker);
+
+    // Find the nearest current participant as the reinforcement caller. If the
+    // previous five are all dead, seed a new pool from the nearest defender.
+    Critter@ caller = null;
+    uint callerDist = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ defender = npcs[i];
+        if(!_GReserveIsDefender(defender) || !_GReserveIsEngagedWith(defender, attacker.Id))
+            continue;
+        uint dist = GetCrittersDistantion(defender, attacker);
+        if(!valid(caller) || dist < callerDist)
+        {
+            @caller = defender;
+            callerDist = dist;
+        }
+    }
+    if(!valid(caller) && _GReserveCountAttackers(map, attacker) < GRESERVE_MAX_ATTACKERS)
+    {
+        for(uint i = 0; i < count; i++)
+        {
+            Critter@ defender = npcs[i];
+            if(!_GReserveIsDefender(defender))
+                continue;
+            uint dist = GetCrittersDistantion(defender, attacker);
+            if(dist <= GRESERVE_AGGRO_RADIUS && (!valid(caller) || dist < callerDist))
+            {
+                @caller = defender;
+                callerDist = dist;
+            }
+        }
+        if(valid(caller))
+            _GReserveTryEngage(map, caller, attacker, false);
+    }
+    if(valid(caller))
+        _GReserveCallReinforcements(map, caller, attacker);
+
     uint16[] reservedX;
     uint16[] reservedY;
     uint tacticChecks = 0;
@@ -650,8 +853,7 @@ void _GReserveAiLoop(Map& map)
         if(!_GReserveIsDefender(defender))
             continue;
 
-        bool nearby = GetCrittersDistantion(defender, attacker) <= GRESERVE_AGGRO_RADIUS;
-        if(nearby || _GReserveHasEnemy(defender, attacker.Id))
+        if(_GReserveIsEngagedWith(defender, attacker.Id))
         {
             _GReserveEngage(defender, attacker);
             // Spread expensive path searches over several 1.5 s map ticks.
