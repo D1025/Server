@@ -92,7 +92,7 @@ lang=engl
 9 9050 R _item p PID_THROWING_KNIFE + 25 #
 9 9060 R _item p PID_SUPER_STIMPAK + 10 #
 9 9070 R _item p PID_STIMPAK + 10 #
-9 9080 R _item PID_BEER + 1 R _item p PID_CIGARETTES + 1 R _item p PID_MENTATS + 1 R _item p PID_BUFFOUT + 1 R _item p PID_PSYCHO + 1 R _item p PID_JET + 3 R _item p PID_NUKA_COLA + 2 R _item p PID_RADAWAY + 5 R _item p PID_RAD_X + 1 R _item p PID_ANTIDOTE + 3 R _item p PID_JET_ANTIDOTE + 2 #
+9 9080 R _item p PID_BEER + 1 R _item p PID_CIGARETTES + 1 R _item p PID_MENTATS + 1 R _item p PID_BUFFOUT + 1 R _item p PID_PSYCHO + 1 R _item p PID_JET + 3 R _item p PID_NUKA_COLA + 2 R _item p PID_RADAWAY + 5 R _item p PID_RAD_X + 1 R _item p PID_ANTIDOTE + 3 R _item p PID_JET_ANTIDOTE + 2 #
 9 9090 R _item p PID_MEDICAL_SUPPLIES + 10 #
 2 9100 @
 10 10000 None 0 #
