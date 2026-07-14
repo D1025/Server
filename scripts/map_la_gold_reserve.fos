@@ -29,6 +29,7 @@
 //
 
 #include "_macros.fos"
+#include "item_upgrades_shared.fos"
 #include "npc_planes_h.fos"
 
 import bool IsKeyAviable(Critter& cr, uint lockerId) from "lockers";
@@ -365,17 +366,21 @@ bool _GReserveWeaponProfile(Critter& npc, bool& ranged, bool& burst, bool& casca
     if(!valid(weapon))
         return false;
 
-    int use = _WeaponModeUse(mode);
-    ranged = _WeaponSkill(weapon, use) != SK_CLOSE_COMBAT && _WeaponMaxDist(weapon, use) > 2;
-    maxDist = _WeaponMaxDist(weapon, use);
+    uint use = uint(_WeaponModeUse(mode));
+    uint currentMaxDist = uint(_WeaponMaxDist(weapon, use));
+    ranged = int(_WeaponSkill(weapon, use)) != int(SK_CLOSE_COMBAT) &&
+             currentMaxDist > uint(2);
+    maxDist = currentMaxDist;
     burst = false;
-    for(int u = 0; u < 3; u++)
+    for(uint u = 0; u < 3; u++)
     {
-        if((weapon.Weapon_ActiveUses & (1 << u)) != 0 && _WeaponRound(weapon, u) > 1)
+        if((uint(weapon.Weapon_ActiveUses) & (uint(1) << u)) != uint(0) &&
+           uint(_WeaponRound(weapon, u)) > uint(1))
         {
             burst = true;
-            if(_WeaponMaxDist(weapon, u) > int(maxDist))
-                maxDist = _WeaponMaxDist(weapon, u);
+            uint burstDist = uint(_WeaponMaxDist(weapon, u));
+            if(burstDist > maxDist)
+                maxDist = burstDist;
         }
     }
     cascade = burst && WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE);
