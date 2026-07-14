@@ -1105,7 +1105,7 @@ int GetChosenWeaponDisplayDamage(ItemCl@ weapon, CritterCl@ chosen, uint8 use)
             meleeDamage /= 2;
     }
 
-    weaponDmg += weaponDmg * SelectWeaponBonus(weapon, BONUS_WEAPON_DAMAGE) / 100;
+    weaponDmg += weaponDmg * SelectWeaponBonus(weapon, UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) / 100;
     if(isBludgeoning)
         weaponDmg += meleeDamage; // Pure post-resistance component on the server.
     return weaponDmg;
@@ -1523,7 +1523,7 @@ void CollectArmorCompare(ItemCl@ item, CritterCl@ chosen)
 int CompareWeaponDamage(ItemCl@ it)
 {
     int dmg = _WeaponDmg(it.Proto, 0);
-    return dmg + dmg * UpgradeWeaponBonus(it, BONUS_WEAPON_DAMAGE) / 100;
+    return dmg + dmg * UpgradeWeaponBonus(it, UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) / 100;
 }
 
 int CompareWeaponRange(ItemCl@ it)
@@ -1546,9 +1546,9 @@ void CollectWeaponCompare(ItemCl@ item, CritterCl@ chosen)
 
     CmpAddSingle("Damage", CompareWeaponDamage(item), CompareWeaponDamage(equipped), false, "");
     CmpAddSingle("Range", CompareWeaponRange(item), CompareWeaponRange(equipped), false, "");
-    CmpAddSingle("Accuracy", UpgradeWeaponBonus(item, BONUS_WEAPON_ACCURACY), UpgradeWeaponBonus(equipped, BONUS_WEAPON_ACCURACY), false, "%");
-    CmpAddSingle("Crit pw.", UpgradeWeaponBonus(item, BONUS_WEAPON_CRITICAL_ROLL), UpgradeWeaponBonus(equipped, BONUS_WEAPON_CRITICAL_ROLL), false, "");
-    CmpAddSingle("Max AP", UpgradeWeaponBonus(item, BONUS_WEAPON_MAX_AP), UpgradeWeaponBonus(equipped, BONUS_WEAPON_MAX_AP), false, "");
+    CmpAddSingle("Accuracy", UpgradeWeaponBonus(item, UPGRADE_WEAPON_PERK_ACCURATE), UpgradeWeaponBonus(equipped, UPGRADE_WEAPON_PERK_ACCURATE), false, "%");
+    CmpAddSingle("Crit pw.", UpgradeWeaponBonus(item, UPGRADE_WEAPON_PERK_CRITICAL_POWER), UpgradeWeaponBonus(equipped, UPGRADE_WEAPON_PERK_CRITICAL_POWER), false, "");
+    CmpAddSingle("Max AP", UpgradeWeaponBonus(item, UPGRADE_WEAPON_PERK_AP_BOOST), UpgradeWeaponBonus(equipped, UPGRADE_WEAPON_PERK_AP_BOOST), false, "");
     CmpAddSingle("Mag", int(UpgradeWeaponMaxAmmo(item)), int(UpgradeWeaponMaxAmmo(equipped)), false, "");
 }
 
@@ -2144,32 +2144,32 @@ uint GetWeaponMaxAmmoDisplay(ItemCl@ it)
     return UpgradeWeaponMaxAmmo(it);
 }
 
-string GetWeaponUpgradePerkText(int type)
+string GetWeaponUpgradePerkText(int type, int value)
 {
     switch(type)
     {
     case UPGRADE_WEAPON_PERK_ACCURATE:
-        return "Accurate";
+        return "Accurate: Accuracy +" + value + "%";
     case UPGRADE_WEAPON_PERK_PENETRATE:
-        return "Penetrate";
+        return "Penetrate: Target DT -" + value;
     case UPGRADE_WEAPON_PERK_COMMANDO:
-        return "Commando";
+        return "Commando: Target AC " + value;
     case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
-        return "Double Magazine";
+        return "Double Magazine: Capacity +" + value + "%";
     case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
-        return "Enhanced Damage";
+        return "Enhanced Damage: Damage +" + value + "%";
     case UPGRADE_WEAPON_PERK_AP_BOOST:
-        return "AP Boost";
+        return "AP Boost: Max AP +" + value;
     case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
-        return "Critical Power";
+        return "Critical Power: Critical roll +" + value;
     case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
-        return "Silent Hill Monster";
+        return "Silent Hill Monster: Damage +" + value + "% below 35% HP";
     case UPGRADE_WEAPON_PERK_BLAST:
-        return "Blast";
+        return "Blast: Explosion radius +" + value;
     case UPGRADE_WEAPON_PERK_PERSISTENT:
-        return "Persistent";
+        return "Persistent: Adds " + value + "% damage as persistent damage";
     case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
-        return "Increased Range";
+        return "Increased Range: Range +" + value + "%";
     default:
         return "";
     }
@@ -2325,13 +2325,6 @@ else if(it.GetType() == ITEM_TYPE_WEAPON)
 {
 	switch(type)
 	{
-		case 100: {result="\nCrit Power +" + value + "";break;}
-		case 101: {result="\nCrit Chance +" + value + "";break;}
-		case BONUS_WEAPON_DAMAGE:
-		case BONUS_WEAPON_DAMAGE_EXTRA: {result="\nDamage +" + value + "%";break;}
-		case 104: {result="\nAccuracy +" + value + "%";break;}
-		case 105: {result="\nAction points +" + value + "";break;}
-        case 106: {result="\nRange +" + value + "";break;}
 		case UPGRADE_WEAPON_PERK_ACCURATE:
 		case UPGRADE_WEAPON_PERK_PENETRATE:
 		case UPGRADE_WEAPON_PERK_COMMANDO:
@@ -2344,12 +2337,10 @@ else if(it.GetType() == ITEM_TYPE_WEAPON)
 		case UPGRADE_WEAPON_PERK_PERSISTENT:
 		case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
 		{
-			string txt = GetWeaponUpgradePerkText(type);
+			string txt = GetWeaponUpgradePerkText(type, value);
 			if(txt.length() > 0)
 			{
 				result = "\n|" + AW_COLOR_WEAPON_PERK + " Perk: " + txt;
-				if(stacks > 1)
-					result += " x" + stacks;
 				result += "|" + COLOR_TEXT + " ";
 			}
 			break;

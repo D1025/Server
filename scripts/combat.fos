@@ -483,7 +483,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     bool             isFlamethrower = (weapPid == PID_FLAMER) || (weapPid == PID_IMPROVED_FLAMETHROWER) || (weapPid == PID_FIRE_GECKO_FLAME_WEAPON);
     bool             isRocket = (ammoPid == PID_EXPLOSIVE_ROCKET) || (ammoPid == PID_40MM_GRENADE) || (ammoPid == PID_ROCKET_AP) || (ammoPid == PID_ROBO_ROCKET_AMMO);
 	bool 			 isExplodeRocket = (ammoPid == PID_EXPLOSIVE_ROCKET) || (ammoPid == PID_40MM_GRENADE);
-    bool             hasBlastArea = WeaponHasProtoPerk(weapon, WEAPON_PERK_BLAST) || (UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_BLAST) > 0);
+    bool             hasBlastArea = WeaponHasProtoPerk(weapon, WEAPON_PERK_BLAST) || (UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_BLAST) > 0);
     bool             isShotgun = weapon.Weapon_Caliber == 11;
 	bool             isBozar = weapPid == PID_BOZAR;
 	bool             isLSW = weapPid == PID_LIGHT_SUPPORT_WEAPON;
@@ -494,7 +494,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     bool             eyeDamage = cr.Damage[DAMAGE_EYE] != 0;
     int              weaponPerk = weapon.Weapon_Perk;
     bool             perkAccurate = WeaponHasProtoPerk(weapon, WEAPON_PERK_ACCURATE);
-    bool             perkPenetrate = WeaponHasProtoPerk(weapon, WEAPON_PERK_PENETRATE) || UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_PENETRATE) > 0;
+    bool             perkPenetrate = WeaponHasProtoPerk(weapon, WEAPON_PERK_PENETRATE) || UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_PENETRATE) > 0;
     bool             perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
     bool             perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
     bool             perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);
@@ -661,15 +661,13 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     }
     if(WeaponHasProtoPerk(weapon, WEAPON_PERK_COMMANDO))
         attack.ACMod -= 30;
-    int commandoStacks = UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_COMMANDO);
-    if(commandoStacks > 0)
-        attack.ACMod -= 30 * commandoStacks;
+    attack.ACMod += UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_COMMANDO);
 
     // To check if the original target was hit:
     attack.TargetId = target.Id;
 
     // Here we are deciding the real toHit;
-    int toHit = baseToHit + attack.SelectWeaponBonus(BONUS_WEAPON_ACCURACY);
+    int toHit = baseToHit + attack.SelectWeaponBonus(UPGRADE_WEAPON_PERK_ACCURATE);
     toHit -= isHthAttack ? (GetHitAim(aim) / 2) : GetHitAim(aim);
 
     // Range considerations, we are storing everything for some later use
@@ -759,7 +757,7 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     {
         isHit = true;
 
-            int chance = cr.Stat[ST_CRITICAL_CHANCE] + margin / 10 + (GetHitAim(aim) * (60 + 4 * cr.Stat[ST_LUCK])) / 100 + attack.SelectWeaponBonus(BONUS_WEAPON_CRITICAL_CHANCE);
+            int chance = cr.Stat[ST_CRITICAL_CHANCE] + margin / 10 + (GetHitAim(aim) * (60 + 4 * cr.Stat[ST_LUCK])) / 100;
             if(isHthAttack && cr.Perk[PE_BONUS_HTH_DAMAGE_II] > 0)
                 chance += 15;
 				
@@ -1536,9 +1534,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     hasKnockbackPerk = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_KNOCKBACK) : (weaponPerk == WEAPON_PERK_KNOCKBACK);
 	bool     isWeaponBluedgeoning = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_BLUDGEONING) : (weaponPerk == WEAPON_PERK_BLUDGEONING);
     bool     hasWeaponPersistent = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_PERSISTENT) : (weaponPerk == WEAPON_PERK_PERSISTENT);
-    int      upgradePersistentStacks = UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_PERSISTENT);
+    int      upgradePersistentPercent = UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_PERSISTENT);
     int      protoSilentHillStacks = valid(realWeapon) ? WeaponProtoPerkStacks(realWeapon.Proto, WEAPON_PERK_SILENT_HILL_MONSTER) : (weaponPerk == WEAPON_PERK_SILENT_HILL_MONSTER ? 1 : 0);
-    int      upgradeSilentHillStacks = UpgradePerkStacks(realWeapon, UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER);
+    int      upgradeSilentHillPercent = UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER);
 
 
     int realrounds = rounds;
@@ -1632,7 +1630,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             aim_ = HIT_LOCATION_UNCALLED;
         aim_--;
 
-        roll += attacker.Stat[ST_LUCK] * 3 + attack.SelectWeaponBonus(BONUS_WEAPON_CRITICAL_ROLL);
+        roll += attacker.Stat[ST_LUCK] * 3 + attack.SelectWeaponBonus(UPGRADE_WEAPON_PERK_CRITICAL_POWER);
 	
 		roll +=AddCritRollWeapon(realWeapon); //05-03-2014 Cubil: bonus bazowy do broni do crit rolla
 		
@@ -1914,7 +1912,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     targetDR = CLAMP(targetDR, 0, 95);
 
 
-    int damage = attack.Damage + attack.BonusDmg + attack.Damage * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
+    int damage = attack.Damage + attack.BonusDmg + attack.Damage * attack.SelectWeaponBonus(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) / 100;
     if(validAttacker && isMeleeWeaponAttack && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
         damage = MAX(1, damage / 2);
 
@@ -1979,7 +1977,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         if(targetLowLife)
         {
             int bonusPercent = protoSilentHillStacks * SILENT_HILL_PROTO_BONUS_PERCENT;
-            bonusPercent += upgradeSilentHillStacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER);
+            bonusPercent += upgradeSilentHillPercent;
             if(bonusPercent > 0)
                 totalDmg += (totalDmg * bonusPercent) / 100;
         }
@@ -1996,10 +1994,9 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             totalDmg = 0;
         }
 
-        if(upgradePersistentStacks > 0)
+        if(upgradePersistentPercent > 0)
         {
-            int dotPercent = WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_PERSISTENT) * upgradePersistentStacks;
-            persistentDotDamage += (postResistDamage * dotPercent) / 100;
+            persistentDotDamage += (postResistDamage * upgradePersistentPercent) / 100;
         }
 
         if(persistentDotDamage > 0)
@@ -2790,7 +2787,7 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
 
     ProtoItem@ proto = GetProtoItem(weapPid);
     int protoBlastPerkStacks = WeaponProtoPerkStacks(proto, WEAPON_PERK_BLAST);
-    int upgradeBlastPerkStacks = UpgradePerkStacks(attack.RealWeapon, UPGRADE_WEAPON_PERK_BLAST);
+    int upgradeBlastRadius = UpgradeWeaponBonus(attack.RealWeapon, UPGRADE_WEAPON_PERK_BLAST);
     bool isLegacyGrenade = (weapPid == PID_FRAG_GRENADE || weapPid == PID_HOLY_HAND_GRENADE || weapPid == PID_PULSE_GRENADE ||
                             weapPid == PID_PLASMA_GRENADE || weapPid == PID_FAKE_PLASMA_GRENADE || weapPid == PID_FAKE_FRAG_GRENADE ||
                             weapPid == PID_DYNACORD);
@@ -2801,22 +2798,18 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
 
     if(!isLegacyGrenade)
     {
-        int upgradeBonusRadius = 0;
-        if(upgradeBlastPerkStacks > 0)
-            upgradeBonusRadius = upgradeBlastPerkStacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_BLAST);
-
-        bool onlyUpgradeBlast = (protoBlastPerkStacks == 0 && upgradeBonusRadius > 0);
+        bool onlyUpgradeBlast = (protoBlastPerkStacks == 0 && upgradeBlastRadius > 0);
         if(onlyUpgradeBlast)
         {
-            radius = uint(MAX(1, upgradeBonusRadius));
+            radius = uint(MAX(1, upgradeBlastRadius));
         }
         else
         {
         if(protoBlastPerkStacks > 0)
             radius += uint(protoBlastPerkStacks);
 
-            if(upgradeBonusRadius > 0)
-                radius += uint(upgradeBonusRadius);
+            if(upgradeBlastRadius > 0)
+                radius += uint(upgradeBlastRadius);
 
             if(isExplodeRocket)
                 radius += 1;
@@ -2828,7 +2821,7 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
     else if(attack.Attacker.Perk[PE_DEMOLITION_EXPERT] != 0)
         radius += 1;
 
-    bool reduceSplashDamage = (!isLegacyGrenade && protoBlastPerkStacks == 0 && upgradeBlastPerkStacks > 0);
+    bool reduceSplashDamage = (!isLegacyGrenade && protoBlastPerkStacks == 0 && upgradeBlastRadius > 0);
     uint effectRadius = (radius > 0 ? radius : 1);
 	//nowy wybuch molotova z fire_hexes - worldremaker 26.03.2017
 	if(weapPid==PID_MOLOTOV_COCKTAIL) 
@@ -2916,7 +2909,7 @@ void CommenceExplosionEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, Crit
     attack.Aim = HIT_LOCATION_UNCALLED;
     ProtoItem@ proto = GetProtoItem(weapPid);
 
-    attack.Damage = _WeaponDmg(proto, 0) + _WeaponDmg(proto, 0) * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
+    attack.Damage = _WeaponDmg(proto, 0) + _WeaponDmg(proto, 0) * attack.SelectWeaponBonus(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) / 100;
     attack.DmgType = _WeaponDmgType(proto, 0);
     attack.WeaponPerk = proto.Weapon_Perk;
 
@@ -3128,7 +3121,7 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 
         targetDR = CLAMP(targetDR, 0, 100);
 
-        int damage = _WeaponDmg(weapon, weaponUse) + _WeaponDmg(weapon, weaponUse) * attack.SelectWeaponBonus(BONUS_WEAPON_DAMAGE) / 100;
+        int damage = _WeaponDmg(weapon, weaponUse) + _WeaponDmg(weapon, weaponUse) * attack.SelectWeaponBonus(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) / 100;
         int dmgMul = validAmmo ? ammo.Ammo_DmgMult : 1;   // Technically, should be *2
         int dmgDiv = validAmmo ? ammo.Ammo_DmgDiv : 1;    // Technically, should be *2
         totalDmg = damage + 2 * cr.Perk[PE_BONUS_RANGED_DAMAGE] + cr.Perk[PE_MORE_RANGED_DAMAGE] * 3;

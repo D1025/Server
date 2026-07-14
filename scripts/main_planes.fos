@@ -1092,7 +1092,7 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
             wpnDist += UpgradeWeaponRangeBonus(realWeapon, wpnDist);
         int        multihex = npc.GetMultihex() + target.GetMultihex();
         bool       perkAccurate = WeaponHasProtoPerk(weapon, WEAPON_PERK_ACCURATE);
-        int        weaponAccBonus = valid(realWeapon) ? UpgradeWeaponBonus(realWeapon, BONUS_WEAPON_ACCURACY) : 0;
+        int        weaponAccBonus = valid(realWeapon) ? UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_ACCURATE) : 0;
         bool       perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
         bool       perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
         bool       perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);

@@ -1180,18 +1180,6 @@ void AddWeaponBonus(Item@ it, int number, bool isCrafting = false)
     TryApplyRandomWeaponPerk(it, isCrafting);
 }
 
-bool IsBonusExcluded(bool isCrafting, int bonusType)
-{
-    if(!isCrafting)
-        return false;
-
-    // Kept for compatibility with older callers; not used in v2 roll.
-    if(bonusType == BONUS_WEAPON_MAX_AP)
-        return true;
-
-    return false;
-}
-
 int checkBonus(Item@ it, int bonusType)
 {
     if(!valid(it))

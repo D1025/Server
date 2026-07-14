@@ -368,7 +368,6 @@ class WeaponRadiusChosen
 			if( chosen.Perk[PE_SHARPSHOOTER] == 1 && WeaponHasProtoPerk(chosenWeapon.Proto, WEAPON_PERK_SCOPE_RANGE) )
 			    wpnMaxDist+=5;
 
-			/*wpnMaxDist += checkBonus(chosenWeapon, BONUS_WEAPON_MAX_RANGE);*/
 
 			uint8 wepSkill = 0;
 			switch(wepMode)

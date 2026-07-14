@@ -196,15 +196,6 @@
 #define ITEM_RADIO                               (0x40000000)
 #define ITEM_CACHED                              (0x80000000) // Not used
 
-// Possible weapon bonus
-#define BONUS_WEAPON_CRITICAL_ROLL				(100)
-#define BONUS_WEAPON_CRITICAL_CHANCE			(101)
-#define BONUS_WEAPON_DAMAGE						(102)
-#define BONUS_WEAPON_DAMAGE_EXTRA				(103) // Legacy secondary slot, treated as damage.
-#define BONUS_WEAPON_ACCURACY					(104)
-#define BONUS_WEAPON_MAX_AP						(105)
-#define BONUS_WEAPON_MAX_RANGE                  (106)
-
 // Upgrade slots/perks
 #define UPGRADE_SLOT_EMPTY                      (9000)
 #define UPGRADE_SLOT_USED                       (9001)

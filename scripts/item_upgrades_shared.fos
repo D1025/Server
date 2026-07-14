@@ -391,45 +391,18 @@ int WeaponUpgradePerkBaseValue(int perkType)
     return 0;
 }
 
-int UpgradeWeaponBonus(UpgradeItemMutual@ item, int bonusType)
+int UpgradeWeaponBonus(UpgradeItemMutual@ item, int perkType)
 {
-    int bonus = UpgradeBonusValue(item, bonusType);
-    if(@item == null)
-        return bonus;
-
-    if(bonusType == BONUS_WEAPON_DAMAGE)
-        bonus += UpgradeBonusValue(item, BONUS_WEAPON_DAMAGE_EXTRA);
-
-    if(bonusType == BONUS_WEAPON_ACCURACY)
-    {
-        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_ACCURATE) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_ACCURATE);
-    }
-    else if(bonusType == BONUS_WEAPON_DAMAGE)
-    {
-        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE);
-    }
-    else if(bonusType == BONUS_WEAPON_CRITICAL_ROLL)
-    {
-        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_CRITICAL_POWER) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_CRITICAL_POWER);
-    }
-    else if(bonusType == BONUS_WEAPON_MAX_AP)
-    {
-        bonus += UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_AP_BOOST) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_AP_BOOST);
-    }
-
-    return bonus;
+    if(@item == null || !IsWeaponUpgradePerk(perkType))
+        return 0;
+    return UpgradeBonusValue(item, perkType);
 }
 
 int UpgradeWeaponRangeBonus(UpgradeItemMutual@ item, int baseRange)
 {
-    int bonus = UpgradeWeaponBonus(item, BONUS_WEAPON_MAX_RANGE);
-    if(@item != null && baseRange > 0)
-    {
-        int rangeStacks = UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_INCREASED_RANGE);
-        if(rangeStacks > 0)
-            bonus += (baseRange * rangeStacks * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_INCREASED_RANGE)) / 100;
-    }
-    return bonus;
+    if(@item == null || baseRange <= 0)
+        return 0;
+    return (baseRange * UpgradeWeaponBonus(item, UPGRADE_WEAPON_PERK_INCREASED_RANGE)) / 100;
 }
 
 int UpgradeReloadApMod(UpgradeItemMutual@ item)
@@ -444,15 +417,15 @@ uint UpgradeWeaponMaxAmmo(UpgradeItemMutual@ item)
         return 0;
 
     uint maxAmmo = item.Proto.Weapon_MaxAmmoCount;
-    int stacks = UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE);
-    if(stacks > 0)
-        maxAmmo += item.Proto.Weapon_MaxAmmoCount * uint(stacks);
+    int bonusPercent = UpgradeWeaponBonus(item, UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE);
+    if(bonusPercent > 0)
+        maxAmmo += (item.Proto.Weapon_MaxAmmoCount * uint(bonusPercent)) / 100;
     return maxAmmo;
 }
 
 int UpgradeWeaponPenetrateDtReduction(UpgradeItemMutual@ item)
 {
-    return UpgradePerkStacks(item, UPGRADE_WEAPON_PERK_PENETRATE) * WeaponUpgradePerkBaseValue(UPGRADE_WEAPON_PERK_PENETRATE);
+    return UpgradeWeaponBonus(item, UPGRADE_WEAPON_PERK_PENETRATE);
 }
 
 #endif // __ITEM_UPGRADES_SHARED__

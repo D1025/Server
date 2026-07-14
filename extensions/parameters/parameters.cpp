@@ -14,8 +14,6 @@
 #include <Mmsystem.h>
 #endif
 
-#define BONUS_WEAPON_MAX_AP						(105)
-#define BONUS_WEAPON_MAX_RANGE                  (106)
 #define WEAPON_PERK_GUARDED_STANCE              (21)
 #define BONUS_ARMOR_NORMAL_DT					(100)
 #define BONUS_ARMOR_LASER_DT					(101)
@@ -44,6 +42,8 @@
 #define BONUS_ARMOR_ALL_DR						(124)
 #define BONUS_ARMOR_FAST_RELOAD					(125)
 #define BONUS_ARMOR_AC							(126)
+#define UPGRADE_WEAPON_PERK_AP_BOOST			(206)
+#define UPGRADE_WEAPON_PERK_INCREASED_RANGE		(211)
 #define PID_GAS_MASK							(582) // utility slot, +20 poison/rad resist (see ITEMPID.H)
 #define GAS_MASK_RESIST_BONUS					(20)
 #ifndef UPGRADE_MAX_SLOTS
@@ -424,7 +424,7 @@ EXPORT int getParam_MaxAp(CritterMutual& cr, uint)
 	val += checkBonus(armor, BONUS_ARMOR_MAX_AP);
 
 	const Item* weapon = cr.ItemSlotMain;
-	val += checkBonus(weapon, BONUS_WEAPON_MAX_AP);
+	val += checkBonus(weapon, UPGRADE_WEAPON_PERK_AP_BOOST);
 
 	if (cr.Params[TRAIT_BERSERKER] && ((getParam_Hp(cr, 0)*100)/getParam_MaxLife(cr,0)) <= 50)
 		val+=2;
@@ -846,7 +846,7 @@ uint GetAttackDistantion(CritterMutual& cr, Item& item, uint8 mode)
 	}
 	if(cr.Params[MODE_RANGE_HTH]) dist += cr.Params[MODE_RANGE_HTH]; // reach for HtH weapons AND creature natural attacks (value-based; 1 = classic +1)
 	dist += GetMultihex(cr);
-	dist += checkBonus(item, BONUS_WEAPON_MAX_RANGE);
+	dist += dist * checkBonus(item, UPGRADE_WEAPON_PERK_INCREASED_RANGE) / 100;
 	if(item.Proto->WeaponHasPerk(WEAPON_PERK_SCOPE_RANGE) && cr.Params[PE_SHARPSHOOTER])
 		dist+=5;
 	if(dist < 0) dist = 0;

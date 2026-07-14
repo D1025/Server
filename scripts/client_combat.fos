@@ -142,7 +142,7 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
 	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) toHit = int(MAX(chosen.Skill[SK_PISTOLS], chosen.Skill[SK_DOCTOR])); // 25-07-2013 Cubik: przy uzywaniu Needlera do celnosci brany jest max(sg,doc)
 	
 	if(valid(realWeapon))
-		toHit+= checkBonus(realWeapon, BONUS_WEAPON_ACCURACY);
+		toHit+= checkBonus(realWeapon, UPGRADE_WEAPON_PERK_ACCURATE);
 		
     bool perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
     bool perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
