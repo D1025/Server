@@ -6,6 +6,9 @@
 // NCR LA Gold Reserve dungeon (map q_la_gold_reserve, MAP_NCRLAGoldReserve).
 //
 // Design:
+//  - When an NPC carrying a key dies, every door matched by that key is unlocked
+//    and opened automatically. This keeps progression working even though the
+//    reserve's NPC corpses are not lootable.
 //  - The vault lockers can no longer be lockpicked open - lockpicking them does
 //    nothing.
 //  - They stay sealed until every hostile NPC on the map is dead. Once the reserve
@@ -39,6 +42,8 @@ import void StatDungeonReward(Item@ it) from "item_bonus";
 
 void map_init(Map& map, bool firstTime)
 {
+    map.SetEvent(MAP_EVENT_CRITTER_DEAD, "_GReserveCritterDead");
+
     // (Re)attach the vault-locker gate on every map load - runtime item events do
     // not survive a server restart.
     array<Item@> containers;
@@ -51,6 +56,41 @@ void map_init(Map& map, bool firstTime)
         // Only the actually-locked vault lockers (they carry a locker/key id).
         if(cont.LockerId != 0)
             cont.SetEvent(ITEM_EVENT_SKILL, "_GReserveLocker");
+    }
+}
+
+// Opens every door matched by a key carried by an NPC at the moment of death.
+// MAP_EVENT_CRITTER_DEAD runs before the global critter-death handler, so keys are
+// still available here even when the corpse is made non-lootable afterwards.
+void _GReserveCritterDead(Map& map, Critter& cr, Critter@ killer)
+{
+    if(!cr.IsNpc())
+        return;
+
+    array<Item@> keys;
+    uint keyCount = cr.GetItemsByType(ITEM_TYPE_KEY, keys);
+    if(keyCount == 0)
+        return;
+
+    array<Item@> doors;
+    uint doorCount = map.GetItemsByType(ITEM_TYPE_DOOR, doors);
+    for(uint i = 0; i < keyCount; i++)
+    {
+        Item@ key = keys[i];
+        if(!valid(key) || key.LockerId == 0)
+            continue;
+
+        for(uint j = 0; j < doorCount; j++)
+        {
+            Item@ door = doors[j];
+            if(!valid(door) || door.LockerId != key.LockerId)
+                continue;
+
+            door.LockerId = 0;
+            door.LockerComplexity = 0;
+            if(_LockerIsClose(door))
+                door.LockerOpen();
+        }
     }
 }
 
