@@ -10688,7 +10688,7 @@ ProtoId              2826
 MapX                 90
 MapY                 80
 Item_LockerDoorId    666321
-Item_LockerComplexity 300
+Item_LockerComplexity 100
 
 MapObjType           2
 ProtoId              5613
@@ -13272,14 +13272,14 @@ ProtoId              3466
 MapX                 100
 MapY                 153
 Item_LockerDoorId    666111
-Item_LockerComplexity 200
+Item_LockerComplexity 100
 
 MapObjType           1
 ProtoId              3466
 MapX                 98
 MapY                 153
 Item_LockerDoorId    666111
-Item_LockerComplexity 200
+Item_LockerComplexity 100
 
 MapObjType           2
 ProtoId              5812
@@ -22031,7 +22031,7 @@ ProtoId              2259
 MapX                 90
 MapY                 142
 Item_LockerDoorId    666111
-Item_LockerComplexity 250
+Item_LockerComplexity 100
 
 MapObjType           1
 ProtoId              2261
@@ -22705,7 +22705,7 @@ ProtoId              2645
 MapX                 90
 MapY                 85
 Item_LockerDoorId    666123
-Item_LockerComplexity 300
+Item_LockerComplexity 100
 
 MapObjType           2
 ProtoId              5590
@@ -28033,14 +28033,14 @@ ProtoId              2258
 MapX                 94
 MapY                 47
 Item_LockerDoorId    1111111111
-Item_LockerComplexity 300
+Item_LockerComplexity 100
 
 MapObjType           1
 ProtoId              2258
 MapX                 46
 MapY                 109
 Item_LockerDoorId    111111111
-Item_LockerComplexity 300
+Item_LockerComplexity 100
 
 MapObjType           2
 ProtoId              2293
@@ -29011,14 +29011,14 @@ ProtoId              2960
 MapX                 94
 MapY                 43
 Item_LockerDoorId    1111111111
-Item_LockerComplexity 300
+Item_LockerComplexity 100
 
 MapObjType           1
 ProtoId              2960
 MapX                 46
 MapY                 97
 Item_LockerDoorId    11111111
-Item_LockerComplexity 300
+Item_LockerComplexity 100
 
 MapObjType           2
 ProtoId              5598
@@ -30468,6 +30468,7 @@ ProtoId              518
 MapX                 91
 MapY                 145
 Dir                  3
+UID                  1001
 ScriptName           ncr_guard
 FuncName             critter_init
 Critter_Cond         1
@@ -32650,6 +32651,13 @@ Critter_ParamValue8  0
 
 MapObjType           1
 ProtoId              105
+MapX                 91
+MapY                 145
+ContainerUID         1001
+Item_LockerDoorId    666111
+
+MapObjType           1
+ProtoId              105
 MapX                 88
 MapY                 92
 ContainerUID         1
@@ -34695,4 +34703,3 @@ MapY                 77
 LightColor           99994000
 LightDistance        8
 LightIntensity       25
-
