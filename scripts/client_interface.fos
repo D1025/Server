@@ -2144,6 +2144,39 @@ uint GetWeaponMaxAmmoDisplay(ItemCl@ it)
     return UpgradeWeaponMaxAmmo(it);
 }
 
+string GetWeaponUpgradePerkText(int type)
+{
+    switch(type)
+    {
+    case UPGRADE_WEAPON_PERK_ACCURATE:
+        return "Accurate";
+    case UPGRADE_WEAPON_PERK_PENETRATE:
+        return "Penetrate";
+    case UPGRADE_WEAPON_PERK_COMMANDO:
+        return "Commando";
+    case UPGRADE_WEAPON_PERK_DOUBLE_MAGAZINE:
+        return "Double Magazine";
+    case UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE:
+        return "Enhanced Damage";
+    case UPGRADE_WEAPON_PERK_AP_BOOST:
+        return "AP Boost";
+    case UPGRADE_WEAPON_PERK_CRITICAL_POWER:
+        return "Critical Power";
+    case UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER:
+        return "Silent Hill Monster";
+    case UPGRADE_WEAPON_PERK_BLAST:
+        return "Blast";
+    case UPGRADE_WEAPON_PERK_PERSISTENT:
+        return "Persistent";
+    case UPGRADE_WEAPON_PERK_INCREASED_RANGE:
+        return "Increased Range";
+    default:
+        return "";
+    }
+
+    return "";
+}
+
 string GetWeaponUpgradePerkText(int type, int value)
 {
     switch(type)

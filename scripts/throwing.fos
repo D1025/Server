@@ -228,7 +228,9 @@ void CommenceThrowing(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty)
 {
     uint8 dir = GetDirection(cr.HexX, cr.HexY, tx, ty);
     cr.SetDir(dir);
-    _CritAnimateThrow(cr);
+    // The thrown item may come from inventory (NPC smoke screen), while another weapon
+    // remains equipped. Pass the actual item so clients do not animate the hand weapon.
+    cr.Animate(0, ANIM2_THROW, item, true, true);
     if(cr.Mode[MODE_HIDE] != 0)
     {
         if(!cr.IsPlayer() || cr.GetAccess() == ACCESS_CLIENT)
