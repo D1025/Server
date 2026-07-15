@@ -27,6 +27,7 @@
 
 #include "_macros.fos"
 #include "item_upgrades_shared.fos"
+#include "npc_planes_h.fos"
 
 import bool IsKeyAviable(Critter& cr, uint lockerId) from "lockers";
 import bool LockerClose(Item& item) from "lockers";
