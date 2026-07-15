@@ -30871,9 +30871,9 @@ Critter_ParamValue8  0
 
 MapObjType           0
 ProtoId              518
-MapX                 68
-MapY                 81
-Dir                  5
+MapX                 103
+MapY                 115
+Dir                  2
 ScriptName           ncr_guard
 FuncName             critter_init
 Critter_Cond         1
@@ -30902,7 +30902,7 @@ MapObjType           0
 ProtoId              518
 MapX                 107
 MapY                 117
-Dir                  3
+Dir                  2
 ScriptName           ncr_guard
 FuncName             critter_init
 Critter_Cond         1

@@ -91,6 +91,33 @@ bool _GReserveIsDefender(Critter@ cr)
            !_CritHasExtMode(cr, MODE_EXT_FOLLOWER) && !_CritHasExtMode(cr, MODE_EXT_SLAVE);
 }
 
+bool _GReserveIsGrenadier(Critter& npc)
+{
+    Item@ armor = npc.GetItem(0, SLOT_ARMOR);
+    uint armorPid = uint(npc.Stat[ST_DEFAULT_ARMOR_PID]);
+    if(valid(armor))
+        armorPid = armor.GetProtoId();
+    return armorPid == uint(PID_NCR_ARMOR);
+}
+
+void _GReserveDeleteItem(Critter& npc, uint16 pid)
+{
+    uint count = npc.CountItem(pid);
+    if(count > uint(0))
+        npc.DeleteItem(pid, count);
+}
+
+void _GReserveRemoveGrenades(Critter& npc)
+{
+    _GReserveDeleteItem(npc, uint16(PID_FRAG_GRENADE));
+    _GReserveDeleteItem(npc, uint16(PID_PLASMA_GRENADE));
+    _GReserveDeleteItem(npc, uint16(PID_PULSE_GRENADE));
+    _GReserveDeleteItem(npc, uint16(PID_SMOKE_GRENADE));
+    _GReserveDeleteItem(npc, uint16(PID_GAS_GRENADE));
+    _GReserveDeleteItem(npc, uint16(PID_MOLOTOV_COCKTAIL));
+    _GReserveDeleteItem(npc, uint16(PID_DYNACORD));
+}
+
 uint16 _GReserveDesiredWeapon(Critter& npc)
 {
     int bagId = npc.Stat[ST_BAG_ID];
@@ -114,14 +141,20 @@ void _GReserveEnsureEquipment(Critter& npc)
     if(pistolCount > uint(0))
         npc.DeleteItem(PID_10MM_PISTOL, pistolCount);
 
-    uint smokeCount = npc.CountItem(PID_SMOKE_GRENADE);
-    if(smokeCount > uint(0))
+    bool isGrenadier = _GReserveIsGrenadier(npc);
+    if(isGrenadier)
     {
-        npc.DeleteItem(PID_SMOKE_GRENADE, smokeCount);
-        npc.AddItem(PID_FRAG_GRENADE, smokeCount);
+        uint smokeCount = npc.CountItem(PID_SMOKE_GRENADE);
+        if(smokeCount > uint(0))
+        {
+            npc.DeleteItem(PID_SMOKE_GRENADE, smokeCount);
+            npc.AddItem(PID_FRAG_GRENADE, smokeCount);
+        }
+        if(npc.CountItem(PID_FRAG_GRENADE) == uint(0))
+            npc.AddItem(PID_FRAG_GRENADE, 1);
     }
-    if(npc.CountItem(PID_FRAG_GRENADE) == uint(0))
-        npc.AddItem(PID_FRAG_GRENADE, 1);
+    else
+        _GReserveRemoveGrenades(npc);
 
     uint16 weaponPid = _GReserveDesiredWeapon(npc);
     uint16 otherPid = weaponPid == uint16(PID_FN_FAL) ? uint16(PID_M60) : uint16(PID_FN_FAL);
@@ -150,13 +183,13 @@ void _GReserveEnsureEquipment(Critter& npc)
         npc.StatBase[ST_LAST_WEAPON_USE] = 0;
     }
 
-    Item@ grenade = npc.GetItem(PID_FRAG_GRENADE, -1);
-    if(valid(grenade))
+    npc.SetFavoriteItem(SLOT_HAND2, 0);
+    if(isGrenadier)
     {
+        Item@ grenade = npc.GetItem(PID_FRAG_GRENADE, -1);
         // Keep one grenade available for explicit smoke-counter tactics, but do
         // not advertise/equip it as the normal battle weapon.
-        npc.SetFavoriteItem(SLOT_HAND2, 0);
-        if(grenade.CritSlot != SLOT_INV)
+        if(valid(grenade) && grenade.CritSlot != SLOT_INV)
             npc.MoveItem(grenade.Id, grenade.GetCount(), SLOT_INV);
     }
 }
