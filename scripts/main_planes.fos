@@ -34,6 +34,7 @@ import bool NpcSmokeAggroHold(Critter& npc, Critter@ target) from "main";
 // Tactical path searches are intentionally throttled: npc_plane_run is a hot path
 // and a large encounter must not evaluate a full set of destinations every frame.
 #define TACTICAL_POSITION_COOLDOWN_MS (3500)
+#define TACTICAL_MAX_REPOSITION_PATH  (uint(8))
 uint[] TacticalPositionIds;
 uint[] TacticalPositionUntil;
 
@@ -1726,15 +1727,13 @@ bool TacticalStageWhenBlocked(Map& map, Critter& npc, NpcPlane& attackPlane,
                 score += 100;
             score -= int(TacticalCrowdAt(allies, hx, hy)) * 55;
             score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 75;
-            if(dirOffset == 0)
-                score += 20;
             if(score <= bestScore)
                 continue;
 
             uint path = map.GetPathLength(npc, hx, hy, 0);
-            if(path == 0)
+            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
                 continue;
-            score -= int(MIN(path, uint(30)));
+            score -= int(path) * 25;
 
             if(score > bestScore)
             {
@@ -1758,9 +1757,6 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
     if(!valid(target) || !npc.IsCanWalk() || npc.IsBusy() || npc.IsKnockout() ||
        npc.Param[ST_DEPLOYED] != 0 || maxDist < 3)
         return false;
-    if(TacticalPositionOnCooldown(npc.Id))
-        return false;
-    TacticalSetPositionCooldown(npc.Id);
 
     Map@ map = npc.GetMap();
     if(!valid(map))
@@ -1775,21 +1771,41 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
     uint threatDist = 1;
     TacticalThreatProfile(target, threatRanged, threatDist);
 
+    // A scope preference may raise minDist to 8 even though the weapon can fire
+    // from closer. Preserve only genuine explosive safety gaps (3-5 hexes).
+    uint requiredMinDist = minDist;
+    if(minDist >= 8)
+        requiredMinDist = 1;
     uint currentDist = GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY);
-    bool currentLine = currentDist >= minDist && currentDist <= maxDist &&
+    bool currentLine = currentDist >= requiredMinDist && currentDist <= maxDist &&
                        TacticalHasLine(map, npc.HexX, npc.HexY, target.HexX, target.HexY);
+    uint currentCrowd = TacticalCrowdAt(allies, npc.HexX, npc.HexY);
+    bool currentFireLane = TacticalInFriendlyFireLane(allies, target, npc.HexX, npc.HexY);
+    bool meleePressure = target.IsPlayer() && !threatRanged && currentDist <= threatDist + 2;
+    bool closePressure = target.IsPlayer() && currentDist <= 2;
+    bool mustMove = !currentLine || currentFireLane || currentCrowd >= 2 ||
+                    meleePressure || closePressure;
+
+    // A working firing position is sticky. Cover and formation are tie-breakers
+    // only while fixing a real problem, never a reason to orbit the target.
+    if(!mustMove)
+        return false;
+    if(TacticalPositionOnCooldown(npc.Id))
+        return false;
+    TacticalSetPositionCooldown(npc.Id);
+
     int currentScore = -100000;
     if(currentLine)
     {
-        currentScore = 1000 - ABS(int(currentDist) - int(preferredDist)) * 12;
+        currentScore = 1000 - ABS(int(currentDist) - int(preferredDist)) * 4;
         if(TacticalHasNearCover(map, npc.HexX, npc.HexY, target))
-            currentScore += 140;
-        currentScore -= int(TacticalCrowdAt(allies, npc.HexX, npc.HexY)) * 60;
-        if(TacticalInFriendlyFireLane(allies, target, npc.HexX, npc.HexY))
-            currentScore -= 220;
-        if(target.IsPlayer() && !threatRanged && currentDist <= threatDist + 2)
+            currentScore += 40;
+        currentScore -= int(currentCrowd) * 80;
+        if(currentFireLane)
+            currentScore -= 300;
+        if(meleePressure)
             currentScore -= 600;
-        else if(target.IsPlayer() && currentDist <= 2)
+        else if(closePressure)
             currentScore -= 300;
         if(!TacticalTargetCanAttack(map, target, npc.HexX, npc.HexY, threatRanged, threatDist))
             currentScore += 120;
@@ -1802,48 +1818,44 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
     for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
     {
         uint dir = (seedDir + dirOffset) % 6;
-        for(uint variant = 0; variant < 3; variant++)
+        for(uint step = 1; step <= 4; step++)
         {
-            int radius = int(preferredDist) + int(variant) * 2 - 2;
-            radius = CLAMP(radius, int(minDist), int(maxDist));
-            uint16 hx = target.HexX;
-            uint16 hy = target.HexY;
-            map.MoveHexByDir(hx, hy, dir, uint(radius));
-            if(variant == 1)
-                map.MoveHexByDir(hx, hy, (dir + 2) % 6, 1);
-            else if(variant == 2)
-                map.MoveHexByDir(hx, hy, (dir + 4) % 6, 1);
+            // Search locally around the NPC. A geometrically attractive hex on
+            // the far side of the player is no longer a tactical candidate.
+            uint16 hx = npc.HexX;
+            uint16 hy = npc.HexY;
+            map.MoveHexByDir(hx, hy, dir, step);
 
             if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
                TacticalIsReserved(reservedX, reservedY, hx, hy))
                 continue;
             uint dist = GetDistantion(hx, hy, target.HexX, target.HexY);
-            if(dist < minDist || dist > maxDist ||
+            if(dist < requiredMinDist || dist > maxDist ||
                !TacticalHasLine(map, hx, hy, target.HexX, target.HexY))
                 continue;
 
-            int score = 1000 - ABS(int(dist) - int(preferredDist)) * 12;
+            uint path = map.GetPathLength(npc, hx, hy, 0);
+            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
+                continue;
+
+            // The nearest position that fixes the problem wins. Cover and desired
+            // range have deliberately small weights compared with actual travel.
+            int score = 1000 - int(path) * 70 -
+                        ABS(int(dist) - int(preferredDist)) * 4;
             if(TacticalHasNearCover(map, hx, hy, target))
-                score += 140;
-            score -= int(TacticalCrowdAt(allies, hx, hy)) * 60;
-            score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 80;
+                score += 40;
+            score -= int(TacticalCrowdAt(allies, hx, hy)) * 80;
+            score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 100;
             if(TacticalInFriendlyFireLane(allies, target, hx, hy))
-                score -= 220;
+                score -= 300;
             if(target.IsPlayer() && !threatRanged && dist <= threatDist + 2)
                 score -= 600;
             else if(target.IsPlayer() && dist <= 2)
                 score -= 300;
             if(!TacticalTargetCanAttack(map, target, hx, hy, threatRanged, threatDist))
                 score += 120;
-            if(dirOffset == 0)
-                score += 35;
             if(score <= bestScore)
                 continue;
-
-            uint path = map.GetPathLength(npc, hx, hy, 0);
-            if(path == 0)
-                continue;
-            score -= int(MIN(path, uint(30)));
 
             if(score > bestScore)
             {
@@ -1854,7 +1866,7 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
         }
     }
 
-    if(bestScore > currentScore + 35)
+    if(bestScore > currentScore + 20)
         return TacticalAddMove(npc, attackPlane, target, bestX, bestY);
     if(!currentLine && bestScore == -100000)
         return TacticalStageWhenBlocked(map, npc, attackPlane, target, allies,
@@ -1914,15 +1926,13 @@ bool TacticalRepositionMelee(Critter& npc, NpcPlane& attackPlane, Critter@ targe
             score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 80;
             if(TacticalInFriendlyFireLane(allies, target, hx, hy))
                 score -= 250;
-            if(dirOffset == 0)
-                score += 35;
             if(score <= bestScore)
                 continue;
 
             uint path = map.GetPathLength(npc, hx, hy, 0);
-            if(path == 0)
+            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
                 continue;
-            score -= int(MIN(path, uint(30)));
+            score -= int(path) * 25;
 
             if(score > bestScore)
             {

@@ -47,9 +47,15 @@ import void StatDungeonReward(Item@ it) from "item_bonus";
 #define GRESERVE_MDATA_REWARD_DONE  (20)
 
 // Defender maintenance. Team 5 is used by reserve defenders in the map file.
+// Only a local fire team joins at once; the alarm follows the player through
+// the reserve and restores attack planes dropped after a temporary loss of sight.
 #define GRESERVE_DEFENDER_TEAM       (5)
 #define GRESERVE_DEFENDER_COUNT      (31)
 #define GRESERVE_RESPAWN_MINUTES     (30)
+#define GRESERVE_REINFORCE_RADIUS    (uint(15))
+#define GRESERVE_AGGRO_RADIUS        (uint(10))
+#define GRESERVE_MAX_ATTACKERS       (uint(5))
+#define GRESERVE_MDATA_ALARM_TARGET  (21)
 #define GRESERVE_MDATA_WAVE_CLEARED  (22)
 #define GRESERVE_MDATA_RESET_PENDING (23)
 #define GRESERVE_MAINTENANCE_LOOP_MS (1500)
@@ -135,13 +141,22 @@ void _GReserveEnsureEquipment(Critter& npc)
         weapon.AmmoCount = weapon.Proto.Weapon_MaxAmmoCount;
         npc.SetFavoriteItem(SLOT_HAND1, weaponPid);
         npc.MoveItem(weapon.Id, 1, SLOT_HAND1);
+
+        // The AI caches its last selected weapon. Defenders used to keep the
+        // grenade id cached after their loadout was replaced and, together with
+        // unlimited ammo, consequently threw the same grenade forever.
+        npc.StatBase[ST_LAST_WEAPON_ID] = weapon.Id;
+        npc.StatBase[ST_LAST_WEAPON_USE] = 0;
     }
 
     Item@ grenade = npc.GetItem(PID_FRAG_GRENADE, -1);
     if(valid(grenade))
     {
-        npc.SetFavoriteItem(SLOT_HAND2, PID_FRAG_GRENADE);
-        npc.MoveItem(grenade.Id, grenade.GetCount(), SLOT_HAND2);
+        // Keep one grenade available for explicit smoke-counter tactics, but do
+        // not advertise/equip it as the normal battle weapon.
+        npc.SetFavoriteItem(SLOT_HAND2, 0);
+        if(grenade.CritSlot != SLOT_INV)
+            npc.MoveItem(grenade.Id, grenade.GetCount(), SLOT_INV);
     }
 }
 
@@ -177,6 +192,8 @@ void _GReserveSetupDefender(Map& map, Critter& npc, bool repairHex)
 
     npc.StatBase[ST_REPLICATION_TIME] = REPLICATION_MINUTE(GRESERVE_RESPAWN_MINUTES);
     npc.ModeBase[MODE_UNLIMITED_AMMO] = 1;
+    npc.SetEvent(CRITTER_EVENT_ATTACKED, "_GReserveDefenderAttacked");
+    npc.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_GReserveDefenderShowCritter");
     if(repairHex && !npc.IsDead())
         _GReserveEnsureEquipment(npc);
     if(repairHex && !npc.IsDead())
@@ -197,8 +214,144 @@ void _GReserveSetupDefenders(Map& map, bool repairHex)
 
 void _GReserveCritterIn(Map& map, Critter& cr)
 {
-    if(cr.IsNpc())
-        _GReserveSetupDefender(map, cr, true);
+    if(!cr.IsNpc())
+        return;
+
+    // MAP_EVENT_IN_CRITTER runs with map transfers locked, so TransitToHex from
+    // _GReserveRepairBlockedHex cannot succeed here. Equip now and let the first
+    // unlocked maintenance tick repair an invalid spawn hex.
+    _GReserveSetupDefender(map, cr, false);
+    if(_GReserveIsDefender(cr) && !cr.IsDead())
+        _GReserveEnsureEquipment(cr);
+}
+
+bool _GReserveHasEnemy(Critter& npc, uint enemyId)
+{
+    array<uint> enemies;
+    npc.GetEnemyStack(enemies);
+    for(uint i = 0; i < enemies.length(); i++)
+    {
+        if(enemies[i] == enemyId)
+            return true;
+    }
+    return false;
+}
+
+bool _GReserveHasAttackPlane(Critter& npc, uint targetId)
+{
+    array<NpcPlane@> planes;
+    npc.GetPlanes(planes);
+    for(uint i = 0; i < planes.length(); i++)
+    {
+        if(valid(planes[i]) && planes[i].Type == AI_PLANE_ATTACK &&
+           planes[i].Attack_TargId == targetId)
+            return true;
+    }
+    return false;
+}
+
+bool _GReserveIsEngagedWith(Critter& npc, uint targetId)
+{
+    return _GReserveHasEnemy(npc, targetId) || _GReserveHasAttackPlane(npc, targetId);
+}
+
+void _GReserveEngage(Critter& defender, Critter& attacker)
+{
+    defender.AddEnemyInStack(attacker.Id);
+    if(!_GReserveHasAttackPlane(defender, attacker.Id))
+        AddAttackPlane(defender, 0, attacker);
+}
+
+uint _GReserveCountAttackers(Map& map, Critter& attacker)
+{
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+    uint active = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        if(_GReserveIsDefender(npcs[i]) && _GReserveIsEngagedWith(npcs[i], attacker.Id))
+            active++;
+    }
+    return active;
+}
+
+bool _GReserveTryEngage(Map& map, Critter& defender, Critter& attacker, bool force)
+{
+    if(_GReserveIsEngagedWith(defender, attacker.Id))
+    {
+        _GReserveEngage(defender, attacker);
+        return true;
+    }
+
+    if(_GReserveCountAttackers(map, attacker) >= GRESERVE_MAX_ATTACKERS && !force)
+        return false;
+
+    _GReserveEngage(defender, attacker);
+    return true;
+}
+
+void _GReserveCallReinforcements(Map& map, Critter& caller, Critter& attacker)
+{
+    array<Critter@> npcs;
+    uint count = map.GetCrittersHex(caller.HexX, caller.HexY, GRESERVE_REINFORCE_RADIUS,
+                                   FIND_ONLY_NPC | FIND_LIFE, npcs);
+    uint active = _GReserveCountAttackers(map, attacker);
+    while(active < GRESERVE_MAX_ATTACKERS)
+    {
+        Critter@ closest = null;
+        uint closestScore = 0;
+        for(uint i = 0; i < count; i++)
+        {
+            Critter@ defender = npcs[i];
+            if(!_GReserveIsDefender(defender) || _GReserveIsEngagedWith(defender, attacker.Id))
+                continue;
+
+            uint score = GetCrittersDistantion(defender, caller) +
+                         GetCrittersDistantion(defender, attacker);
+            if(!valid(closest) || score < closestScore)
+            {
+                @closest = defender;
+                closestScore = score;
+            }
+        }
+        if(!valid(closest))
+            return;
+
+        _GReserveEngage(closest, attacker);
+        active++;
+    }
+}
+
+// The attack itself proceeds; this handler only establishes and shares aggro.
+bool _GReserveDefenderAttacked(Critter& defender, Critter& attacker)
+{
+    if(!_GReserveIsDefender(defender) || !valid(attacker) || attacker.IsDead() ||
+       _GReserveIsDefender(attacker))
+        return false;
+
+    Map@ map = defender.GetMap();
+    if(!valid(map))
+        return false;
+
+    map.SetData(GRESERVE_MDATA_ALARM_TARGET, attacker.Id);
+    _GReserveTryEngage(map, defender, attacker, true);
+    _GReserveCallReinforcements(map, defender, attacker);
+    return false;
+}
+
+// LA Gold Reserve is a hostile dungeon: every living player is attacked on sight.
+void _GReserveDefenderShowCritter(Critter& defender, Critter& target)
+{
+    if(!_GReserveIsDefender(defender) || !target.IsPlayer() || target.IsDead())
+        return;
+
+    Map@ map = defender.GetMap();
+    if(!valid(map))
+        return;
+
+    map.SetData(GRESERVE_MDATA_ALARM_TARGET, target.Id);
+    _GReserveTryEngage(map, defender, target, false);
+    _GReserveCallReinforcements(map, defender, target);
 }
 
 bool _GReserveRestoreLock(Item& item)
@@ -300,6 +453,7 @@ void _GReserveProcessRespawnCycle(Map& map)
     // A complete living roster starts a new reward/lock cycle. If a doorway is
     // occupied, keep retrying its close operation on following map loops.
     map.SetData(GRESERVE_MDATA_REWARD_DONE, 0);
+    map.SetData(GRESERVE_MDATA_ALARM_TARGET, 0);
     if(_GReserveRestoreLocks(map))
     {
         map.SetData(GRESERVE_MDATA_WAVE_CLEARED, 0);
@@ -311,6 +465,72 @@ void _GReserveMaintenanceLoop(Map& map)
 {
     _GReserveSetupDefenders(map, false); // also covers replicated NPCs after regen
     _GReserveProcessRespawnCycle(map);
+
+    array<Critter@> npcs;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, npcs);
+
+    // Respawn entry events cannot move critters while map transfers are locked.
+    // The first maintenance tick is outside that lock and safely repairs them.
+    for(uint i = 0; i < count; i++)
+    {
+        if(_GReserveIsDefender(npcs[i]))
+            _GReserveRepairBlockedHex(map, npcs[i]);
+    }
+
+    uint targetId = map.GetData(GRESERVE_MDATA_ALARM_TARGET);
+    if(targetId == 0)
+        return;
+
+    Critter@ attacker = GetCritter(targetId);
+    if(!valid(attacker) || attacker.IsDead() || attacker.GetMapId() != map.Id)
+    {
+        map.SetData(GRESERVE_MDATA_ALARM_TARGET, 0);
+        return;
+    }
+
+    // Preserve every existing participant even if the standard AI discarded its
+    // plane after a temporary trace/visibility failure.
+    Critter@ caller = null;
+    uint callerDist = 0;
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ defender = npcs[i];
+        if(!_GReserveIsDefender(defender) || !_GReserveIsEngagedWith(defender, attacker.Id))
+            continue;
+
+        _GReserveEngage(defender, attacker);
+        uint dist = GetCrittersDistantion(defender, attacker);
+        if(!valid(caller) || dist < callerDist)
+        {
+            @caller = defender;
+            callerDist = dist;
+        }
+    }
+
+    // If all planes were already lost, reacquire from the closest defender near
+    // the player. This keeps aggro moving from room to room without waking the
+    // entire dungeon through closed doors.
+    if(!valid(caller))
+    {
+        for(uint i = 0; i < count; i++)
+        {
+            Critter@ defender = npcs[i];
+            if(!_GReserveIsDefender(defender))
+                continue;
+
+            uint dist = GetCrittersDistantion(defender, attacker);
+            if(dist <= GRESERVE_AGGRO_RADIUS && (!valid(caller) || dist < callerDist))
+            {
+                @caller = defender;
+                callerDist = dist;
+            }
+        }
+        if(valid(caller))
+            _GReserveTryEngage(map, caller, attacker, false);
+    }
+
+    if(valid(caller))
+        _GReserveCallReinforcements(map, caller, attacker);
 }
 
 // Opens every door matched by a key carried by an NPC at the moment of death.
