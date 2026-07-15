@@ -31,6 +31,12 @@ import void MoveMobToFreeHex(Critter& mob) from "mob_dynamic";
 import int  _AbominationMinionAim(Critter& npc, Critter& target) from "eventboss";
 import bool NpcSmokeAggroHold(Critter& npc, Critter@ target) from "main";
 
+// Tactical path searches are intentionally throttled: npc_plane_run is a hot path
+// and a large encounter must not evaluate a full set of destinations every frame.
+#define TACTICAL_POSITION_COOLDOWN_MS (3500)
+uint[] TacticalPositionIds;
+uint[] TacticalPositionUntil;
+
 //companion SF overstack
 //import void MoveCompToFreeHex(Critter& cr) from "companions";
 #define COMPANION_DIALOG_PRE_ID       (9321)
@@ -829,6 +835,11 @@ bool npc_plane_end(Critter& npc, NpcPlane& plane, int reason, Critter@ someCr, I
     {
         return true;
     }
+    if(plane.Identifier == PLANE_TACTICAL_POSITION)
+    {
+        TacticalClearPositionCooldown(npc.Id);
+        return true;
+    }
     switch(reason)
     {
     //case REASON_TRACE_FAIL:
@@ -1139,6 +1150,11 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
                 r1 = 1 + multihex;
                 r2 = (wpnDist > 1 ? 2 : 1) + multihex + reach;
                 r0 = (reach > 0 ? r2 : 1 + multihex);    // reach attackers prefer to strike from their max reach
+
+                // Reserve one of the actually reachable attack hexes. If a doorway exposes only
+                // a single melee slot, one NPC takes it while the rest spread into safe staging
+                // positions instead of forming a helpless queue in the player's line of fire.
+                TacticalRepositionMelee(npc, plane, target, uint(r2));
             }
             return true;
         }
@@ -1324,6 +1340,12 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
                 r0 = CLAMP(best, lo, hi);
             }
 
+            // Prefer a distinct firing sector with a clean line, nearby cover and room for allies.
+            // A close melee player makes distance/safety much more valuable, so ranged NPCs kite
+            // if the map offers a reachable escape hex.
+            TacticalRepositionRanged(npc, plane, target, uint(r0 + multihex),
+                                     uint(r1 + multihex), uint(r2 + multihex));
+
             // Multihex
             r0 += multihex;
             r1 += multihex;
@@ -1392,14 +1414,540 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
     return false;
 }
 
+bool TacticalAttacksTarget(Critter& npc, uint targetId)
+{
+    array<NpcPlane@> planes;
+    npc.GetPlanes(planes);
+    for(uint i = 0; i < planes.length(); i++)
+    {
+        if(valid(planes[i]) && planes[i].Type == AI_PLANE_ATTACK &&
+           planes[i].Attack_TargId == targetId)
+            return true;
+    }
+    return false;
+}
+
+bool TacticalIsAlly(Critter& npc, Critter& other)
+{
+    if(npc.Id == other.Id || !other.IsNpc())
+        return false;
+    if(IsCurrentEnemy(npc, other.Id) || IsCurrentEnemy(other, npc.Id))
+        return false;
+
+    int group = _GroupIndex(npc);
+    if(group > FACTION_NONE && group == _GroupIndex(other))
+        return true;
+
+    int team = npc.Stat[ST_TEAM_ID];
+    if(team != 0 && team == other.Stat[ST_TEAM_ID])
+        return true;
+
+    // Some encounter mobs use neither a faction nor a non-zero team. If both are
+    // already attacking the same target (checked by the caller) and do not regard
+    // each other as enemies, they may still share firing-space reservations.
+    return true;
+}
+
+void TacticalCollectAllies(Map& map, Critter& npc, Critter& target,
+                           array<Critter@>& allies, array<uint16>& reservedX,
+                           array<uint16>& reservedY)
+{
+    array<Critter@> critters;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, critters);
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ ally = critters[i];
+        if(!valid(ally) || !TacticalIsAlly(npc, ally) ||
+           !TacticalAttacksTarget(ally, target.Id))
+            continue;
+
+        allies.insertLast(ally);
+        array<NpcPlane@> moves;
+        ally.GetPlanes(PLANE_TACTICAL_POSITION, moves);
+        for(uint p = 0; p < moves.length(); p++)
+        {
+            if(valid(moves[p]) && moves[p].Type == AI_PLANE_WALK &&
+               moves[p].IdentifierExt == target.Id)
+            {
+                reservedX.insertLast(moves[p].Walk_HexX);
+                reservedY.insertLast(moves[p].Walk_HexY);
+            }
+        }
+    }
+}
+
+bool TacticalHasLine(Map& map, uint16 hx, uint16 hy, uint16 tx, uint16 ty)
+{
+    uint dist = GetDistantion(hx, hy, tx, ty);
+    if(dist == 0)
+        return true;
+
+    uint16 lineX = tx;
+    uint16 lineY = ty;
+    map.GetHexCoord(hx, hy, lineX, lineY, 0.0f, dist);
+    return lineX == tx && lineY == ty;
+}
+
+bool TacticalHasNearCover(Map& map, uint16 hx, uint16 hy, Critter& target)
+{
+    if(GetDistantion(hx, hy, target.HexX, target.HexY) <= 1)
+        return false;
+
+    uint16 coverX = hx;
+    uint16 coverY = hy;
+    map.MoveHexByDir(coverX, coverY, GetDirection(hx, hy, target.HexX, target.HexY), 1);
+    return map.IsHexRaked(coverX, coverY) && !map.IsHexPassed(coverX, coverY) &&
+           !valid(map.GetCritter(coverX, coverY));
+}
+
+bool TacticalPositionOnCooldown(uint npcId)
+{
+    for(uint i = 0; i < TacticalPositionIds.length();)
+    {
+        if(TacticalPositionUntil[i] <= __FullSecond)
+        {
+            TacticalPositionIds.removeAt(i);
+            TacticalPositionUntil.removeAt(i);
+            continue;
+        }
+        if(TacticalPositionIds[i] == npcId)
+            return true;
+        i++;
+    }
+    return false;
+}
+
+void TacticalSetPositionCooldown(uint npcId)
+{
+    TacticalPositionIds.insertLast(npcId);
+    TacticalPositionUntil.insertLast(__FullSecond + REAL_MS(TACTICAL_POSITION_COOLDOWN_MS));
+}
+
+void TacticalClearPositionCooldown(uint npcId)
+{
+    for(uint i = 0; i < TacticalPositionIds.length(); i++)
+    {
+        if(TacticalPositionIds[i] == npcId)
+        {
+            TacticalPositionIds.removeAt(i);
+            TacticalPositionUntil.removeAt(i);
+            return;
+        }
+    }
+}
+
+uint TacticalCrowdAt(array<Critter@>& allies, uint16 hx, uint16 hy)
+{
+    uint crowd = 0;
+    for(uint i = 0; i < allies.length(); i++)
+    {
+        if(valid(allies[i]) && GetDistantion(hx, hy, allies[i].HexX, allies[i].HexY) <= 2)
+            crowd++;
+    }
+    return crowd;
+}
+
+uint TacticalReservationsNear(array<uint16>& reservedX, array<uint16>& reservedY,
+                              uint16 hx, uint16 hy)
+{
+    uint count = 0;
+    for(uint i = 0; i < reservedX.length(); i++)
+    {
+        if(GetDistantion(hx, hy, reservedX[i], reservedY[i]) <= 1)
+            count++;
+    }
+    return count;
+}
+
+bool TacticalIsReserved(array<uint16>& reservedX, array<uint16>& reservedY,
+                        uint16 hx, uint16 hy)
+{
+    for(uint i = 0; i < reservedX.length(); i++)
+    {
+        if(reservedX[i] == hx && reservedY[i] == hy)
+            return true;
+    }
+    return false;
+}
+
+bool TacticalWeaponFireProfile(ProtoItem@ weapon, uint& maxDist, bool& cascade)
+{
+    if(!valid(weapon))
+        return false;
+
+    bool burst = false;
+    cascade = false;
+    maxDist = 0;
+    for(uint use = 0; use < 3; use++)
+    {
+        if((weapon.Weapon_ActiveUses & (1 << use)) == 0)
+            continue;
+        if(_WeaponMaxDist(weapon, use) > 2)
+            maxDist = MAX(maxDist, uint(_WeaponMaxDist(weapon, use)));
+        if(_WeaponRound(weapon, use) > 1)
+            burst = true;
+    }
+    cascade = burst && WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE);
+    return maxDist > 2;
+}
+
+bool TacticalInFriendlyFireLane(array<Critter@>& allies, Critter& target,
+                                uint16 hx, uint16 hy)
+{
+    for(uint i = 0; i < allies.length(); i++)
+    {
+        Critter@ gunner = allies[i];
+        uint8 mode = 0;
+        ProtoItem@ weapon = gunner.GetSlotProto(SLOT_HAND1, mode);
+        uint maxDist = 0;
+        bool cascade = false;
+        if(!TacticalWeaponFireProfile(weapon, maxDist, cascade))
+            continue;
+
+        uint toTarget = GetDistantion(gunner.HexX, gunner.HexY, target.HexX, target.HexY);
+        uint toHex = GetDistantion(gunner.HexX, gunner.HexY, hx, hy);
+        if(toHex == 0 || toHex >= toTarget || toHex > maxDist)
+            continue;
+
+        uint hexToTarget = GetDistantion(hx, hy, target.HexX, target.HexY);
+        if(toHex + hexToTarget <= toTarget + 1)
+            return true;
+
+        if(cascade)
+        {
+            int targetDir = GetDirection(gunner.HexX, gunner.HexY, target.HexX, target.HexY);
+            int hexDir = GetDirection(gunner.HexX, gunner.HexY, hx, hy);
+            int delta = ABS(targetDir - hexDir);
+            if(delta > 3)
+                delta = 6 - delta;
+            if(delta <= 1)
+                return true;
+        }
+    }
+    return false;
+}
+
+void TacticalThreatProfile(Critter& target, bool& ranged, uint& maxDist)
+{
+    uint8 mode = 0;
+    ProtoItem@ weapon = target.GetSlotProto(SLOT_HAND1, mode);
+    if(!valid(weapon))
+    {
+        ranged = false;
+        maxDist = 1 + target.GetMultihex();
+        return;
+    }
+
+    int use = _WeaponModeUse(mode);
+    ranged = _WeaponSkill(weapon, use) != SK_CLOSE_COMBAT && _WeaponMaxDist(weapon, use) > 2;
+    maxDist = uint(MAX(1, _WeaponMaxDist(weapon, use))) + target.GetMultihex();
+}
+
+bool TacticalTargetCanAttack(Map& map, Critter& target, uint16 hx, uint16 hy,
+                             bool threatRanged, uint threatDist)
+{
+    if(GetDistantion(target.HexX, target.HexY, hx, hy) > threatDist)
+        return false;
+    return !threatRanged || TacticalHasLine(map, target.HexX, target.HexY, hx, hy);
+}
+
+bool TacticalAddMove(Critter& npc, NpcPlane& attackPlane, Critter& target,
+                     uint16 hx, uint16 hy)
+{
+    array<NpcPlane@> pending;
+    npc.GetPlanes(PLANE_TACTICAL_POSITION, pending);
+    if(pending.length() > 0)
+        return false;
+
+    return AddWalkPlane(npc, attackPlane.Priority + 5, PLANE_TACTICAL_POSITION,
+                        target.Id, hx, hy,
+                        uint8(GetDirection(hx, hy, target.HexX, target.HexY)), true, 0);
+}
+
+bool TacticalAddWait(Critter& npc, NpcPlane& attackPlane, Critter& target)
+{
+    array<NpcPlane@> pending;
+    npc.GetPlanes(PLANE_TACTICAL_POSITION, pending);
+    if(pending.length() > 0)
+        return false;
+
+    return AddMiscPlane(npc, attackPlane.Priority + 5, PLANE_TACTICAL_POSITION,
+                        target.Id, AFTER(REAL_MS(Random(TACTICAL_POSITION_COOLDOWN_MS,
+                                                       TACTICAL_POSITION_COOLDOWN_MS + 700))), null);
+}
+
+bool TacticalStageWhenBlocked(Map& map, Critter& npc, NpcPlane& attackPlane,
+                              Critter& target, array<Critter@>& allies,
+                              array<uint16>& reservedX, array<uint16>& reservedY,
+                              uint desiredDist)
+{
+    bool threatRanged = false;
+    uint threatDist = 1;
+    TacticalThreatProfile(target, threatRanged, threatDist);
+
+    bool currentHidden = !TacticalHasLine(map, target.HexX, target.HexY, npc.HexX, npc.HexY);
+    bool currentSafe = !TacticalTargetCanAttack(map, target, npc.HexX, npc.HexY,
+                                                threatRanged, threatDist);
+    int currentScore = -100000;
+    if(currentSafe)
+    {
+        currentScore = 500;
+        if(currentHidden)
+            currentScore += 300;
+        if(TacticalHasNearCover(map, npc.HexX, npc.HexY, target))
+            currentScore += 100;
+        currentScore -= int(TacticalCrowdAt(allies, npc.HexX, npc.HexY)) * 55;
+    }
+
+    int bestScore = -100000;
+    uint16 bestX = 0;
+    uint16 bestY = 0;
+    uint seedDir = npc.Id % 6;
+    for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
+    {
+        uint dir = (seedDir + dirOffset) % 6;
+        for(uint step = 1; step <= 5; step++)
+        {
+            uint16 hx = npc.HexX;
+            uint16 hy = npc.HexY;
+            map.MoveHexByDir(hx, hy, dir, step);
+            if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+               TacticalIsReserved(reservedX, reservedY, hx, hy))
+                continue;
+            if(TacticalTargetCanAttack(map, target, hx, hy, threatRanged, threatDist))
+                continue;
+
+            bool hidden = !TacticalHasLine(map, target.HexX, target.HexY, hx, hy);
+            uint dist = GetDistantion(hx, hy, target.HexX, target.HexY);
+            int score = 500 - ABS(int(dist) - int(desiredDist)) * 10;
+            if(hidden)
+                score += 300;
+            if(TacticalHasNearCover(map, hx, hy, target))
+                score += 100;
+            score -= int(TacticalCrowdAt(allies, hx, hy)) * 55;
+            score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 75;
+            if(dirOffset == 0)
+                score += 20;
+            if(score <= bestScore)
+                continue;
+
+            uint path = map.GetPathLength(npc, hx, hy, 0);
+            if(path == 0)
+                continue;
+            score -= int(MIN(path, uint(30)));
+
+            if(score > bestScore)
+            {
+                bestScore = score;
+                bestX = hx;
+                bestY = hy;
+            }
+        }
+    }
+
+    if(bestScore > currentScore + 25)
+        return TacticalAddMove(npc, attackPlane, target, bestX, bestY);
+    if(currentSafe)
+        return TacticalAddWait(npc, attackPlane, target);
+    return false;
+}
+
+bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ target,
+                              uint preferredDist, uint minDist, uint maxDist)
+{
+    if(!valid(target) || !npc.IsCanWalk() || npc.IsBusy() || npc.IsKnockout() ||
+       npc.Param[ST_DEPLOYED] != 0 || maxDist < 3)
+        return false;
+    if(TacticalPositionOnCooldown(npc.Id))
+        return false;
+    TacticalSetPositionCooldown(npc.Id);
+
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+
+    array<Critter@> allies;
+    array<uint16> reservedX;
+    array<uint16> reservedY;
+    TacticalCollectAllies(map, npc, target, allies, reservedX, reservedY);
+
+    bool threatRanged = false;
+    uint threatDist = 1;
+    TacticalThreatProfile(target, threatRanged, threatDist);
+
+    uint currentDist = GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY);
+    bool currentLine = currentDist >= minDist && currentDist <= maxDist &&
+                       TacticalHasLine(map, npc.HexX, npc.HexY, target.HexX, target.HexY);
+    int currentScore = -100000;
+    if(currentLine)
+    {
+        currentScore = 1000 - ABS(int(currentDist) - int(preferredDist)) * 12;
+        if(TacticalHasNearCover(map, npc.HexX, npc.HexY, target))
+            currentScore += 140;
+        currentScore -= int(TacticalCrowdAt(allies, npc.HexX, npc.HexY)) * 60;
+        if(TacticalInFriendlyFireLane(allies, target, npc.HexX, npc.HexY))
+            currentScore -= 220;
+        if(target.IsPlayer() && !threatRanged && currentDist <= threatDist + 2)
+            currentScore -= 600;
+        else if(target.IsPlayer() && currentDist <= 2)
+            currentScore -= 300;
+        if(!TacticalTargetCanAttack(map, target, npc.HexX, npc.HexY, threatRanged, threatDist))
+            currentScore += 120;
+    }
+
+    int bestScore = -100000;
+    uint16 bestX = 0;
+    uint16 bestY = 0;
+    uint seedDir = npc.Id % 6;
+    for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
+    {
+        uint dir = (seedDir + dirOffset) % 6;
+        for(uint variant = 0; variant < 3; variant++)
+        {
+            int radius = int(preferredDist) + int(variant) * 2 - 2;
+            radius = CLAMP(radius, int(minDist), int(maxDist));
+            uint16 hx = target.HexX;
+            uint16 hy = target.HexY;
+            map.MoveHexByDir(hx, hy, dir, uint(radius));
+            if(variant == 1)
+                map.MoveHexByDir(hx, hy, (dir + 2) % 6, 1);
+            else if(variant == 2)
+                map.MoveHexByDir(hx, hy, (dir + 4) % 6, 1);
+
+            if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+               TacticalIsReserved(reservedX, reservedY, hx, hy))
+                continue;
+            uint dist = GetDistantion(hx, hy, target.HexX, target.HexY);
+            if(dist < minDist || dist > maxDist ||
+               !TacticalHasLine(map, hx, hy, target.HexX, target.HexY))
+                continue;
+
+            int score = 1000 - ABS(int(dist) - int(preferredDist)) * 12;
+            if(TacticalHasNearCover(map, hx, hy, target))
+                score += 140;
+            score -= int(TacticalCrowdAt(allies, hx, hy)) * 60;
+            score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 80;
+            if(TacticalInFriendlyFireLane(allies, target, hx, hy))
+                score -= 220;
+            if(target.IsPlayer() && !threatRanged && dist <= threatDist + 2)
+                score -= 600;
+            else if(target.IsPlayer() && dist <= 2)
+                score -= 300;
+            if(!TacticalTargetCanAttack(map, target, hx, hy, threatRanged, threatDist))
+                score += 120;
+            if(dirOffset == 0)
+                score += 35;
+            if(score <= bestScore)
+                continue;
+
+            uint path = map.GetPathLength(npc, hx, hy, 0);
+            if(path == 0)
+                continue;
+            score -= int(MIN(path, uint(30)));
+
+            if(score > bestScore)
+            {
+                bestScore = score;
+                bestX = hx;
+                bestY = hy;
+            }
+        }
+    }
+
+    if(bestScore > currentScore + 35)
+        return TacticalAddMove(npc, attackPlane, target, bestX, bestY);
+    if(!currentLine && bestScore == -100000)
+        return TacticalStageWhenBlocked(map, npc, attackPlane, target, allies,
+                                        reservedX, reservedY, preferredDist);
+    return false;
+}
+
+bool TacticalRepositionMelee(Critter& npc, NpcPlane& attackPlane, Critter@ target,
+                             uint attackReach)
+{
+    if(!valid(target) || !npc.IsCanWalk() || npc.IsBusy() || npc.IsKnockout() ||
+       npc.Param[ST_DEPLOYED] != 0)
+        return false;
+    if(TacticalPositionOnCooldown(npc.Id))
+        return false;
+    TacticalSetPositionCooldown(npc.Id);
+
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+
+    array<Critter@> allies;
+    array<uint16> reservedX;
+    array<uint16> reservedY;
+    TacticalCollectAllies(map, npc, target, allies, reservedX, reservedY);
+
+    uint currentDist = GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY);
+    bool currentCanAttack = currentDist <= attackReach &&
+                            TacticalHasLine(map, npc.HexX, npc.HexY, target.HexX, target.HexY);
+    int currentScore = -100000;
+    if(currentCanAttack)
+    {
+        currentScore = 1000 - int(TacticalCrowdAt(allies, npc.HexX, npc.HexY)) * 45;
+        if(TacticalInFriendlyFireLane(allies, target, npc.HexX, npc.HexY))
+            currentScore -= 250;
+    }
+
+    int bestScore = -100000;
+    uint16 bestX = 0;
+    uint16 bestY = 0;
+    uint seedDir = npc.Id % 6;
+    for(uint ring = 1; ring <= attackReach; ring++)
+    {
+        for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
+        {
+            uint dir = (seedDir + dirOffset) % 6;
+            uint16 hx = target.HexX;
+            uint16 hy = target.HexY;
+            map.MoveHexByDir(hx, hy, dir, ring);
+            if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+               TacticalIsReserved(reservedX, reservedY, hx, hy) ||
+               !TacticalHasLine(map, hx, hy, target.HexX, target.HexY))
+                continue;
+
+            int score = 1000 - int(ring - 1) * 20;
+            score -= int(TacticalCrowdAt(allies, hx, hy)) * 45;
+            score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 80;
+            if(TacticalInFriendlyFireLane(allies, target, hx, hy))
+                score -= 250;
+            if(dirOffset == 0)
+                score += 35;
+            if(score <= bestScore)
+                continue;
+
+            uint path = map.GetPathLength(npc, hx, hy, 0);
+            if(path == 0)
+                continue;
+            score -= int(MIN(path, uint(30)));
+
+            if(score > bestScore)
+            {
+                bestScore = score;
+                bestX = hx;
+                bestY = hy;
+            }
+        }
+    }
+
+    if(bestScore > currentScore + (currentCanAttack ? 70 : 0))
+        return TacticalAddMove(npc, attackPlane, target, bestX, bestY);
+
+    // No reachable attack slot means a choke is full. Stay outside the player's
+    // reach/line of fire and retry after a short delay instead of queuing behind
+    // the one NPC that can currently fight.
+    if(!currentCanAttack && bestScore == -100000)
+        return TacticalStageWhenBlocked(map, npc, attackPlane, target, allies,
+                                        reservedX, reservedY, attackReach + 3);
+    return false;
+}
+
 // TODO more general version, this will cover all our weapons though
 bool CogitateFiring(Critter& cr, uint& mode, uint& aim)   // in: targetId, 0; out: mode, aim
 {
-    Map@ cognitionMap = cr.GetMap();
-    bool tacticalReserve = valid(cognitionMap) && cognitionMap.GetProtoId() == MAP_NCRLAGoldReserve;
-    if(!tacticalReserve && Random(1, 10) > cr.Stat[ST_INTELLECT])
-        return false;                                     // too stupid to think about this
-
     Critter@ target = GetCritter(mode);
     if(!valid(target))
         return false;
@@ -1422,6 +1970,18 @@ bool CogitateFiring(Critter& cr, uint& mode, uint& aim)   // in: targetId, 0; ou
     ProtoItem@ protoAmmo = null;
     if(weapon.AmmoPid != 0)
         @protoAmmo = GetProtoItem(weapon.AmmoPid);
+
+    // Keep the old intellect-based deliberation for ordinary attacks, but every
+    // weapon that genuinely offers single primary + burst secondary evaluates
+    // those two modes. This makes the requested mode choice global without also
+    // turning every low-intelligence NPC into a perfect aimed-shot calculator.
+    bool hasSingleAndBurst = _WeaponIsPrimaryAviable(protoWeapon) &&
+                             protoWeapon.Weapon_Round_0 <= 1 &&
+                             _WeaponIsSecondaryAviable(protoWeapon) &&
+                             _WeaponRound(protoWeapon, 1) > 1;
+    if(!hasSingleAndBurst && Random(1, 10) > cr.Stat[ST_INTELLECT])
+        return false;
+
     if(protoWeapon.Weapon_Skill_0 == SK_CLOSE_COMBAT)  // assuming all modes melee
     {
         mode = 0;
@@ -1605,10 +2165,6 @@ bool ValidateBurst(Critter& cr, Critter& target, ProtoItem@ weapon, uint mode)
     if(!valid(map))
         return false;
 
-    bool tacticalReserve = map.GetProtoId() == MAP_NCRLAGoldReserve;
-    if(!tacticalReserve && Random(0, 2) == 0)
-        return false;                 // retain the ordinary NPC shot diversity
-
     // CogitateFiring receives the target id in `mode`. The burst offered by
     // this branch is the weapon's secondary use, not that temporary input value.
     const uint burstUse = 1;
@@ -1623,6 +2179,8 @@ bool ValidateBurst(Critter& cr, Critter& target, ProtoItem@ weapon, uint mode)
     uint16   hy = cr.HexY;
     uint16   tx = target.HexX;
     uint16   ty = target.HexY;
+    if(GetDistantion(hx, hy, tx, ty) > maxDist + cr.GetMultihex() + target.GetMultihex())
+        return false;
     Critter@ blocker = TraceFirstCritter(hx, hy, tx, ty, map, maxDist, hx, hy, 0);
     if(valid(blocker) && !IsCurrentEnemy(cr, blocker.Id))
     {
@@ -1658,31 +2216,26 @@ bool ValidateBurst(Critter& cr, Critter& target, ProtoItem@ weapon, uint mode)
         return false;
     }
 
-    if(tacticalReserve)
-    {
-        // Compare expected hit volume per AP after physical/smoke cover has
-        // absorbed part of the burst. This deliberately keeps a profitable
-        // burst instead of rejecting it merely because cover is present.
-        uint rounds = _WeaponRound(weapon, burstUse);
-        Item@ hand = cr.GetItem(0, SLOT_HAND1);
-        if(valid(hand) && weapon.Weapon_MaxAmmoCount > 0 && cr.Mode[MODE_UNLIMITED_AMMO] == 0)
-            rounds = MIN(rounds, hand.AmmoCount);
-        uint effectiveRounds = ApplyCoverLoss(map, hx, hy, tx, ty, target, rounds);
-        if(effectiveRounds <= 1)
-            return false;
+    // Compare expected hit volume per AP after physical/smoke cover has absorbed
+    // part of the burst. Every NPC now makes this choice; cover is a cost in the
+    // calculation, not an unconditional reason to fall back to single fire.
+    uint rounds = _WeaponRound(weapon, burstUse);
+    Item@ hand = cr.GetItem(0, SLOT_HAND1);
+    if(valid(hand) && weapon.Weapon_MaxAmmoCount > 0 && cr.Mode[MODE_UNLIMITED_AMMO] == 0)
+        rounds = MIN(rounds, hand.AmmoCount);
+    uint effectiveRounds = ApplyCoverLoss(map, hx, hy, tx, ty, target, rounds);
+    if(effectiveRounds <= 1)
+        return false;
 
-        ProtoItem@ ammo = valid(hand) && hand.AmmoPid != 0 ? GetProtoItem(hand.AmmoPid) : null;
-        int singleHit = CLAMP(RawToHit(cr, target, weapon, 0, ammo), 5, 95);
-        int burstHit = CLAMP(RawToHit(cr, target, weapon, burstUse, ammo), 5, 95);
-        uint singleAp = MAX(1, _WeaponApCost(weapon, 0));
-        uint burstAp = MAX(1, _WeaponApCost(weapon, burstUse));
+    ProtoItem@ ammo = valid(hand) && hand.AmmoPid != 0 ? GetProtoItem(hand.AmmoPid) : null;
+    int singleHit = CLAMP(RawToHit(cr, target, weapon, 0, ammo), 5, 95);
+    int burstHit = CLAMP(RawToHit(cr, target, weapon, burstUse, ammo), 5, 95);
+    uint singleAp = MAX(1, _WeaponApCost(weapon, 0));
+    uint burstAp = MAX(1, _WeaponApCost(weapon, burstUse));
 
-        int burstValue = int(effectiveRounds) * burstHit * int(singleAp);
-        int singleValue = singleHit * int(burstAp);
-        return burstValue * 100 >= singleValue * 110; // require a real, not marginal, gain
-    }
-
-    return true;
+    int burstValue = int(effectiveRounds) * burstHit * int(singleAp);
+    int singleValue = singleHit * int(burstAp);
+    return burstValue * 100 >= singleValue * 110; // require a real, not marginal, gain
 }
 
 void SkillsSort(Critter& npc, array<int>& skills, uint first, uint count)

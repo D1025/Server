@@ -1178,6 +1178,7 @@
 #define PLANE_FIRE_IN_THE_HOLE                   (39) // Run from a hex and wait for an explosion at safe distance
 #define PLANE_RETURN_WPN                         (40)
 #define PLANE_RAM_INTO_CRITTER                   (41) // Run to a hex and try to ram into the target critter (not a real attack but can KD/damage).
+#define PLANE_TACTICAL_POSITION                  (42) // Shared combat positioning: firing lane, cover or safe staging hex.
 
 // Plane begin/end/run reasons
 // Begin
