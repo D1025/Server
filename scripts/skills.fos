@@ -78,11 +78,9 @@ int GetMedicalUtilityHealingBonus(Item@ utility)
     switch(utility.GetProtoId())
     {
     case PID_FIRST_AID_KIT:
-        return 25;
     case PID_DOCTORS_BAG:
-        return 25;
+        return 0;
     case PID_FIELD_MEDIC_KIT:
-        return 50;
     case PID_PARAMEDICS_BAG:
         return 50;
     default:
@@ -101,17 +99,32 @@ uint ApplyMedicalUtilityCooldownBonus(Item@ utility, uint cooldown)
     {
     case PID_FIRST_AID_KIT:
     case PID_DOCTORS_BAG:
-        reduction = REAL_SECOND(8);
+        reduction = REAL_SECOND(5);
         break;
     case PID_FIELD_MEDIC_KIT:
     case PID_PARAMEDICS_BAG:
-        reduction = REAL_SECOND(4);
-        break;
+        return cooldown;
     default:
         return cooldown;
     }
 
     return cooldown > reduction ? cooldown - reduction : 1;
+}
+
+uint GetMedicalSkillCooldown(Critter& cr, uint baseSeconds)
+{
+    int intelligence = CLAMP(cr.Stat[ST_INTELLECT], 1, 30);
+    uint medicMultiplier = cr.Perk[PE_MEDIC] > 0 ? 3 : 1;
+
+    // Diminishing Intelligence returns. The curve preserves the old values at
+    // Intelligence 10 and gives Medic 65 seconds of reduction at Intelligence 27.
+    uint curveNumerator = uint(intelligence * (1537 - 16 * intelligence)) * medicMultiplier;
+    uint reduction = (REAL_SECOND(1) * curveNumerator + MEDICAL_COOLDOWN_CURVE_DENOMINATOR / 2) /
+                     MEDICAL_COOLDOWN_CURVE_DENOMINATOR;
+    uint cooldown = REAL_SECOND(baseSeconds);
+    uint minimumCooldown = REAL_SECOND(35);
+
+    return cooldown > reduction ? MAX(minimumCooldown, cooldown - reduction) : minimumCooldown;
 }
 
 void ConsumeMedicalUtilityStack(Item@ utility)
@@ -195,8 +208,7 @@ bool UseFirstAidOnCritter(Critter& cr, Critter& targetCr, Item@ item)
     if(!is_self)
         targetCr.Say(SAY_NETMSG, "Hit Points +" + realHeal);
 
-    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 2 * intelligence : 0);
-    uint firstAidCooldown = REAL_SECOND(MAX(1, 100 - intelligence - medicBonus));
+    uint firstAidCooldown = GetMedicalSkillCooldown(cr, 100);
     firstAidCooldown = ApplyHealingPowderCooldownBonus(cr, firstAidCooldown);
     _SetTimeout(cr, TO_SK_FIRST_AID, ApplyMedicalUtilityCooldownBonus(medicalUtility, firstAidCooldown));
 
@@ -297,9 +309,7 @@ bool UseDoctorOnCritter(Critter& cr, Critter& targetCr, Item@ item)
         targetCr.StatBase[ST_CURRENT_AP] = 0;
     }
 
-	//druto
-    int medicBonus = (cr.Perk[PE_MEDIC] > 0 ? 2 * intelligence : 0);
-    uint doctorCooldown = REAL_SECOND(MAX(1, 90 - intelligence - medicBonus));
+    uint doctorCooldown = GetMedicalSkillCooldown(cr, 90);
     doctorCooldown = ApplyHealingPowderCooldownBonus(cr, doctorCooldown);
 	_SetTimeout(cr, TO_SK_DOCTOR, ApplyMedicalUtilityCooldownBonus(medicalUtility, doctorCooldown));
 

@@ -2038,16 +2038,16 @@ string item_description(ItemCl& item, int lookType)
                 switch(item.GetProtoId())
                 {
                 case PID_FIRST_AID_KIT:
-                    result += "\nPassive First Aid: +25 healing, -8 seconds cooldown.";
+                    result += "\nPassive First Aid: -5 seconds cooldown.";
                     break;
                 case PID_DOCTORS_BAG:
-                    result += "\nPassive Doctor: +25 healing, -8 seconds cooldown.";
+                    result += "\nPassive Doctor: -5 seconds cooldown.";
                     break;
                 case PID_FIELD_MEDIC_KIT:
-                    result += "\nPassive First Aid: +50 healing, -4 seconds cooldown.";
+                    result += "\nPassive First Aid: +50 healing.";
                     break;
                 case PID_PARAMEDICS_BAG:
-                    result += "\nPassive Doctor: +50 healing, -4 seconds cooldown.";
+                    result += "\nPassive Doctor: +50 healing.";
                     break;
                 }
                 result += "\nCapacity: " + item.Charge + "/" + item.Proto.Misc_ChargeMax + ".";

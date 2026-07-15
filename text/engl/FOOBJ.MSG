@@ -99,7 +99,7 @@
 {4600}{}{Bag}
 {4601}{}{An average sized bag. Made from weaved brahmin hairs.}
 {4700}{}{First Aid Kit}
-{4701}{}{A basic medical utility. Capacity: 10. While equipped, each First Aid treatment uses one capacity point, adds 25 healing and reduces its cooldown by 8 seconds.}
+{4701}{}{A basic medical utility. Capacity: 10. While equipped, each First Aid treatment uses one capacity point and reduces its cooldown by 5 seconds.}
 {4800}{}{RadAway}
 {4801}{}{A chemical solution that bonds with radiation particles and passes them through your system. Takes time to work.}
 {4900}{}{Antidote}
@@ -189,7 +189,7 @@
 {9000}{}{Back Pack}
 {9001}{}{A sturdy backpack. While equipped in the utility slot, it increases Carry Weight by 50.}
 {9100}{}{Doctor's Bag}
-{9101}{}{A medical utility. Capacity: 10. While equipped, each Doctor treatment uses one capacity point, adds 25 healing and reduces its cooldown by 8 seconds.}
+{9101}{}{A medical utility. Capacity: 10. While equipped, each Doctor treatment uses one capacity point and reduces its cooldown by 5 seconds.}
 {9200}{}{Scorpion Tail}
 {9201}{}{The severed tail of a radscorpion.}
 {9300}{}{Bag}
@@ -778,9 +778,9 @@
 {40700}{}{Mega Power Fist}
 {40701}{}{A "Big Frigger" Power Fist from BeatCo. Considered by many to be the ultimate weapon to use in unarmed combat. This one has upgraded power servos for increased strength. Powered by small energy cells.}
 {40800}{}{Field Medic First Aid Kit}
-{40801}{}{An advanced medical utility. Capacity: 20. While equipped, each First Aid treatment uses one capacity point, adds 50 healing and reduces its cooldown by 4 seconds.}
+{40801}{}{An advanced medical utility. Capacity: 20. While equipped, each First Aid treatment uses one capacity point and adds 50 healing.}
 {40900}{}{Paramedics Bag}
-{40901}{}{An advanced medical utility. Capacity: 20. While equipped, each Doctor treatment uses one capacity point, adds 50 healing and reduces its cooldown by 4 seconds.}
+{40901}{}{An advanced medical utility. Capacity: 20. While equipped, each Doctor treatment uses one capacity point and adds 50 healing.}
 {41000}{}{Expanded Lockpick Set}
 {41001}{}{A set of locksmith tools. Includes all the necessary picks and tension wrenches to open conventional pin and tumbler locks. This set also includes some special tools for more difficult mechanical locking mechanisms.}
 {41100}{}{Electronic Lockpick MKII}

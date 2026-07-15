@@ -1221,8 +1221,11 @@
 #define TIMER_MAX_VALUE                          (599)
 
 // Timeouts in real seconds, generic values
-#define FIRST_AID_TIMEOUT                        # (cr) (REAL_SECOND(MAX(1, 100 - (cr).Stat[ST_INTELLECT] * (1 + ((cr).Perk[PE_MEDIC] > 0 ? 2 : 0)))))
-#define DOCTOR_TIMEOUT                           # (cr) (REAL_SECOND(MAX(1, 90 - (cr).Stat[ST_INTELLECT] * (1 + ((cr).Perk[PE_MEDIC] > 0 ? 2 : 0)))))
+#define MEDICAL_COOLDOWN_CURVE_DENOMINATOR       (1377)
+#define MEDICAL_COOLDOWN_REDUCTION               # (cr) ((REAL_SECOND(1) * CLAMP((cr).Stat[ST_INTELLECT], 1, 30) * (1537 - 16 * CLAMP((cr).Stat[ST_INTELLECT], 1, 30)) * ((cr).Perk[PE_MEDIC] > 0 ? 3 : 1) + MEDICAL_COOLDOWN_CURVE_DENOMINATOR / 2) / MEDICAL_COOLDOWN_CURVE_DENOMINATOR)
+#define MEDICAL_SKILL_TIMEOUT                    # (cr, baseSeconds) (MAX(REAL_SECOND(35), REAL_SECOND(baseSeconds) - MEDICAL_COOLDOWN_REDUCTION(cr)))
+#define FIRST_AID_TIMEOUT                        # (cr) (MEDICAL_SKILL_TIMEOUT(cr, 100))
+#define DOCTOR_TIMEOUT                           # (cr) (MEDICAL_SKILL_TIMEOUT(cr, 90))
 
 #define REPAIR_TIMEOUT                           # (cr)        (REAL_MINUTE(1))                                                                                                                                    // Orig 4 time on day, 1 min
 #define SCIENCE_TIMEOUT                          # (cr)       (REAL_MINUTE(1))                                                                                                                                     // Orig 6 time on day, 1 min
