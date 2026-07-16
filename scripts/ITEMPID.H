@@ -585,6 +585,7 @@
 #define PID_BOBBLEHEAD_LUCK                  (25591)
 #define PID_RIOT_SHIELD                      (25592)
 #define PID_PERSONAL_SHIELD_GENERATOR        (25593)
+#define PID_EXPLOSIVE_COLLAR                 (25594)
 
 //Tools
     //Tech

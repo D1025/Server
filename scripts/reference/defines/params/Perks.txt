@@ -90,7 +90,7 @@
 #define PE_VAULT_CITY_TRAINING      (408)
 #define PE_ALCOHOL_RAISED_HP        (409)
 #define PE_ALCOHOL_RAISED_HP_II     (410)
-#define PE_ALCOHOL_LOWERED_HP       (411)
+#define PE_LEG_BREAKER              (411)
 #define PE_ALCOHOL_LOWERED_HP_II    (412)
 #define PE_AUTODOC_RAISED_HP        (413)
 #define PE_AUTODOC_RAISED_HP_II     (414)

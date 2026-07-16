@@ -1535,6 +1535,18 @@ int[][] PerksData = {
 	},
 #endif
 
+	{ 411, 0, 1 }, // Leg Breaker, Leveling, 1 rank
+	{ // level 1 requirements
+		1, 1, 6, // Perception at least 6
+	},
+#ifdef __SERVER
+	{ // level 1 perk up effects
+	},
+	{ // level 1 perk down effects
+		-1 // Just revert
+	},
+#endif
+
 	{ 417, 2, 1 }, // Expert Excrement Expeditor, Disabled, 1 ranks
 	{ // level 1 requirements
 	},

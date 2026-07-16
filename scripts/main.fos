@@ -63,6 +63,7 @@ import bool IsArenaCombatant(Critter& cr) from "arena";
 import bool IsInsideArena(Critter& cr) from "arena";
 import bool IsCarTrunk(Item@ item) from "car";
 import bool OnUseExplode(Critter& cr, Item& explode, Critter@ targetCr, Item@ targetItem, Scenery@ targetScen, uint timer) from "explode";
+import void ExplodeEx(Map& map, uint16 hexX, uint16 hexY, uint16 effectPid, uint effectRadius, uint damage, uint damageType, uint damageRadius, uint ownerId, uint16 explodePid) from "explode";
 import bool PerkCheck(Critter& cr, uint perk, bool always) from "perks";
 import bool ReversableItem(Item& item) from "fix_boy";
 import bool ReverseItem(Critter& cr, Item& item) from "fix_boy";
@@ -88,6 +89,10 @@ import void   ApplyTimeout(array<Item@>& items, array<uint>& itemsCount, array<I
 import void   CheckBountyHunters(Critter& cr, Critter@ killer) from "bounties";
 import void   CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo) from "combat";
 import void   CombatAttackHex(Critter& cr, uint16 tx, uint16 ty, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo) from "combat";
+import void   GetCrittersInCone(Map@ map, Critter@ attacker, uint16 hx, uint16 hy, uint16 tx, uint16 ty, uint maxDist, float halfAngle, Critter@ primaryTarget, array<Critter@> &inout outCrits) from "combat";
+import bool   IsHexShotableThere(Critter& cr, Item@ item, uint16 tx, uint16 ty) from "hexShot";
+import int    HexShotBlastRadius(Item@ item, Critter@ cr) from "hexShot";
+import void   CommenceHexShoting(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty) from "hexShot";
 import bool   IsDeployed(Critter& cr) from "deploy";
 import bool   EnterDeploy(Critter& cr) from "deploy";
 import void   ExitDeploy(Critter& cr) from "deploy";
@@ -621,6 +626,8 @@ uint loop()
 void critter_attack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponMode, ProtoItem@ ammo)
 {
 	speedboost(cr);
+    if(cr.IsNpc())
+        NpcSmokeTrackVisible(cr, target);                       // backup snapshot at every real attack
 	// Deploy gate: a weapon carrying WEAPON_PERK_DEPLOY can only fire while its wielder is deployed.
 	if(WeaponHasProtoPerk(weapon, WEAPON_PERK_DEPLOY) && !IsDeployed(cr))
 	{
@@ -1090,8 +1097,8 @@ void TryAllyHeal(Critter& wounded)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // AfterTimes tactic "smoke screen": a hurt ranged NPC carrying a smoke grenade (PID 577) lobs it
 // a couple hexes toward its attacker, screening the fall-back the tactical block in
-// main_planes.fos already performs below 40% HP. Works for any NPC with the grenade in inventory;
-// one throw per SMOKE_SCREEN_CD_MS, reset on server restart. Tune the knobs below.
+// main_planes.fos already performs below 40% HP. Works for tactical humanoid/robot NPCs with the
+// grenade in inventory; one throw per SMOKE_SCREEN_CD_MS, reset on server restart.
 #define SMOKE_SCREEN_HP_PCT      (40)       // trigger below this HP%, matches the fall-back threshold
 #define SMOKE_SCREEN_MIN_DIST    (5)        // no point screening an enemy already in your face
 #define SMOKE_SCREEN_CD_MS       (60000)    // per-NPC throw cooldown, real time
@@ -1119,7 +1126,7 @@ bool SmokeThrowOnCooldown(uint id)
 
 void TrySmokeScreen(Critter& cr)
 {
-    if(cr.Timeout[TO_BATTLE] == 0 || !cr.IsLife() || cr.IsBusy())
+    if(!NpcSmokeEligible(cr) || cr.Timeout[TO_BATTLE] == 0 || !cr.IsLife() || cr.IsBusy())
         return;
     if(cr.Stat[ST_INTELLECT] < 5)
         return;                                                  // smart enough to use equipment tactically
@@ -1147,17 +1154,27 @@ void TrySmokeScreen(Critter& cr)
     }
     if(!valid(foe) || !foe.IsLife() || foe.GetMapId() != map.Id)
         return;
-    if(GetDistantion(cr.HexX, cr.HexY, foe.HexX, foe.HexY) < SMOKE_SCREEN_MIN_DIST)
+
+    uint16 foeX = 0, foeY = 0;
+    if(cr.IsSee(foe))
+    {
+        NpcSmokeTrackVisible(cr, foe);
+        foeX = foe.HexX;
+        foeY = foe.HexY;
+    }
+    else if(!NpcSmokeGetLastKnown(cr, foe.Id, foeX, foeY))
+        return;
+    if(GetDistantion(cr.HexX, cr.HexY, foeX, foeY) < SMOKE_SCREEN_MIN_DIST)
         return;
 
     // already screened? standing in a cloud or smoke on the fire line both count
     if(valid(map.GetItem(cr.HexX, cr.HexY, PID_SMOKE_HEX)) || valid(map.GetItem(cr.HexX, cr.HexY, PID_GAS_HEX)))
         return;
-    if(SmokeOnFireLine(map, cr.HexX, cr.HexY, foe.HexX, foe.HexY))
+    if(SmokeOnFireLine(map, cr.HexX, cr.HexY, foeX, foeY))
         return;
 
     // land the grenade toward the enemy, falling back to closer hexes when blocked
-    uint8  dir = GetDirection(cr.HexX, cr.HexY, foe.HexX, foe.HexY);
+    uint8  dir = GetDirection(cr.HexX, cr.HexY, foeX, foeY);
     uint16 tx = 0, ty = 0;
     for(int step = SMOKE_SCREEN_THROW_HEXES; step >= 0; step--)
     {
@@ -1178,24 +1195,125 @@ void TrySmokeScreen(Critter& cr)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// AfterTimes tactic "smoke aggro": when smoke steals the sight line the engine ends the attack
-// plane with REASON_TARGET_DISAPPEARED and the NPC forgets its enemy. main_planes.fos calls this
-// from npc_plane_end - returning true KEEPS the plane queued while the cloud lasts (clouds die
-// after ~45 s, so the hold self-limits; once the smoke clears the NPC either re-engages or
-// forgets normally). Meanwhile a smart NPC fights the smoke itself:
-//   - healthy + frag/plasma grenade in inventory: lob it into the middle of the cloud on the
-//     fire line - any explosion blows smoke away (combat.fos CommenceExplosion -> SmokeDispelArea);
-//   - burst weapon in hand: blind-spray the enemy's last position through the cloud
-//     (CombatAttackHex - cover loss thins the rounds and the shot opens a vision corridor).
-// Deployed gunners join both responses - neither needs to move.
-#define SMOKE_AGGRO_HP_PCT       (60)       // grenade response only while healthy
-#define SMOKE_AGGRO_NADE_CD_MS   (30000)    // roughly one smoke-breaking grenade per cloud
-#define SMOKE_AGGRO_BURST_CD_MS  (5000)     // blind burst rate while the target stays hidden
+// AfterTimes tactic "smoke response". Smoke removes the engine's attack target,
+// but it must not give AI omniscient tracking. While a target is genuinely
+// visible, main_planes.fos calls NpcSmokeTrackVisible and records a snapshot.
+// After LOS is lost every search, shot and grenade uses only that snapshot.
+#define SMOKE_AGGRO_HP_PCT              (60)
+#define SMOKE_MEMORY_MIN_MS             (8000)
+#define SMOKE_MEMORY_MAX_MS             (12000)
+#define SMOKE_MEMORY_PRUNE_MS           (60000)
+#define SMOKE_RESPONSE_WAIT_MIN_MS      (900)
+#define SMOKE_RESPONSE_WAIT_MAX_MS      (1500)
+#define SMOKE_SUPPRESS_FRESH_MS         (6500)
+#define SMOKE_FLAME_SWEEP_FRESH_MS      (2500)
+#define SMOKE_DEPLOY_RELOCATE_MS        (3500)
+#define SMOKE_AGGRO_NADE_CD_MS          (30000)
+#define SMOKE_AGGRO_GROUP_NADE_CD_MS    (15000)
+#define SMOKE_AGGRO_BURST_CD_MS         (5000)
+#define SMOKE_SAFE_BLAST_PADDING        (1)
 
+class NpcSmokeMemory
+{
+    uint   npcId;
+    uint   targetId;
+    uint   mapId;
+    uint16 lastX;
+    uint16 lastY;
+    uint16 prevX;
+    uint16 prevY;
+    uint   lastSeen;
+    uint   lostAt;
+    uint   forgetAt;
+    uint   searchStep;
+    bool   active;
+}
+
+array<NpcSmokeMemory> NpcSmokeMemories;
 uint[] SmokeNadeCdIds;
 uint[] SmokeNadeCdUntil;
 uint[] BlindBurstCdIds;
 uint[] BlindBurstCdUntil;
+uint[] SmokeGroupNadeMapIds;
+int[]  SmokeGroupNadeTags;
+uint[] SmokeGroupNadeUntil;
+
+bool NpcSmokeEligible(Critter& npc)
+{
+    if(!npc.IsNpc())
+        return false;
+    int body = npc.Stat[ST_BODY_TYPE];
+    return IsHumanoid(npc) || body == BT_ROBOT;
+}
+
+bool NpcSmokeHasActiveIr(Critter& npc)
+{
+    Item@ utility = npc.GetItem(0, SLOT_UTILITY);
+    return valid(utility) && utility.GetProtoId() == PID_IR_GOGGLES &&
+           !FLAG(utility.BrokenFlags, BI_BROKEN) && utility.Val1 == 1;
+}
+
+int NpcSmokeFindMemory(uint npcId, uint targetId, bool create)
+{
+    for(uint i = 0; i < NpcSmokeMemories.length();)
+    {
+        if(NpcSmokeMemories[i].lastSeen > 0 &&
+           NpcSmokeMemories[i].lastSeen + REAL_MS(SMOKE_MEMORY_PRUNE_MS) <= __FullSecond)
+        {
+            NpcSmokeMemories.removeAt(i);
+            continue;
+        }
+        if(NpcSmokeMemories[i].npcId == npcId && NpcSmokeMemories[i].targetId == targetId)
+            return int(i);
+        i++;
+    }
+    if(!create)
+        return -1;
+
+    NpcSmokeMemory memory;
+    memory.npcId = npcId;
+    memory.targetId = targetId;
+    NpcSmokeMemories.insertLast(memory);
+    return int(NpcSmokeMemories.length() - 1);
+}
+
+void NpcSmokeTrackVisible(Critter& npc, Critter@ target)   // Export - main_planes.fos
+{
+    if(!NpcSmokeEligible(npc) || !valid(target) || !target.IsLife() ||
+       target.GetMapId() != npc.GetMapId() || !npc.IsSee(target))
+        return;
+
+    int idx = NpcSmokeFindMemory(npc.Id, target.Id, true);
+    NpcSmokeMemory@ memory = NpcSmokeMemories[idx];
+    if(memory.lastSeen == 0)
+    {
+        memory.prevX = target.HexX;
+        memory.prevY = target.HexY;
+    }
+    else if(memory.lastX != target.HexX || memory.lastY != target.HexY)
+    {
+        memory.prevX = memory.lastX;
+        memory.prevY = memory.lastY;
+    }
+    memory.mapId = npc.GetMapId();
+    memory.lastX = target.HexX;
+    memory.lastY = target.HexY;
+    memory.lastSeen = __FullSecond;
+    memory.lostAt = 0;
+    memory.forgetAt = 0;
+    memory.searchStep = 0;
+    memory.active = false;
+}
+
+bool NpcSmokeGetLastKnown(Critter& npc, uint targetId, uint16& hx, uint16& hy)
+{
+    int idx = NpcSmokeFindMemory(npc.Id, targetId, false);
+    if(idx < 0 || NpcSmokeMemories[idx].mapId != npc.GetMapId())
+        return false;
+    hx = NpcSmokeMemories[idx].lastX;
+    hy = NpcSmokeMemories[idx].lastY;
+    return true;
+}
 
 bool NpcTacticOnCooldown(uint[]& ids, uint[]& until, uint id)
 {
@@ -1214,118 +1332,570 @@ bool NpcTacticOnCooldown(uint[]& ids, uint[]& until, uint id)
     return false;
 }
 
-bool NpcSmokeAggroHold(Critter& npc, Critter@ target)   // Export - main_planes.fos npc_plane_end
+int NpcSmokeSquadTag(Critter& npc)
 {
-    if(!valid(target) || !npc.IsLife() || npc.Timeout[TO_BATTLE] == 0)
+    int group = _GroupIndex(npc);
+    if(group > FACTION_NONE)
+        return group;
+    int team = npc.Stat[ST_TEAM_ID];
+    if(team != 0)
+        return 10000 + team;
+    return -int(npc.Id);
+}
+
+bool NpcSmokeGroupGrenadeOnCooldown(Critter& npc)
+{
+    int tag = NpcSmokeSquadTag(npc);
+    for(uint i = 0; i < SmokeGroupNadeUntil.length();)
+    {
+        if(SmokeGroupNadeUntil[i] <= __FullSecond)
+        {
+            SmokeGroupNadeMapIds.removeAt(i);
+            SmokeGroupNadeTags.removeAt(i);
+            SmokeGroupNadeUntil.removeAt(i);
+            continue;
+        }
+        if(SmokeGroupNadeMapIds[i] == npc.GetMapId() && SmokeGroupNadeTags[i] == tag)
+            return true;
+        i++;
+    }
+    return false;
+}
+
+void NpcSmokeSetGroupGrenadeCooldown(Critter& npc)
+{
+    SmokeGroupNadeMapIds.insertLast(npc.GetMapId());
+    SmokeGroupNadeTags.insertLast(NpcSmokeSquadTag(npc));
+    SmokeGroupNadeUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_GROUP_NADE_CD_MS));
+}
+
+bool NpcSmokeIsAlly(Critter& npc, Critter& other)
+{
+    if(npc.Id == other.Id)
+        return true;
+    int group = _GroupIndex(npc);
+    if(group > FACTION_NONE && group == _GroupIndex(other))
+        return true;
+    int team = npc.Stat[ST_TEAM_ID];
+    return team != 0 && team == other.Stat[ST_TEAM_ID];
+}
+
+bool NpcSmokeAttacksTarget(Critter& npc, uint targetId)
+{
+    array<NpcPlane@> planes;
+    npc.GetPlanes(AI_PLANE_ATTACK, planes);
+    for(uint i = 0; i < planes.length(); i++)
+        if(valid(planes[i]) && planes[i].Attack_TargId == targetId)
+            return true;
+    return false;
+}
+
+bool NpcSmokeFindBurstUse(Critter& npc, int& use, bool requireReady)
+{
+    uint8 mode = 0;
+    ProtoItem@ weapon = npc.GetSlotProto(SLOT_HAND1, mode);
+    Item@ hand = npc.GetItem(0, SLOT_HAND1);
+    if(!valid(weapon) || !valid(hand) || weapon.Weapon_Caliber == 11 ||
+       weapon.ProtoId == PID_FLAMER || weapon.ProtoId == PID_IMPROVED_FLAMETHROWER ||
+       weapon.ProtoId == PID_FIRE_GECKO_FLAME_WEAPON)
+        return false;
+    if(hand.AmmoPid == PID_EXPLOSIVE_ROCKET || hand.AmmoPid == PID_40MM_GRENADE ||
+       hand.AmmoPid == PID_ROCKET_AP || hand.AmmoPid == PID_ROBO_ROCKET_AMMO)
+        return false;
+
+    use = _WeaponModeUse(mode);
+    if(_WeaponRound(weapon, use) <= 1)
+    {
+        use = -1;
+        for(int u = 0; u < 3; u++)
+        {
+            if((weapon.Weapon_ActiveUses & (1 << u)) != 0 && _WeaponRound(weapon, u) > 1)
+            {
+                use = u;
+                break;
+            }
+        }
+    }
+    if(use < 0 || _WeaponMaxDist(weapon, use) <= 2)
+        return false;
+    if(!requireReady)
+        return hand.AmmoCount > 0 || npc.Mode[MODE_UNLIMITED_AMMO] != 0;
+    if(hand.AmmoCount < uint(_WeaponRound(weapon, use)) && npc.Mode[MODE_UNLIMITED_AMMO] == 0)
+        return false;
+    int apCost = _WeaponApCost(weapon, use);
+    return apCost > 0 && npc.Stat[ST_CURRENT_AP] >= apCost;
+}
+
+bool NpcSmokeAssignedSuppressor(Critter& npc, uint targetId)
+{
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+    array<Critter@> allies;
+    map.GetCritters(0, FIND_LIFE | FIND_ONLY_NPC, allies);
+    for(uint i = 0; i < allies.length(); i++)
+    {
+        Critter@ ally = allies[i];
+        if(!valid(ally) || ally.Id >= npc.Id || !NpcSmokeEligible(ally) ||
+           !NpcSmokeIsAlly(npc, ally) || !NpcSmokeAttacksTarget(ally, targetId))
+            continue;
+        int allyUse = -1;
+        if(NpcSmokeFindBurstUse(ally, allyUse, true))
+            return false;
+    }
+    return true;
+}
+
+bool NpcSmokeHasPendingResponse(Critter& npc)
+{
+    array<NpcPlane@> pending;
+    npc.GetPlanes(PLANE_SMOKE_RESPONSE, pending);
+    return pending.length() > 0;
+}
+
+bool NpcSmokeAddWait(Critter& npc, NpcPlane& attackPlane, uint targetId)
+{
+    if(NpcSmokeHasPendingResponse(npc))
+        return false;
+    int idx = NpcSmokeFindMemory(npc.Id, targetId, false);
+    if(idx < 0)
+        return false;
+    npc.SetDir(GetDirection(npc.HexX, npc.HexY,
+                            NpcSmokeMemories[idx].lastX, NpcSmokeMemories[idx].lastY));
+    return AddMiscPlane(npc, attackPlane.Priority + 5, PLANE_SMOKE_RESPONSE, targetId,
+                        AFTER(REAL_MS(Random(SMOKE_RESPONSE_WAIT_MIN_MS, SMOKE_RESPONSE_WAIT_MAX_MS))), null);
+}
+
+bool NpcSmokePhysicalLine(Map& map, uint16 hx, uint16 hy, uint16 tx, uint16 ty)
+{
+    uint dist = GetDistantion(hx, hy, tx, ty);
+    if(dist == 0)
+        return true;
+    uint16 lineX = tx;
+    uint16 lineY = ty;
+    map.GetHexCoord(hx, hy, lineX, lineY, 0.0f, dist);
+    return lineX == tx && lineY == ty;
+}
+
+bool NpcSmokeTouchesHex(Map& map, uint16 hx, uint16 hy)
+{
+    if(valid(map.GetItem(hx, hy, PID_SMOKE_HEX)) || valid(map.GetItem(hx, hy, PID_GAS_HEX)))
+        return true;
+    for(uint dir = 0; dir < 6; dir++)
+    {
+        uint16 nx = hx;
+        uint16 ny = hy;
+        map.MoveHexByDir(nx, ny, dir, 1);
+        if(valid(map.GetItem(nx, ny, PID_SMOKE_HEX)) || valid(map.GetItem(nx, ny, PID_GAS_HEX)))
+            return true;
+    }
+    return false;
+}
+
+bool NpcSmokeFindPosition(Critter& npc, uint16 targetX, uint16 targetY, uint desiredDist,
+                          bool requireClearShot, bool retreat, uint16& bestX, uint16& bestY)
+{
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+    int bestScore = -100000;
+    uint seedDir = npc.Id % 6;
+    for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
+    {
+        uint dir = (seedDir + dirOffset) % 6;
+        for(uint step = 2; step <= 5; step++)
+        {
+            uint16 hx = npc.HexX;
+            uint16 hy = npc.HexY;
+            map.MoveHexByDir(hx, hy, dir, step);
+            if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+               valid(map.GetItem(hx, hy, PID_SMOKE_HEX)) || valid(map.GetItem(hx, hy, PID_GAS_HEX)))
+                continue;
+            if(requireClearShot && (!NpcSmokePhysicalLine(map, hx, hy, targetX, targetY) ||
+                                    SmokeOnFireLine(map, hx, hy, targetX, targetY)))
+                continue;
+            uint path = map.GetPathLength(npc, hx, hy, 0);
+            if(path == 0 || path > 10)
+                continue;
+            uint dist = GetDistantion(hx, hy, targetX, targetY);
+            int score = 1000 - int(path) * 60;
+            if(retreat)
+                score += int(dist) * 25;
+            else
+                score -= ABS(int(dist) - int(desiredDist)) * 12;
+            if(score > bestScore)
+            {
+                bestScore = score;
+                bestX = hx;
+                bestY = hy;
+            }
+        }
+    }
+    return bestScore > -100000;
+}
+
+bool NpcSmokeAddMove(Critter& npc, NpcPlane& attackPlane, uint targetId,
+                     uint16 hx, uint16 hy, uint cut)
+{
+    if(NpcSmokeHasPendingResponse(npc) || !npc.IsCanWalk())
+        return false;
+    int idx = NpcSmokeFindMemory(npc.Id, targetId, false);
+    if(idx < 0)
+        return false;
+    return AddWalkPlane(npc, attackPlane.Priority + 5, PLANE_SMOKE_RESPONSE, targetId,
+                        hx, hy, uint8(GetDirection(hx, hy,
+                        NpcSmokeMemories[idx].lastX, NpcSmokeMemories[idx].lastY)), true, cut);
+}
+
+bool NpcSmokeFindCloudAim(Critter& npc, NpcSmokeMemory& memory, uint16& tx, uint16& ty)
+{
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+    uint16 sx = npc.HexX;
+    uint16 sy = npc.HexY;
+    uint16 firstX = 0, firstY = 0, lastX = 0, lastY = 0;
+    bool found = false;
+    uint dist = GetDistantion(npc.HexX, npc.HexY, memory.lastX, memory.lastY);
+    for(uint i = 0; i < dist; i++)
+    {
+        map.MoveHexByDir(sx, sy, GetDirection(sx, sy, memory.lastX, memory.lastY), 1);
+        if(valid(map.GetItem(sx, sy, PID_SMOKE_HEX)) || valid(map.GetItem(sx, sy, PID_GAS_HEX)))
+        {
+            if(!found)
+            {
+                firstX = sx;
+                firstY = sy;
+                found = true;
+            }
+            lastX = sx;
+            lastY = sy;
+        }
+        if(sx == memory.lastX && sy == memory.lastY)
+            break;
+    }
+    if(!found)
+        return false;
+    tx = firstX;
+    ty = firstY;
+    uint half = GetDistantion(firstX, firstY, lastX, lastY) / 2;
+    for(uint i = 0; i < half; i++)
+        map.MoveHexByDir(tx, ty, GetDirection(tx, ty, lastX, lastY), 1);
+    return true;
+}
+
+uint NpcSmokeBlastRadius(Critter& npc, Item@ weapon)
+{
+    if(!valid(weapon))
+        return 1;
+    int protoBlast = WeaponProtoPerkStacks(weapon.Proto, WEAPON_PERK_BLAST);
+    int upgradeBlast = UpgradeWeaponBonus(weapon, UPGRADE_WEAPON_PERK_BLAST);
+    uint radius = 1;
+    if(protoBlast == 0 && upgradeBlast > 0)
+        radius = uint(MAX(1, upgradeBlast));
+    else
+    {
+        if(protoBlast > 0)
+            radius += uint(protoBlast);
+        if(upgradeBlast > 0)
+            radius += uint(upgradeBlast);
+    }
+    if(npc.Perk[PE_DEMOLITION_EXPERT] != 0 && radius > 1)
+        radius++;
+    return radius;
+}
+
+bool NpcSmokeBlastSafe(Critter& npc, uint16 tx, uint16 ty, uint radius)
+{
+    if(GetDistantion(npc.HexX, npc.HexY, tx, ty) <= radius + SMOKE_SAFE_BLAST_PADDING)
         return false;
     Map@ map = npc.GetMap();
-    if(!valid(map) || !target.IsLife() || target.GetMapId() != map.Id)
+    array<Critter@> critters;
+    map.GetCrittersHex(tx, ty, radius + SMOKE_SAFE_BLAST_PADDING, FIND_LIFE_AND_KO, critters);
+    for(uint i = 0; i < critters.length(); i++)
+        if(valid(critters[i]) && !IsCurrentEnemy(npc, critters[i].Id))
+            return false;
+    return true;
+}
+
+bool NpcSmokeBlindFireSafe(Critter& npc, uint16 tx, uint16 ty, ProtoItem& weapon, int use)
+{
+    Map@ map = npc.GetMap();
+    uint maxDist = uint(_WeaponMaxDist(weapon, use));
+    array<Critter@> cone;
+    float halfAngle = WeaponHasProtoPerk(weapon, WEAPON_PERK_CASCADE) ?
+                      float(CASCADE_CONE_ANGLE_OUTER) : 20.0f;
+    GetCrittersInCone(map, npc, npc.HexX, npc.HexY, tx, ty, maxDist, halfAngle, null, cone);
+    for(uint i = 0; i < cone.length(); i++)
+        if(valid(cone[i]) && !IsCurrentEnemy(npc, cone[i].Id))
+            return false;
+    return true;
+}
+
+bool NpcSmokeTryGrenade(Critter& npc, NpcSmokeMemory& memory)
+{
+    if(NpcTacticOnCooldown(SmokeNadeCdIds, SmokeNadeCdUntil, npc.Id) ||
+       NpcSmokeGroupGrenadeOnCooldown(npc))
+        return false;
+    Item@ nade = npc.GetItem(PID_FRAG_GRENADE, -1);
+    if(!valid(nade))
+        @nade = npc.GetItem(PID_PLASMA_GRENADE, -1);
+    if(!valid(nade))
+        return false;
+    uint16 tx = 0, ty = 0;
+    if(!NpcSmokeFindCloudAim(npc, memory, tx, ty) || !IsThrowableThere(npc, nade, tx, ty))
+        return false;
+    if(!NpcSmokeBlastSafe(npc, tx, ty, NpcSmokeBlastRadius(npc, nade)))
         return false;
 
-    // hold only when smoke/gas is what broke the sight line - anything else forgets normally
-    if(!SmokeOnFireLine(map, npc.HexX, npc.HexY, target.HexX, target.HexY)
-       && !valid(map.GetItem(target.HexX, target.HexY, PID_SMOKE_HEX))
-       && !valid(map.GetItem(target.HexX, target.HexY, PID_GAS_HEX))
-       && !valid(map.GetItem(npc.HexX, npc.HexY, PID_SMOKE_HEX))
-       && !valid(map.GetItem(npc.HexX, npc.HexY, PID_GAS_HEX)))
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+    CommenceThrowing(npc, map, nade, tx, ty);
+    SmokeNadeCdIds.insertLast(npc.Id);
+    SmokeNadeCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_NADE_CD_MS));
+    NpcSmokeSetGroupGrenadeCooldown(npc);
+    if(Random(0, 2) == 0)
+        npc.Say(SAY_NORM_ON_HEAD, "Frag out!");
+    return true;
+}
+
+bool NpcSmokeTryLauncher(Critter& npc, NpcSmokeMemory& memory, Item& hand)
+{
+    if(hand.AmmoPid != PID_EXPLOSIVE_ROCKET && hand.AmmoPid != PID_40MM_GRENADE &&
+       hand.AmmoPid != PID_ROCKET_AP && hand.AmmoPid != PID_ROBO_ROCKET_AMMO)
+        return false;
+    if(hand.AmmoCount == 0 ||
+       NpcTacticOnCooldown(SmokeNadeCdIds, SmokeNadeCdUntil, npc.Id) ||
+       NpcSmokeGroupGrenadeOnCooldown(npc))
+        return false;
+    uint16 tx = 0, ty = 0;
+    int use = _WeaponModeUse(hand.Mode);
+    if(!NpcSmokeFindCloudAim(npc, memory, tx, ty) ||
+       !NpcSmokeBlastSafe(npc, tx, ty, uint(MAX(1, HexShotBlastRadius(hand, npc)))) ||
+       !NpcSmokeBlindFireSafe(npc, tx, ty, hand.Proto, use) ||
+       !IsHexShotableThere(npc, hand, tx, ty))
         return false;
 
-    if(npc.IsBusy() || !IsHumanoid(npc) || npc.Stat[ST_INTELLECT] < 5)
-        return true;                                             // hold the grudge, no fancy response
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+    CommenceHexShoting(npc, map, hand, tx, ty);
+    SmokeNadeCdIds.insertLast(npc.Id);
+    SmokeNadeCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_NADE_CD_MS));
+    NpcSmokeSetGroupGrenadeCooldown(npc);
+    return true;
+}
 
-    // 1) blow the cloud away: a healthy NPC with an explosive grenade bombs the smoke midline
+bool NpcSmokeTryBlindFire(Critter& npc, NpcSmokeMemory& memory, bool flameSweep)
+{
+    if(NpcTacticOnCooldown(BlindBurstCdIds, BlindBurstCdUntil, npc.Id))
+        return false;
+    uint8 mode = 0;
+    ProtoItem@ weapon = npc.GetSlotProto(SLOT_HAND1, mode);
+    Item@ hand = npc.GetItem(0, SLOT_HAND1);
+    if(!valid(weapon) || !valid(hand))
+        return false;
+    int use = _WeaponModeUse(mode);
+    if(!flameSweep && !NpcSmokeFindBurstUse(npc, use, true))
+        return false;
+    if(flameSweep && weapon.ProtoId != PID_FLAMER && weapon.ProtoId != PID_IMPROVED_FLAMETHROWER)
+        return false;
+    if(GetDistantion(npc.HexX, npc.HexY, memory.lastX, memory.lastY) > uint(_WeaponMaxDist(weapon, use)) ||
+       !NpcSmokeBlindFireSafe(npc, memory.lastX, memory.lastY, weapon, use))
+        return false;
+    if(hand.AmmoCount < uint(_WeaponRound(weapon, use)) && npc.Mode[MODE_UNLIMITED_AMMO] == 0)
+        return false;
+    int apCost = _WeaponApCost(weapon, use);
+    if(apCost <= 0 || npc.Stat[ST_CURRENT_AP] < apCost)
+        return false;
+
+    npc.StatBase[ST_CURRENT_AP] = 100 * (npc.Stat[ST_CURRENT_AP] - apCost);
+    ProtoItem@ ammo = hand.AmmoPid != 0 ? GetProtoItem(hand.AmmoPid) : null;
+    CombatAttackHex(npc, memory.lastX, memory.lastY, weapon, uint8(use), ammo);
+    BlindBurstCdIds.insertLast(npc.Id);
+    BlindBurstCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_BURST_CD_MS));
+    if(!flameSweep && Random(0, 2) == 0)
+        npc.Say(SAY_NORM_ON_HEAD, "Suppressing fire!");
+    return true;
+}
+
+bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target)   // Export - main_planes.fos
+{
+    if(!NpcSmokeEligible(npc) || !valid(target) || !npc.IsLife() || npc.Timeout[TO_BATTLE] == 0 ||
+       !target.IsLife() || target.GetMapId() != npc.GetMapId() || NpcSmokeHasActiveIr(npc))
+        return false;
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+
+    int idx = NpcSmokeFindMemory(npc.Id, target.Id, false);
+    if(idx < 0 || NpcSmokeMemories[idx].mapId != map.Id)
+        return false;                                           // never saw it: no invented coordinates
+    NpcSmokeMemory@ memory = NpcSmokeMemories[idx];
+
+    bool smokeBreak = SmokeOnFireLine(map, npc.HexX, npc.HexY, memory.lastX, memory.lastY) ||
+                      NpcSmokeTouchesHex(map, memory.lastX, memory.lastY) ||
+                      valid(map.GetItem(npc.HexX, npc.HexY, PID_SMOKE_HEX)) ||
+                      valid(map.GetItem(npc.HexX, npc.HexY, PID_GAS_HEX));
+    if(!smokeBreak)
+    {
+        memory.active = false;
+        return false;
+    }
+
+    if(!memory.active)
+    {
+        memory.active = true;
+        memory.lostAt = __FullSecond;
+        uint rememberMs = uint(CLAMP(SMOKE_MEMORY_MIN_MS + npc.Stat[ST_INTELLECT] * 400,
+                                     SMOKE_MEMORY_MIN_MS, SMOKE_MEMORY_MAX_MS));
+        memory.forgetAt = __FullSecond + REAL_MS(rememberMs);
+        memory.searchStep = 0;
+    }
+    if(__FullSecond >= memory.forgetAt)
+    {
+        memory.active = false;
+        return false;                                           // smoke earned a real disengage window
+    }
+    if(npc.IsBusy() || NpcSmokeHasPendingResponse(npc))
+        return true;
+
     int maxHp = GetActualMaxHp(npc);
-    if(maxHp > 0 && npc.Stat[ST_CURRENT_HP] * 100 >= maxHp * SMOKE_AGGRO_HP_PCT
-       && !NpcTacticOnCooldown(SmokeNadeCdIds, SmokeNadeCdUntil, npc.Id))
+    int hpPct = maxHp > 0 ? npc.Stat[ST_CURRENT_HP] * 100 / maxHp : 100;
+    bool tacticalBrain = HasIntelligentBrain(npc);
+    bool smart = tacticalBrain && npc.Stat[ST_INTELLECT] >= 5;
+    bool inGas = valid(map.GetItem(npc.HexX, npc.HexY, PID_GAS_HEX)) && !GasProtected(npc);
+
+    uint8 mode = 0;
+    ProtoItem@ weapon = npc.GetSlotProto(SLOT_HAND1, mode);
+    Item@ hand = npc.GetItem(0, SLOT_HAND1);
+    int use = valid(weapon) ? _WeaponModeUse(mode) : 0;
+    int skill = valid(weapon) ? _WeaponSkill(weapon, use) : SK_CLOSE_COMBAT;
+    int maxDist = valid(weapon) ? _WeaponMaxDist(weapon, use) : 1;
+    bool melee = !valid(weapon) || skill == SK_CLOSE_COMBAT || maxDist <= 2;
+    bool flamer = valid(weapon) && (weapon.ProtoId == PID_FLAMER || weapon.ProtoId == PID_IMPROVED_FLAMETHROWER);
+    bool shotgun = valid(weapon) && weapon.Weapon_Caliber == 11;
+    bool scoped = valid(weapon) && WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
+    bool launcher = valid(hand) && (hand.AmmoPid == PID_EXPLOSIVE_ROCKET || hand.AmmoPid == PID_40MM_GRENADE ||
+                                    hand.AmmoPid == PID_ROCKET_AP || hand.AmmoPid == PID_ROBO_ROCKET_AMMO);
+
+    // Gas is survival, not tactics. Even a deployed gunner folds the weapon and leaves.
+    if(inGas)
     {
-        Item@ nade = npc.GetItem(PID_FRAG_GRENADE, -1);
-        if(!valid(nade))
-            @nade = npc.GetItem(PID_PLASMA_GRENADE, -1);
-        if(valid(nade))
-        {
-            // walk the fire line, remember the smoke it crosses, aim the middle of that stretch
-            uint16 sx = npc.HexX, sy = npc.HexY;
-            uint16 firstX = 0, firstY = 0, lastX = 0, lastY = 0;
-            bool   found = false;
-            uint   dist = GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY);
-            for(uint i = 0; i < dist; i++)
-            {
-                map.MoveHexByDir(sx, sy, GetDirection(sx, sy, target.HexX, target.HexY), 1);
-                if(valid(map.GetItem(sx, sy, PID_SMOKE_HEX)) || valid(map.GetItem(sx, sy, PID_GAS_HEX)))
-                {
-                    if(!found)
-                    {
-                        firstX = sx;
-                        firstY = sy;
-                        found = true;
-                    }
-                    lastX = sx;
-                    lastY = sy;
-                }
-                if(sx == target.HexX && sy == target.HexY)
-                    break;
-            }
-            if(found)
-            {
-                uint16 tx = firstX, ty = firstY;
-                uint   half = GetDistantion(firstX, firstY, lastX, lastY) / 2;
-                for(uint i = 0; i < half; i++)
-                    map.MoveHexByDir(tx, ty, GetDirection(tx, ty, lastX, lastY), 1);
-                if(IsThrowableThere(npc, nade, tx, ty))
-                {
-                    CommenceThrowing(npc, map, nade, tx, ty);    // explosion dispels the cloud
-                    SmokeNadeCdIds.insertLast(npc.Id);
-                    SmokeNadeCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_NADE_CD_MS));
-                    if(Random(0, 2) == 0)
-                        npc.Say(SAY_NORM_ON_HEAD, "Frag out!");
-                    return true;
-                }
-            }
-        }
+        if(npc.Param[ST_DEPLOYED] != 0)
+            ExitDeploy(npc);
+        uint16 ex = 0, ey = 0;
+        if(NpcSmokeFindPosition(npc, memory.lastX, memory.lastY, uint(maxDist), false, true, ex, ey))
+            NpcSmokeAddMove(npc, attackPlane, target.Id, ex, ey, 0);
+        else
+            NpcSmokeAddWait(npc, attackPlane, target.Id);
+        return true;
     }
 
-    // 2) blind burst down the last known line (works deployed too - no movement involved)
-    if(!NpcTacticOnCooldown(BlindBurstCdIds, BlindBurstCdUntil, npc.Id))
+    // A wounded ranged NPC uses the player's screen to break contact instead of
+    // spending explosives to remove its own protection.
+    if(!melee && hpPct < 40 && npc.IsCanWalk() && npc.Param[ST_DEPLOYED] == 0)
     {
-        uint8      mode = 0;
-        ProtoItem@ weapon = npc.GetSlotProto(SLOT_HAND1, mode);
-        Item@      hand = npc.GetItem(0, SLOT_HAND1);
-        if(valid(weapon) && valid(hand))
+        uint16 rx = 0, ry = 0;
+        if(NpcSmokeFindPosition(npc, memory.lastX, memory.lastY, uint(maxDist), false, true, rx, ry))
+            NpcSmokeAddMove(npc, attackPlane, target.Id, rx, ry, 0);
+        else
+            NpcSmokeAddWait(npc, attackPlane, target.Id);
+        return true;
+    }
+
+    // Healthy, smart troops may remove the cloud, but the whole squad shares a
+    // cooldown and blast safety rejects self/ally/neutral casualties.
+    if(smart && hpPct >= SMOKE_AGGRO_HP_PCT)
+    {
+        if(launcher && NpcSmokeTryLauncher(npc, memory, hand))
+            return true;
+        if(NpcSmokeTryGrenade(npc, memory))
+            return true;
+    }
+
+    if(melee)
+    {
+        // Melee presses the last known position, then projects a couple of hexes
+        // along the last observed movement instead of waiting at the smoke edge.
+        uint16 tx = memory.lastX;
+        uint16 ty = memory.lastY;
+        if(memory.searchStep > 0 && (memory.prevX != memory.lastX || memory.prevY != memory.lastY))
+            map.MoveHexByDir(tx, ty, GetDirection(memory.prevX, memory.prevY, memory.lastX, memory.lastY),
+                             MIN(memory.searchStep, uint(2)));
+        if(!map.IsHexPassed(tx, ty) &&
+           !FindFirstFreeHex(map, tx, ty, GetDirection(npc.HexX, npc.HexY, tx, ty), 4))
         {
-            // fire the current use if it sprays, otherwise any burst use the weapon offers
-            int use = _WeaponModeUse(mode);
-            if(_WeaponRound(weapon, use) <= 1)
+            NpcSmokeAddWait(npc, attackPlane, target.Id);
+            return true;
+        }
+        if(hpPct < 35)
+        {
+            uint16 rx = 0, ry = 0;
+            if(NpcSmokeFindPosition(npc, memory.lastX, memory.lastY, 4, false, true, rx, ry))
             {
-                use = -1;
-                for(int u = 0; u < 3; u++)
-                {
-                    if((weapon.Weapon_ActiveUses & (1 << u)) != 0 && _WeaponRound(weapon, u) > 1)
-                    {
-                        use = u;
-                        break;
-                    }
-                }
-            }
-            if(use >= 0 && _WeaponMaxDist(weapon, use) > 2
-               && GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY) <= uint(_WeaponMaxDist(weapon, use))
-               && (hand.AmmoCount > 0 || npc.Mode[MODE_UNLIMITED_AMMO] != 0))
-            {
-                // the engine deducts attack AP before critter_attack, so this direct
-                // CombatAttackHex call has to charge the shot itself
-                int apCost = _WeaponApCost(weapon, use);
-                if(apCost > 0 && npc.Stat[ST_CURRENT_AP] >= apCost)
-                {
-                    npc.StatBase[ST_CURRENT_AP] = 100 * (npc.Stat[ST_CURRENT_AP] - apCost);
-                    ProtoItem@ ammo = (hand.AmmoPid != 0 ? GetProtoItem(hand.AmmoPid) : null);
-                    CombatAttackHex(npc, target.HexX, target.HexY, weapon, uint8(use), ammo);
-                    BlindBurstCdIds.insertLast(npc.Id);
-                    BlindBurstCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_BURST_CD_MS));
-                    if(Random(0, 2) == 0)
-                        npc.Say(SAY_NORM_ON_HEAD, "Suppressing fire!");
-                }
+                memory.searchStep++;
+                NpcSmokeAddMove(npc, attackPlane, target.Id, rx, ry, 0);
+                return true;
             }
         }
+        memory.searchStep++;
+        if(!NpcSmokeAddMove(npc, attackPlane, target.Id, tx, ty, 1))
+            NpcSmokeAddWait(npc, attackPlane, target.Id);
+        return true;
     }
+
+    // Very low-intellect armed humanoids neither coordinate suppression nor
+    // calculate a flank: they simply press the last known position.
+    if(!tacticalBrain)
+    {
+        if(!NpcSmokeAddMove(npc, attackPlane, target.Id, memory.lastX, memory.lastY, 2))
+            NpcSmokeAddWait(npc, attackPlane, target.Id);
+        return true;
+    }
+
+    // Deployed automatic weapons suppress. Precision/rocket platforms wait a
+    // moment, then fold and seek another sector if they cannot safely clear smoke.
+    int burstUse = -1;
+    bool automatic = !shotgun && !flamer && !launcher && NpcSmokeFindBurstUse(npc, burstUse, false);
+    if(npc.Param[ST_DEPLOYED] != 0 && !automatic && __FullSecond >= memory.lostAt + REAL_MS(SMOKE_DEPLOY_RELOCATE_MS))
+        ExitDeploy(npc);
+
+    if(automatic && NpcSmokeAssignedSuppressor(npc, target.Id))
+    {
+        if(__FullSecond <= memory.lastSeen + REAL_MS(SMOKE_SUPPRESS_FRESH_MS) &&
+           NpcSmokeTryBlindFire(npc, memory, false))
+            return true;
+        NpcSmokeAddWait(npc, attackPlane, target.Id);             // hold the lane between bursts
+        return true;
+    }
+
+    // A flamethrower gets one very short-lived sweep at the last seen hex. It
+    // never follows the hidden target; otherwise it behaves like a short gun.
+    if(flamer && __FullSecond <= memory.lastSeen + REAL_MS(SMOKE_FLAME_SWEEP_FRESH_MS) &&
+       NpcSmokeTryBlindFire(npc, memory, true))
+        return true;
+
+    if(npc.Param[ST_DEPLOYED] != 0)
+    {
+        NpcSmokeAddWait(npc, attackPlane, target.Id);
+        return true;
+    }
+
+    // Single-shot, shotgun, non-explosive throwing and non-assigned automatic
+    // NPCs look for a smoke-free lateral angle. Scoped weapons preserve range;
+    // short weapons approach the edge. If no angle exists, face the likely exit.
+    uint desired = scoped ? uint(MAX(8, maxDist * 3 / 4)) :
+                   (shotgun || flamer || skill == SK_THROWING ? uint(MIN(5, maxDist)) : uint(MIN(8, maxDist)));
+    uint16 fx = 0, fy = 0;
+    if(NpcSmokeFindPosition(npc, memory.lastX, memory.lastY, desired, true, false, fx, fy))
+    {
+        memory.searchStep++;
+        NpcSmokeAddMove(npc, attackPlane, target.Id, fx, fy, 0);
+    }
+    else
+        NpcSmokeAddWait(npc, attackPlane, target.Id);
     return true;
 }
 
@@ -1335,11 +1905,15 @@ void PostDamage(Critter& cr)
 {
     if(valid(cr.GetMap()) && cr.GetMap().IsTurnBased())
         return;
-    if(cr.IsPlayer() || !IsHumanoid(cr) || cr.Cond == COND_DEAD)
+    if(cr.IsPlayer() || cr.Cond == COND_DEAD)
         return;
 
+    if(NpcSmokeEligible(cr))
+        TrySmokeScreen(cr);
+    if(!IsHumanoid(cr))
+        return;                                                  // robots use smoke, but not human medicine
+
     TryAllyHeal(cr);
-    TrySmokeScreen(cr);
     if(cr.IsInjured())
     {
         if(cr.Timeout[TO_SK_DOCTOR] <= 0)
@@ -2938,6 +3512,8 @@ void TryClearDeployLine(Critter& cr)
     if(!valid(map))
         return;
 
+    if(NpcSmokeHasPendingResponse(cr))
+        return;                                                  // the lost-target state already chose this move
     array<NpcPlane@> pending;                                    // don't stack a second dodge
     cr.GetPlanes(PLANE_WANDER, pending);
     if(pending.length() > 0)
@@ -2981,18 +3557,25 @@ void TryClearDeployLine(Critter& cr)
 // as TryClearDeployLine above; won't stack a second dodge.
 void TrySmokeEvade(Critter& cr)
 {
-    if(!cr.IsNpc() || cr.IsDead() || cr.IsKnockout() || !cr.IsCanWalk())
+    if(!NpcSmokeEligible(cr) || cr.IsDead() || cr.IsKnockout())
         return;
-    if(cr.Param[ST_DEPLOYED] != 0)
-        return;                                                  // deployed gunners hold the position
     Map@ map = cr.GetMap();
     if(!valid(map))
         return;
     bool inGas = valid(map.GetItem(cr.HexX, cr.HexY, PID_GAS_HEX));
     if(!inGas && !valid(map.GetItem(cr.HexX, cr.HexY, PID_SMOKE_HEX)))
         return;
+    bool gasDanger = inGas && !GasProtected(cr);
+    if(cr.Param[ST_DEPLOYED] != 0)
+    {
+        if(!gasDanger)
+            return;                                              // deployed automatic response is handled on lost target
+        ExitDeploy(cr);                                          // gas survival overrides the firing position
+    }
+    if(!cr.IsCanWalk())
+        return;
 
-    if(!(inGas && !GasProtected(cr)))                            // gas without a mask: always flee
+    if(!gasDanger)                                               // gas without a mask: always flee
     {
         if(cr.Timeout[TO_BATTLE] == 0)
             return;                                              // harmless smoke, no fight - stay put
@@ -3003,6 +3586,8 @@ void TrySmokeEvade(Critter& cr)
             return;                                              // melee profits from the cover, keep pressing
     }
 
+    if(NpcSmokeHasPendingResponse(cr))
+        return;                                                  // the lost-target state already chose this move
     array<NpcPlane@> pending;                                    // don't stack a second dodge
     cr.GetPlanes(PLANE_WANDER, pending);
     if(pending.length() > 0)
@@ -3012,6 +3597,20 @@ void TrySmokeEvade(Critter& cr)
     NpcPlane@ plane = cr.GetCurPlane();
     if(valid(plane) && plane.Type == AI_PLANE_ATTACK)
         @foe = GetCritter(plane.Attack_TargId);
+
+    uint16 foeX = 0, foeY = 0;
+    bool knowFoe = false;
+    if(valid(foe))
+    {
+        if(cr.IsSee(foe))
+        {
+            foeX = foe.HexX;
+            foeY = foe.HexY;
+            knowFoe = true;
+        }
+        else
+            knowFoe = NpcSmokeGetLastKnown(cr, foe.Id, foeX, foeY);
+    }
 
     // first cloud-free passable hex per direction; among those keep range from the target
     int    bestScore = -1;
@@ -3026,7 +3625,7 @@ void TrySmokeEvade(Critter& cr)
                 continue;
             if(valid(map.GetItem(hx, hy, PID_SMOKE_HEX)) || valid(map.GetItem(hx, hy, PID_GAS_HEX)))
                 continue;
-            int score = (valid(foe) ? int(GetDistantion(hx, hy, foe.HexX, foe.HexY)) : 1);
+            int score = (knowFoe ? int(GetDistantion(hx, hy, foeX, foeY)) : 1);
             if(score > bestScore)
             {
                 bestScore = score;
@@ -3053,6 +3652,8 @@ void TryUndeployNpc(Critter& cr)
 {
     if(!cr.IsNpc() || cr.Param[ST_DEPLOYED] == 0 || cr.IsDead() || cr.IsKnockout())
         return;
+    if(NpcSmokeHasPendingResponse(cr))
+        return;                                                  // smoke response owns hold/fold decisions
     Map@ map = cr.GetMap();
     if(!valid(map))
         return;
@@ -3063,10 +3664,20 @@ void TryUndeployNpc(Critter& cr)
         @foe = GetCritter(plane.Attack_TargId);
     if(valid(foe) && foe.IsLife() && foe.GetMapId() == map.Id)
     {
+        uint16 foeX = 0, foeY = 0;
+        bool knowFoe = false;
+        if(cr.IsSee(foe))
+        {
+            foeX = foe.HexX;
+            foeY = foe.HexY;
+            knowFoe = true;
+        }
+        else
+            knowFoe = NpcSmokeGetLastKnown(cr, foe.Id, foeX, foeY);
         uint8      mode = 0;
         ProtoItem@ weapon = cr.GetSlotProto(SLOT_HAND1, mode);
-        if(valid(weapon)
-           && GetDistantion(cr.HexX, cr.HexY, foe.HexX, foe.HexY) <= uint(_WeaponMaxDist(weapon, _WeaponModeUse(mode))))
+        if(knowFoe && valid(weapon)
+           && GetDistantion(cr.HexX, cr.HexY, foeX, foeY) <= uint(_WeaponMaxDist(weapon, _WeaponModeUse(mode))))
             return;                                              // target still serviceable, stay planted
     }
     ExitDeploy(cr);
@@ -3284,6 +3895,25 @@ void DeletePoweredArmors(Critter& cr)
     }
 }
 
+#define EXPLOSIVE_COLLAR_DAMAGE_PERCENT          (25)
+#define EXPLOSIVE_COLLAR_RADIUS                  (3)
+
+void ExplodeCollarOnDeath(Critter& cr, Map@ map)
+{
+    if(!cr.IsPlayer() || !valid(map))
+        return;
+
+    Item@ collar = cr.GetItem(0, SLOT_UTILITY);
+    if(!valid(collar) || collar.GetProtoId() != PID_EXPLOSIVE_COLLAR)
+        return;
+
+    uint damage = uint(MAX(1, GetActualMaxHp(cr) * EXPLOSIVE_COLLAR_DAMAGE_PERCENT / 100));
+    DeleteItem(collar);
+    // The final argument only selects ExplodeEx's door-damage profile.
+    ExplodeEx(map, cr.HexX, cr.HexY, PID_EXPLODE_ROCKET, EXPLOSIVE_COLLAR_RADIUS, damage,
+              DAMAGE_EXPLODE, EXPLOSIVE_COLLAR_RADIUS, cr.Id, PID_ACTIVE_DYNAMITE);
+}
+
 void critter_dead(Critter& cr, Critter@ killer)
 {
     //if(!valid(cr) || !valid(killer))
@@ -3304,6 +3934,7 @@ void critter_dead(Critter& cr, Critter@ killer)
 	}
 	uint crGroup = _GroupIndex(cr);
     Map@ map = cr.GetMap();
+    ExplodeCollarOnDeath(cr, map);
     cr.ParamBase[TO_IMMUNITY_TIME] = MAX(uint(cr.Param[TO_IMMUNITY_TIME]), ELAPSED_TIME + SLEEPY_DEATH_IMMUNITY(cr));
     if(valid(killer) && killer.IsPlayer() && !IsFlaggedAsIllegal(cr) && (killer.Id != cr.Id) && (crGroup > 1) && !IsArenaCombatant(killer) && !IsDueling(killer))
     {

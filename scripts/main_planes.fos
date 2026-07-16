@@ -29,14 +29,24 @@ import void MilitiaMoveToFreeHex(Critter& cr) from "town_militia";
 import void SetWear(Item& item, int wearProcent) from "repair";
 import void MoveMobToFreeHex(Critter& mob) from "mob_dynamic";
 import int  _AbominationMinionAim(Critter& npc, Critter& target) from "eventboss";
-import bool NpcSmokeAggroHold(Critter& npc, Critter@ target) from "main";
+import void NpcSmokeTrackVisible(Critter& npc, Critter@ target) from "main";
+import bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target) from "main";
 
 // Tactical path searches are intentionally throttled: npc_plane_run is a hot path
 // and a large encounter must not evaluate a full set of destinations every frame.
 #define TACTICAL_POSITION_COOLDOWN_MS (3500)
 #define TACTICAL_MAX_REPOSITION_PATH  (uint(8))
+#define TACTICAL_MELEE_REACTION_MIN_MS (800)
+#define TACTICAL_MELEE_REACTION_MAX_MS (1800)
+#define TACTICAL_MELEE_EVADE_CD_MS     (5500)
+#define TACTICAL_MELEE_STATE_PRUNE_MS  (30000)
 uint[] TacticalPositionIds;
 uint[] TacticalPositionUntil;
+uint[] TacticalMeleeNpcIds;
+uint[] TacticalMeleeTargetIds;
+uint[] TacticalMeleePressureSince;
+uint[] TacticalMeleeEvadeUntil;
+uint[] TacticalMeleeStateTouched;
 
 //companion SF overstack
 //import void MoveCompToFreeHex(Critter& cr) from "companions";
@@ -841,6 +851,8 @@ bool npc_plane_end(Critter& npc, NpcPlane& plane, int reason, Critter@ someCr, I
         TacticalClearPositionCooldown(npc.Id);
         return true;
     }
+    if(plane.Identifier == PLANE_SMOKE_RESPONSE)
+        return true;
     switch(reason)
     {
     //case REASON_TRACE_FAIL:
@@ -870,9 +882,9 @@ bool npc_plane_end(Critter& npc, NpcPlane& plane, int reason, Critter@ someCr, I
     case REASON_NO_UNARMED:
         return PlaneEndNoArmed(npc, plane);
     case REASON_TARGET_DISAPPEARED:
-        // Smoke stole the sight line: keep the attack plane queued and fight the cloud
-        // (grenade dispel / blind burst) instead of forgetting the enemy - main.fos.
-        if(NpcSmokeAggroHold(npc, someCr))
+        // Smoke stole the sight line: keep the attack queued briefly while main.fos
+        // selects a last-known-position response for this weapon and squad role.
+        if(NpcSmokeAggroHold(npc, plane, someCr))
             return false;
         break;
     }
@@ -897,6 +909,15 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
     #ifdef __TEST__
     npc.Say(SAY_NORM, "npc_plane_run: " + plane2str(plane.Type) + ", " + reason2str(reason));
     #endif
+    // Keep a real last-seen snapshot while the engine confirms visibility.
+    // NpcSmokeTrackVisible performs its own IsSee check, so hidden target
+    // coordinates never leak into the smoke response state.
+    if(plane.Type == AI_PLANE_ATTACK)
+    {
+        Critter@ visibleTarget = GetCritter(plane.Attack_TargId);
+        if(valid(visibleTarget))
+            NpcSmokeTrackVisible(npc, visibleTarget);
+    }
     if(reason == REASON_ATTACK_WEAPON)
     {
         uint   targetId = r0;
@@ -1342,8 +1363,8 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
             }
 
             // Prefer a distinct firing sector with a clean line, nearby cover and room for allies.
-            // A close melee player makes distance/safety much more valuable, so ranged NPCs kite
-            // if the map offers a reachable escape hex.
+            // Melee danger is evaluated below from the player's real reach, with a reaction delay
+            // and a separate anti-chain-kite cooldown.
             TacticalRepositionRanged(npc, plane, target, uint(r0 + multihex),
                                      uint(r1 + multihex), uint(r2 + multihex));
 
@@ -1537,6 +1558,72 @@ void TacticalClearPositionCooldown(uint npcId)
     }
 }
 
+int TacticalMeleeStateIndex(uint npcId, uint targetId, bool create)
+{
+    for(uint i = 0; i < TacticalMeleeNpcIds.length();)
+    {
+        if(TacticalMeleeStateTouched[i] + REAL_MS(TACTICAL_MELEE_STATE_PRUNE_MS) <= __FullSecond)
+        {
+            TacticalMeleeNpcIds.removeAt(i);
+            TacticalMeleeTargetIds.removeAt(i);
+            TacticalMeleePressureSince.removeAt(i);
+            TacticalMeleeEvadeUntil.removeAt(i);
+            TacticalMeleeStateTouched.removeAt(i);
+            continue;
+        }
+        if(TacticalMeleeNpcIds[i] == npcId && TacticalMeleeTargetIds[i] == targetId)
+        {
+            TacticalMeleeStateTouched[i] = __FullSecond;
+            return int(i);
+        }
+        i++;
+    }
+    if(!create)
+        return -1;
+
+    TacticalMeleeNpcIds.insertLast(npcId);
+    TacticalMeleeTargetIds.insertLast(targetId);
+    TacticalMeleePressureSince.insertLast(0);
+    TacticalMeleeEvadeUntil.insertLast(0);
+    TacticalMeleeStateTouched.insertLast(__FullSecond);
+    return int(TacticalMeleeNpcIds.length() - 1);
+}
+
+uint TacticalMeleeReactionDelay(Critter& npc, uint currentDist, uint threatDist)
+{
+    int delay = TACTICAL_MELEE_REACTION_MAX_MS - CLAMP(npc.Stat[ST_INTELLECT], 1, 10) * 60;
+    if(currentDist < threatDist)
+        delay -= MIN(600, int(threatDist - currentDist) * 250);   // deeper danger reacts faster, never instantly
+    delay += int(npc.Id % 201);                                  // stable per-NPC hesitation
+    return uint(CLAMP(delay, TACTICAL_MELEE_REACTION_MIN_MS, TACTICAL_MELEE_REACTION_MAX_MS));
+}
+
+bool TacticalMeleePressureReady(Critter& npc, Critter& target, uint currentDist, uint threatDist)
+{
+    int idx = TacticalMeleeStateIndex(npc.Id, target.Id, true);
+    if(currentDist > threatDist)
+    {
+        TacticalMeleePressureSince[idx] = 0;
+        return false;
+    }
+    if(TacticalMeleeEvadeUntil[idx] > __FullSecond)
+        return false;                                            // no perfect chain-kiting
+    if(TacticalMeleePressureSince[idx] == 0)
+    {
+        TacticalMeleePressureSince[idx] = __FullSecond;
+        return false;
+    }
+    return TacticalMeleePressureSince[idx] +
+           REAL_MS(TacticalMeleeReactionDelay(npc, currentDist, threatDist)) <= __FullSecond;
+}
+
+void TacticalSetMeleeEvadeCooldown(Critter& npc, Critter& target)
+{
+    int idx = TacticalMeleeStateIndex(npc.Id, target.Id, true);
+    TacticalMeleePressureSince[idx] = 0;
+    TacticalMeleeEvadeUntil[idx] = __FullSecond + REAL_MS(TACTICAL_MELEE_EVADE_CD_MS);
+}
+
 uint TacticalCrowdAt(array<Critter@>& allies, uint16 hx, uint16 hy)
 {
     uint crowd = 0;
@@ -1632,16 +1719,21 @@ void TacticalThreatProfile(Critter& target, bool& ranged, uint& maxDist)
 {
     uint8 mode = 0;
     ProtoItem@ weapon = target.GetSlotProto(SLOT_HAND1, mode);
+    uint multihex = target.GetMultihex();
+    uint meleeReach = uint(MAX(0, target.Param[MODE_RANGE_HTH]));
     if(!valid(weapon))
     {
         ranged = false;
-        maxDist = 1 + target.GetMultihex();
+        maxDist = 1 + multihex + meleeReach;
         return;
     }
 
     int use = _WeaponModeUse(mode);
     ranged = _WeaponSkill(weapon, use) != SK_CLOSE_COMBAT && _WeaponMaxDist(weapon, use) > 2;
-    maxDist = uint(MAX(1, _WeaponMaxDist(weapon, use))) + target.GetMultihex();
+    if(ranged)
+        maxDist = uint(MAX(1, _WeaponMaxDist(weapon, use))) + multihex;
+    else
+        maxDist = uint(_WeaponMaxDist(weapon, use) > 1 ? 2 : 1) + multihex + meleeReach;
 }
 
 bool TacticalTargetCanAttack(Map& map, Critter& target, uint16 hx, uint16 hy,
@@ -1781,8 +1873,13 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
                        TacticalHasLine(map, npc.HexX, npc.HexY, target.HexX, target.HexY);
     uint currentCrowd = TacticalCrowdAt(allies, npc.HexX, npc.HexY);
     bool currentFireLane = TacticalInFriendlyFireLane(allies, target, npc.HexX, npc.HexY);
-    bool meleePressure = target.IsPlayer() && !threatRanged && currentDist <= threatDist + 2;
-    bool closePressure = target.IsPlayer() && currentDist <= 2;
+    // Melee pressure starts at the player's real attack reach (including
+    // MODE_RANGE_HTH), but only after sustained exposure. The old threatDist+2
+    // and immediate <=2 checks made ranged NPCs pre-kite before melee could hit.
+    bool meleePressure = false;
+    if(target.IsPlayer() && !threatRanged)
+        meleePressure = TacticalMeleePressureReady(npc, target, currentDist, threatDist);
+    bool closePressure = target.IsPlayer() && threatRanged && currentDist <= 1;
     bool mustMove = !currentLine || currentFireLane || currentCrowd >= 2 ||
                     meleePressure || closePressure;
 
@@ -1804,9 +1901,9 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
         if(currentFireLane)
             currentScore -= 300;
         if(meleePressure)
-            currentScore -= 600;
+            currentScore -= 350;
         else if(closePressure)
-            currentScore -= 300;
+            currentScore -= 150;
         if(!TacticalTargetCanAttack(map, target, npc.HexX, npc.HexY, threatRanged, threatDist))
             currentScore += 120;
     }
@@ -1818,7 +1915,8 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
     for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
     {
         uint dir = (seedDir + dirOffset) % 6;
-        for(uint step = 1; step <= 4; step++)
+        uint maxStep = meleePressure ? 3 : 4;
+        for(uint step = 1; step <= maxStep; step++)
         {
             // Search locally around the NPC. A geometrically attractive hex on
             // the far side of the player is no longer a tactical candidate.
@@ -1848,10 +1946,10 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
             score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 100;
             if(TacticalInFriendlyFireLane(allies, target, hx, hy))
                 score -= 300;
-            if(target.IsPlayer() && !threatRanged && dist <= threatDist + 2)
-                score -= 600;
-            else if(target.IsPlayer() && dist <= 2)
-                score -= 300;
+            if(target.IsPlayer() && !threatRanged && dist <= threatDist)
+                score -= 350;
+            else if(target.IsPlayer() && threatRanged && dist <= 1)
+                score -= 150;
             if(!TacticalTargetCanAttack(map, target, hx, hy, threatRanged, threatDist))
                 score += 120;
             if(score <= bestScore)
@@ -1867,10 +1965,20 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
     }
 
     if(bestScore > currentScore + 20)
-        return TacticalAddMove(npc, attackPlane, target, bestX, bestY);
+    {
+        bool moved = TacticalAddMove(npc, attackPlane, target, bestX, bestY);
+        if(moved && meleePressure)
+            TacticalSetMeleeEvadeCooldown(npc, target);
+        return moved;
+    }
     if(!currentLine && bestScore == -100000)
-        return TacticalStageWhenBlocked(map, npc, attackPlane, target, allies,
-                                        reservedX, reservedY, preferredDist);
+    {
+        bool moved = TacticalStageWhenBlocked(map, npc, attackPlane, target, allies,
+                                              reservedX, reservedY, preferredDist);
+        if(moved && meleePressure)
+            TacticalSetMeleeEvadeCooldown(npc, target);
+        return moved;
+    }
     return false;
 }
 

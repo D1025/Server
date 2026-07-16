@@ -1869,6 +1869,9 @@
 # PE_SERVO_GUNNER              (410)
 {104101}{}{Servo Gunner}
 {104102}{}{Your power armor steadies deployable weapons well enough to fire from the hip - no need to deploy first. If you do deploy, the servo bracing hardens your limbs for +10 damage resistance to arms and legs. Requires Powered Bipod.}
+# PE_LEG_BREAKER               (411)
+{104111}{}{Leg Breaker}
+{104112}{}{Your melee attacks hamper an opponent's movement, preventing them from running for 2 seconds. Further hits refresh the duration.}
 # PE_EXPERT_EXCREMENT
 {104171}{}{Expert Excrement Expeditor}
 {104172}{}{You can sling bull with the best of them.}

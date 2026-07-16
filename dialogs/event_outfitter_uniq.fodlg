@@ -102,11 +102,12 @@ lang=engl
 10 10040 R _item p PID_PERSONAL_SHIELD_GENERATOR + 1 #
 10 10050 R _item p PID_GAS_MASK + 1 #
 10 10060 R _item p PID_TALISMAN + 1 #
-10 10070 R _item p PID_FIRST_AID_KIT + 1 #
-10 10080 R _item p PID_DOCTORS_BAG + 1 #
-10 10090 R _item p PID_FIELD_MEDIC_KIT + 1 #
-10 10100 R _item p PID_PARAMEDICS_BAG + 1 #
-10 10110 R _item p PID_BACKPACK + 1 #
+10 10070 R _item p PID_EXPLOSIVE_COLLAR + 1 #
+10 10080 R _item p PID_FIRST_AID_KIT + 1 #
+10 10090 R _item p PID_DOCTORS_BAG + 1 #
+10 10100 R _item p PID_FIELD_MEDIC_KIT + 1 #
+10 10110 R _item p PID_PARAMEDICS_BAG + 1 #
+10 10120 R _item p PID_BACKPACK + 1 #
 2 10120 &
 
 [engl]
@@ -207,9 +208,10 @@ lang=engl
 {10040}{}{A Personal Shield Generator.}
 {10050}{}{A Gas Mask.}
 {10060}{}{A Talisman.}
-{10070}{}{A First Aid Kit.}
-{10080}{}{A Doctor's Bag.}
-{10090}{}{A Field Medic Kit.}
-{10100}{}{A Paramedic's Bag.}
-{10110}{}{A Backpack.}
-{10120}{}{Back.}
+{10070}{}{An Explosive Collar}
+{10080}{}{A First Aid Kit.}
+{10090}{}{A Doctor's Bag.}
+{10100}{}{A Field Medic Kit.}
+{10110}{}{A Paramedic's Bag.}
+{10120}{}{A Backpack.}
+{10130}{}{Back.}

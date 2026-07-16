@@ -268,6 +268,11 @@
 #define DAMAGE_EMP                               (6)
 #define DAMAGE_EXPLODE                           (7)
 
+// Weapon-perk knockback is based on final damage after every protection layer.
+#define KNOCKBACK_MIN_POST_SOAK_DAMAGE            (30)
+#define KNOCKBACK_DAMAGE_DIVISOR                  (15)
+#define DYNACORD_FUSE_SECONDS                     (3)
+
 // Wall-slam: surowe obrazenia (przed resistami) za kazdy nieprzebyty heks odrzutu (patrz ApplyWallSlam w combat.fos)
 #define WALL_SLAM_DMG_PER_HEX                    (14)
 
@@ -492,6 +497,7 @@
 #define CTE_SUPERSTIMHEALING                     (1338)
 #define CTE_NO_RUN                               (1339)
 #define CTE_PERSISTENT_DOT                       (1340)
+#define CTE_MELEE_NO_RUN                         (1341)
 
 // Parameters
 /// Stats
@@ -839,7 +845,7 @@
 #define PE_VAULT_CITY_TRAINING                   (408) // Not implemented
 #define PE_POWERED_BIPOD                         (409) // Deploy perk: while deployed in power armor you may still walk (never run), each move hex costs 1 AP (deploy.fos + engine Act_Move). Reused slot (was unused PE_ALCOHOL_RAISED_HP)
 #define PE_SERVO_GUNNER                          (410) // Deploy perk: in power armor you may fire a deployable weapon without deploying; while deployed you gain +10 DR to arms/legs (combat.fos). Requires PE_POWERED_BIPOD (main.fos). Reused slot (was unused PE_ALCOHOL_RAISED_HP_II)
-#define PE_ALCOHOL_LOWERED_HP                    (411) // Not implemented
+#define PE_LEG_BREAKER                           (411)
 #define PE_ALCOHOL_LOWERED_HP_II                 (412) // Not implemented
 #define PE_AUTODOC_RAISED_HP                     (413) // Not implemented
 #define PE_AUTODOC_RAISED_HP_II                  (414) // Not implemented
@@ -1179,6 +1185,7 @@
 #define PLANE_RETURN_WPN                         (40)
 #define PLANE_RAM_INTO_CRITTER                   (41) // Run to a hex and try to ram into the target critter (not a real attack but can KD/damage).
 #define PLANE_TACTICAL_POSITION                  (42) // Shared combat positioning: firing lane, cover or safe staging hex.
+#define PLANE_SMOKE_RESPONSE                     (43) // Short move/wait while reacting to a target hidden by smoke.
 
 // Plane begin/end/run reasons
 // Begin

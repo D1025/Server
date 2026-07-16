@@ -161,6 +161,22 @@ LightColor=-16777216
 Utility_Flags=256
 
 [Proto]
+ProtoId=25594
+Type=5
+PicMap=art\items\box2.frm
+PicInv=art\inven\explosive_colar.png
+Flags=134217758
+DisableEgg=1
+Stackable=0
+Slot=4
+Weight=907
+Volume=1
+SoundId=48
+Cost=1000
+Material=1
+LightColor=-16777216
+
+[Proto]
 ProtoId=570
 Type=5
 PicMap=art\items\smalbox2.frm

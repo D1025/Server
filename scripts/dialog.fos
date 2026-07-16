@@ -1424,7 +1424,8 @@ array<array<uint16> > outfitData =
     { PID_MOTION_SENSOR, 1, PID_GOGGLES, 1 },
     { PID_SUPER_STIMPAK, 3 },
     { PID_COOKIE, 10 },
-    { PID_MIRROR_SHADES, 1 }
+    { PID_MIRROR_SHADES, 1 },
+    { PID_EXPLOSIVE_COLLAR, 1 }
 };
 
 

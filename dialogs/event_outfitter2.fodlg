@@ -90,7 +90,8 @@ lang=engl
 40 12040 R _script dialog@r_Outfitter 1 30 #
 40 12050 R _script dialog@r_Outfitter 1 31 #
 40 12060 R _script dialog@r_Outfitter 1 32 #
-40 12070 @
+40 12070 R _script dialog@r_Outfitter 1 33 #
+40 12080 @
 40 13000 None 0 @
 50 14000 None 0 @
 666 15000 None 0 &
@@ -181,7 +182,8 @@ lang=engl
 {12040}{}{Hypochondriac (three extra super stimpaks)}
 {12050}{}{Glutton (ten cookies).}
 {12060}{}{Poser (mirrored shades)}
-{12070}{}{Erm... no, thanks. I'm ready for combat.}
+{12070}{}{Dead man's switch (Explosive Collar).}
+{12080}{}{Erm... no, thanks. I'm ready for combat.}
 {13000}{}{Good luck. Next!}
 {14000}{}{You've already received your gear. Next!}
 {15000}{}{Outfitter dialog error. If you see this message report it on forum.}
