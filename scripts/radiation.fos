@@ -46,6 +46,11 @@ void AffectRadiation(Critter& cr, int value)   // Export
 {
     if(cr.IsDead())
         return;
+    if(cr.Stat[ST_NPC_BOSS] == 1)   // MOB_IS_BOSS
+    {
+        DropRadiation(cr);
+        return;
+    }
     if(cr.Stat[ST_BODY_TYPE] == BT_ROBOT || cr.Stat[ST_BODY_TYPE] == BT_ALIEN)
         return;
 
@@ -118,6 +123,11 @@ uint cte_Radiation(Critter& cr, int identifier, uint& stage)
 {
     if(cr.IsDead())
         return GAME_MINUTE(100);
+    if(cr.Stat[ST_NPC_BOSS] == 1)   // Also clean statuses restored from an older save.
+    {
+        DropRadiation(cr);
+        return 0;
+    }
 
     uint newStage = GetRadiationStage(cr.Stat[ST_RADIATION_LEVEL]);
     uint duration = RADIATION_DURATION;

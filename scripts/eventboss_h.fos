@@ -15,6 +15,30 @@ interface IAttack
     void AttackRecuperationEnd();
 };
 
+// Worldmap event bosses accelerate at four or more living players:
+// 4 players = 10%, then +5 percentage points per additional player, capped at 50%.
+uint EventBossPlayerHaste(Critter@ boss)
+{
+    if(!valid(boss))
+        return 0;
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return 0;
+    array<Critter@> players;
+    uint count = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+    if(count <= 3)
+        return 0;
+    uint haste = 10 + (count - 4) * 5;
+    return haste > 50 ? 50 : haste;
+}
+
+uint EventBossScaledDelay(Critter@ boss, uint delay)
+{
+    uint haste = EventBossPlayerHaste(boss);
+    uint scaled = delay * (100 - haste) / 100;
+    return scaled > 0 ? scaled : 1;
+}
+
 
 
 
@@ -35,6 +59,7 @@ class CBoss
 
     //
     bool patern;
+    bool scaleWithPlayers;
 
     CBoss()
     {
@@ -51,6 +76,7 @@ class CBoss
         attackRecuperations = array<int>(0);
 
         patern = false;
+        scaleWithPlayers = false;
     }
 
 
@@ -71,6 +97,7 @@ class CBoss
     void AddCritter(Critter& crit)
     {
         critterList.insertLast(crit.Id);
+        crit.StatBase[ST_NPC_BOSS] = 1;   // MOB_IS_BOSS; grants shared boss-only protections
         crit.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_BossShowCritter");
         crit.SetEvent(CRITTER_EVENT_ATTACKED, "_BossAttacked");
         crit.SetEvent(CRITTER_EVENT_FINISH, "_BossFinish");
@@ -107,14 +134,20 @@ class CBoss
         }
         attacks[currentAttack].AttackPrepareStart();
         array<int> vals = { id };
-        timeEvent = CreateTimeEvent(AFTER(attackPrepareTimes[currentAttack]), "e_CommenceAttack", vals, false);
+        uint delay = uint(attackPrepareTimes[currentAttack]);
+        if(scaleWithPlayers && critterList.length() > 0)
+            delay = EventBossScaledDelay(GetCritter(critterList[0]), delay);
+        timeEvent = CreateTimeEvent(AFTER(delay), "e_CommenceAttack", vals, false);
     }
 
     void commenceAttack()
     {
         attacks[currentAttack].AttackCommence();
         array<int> vals = { id };
-        timeEvent = CreateTimeEvent(AFTER(attackRecuperations[currentAttack]), "e_FinishAttack", vals, false);
+        uint delay = uint(attackRecuperations[currentAttack]);
+        if(scaleWithPlayers && critterList.length() > 0)
+            delay = EventBossScaledDelay(GetCritter(critterList[0]), delay);
+        timeEvent = CreateTimeEvent(AFTER(delay), "e_FinishAttack", vals, false);
     }
 
     void finishAttack()

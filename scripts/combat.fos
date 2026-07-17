@@ -57,7 +57,7 @@ import bool RegisterShotCorridor( Map& map, uint16 fromHx, uint16 fromHy, uint16
 #define PERSISTENT_DOT_TICK_PERIOD   (REAL_SECOND(1))
 #define SILENT_HILL_LOW_LIFE_THRESHOLD_PERCENT (35)
 #define SILENT_HILL_PROTO_BONUS_PERCENT        (50)
-#define TALISMAN_COOLDOWN                       (REAL_MINUTE(1))
+#define TALISMAN_COOLDOWN                       (REAL_MINUTE(2))
 #define TALISMAN_IMMUNITY                       (REAL_SECOND(3))
 #define PERSONAL_SHIELD_COOLDOWN                (REAL_MINUTE(1))
 
@@ -151,6 +151,7 @@ class AttackStruct
     ProtoItem@ Ammo = null;
     bool       SilentDeathEffect = false;
     bool       InYourFaceEffect = false;
+	bool       DamageOnly = false; // suppress crit/KD/limb effects for replicated damage
 	uint16     ammoPid;
 	uint16     weaponPid;
 	int8       weaponMode; // for swing/thrust melee weapons
@@ -172,6 +173,45 @@ class AttackStruct
 		return UpgradeWeaponBonus(RealWeapon, Int_Val_WeaponBonus);
 	}		
 	
+}
+
+bool IsEventAbominationAttack(Critter& attacker, AttackStruct& attack)
+{
+    return attacker.IsNpc() && attacker.Stat[ST_NPC_BOSS] != 0 &&
+           attacker.GetProtoId() == NPC_PID_MotherDeathclaw && attack.IsUnarmed;
+}
+
+// The Abomination's successful claw hit damages its original target exactly once,
+// then repeats damage resolution for every other player on the map. Replicas use
+// each player's own protection but carry no crit, limb, knockdown or knockback effects.
+void ApplyEventAbominationHit(AttackStruct& attack, Critter& originalTarget,
+                              bool isCritical, bool intentionally,
+                              array<CombatRes>& results)
+{
+    ApplyDamage(attack, originalTarget, 1, isCritical, intentionally, results, 0);
+
+    Critter@ attacker = attack.Attacker;
+    if(!valid(attacker))
+        return;
+    Map@ map = attacker.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> players;
+    uint count = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+    AttackStruct echo = attack;
+    echo.DamageOnly = true;
+    echo.CombatMessage = false;
+    echo.SilentDeathEffect = false;
+    echo.InYourFaceEffect = false;
+    echo.TargetHit = false;
+    echo.set_Aim(HIT_LOCATION_UNCALLED);
+    for(uint i = 0; i < count; i++)
+    {
+        if(!valid(players[i]) || players[i].IsDead() || players[i].Id == originalTarget.Id)
+            continue;
+        ApplyDamage(echo, players[i], 1, false, true, results, 0);
+    }
 }
 
 int SelectArmorBonus(Item@ armor, int Int_Val_ArmorBonus)
@@ -932,7 +972,10 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
             }
             else
             {
-                ApplyDamage(attack, realTarget, 1, criticalHit, true, results, 0);
+                if(IsEventAbominationAttack(cr, attack))
+                    ApplyEventAbominationHit(attack, realTarget, criticalHit, true, results);
+                else
+                    ApplyDamage(attack, realTarget, 1, criticalHit, true, results, 0);
             }
         }
         else
@@ -1560,6 +1603,11 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     int      upgradePersistentPercent = UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_PERSISTENT);
     int      protoSilentHillStacks = valid(realWeapon) ? WeaponProtoPerkStacks(realWeapon.Proto, WEAPON_PERK_SILENT_HILL_MONSTER) : (weaponPerk == WEAPON_PERK_SILENT_HILL_MONSTER ? 1 : 0);
     int      upgradeSilentHillPercent = UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER);
+    if(attack.DamageOnly)
+    {
+        isCritical = false;
+        hasKnockbackPerk = false;
+    }
 
 
     int realrounds = rounds;
@@ -1698,23 +1746,21 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         // 0x00008000 - lose next turn
         // 0x00200000 - random
 
-        uint offset = (bt > BT_BIG_BAD_BOSS ? 1 : bt) * 9 * 6 * 7 + aim_ * 6 * 7 + critLevel * 7;
-		
 		if(rounds<=1)
         // jezeli pojedynczy strzal to warunek ze krytyczny wczesniej spelniony i zawsze obliczaj tego krytyka
 		{
-			_dmgMul[0] *= CriticalTable[offset];
+			_dmgMul[0] *= CriticalTable[aim_][critLevel][CRITICAL_DAMAGE_MULTIPLIER];
 			_dmgMul[0] >>= 1;
 		}
 		
 		if(isCritical && !(target.Trait[TRAIT_BONEHEAD] != 0 && (aim == HIT_LOCATION_HEAD || aim == HIT_LOCATION_EYES)))
 		{
-			eff = CriticalTable[offset + 1];
-			//int  stat = CriticalTable[offset + 2];
-			//int  statMod = CriticalTable[offset + 3];
+			eff = CriticalTable[aim_][critLevel][CRITICAL_EFFECTS];
+			//int stat = CriticalTable[aim_][critLevel][CRITICAL_STAT_CHECK];
+			//int statMod = CriticalTable[aim_][critLevel][CRITICAL_CHECK_MODIFIER];
 
-			uint cMessage = CriticalTable[offset + 5];
-			uint cFailureMessage = CriticalTable[offset + 6];
+			uint cMessage = CriticalTable[aim_][critLevel][CRITICAL_MESSAGE];
+			uint cFailureMessage = CriticalTable[aim_][critLevel][CRITICAL_FAILURE_MESSAGE];
 
             if((aim == HIT_LOCATION_TORSO && critLevel > 1))
                 knockbackFromCrit = true;
@@ -1727,18 +1773,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 			// OLD, but keep for reference (for now):
 			// Get data for player body type
-			// delete offset=MAX_BODY_TYPES*9*6*7+aim_*6*7+roll*7;
-			// magic number 1500 = (fonline male player series minus men series)
-			// uint cMessageSelf=CriticalTable[offset+5] + 1500; //+ (target.Gender==GENDER_FEMALE?100:0);
-			// uint cFailureMessageSelf=CriticalTable[offset+6] +1500; //+ (target.Gender==GENDER_FEMALE?100:0);
-
 			extraMessage = cMessage;
 
             //no failure
 			/*if(stat != -1)
 				if(Random(1, 10) > target.Stat[stat] + statMod)
 				{
-					eff |= CriticalTable[offset + 4];
+					eff |= CriticalTable[aim_][critLevel][CRITICAL_FAILURE_EFFECTS];
 					extraMessage = cFailureMessage;
 				} */
 
@@ -1846,7 +1887,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     }
 	
     // Grappler Trait knockdown
-    if(validAttacker && attack.IsUnarmed && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
+    if(validAttacker && !attack.DamageOnly && attack.IsUnarmed && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
     {
         int bonus = (valid(realWeaponTarget) && WeaponHasProtoPerk(realWeaponTarget.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0) - (valid(realWeapon) && WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0);
         if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + bonus < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])

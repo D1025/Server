@@ -811,3 +811,5 @@
 {18801}{}{Enclave turrets are equipped with heavy dual miniguns that can rip even through power armor with ease, making fighting one's way through hardly an option.}
 {18810}{}{Aerial Turret}
 {18811}{}{Enclave turrets are equipped with heavy dual miniguns that can rip even through power armor with ease, making fighting one's way through hardly an option.}
+{18820}{}{Slave Master}
+{18821}{}{A brutal overseer who turns the explosive collars of his captives into weapons.}

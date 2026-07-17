@@ -27,6 +27,11 @@ void AffectPoison(Critter& cr, int value)   // Export
 {
     if(cr.IsDead())
         return;
+    if(cr.Stat[ST_NPC_BOSS] == 1)   // MOB_IS_BOSS
+    {
+        DropPoison(cr);
+        return;
+    }
 
     array<uint> indexes;
     array<uint> durations;
@@ -111,6 +116,11 @@ uint cte_Poison(Critter& cr, int identifier, uint& rate)
 {
     if(cr.IsDead())
         return GAME_MINUTE(100);
+    if(cr.Stat[ST_NPC_BOSS] == 1)   // Also clean statuses restored from an older save.
+    {
+        DropPoison(cr);
+        return 0;
+    }
 
     int levelVal = cr.Stat[ST_POISONING_LEVEL];
     if(levelVal > 0)

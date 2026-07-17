@@ -217,6 +217,155 @@ bool npc_plane_begin(Critter& npc, NpcPlane& plane, int reason, Critter@ someCr,
     return true;
 }
 
+bool PostHealAttacksTarget(Critter& npc, uint targetId)
+{
+    array<NpcPlane@> planes;
+    npc.GetPlanes(AI_PLANE_ATTACK, planes);
+    for(uint i = 0; i < planes.length(); i++)
+        if(valid(planes[i]) && planes[i].Attack_TargId == targetId)
+            return true;
+    return false;
+}
+
+Critter@ PostHealFindTarget(Critter& npc, Critter& healed)
+{
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return null;
+
+    array<Critter@> candidates;
+    array<Critter@> allies;
+    map.GetCrittersHex(npc.HexX, npc.HexY, 35, FIND_LIFE, candidates);
+    map.GetCrittersHex(npc.HexX, npc.HexY, 35, FIND_LIFE | FIND_ONLY_NPC, allies);
+    int group = _GroupIndex(npc);
+    int bestScore = 1000000;
+    Critter@ best = null;
+    for(uint i = 0; i < candidates.length(); i++)
+    {
+        Critter@ target = candidates[i];
+        if(!valid(target) || target.Id == npc.Id || target.Id == healed.Id ||
+           !target.IsLife() || target.GetMapId() != map.Id)
+            continue;
+        if(target.IsNpc() && group > FACTION_NONE && _GroupIndex(target) == group)
+            continue;
+
+        bool ownKnown = IsCurrentEnemy(npc, target.Id) || PostHealAttacksTarget(npc, target.Id);
+        bool squadKnown = IsCurrentEnemy(healed, target.Id) || PostHealAttacksTarget(healed, target.Id);
+        for(uint a = 0; group > FACTION_NONE && !squadKnown && a < allies.length(); a++)
+        {
+            Critter@ ally = allies[a];
+            if(valid(ally) && ally.Id != npc.Id && _GroupIndex(ally) == group &&
+               PostHealAttacksTarget(ally, target.Id))
+                squadKnown = true;
+        }
+        bool visible = npc.IsSee(target);
+        if(!ownKnown && (!squadKnown || !visible))
+            continue;                                           // allies share a visible threat, never hidden coordinates
+
+        int score = int(GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY)) * 10;
+        if(visible)
+            score -= 220;
+        if(ownKnown)
+            score -= 80;
+        if(score < bestScore)
+        {
+            bestScore = score;
+            @best = target;
+        }
+    }
+    return best;
+}
+
+uint PostHealCoverValue(Map& map, uint16 hx, uint16 hy)
+{
+    uint cover = 0;
+    for(uint dir = 0; dir < 6; dir++)
+    {
+        uint16 nx = hx;
+        uint16 ny = hy;
+        map.MoveHexByDir(nx, ny, dir, 1);
+        if(map.IsHexRaked(nx, ny) && !map.IsHexPassed(nx, ny) && !valid(map.GetCritter(nx, ny)))
+            cover++;
+    }
+    return cover;
+}
+
+bool PostHealReposition(Critter& npc, Critter& healed, NpcPlane& healPlane)
+{
+    if(!npc.IsCanWalk() || npc.IsKnockout())
+        return false;
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+
+    int bestScore = -100000;
+    uint16 bestX = 0;
+    uint16 bestY = 0;
+    uint seedDir = npc.Id % 6;
+    for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
+    {
+        uint dir = (seedDir + dirOffset) % 6;
+        for(uint step = 1; step <= 4; step++)
+        {
+            uint16 hx = npc.HexX;
+            uint16 hy = npc.HexY;
+            map.MoveHexByDir(hx, hy, dir, step);
+            if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+               valid(map.GetCritter(hx, hy)) || valid(map.GetItem(hx, hy, PID_SMOKE_HEX)) ||
+               valid(map.GetItem(hx, hy, PID_GAS_HEX)))
+                continue;
+
+            uint path = map.GetPathLength(npc, hx, hy, 0);
+            if(path == 0 || path > 6)
+                continue;
+            uint supportDist = GetDistantion(hx, hy, healed.HexX, healed.HexY);
+            int score = 800 - int(path) * 70 - ABS(int(supportDist) - 2) * 45 +
+                        int(PostHealCoverValue(map, hx, hy)) * 35;
+            if(score > bestScore)
+            {
+                bestScore = score;
+                bestX = hx;
+                bestY = hy;
+            }
+        }
+    }
+    if(bestScore <= -100000)
+        return false;
+
+    return AddWalkPlane(npc, healPlane.Priority + 1, PLANE_POST_HEAL_REASSESS, healed.Id,
+                        bestX, bestY, uint8(GetDirection(bestX, bestY, healed.HexX, healed.HexY)),
+                        true, 0);
+}
+
+void PostAllyHealPositionReached(Critter& npc, uint healedId, uint priority)
+{
+    Critter@ healed = GetCritter(healedId);
+    if(!valid(healed) || !healed.IsLife() || healed.GetMapId() != npc.GetMapId() ||
+       (npc.Timeout[TO_BATTLE] == 0 && healed.Timeout[TO_BATTLE] == 0))
+        return;
+
+    Critter@ target = PostHealFindTarget(npc, healed);
+    if(valid(target) && AddAttackPlane(npc, priority + 1, target))
+        return;
+    AddMiscPlane(npc, priority + 1, PLANE_TACTICAL_POSITION, healed.Id,
+                 AFTER(REAL_MS(Random(1200, 2000))), null);      // hold the new support point
+}
+
+void PostAllyHealDecision(Critter& npc, Critter& healed, NpcPlane& healPlane)
+{
+    if(npc.Id == healed.Id || (npc.Timeout[TO_BATTLE] == 0 && healed.Timeout[TO_BATTLE] == 0))
+        return;                                                  // ordinary out-of-combat healing keeps normal schedules
+
+    Critter@ target = PostHealFindTarget(npc, healed);
+    if(valid(target) && AddAttackPlane(npc, healPlane.Priority + 1, target))
+        return;
+    if(PostHealReposition(npc, healed, healPlane))
+        return;
+
+    AddMiscPlane(npc, healPlane.Priority + 1, PLANE_TACTICAL_POSITION, healed.Id,
+                 AFTER(REAL_MS(Random(1200, 2000))), null);      // boxed in: hold support position briefly
+}
+
 bool UseSkillOn(Critter& npc, uint crId, NpcPlane& plane)
 {
     Critter@ cr = ::GetCritter(crId);
@@ -258,6 +407,8 @@ bool UseSkillOn(Critter& npc, uint crId, NpcPlane& plane)
         // npc.Wait(__Breaktime); // TODO force waiting until end of animation
         if(firstAid || doctor)
             npc.Action(ACTION_PICK_CRITTER, 1, null);                        // TODO is this correct?
+        if((firstAid || doctor) && npc.Id != cr.Id)
+            PostAllyHealDecision(npc, cr, plane);
         return true;
     }
     else
@@ -853,6 +1004,12 @@ bool npc_plane_end(Critter& npc, NpcPlane& plane, int reason, Critter@ someCr, I
     }
     if(plane.Identifier == PLANE_SMOKE_RESPONSE)
         return true;
+    if(plane.Identifier == PLANE_POST_HEAL_REASSESS)
+    {
+        if(reason == REASON_SUCCESS)
+            PostAllyHealPositionReached(npc, plane.IdentifierExt, plane.Priority);
+        return true;
+    }
     switch(reason)
     {
     //case REASON_TRACE_FAIL:

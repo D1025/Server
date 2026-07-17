@@ -538,4 +538,5 @@
 #define NPC_PID_Unknown2                (523)                    //
 #define NPC_PID_Unknown3                (524)                    //
 #define NPC_PID_PASHTSHUUR              (525)                    // tERRIBLE pASHTSHUUR.
+#define NPC_PID_SlaveMaster             (1882)                   // Worldmap event boss.
 #endif __NPC_PIDS__

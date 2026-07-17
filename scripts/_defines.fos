@@ -271,7 +271,7 @@
 // Weapon-perk knockback is based on final damage after every protection layer.
 #define KNOCKBACK_MIN_POST_SOAK_DAMAGE            (30)
 #define KNOCKBACK_DAMAGE_DIVISOR                  (15)
-#define DYNACORD_FUSE_SECONDS                     (3)
+#define DYNACORD_FUSE_SECONDS                     (5)
 
 // Wall-slam: surowe obrazenia (przed resistami) za kazdy nieprzebyty heks odrzutu (patrz ApplyWallSlam w combat.fos)
 #define WALL_SLAM_DMG_PER_HEX                    (14)
@@ -1186,6 +1186,7 @@
 #define PLANE_RAM_INTO_CRITTER                   (41) // Run to a hex and try to ram into the target critter (not a real attack but can KD/damage).
 #define PLANE_TACTICAL_POSITION                  (42) // Shared combat positioning: firing lane, cover or safe staging hex.
 #define PLANE_SMOKE_RESPONSE                     (43) // Short move/wait while reacting to a target hidden by smoke.
+#define PLANE_POST_HEAL_REASSESS                 (44) // One-shot combat reassessment after healing an ally.
 
 // Plane begin/end/run reasons
 // Begin
