@@ -98,6 +98,8 @@ class CBoss
     {
         critterList.insertLast(crit.Id);
         crit.StatBase[ST_NPC_BOSS] = 1;   // MOB_IS_BOSS; grants shared boss-only protections
+        if(crit.PerkBase[PE_STONEWALL] == 0)
+            crit.PerkBase[PE_STONEWALL] = 1;
         crit.SetEvent(CRITTER_EVENT_SHOW_CRITTER, "_BossShowCritter");
         crit.SetEvent(CRITTER_EVENT_ATTACKED, "_BossAttacked");
         crit.SetEvent(CRITTER_EVENT_FINISH, "_BossFinish");

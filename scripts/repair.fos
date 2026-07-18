@@ -386,7 +386,12 @@ bool TryRepairItemCall(Critter& cr, Item@ item, Item@ with_item)
 
 void WearItem(Critter& cr, Item& item, int wearCount)   // Export
 {
-    if(wearCount <= 0 || !item.IsDeteriorable() || FLAG(item.BrokenFlags, BI_ETERNAL) || FLAG(item.BrokenFlags, BI_BROKEN))
+    if(!item.IsDeteriorable() || FLAG(item.BrokenFlags, BI_ETERNAL) || FLAG(item.BrokenFlags, BI_BROKEN))
+        return;
+
+    if(item.GetType() == ITEM_TYPE_WEAPON || item.GetType() == ITEM_TYPE_ARMOR)
+        wearCount /= 2;
+    if(wearCount <= 0)
         return;
 
     item.Deterioration += wearCount;

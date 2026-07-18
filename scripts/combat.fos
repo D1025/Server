@@ -1600,6 +1600,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     hasKnockbackPerk = valid(attackWeaponProto) ? WeaponHasProtoPerk(attackWeaponProto, WEAPON_PERK_KNOCKBACK) : (weaponPerk == WEAPON_PERK_KNOCKBACK);
 	bool     isWeaponBluedgeoning = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_BLUDGEONING) : (weaponPerk == WEAPON_PERK_BLUDGEONING);
     bool     hasWeaponPersistent = valid(realWeapon) ? WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_PERSISTENT) : (weaponPerk == WEAPON_PERK_PERSISTENT);
+    bool     hasWeaponOverload = valid(attackWeaponProto) ? WeaponHasProtoPerk(attackWeaponProto, WEAPON_PERK_OVERLOAD) : (weaponPerk == WEAPON_PERK_OVERLOAD);
     int      upgradePersistentPercent = UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_PERSISTENT);
     int      protoSilentHillStacks = valid(realWeapon) ? WeaponProtoPerkStacks(realWeapon.Proto, WEAPON_PERK_SILENT_HILL_MONSTER) : (weaponPerk == WEAPON_PERK_SILENT_HILL_MONSTER ? 1 : 0);
     int      upgradeSilentHillPercent = UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_SILENT_HILL_MONSTER);
@@ -1976,6 +1977,27 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 
     int damage = attack.Damage + attack.BonusDmg + attack.Damage * attack.SelectWeaponBonus(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) / 100;
+    // Overload turns the target's stored Persistent damage into immediate raw
+    // electro damage before DT/DR. One pool point grants two damage, but the
+    // bonus can never exceed this attack's base roll (at most double damage).
+    if(hasWeaponOverload && dmgType == DAMAGE_ELECTR &&
+       target.Mode[MODE_INVULNERABLE] == 0 && attack.Damage > 0)
+    {
+        int persistentPool = MAX(0, target.Stat[ST_PERSISTENT_DOT]);
+        int persistentUsed = MIN(persistentPool, attack.Damage / 2);
+        int overloadBonus = persistentUsed * 2;
+        if(overloadBonus > 0)
+        {
+            damage += overloadBonus;
+            int persistentLeft = persistentPool - persistentUsed;
+            target.StatBase[ST_PERSISTENT_DOT] = persistentLeft;
+            if(persistentLeft <= 0)
+            {
+                target.StatBase[ST_PERSISTENT_DOT_LAST_ENEMY_ID] = 0;
+                target.EraseTimeEvents(CTE_PERSISTENT_DOT);
+            }
+        }
+    }
     if(validAttacker && isMeleeWeaponAttack && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
         damage = MAX(1, damage / 2);
 

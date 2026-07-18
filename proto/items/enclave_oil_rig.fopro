@@ -104,6 +104,7 @@ Material=1
 Weapon_Anim1=4
 Weapon_MinStrength=2
 Weapon_Perk=3
+Weapon_Perk_2=22
 Weapon_ActiveUses=2
 Weapon_CriticalFailture=2
 Weapon_Skill_0=204

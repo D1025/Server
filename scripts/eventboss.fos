@@ -753,13 +753,15 @@ class PatternBoss : CBoss
 #define EVENT_BOSS_TEAM             (17)               // shared team so boss & minions never fight each other
 #define EVENT_BOSS_AIPACKET         (131)              // AIPACKET_MEAN_DEATHCLAW (see _ai.fos) -- aggressive creature AI
 #define EVENT_BOSS_MINION_LEVEL     (10)               // weak fodder
-// Per-boss minion cap -- see _EventMinionMax(). Slave Master starts at four;
-// its real target is adjusted to 4/5/6 by the number of players in the arena.
+// Per-boss minion cap -- see _EventMinionMax(). Slave Master starts at 20;
+// each additional living player raises its live-slave target by two, up to 40.
 #define EVENT_BOSS_RESPAWN_TIME     (REAL_MINUTE(2))   // minions top back up to their cap on this interval
 #define EVENT_BOSS_MINION_BAG_WARLORD (174)            // BAG_Navarro_EnclavePatrol_Male2 (Enclave Patrol w/ Plasma Pistol)
 #define EVENT_WARLORD_DYNACORD_COUNT (32)               // 20% fewer projectiles than the old 40-grenade barrage
 #define EVENT_WARLORD_ECA_MALE_CRTYPE (147)              // black Enclave Combat Armor sprite
 #define EVENT_WARLORD_ECA_FEMALE_CRTYPE (148)
+#define EVENT_BOSS_WARLORD_VARIANT (1)
+#define EVENT_WARLORD_TARGET_INTERVAL (REAL_SECOND(1))
 #define EVENT_BOSS_SLAVE_MASTER_VARIANT (3)
 #define EVENT_SLAVE_MARKER         (4242)
 #define EVENT_SLAVE_MARKER_PARAM   (ST_VAR7)
@@ -769,13 +771,26 @@ class PatternBoss : CBoss
 #define EVENT_BOSS_VARIANT_PARAM   (ST_VAR2)
 #define EVENT_SLAVE_GUARD_PARAM    (ST_VAR3)
 #define EVENT_SLAVE_PHASE_PARAM    (ST_VAR4)
-#define EVENT_SLAVE_BASE_HP        (750)
+#define EVENT_SLAVE_BLAST_STACK_PARAM (ST_VAR5)
+#define EVENT_SLAVE_BASE_HP        (350)
 #define EVENT_SLAVE_NORMAL_RESIST  (50)
 #define EVENT_SLAVE_ENERGY_RESIST  (40)
 #define EVENT_SLAVE_EXPLODE_RESIST (10)
-#define EVENT_SLAVE_HARD_CAP       (7)
+#define EVENT_SLAVE_BASE_CAP       (20)
+#define EVENT_SLAVE_CAP_PER_PLAYER (2)
+#define EVENT_SLAVE_HARD_CAP       (40)
+#define EVENT_SLAVE_RESPAWN_BATCH  (8)
+#define EVENT_SLAVE_RESPAWN_TIME   (REAL_SECOND(30))
 #define EVENT_SLAVE_COLLAR_FUSE    (REAL_SECOND(5))
+#define EVENT_SLAVE_BLOOD_INTERVAL (REAL_SECOND(10))
+#define EVENT_SLAVE_BLOOD_WINDOW   (REAL_SECOND(4))
 #define EVENT_SLAVE_BLOOD_HEAL     (450)
+#define EVENT_SLAVE_BASE_EXPLODE_DR (25)
+#define EVENT_SLAVE_BLAST_BASE_DR  (60)
+#define EVENT_SLAVE_BLAST_DR       (5)
+#define EVENT_SLAVE_BLAST_DT       (10)
+#define EVENT_SLAVE_BLAST_DURATION (REAL_SECOND(10))
+#define EVENT_SLAVE_RAGE_DAMAGE_PERCENT (150)
 #define EVENT_BOSS_TOWN_CLEAR       (170)              // world units that must be free of any town/city
 #define EVENT_BOSS_SPAWN_TRIES      (250)              // attempts to find a valid worldmap spot
 
@@ -923,11 +938,10 @@ uint _EventLivingPlayerCount(Map& map)
 uint _EventSlaveTargetCount(Map& map)
 {
     uint players = _EventLivingPlayerCount(map);
-    if(players <= 1)
-        return 4;
-    if(players <= 3)
-        return 5;
-    return 6;
+    uint target = EVENT_SLAVE_BASE_CAP;
+    if(players > 1)
+        target += (players - 1) * EVENT_SLAVE_CAP_PER_PLAYER;
+    return target > EVENT_SLAVE_HARD_CAP ? EVENT_SLAVE_HARD_CAP : target;
 }
 
 uint _EventSlaveArmCount(Map& map)
@@ -954,6 +968,99 @@ Critter@ _EventRandomEnemy(Critter& boss)
     if(enemies.length() == 0)
         return null;
     return enemies[Random(0, enemies.length() - 1)];
+}
+
+uint _EventCurrentAttackTarget(Critter& boss)
+{
+    NpcPlane@ current = boss.GetCurPlane();
+    if(valid(current) && current.Type == AI_PLANE_ATTACK)
+        return current.Attack_TargId;
+
+    array<NpcPlane@> planes;
+    boss.GetPlanes(AI_PLANE_ATTACK, planes);
+    uint targetId = 0;
+    uint priority = 0;
+    for(uint i = 0; i < planes.length(); i++)
+        if(valid(planes[i]) && (targetId == 0 || planes[i].Priority > priority))
+        {
+            targetId = planes[i].Attack_TargId;
+            priority = planes[i].Priority;
+        }
+    return targetId;
+}
+
+// Warlord Kaine always pressures the living player carrying the largest
+// Persistent pool. Keeping the current victim on equal pools prevents target
+// thrashing; otherwise the closest tied player wins.
+Critter@ _EventWarlordPriorityTarget(Critter& boss)
+{
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return null;
+
+    array<Critter@> players;
+    uint count = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+    int highestPersistent = -1;
+    for(uint i = 0; i < count; i++)
+    {
+        if(!_IsEventEnemy(boss, players[i]))
+            continue;
+        int pool = MAX(0, players[i].Stat[ST_PERSISTENT_DOT]);
+        if(pool > highestPersistent)
+            highestPersistent = pool;
+    }
+
+    if(highestPersistent >= 0)
+    {
+        uint currentTargetId = _EventCurrentAttackTarget(boss);
+        for(uint i = 0; i < count; i++)
+            if(players[i].Id == currentTargetId && _IsEventEnemy(boss, players[i]) &&
+               MAX(0, players[i].Stat[ST_PERSISTENT_DOT]) == highestPersistent)
+                return players[i];
+
+        Critter@ closest = null;
+        uint closestDistance = 0;
+        for(uint i = 0; i < count; i++)
+        {
+            if(!_IsEventEnemy(boss, players[i]) ||
+               MAX(0, players[i].Stat[ST_PERSISTENT_DOT]) != highestPersistent)
+                continue;
+            uint distance = GetDistantion(boss.HexX, boss.HexY, players[i].HexX, players[i].HexY);
+            if(!valid(closest) || distance < closestDistance)
+            {
+                @closest = players[i];
+                closestDistance = distance;
+            }
+        }
+        if(valid(closest))
+            return closest;
+    }
+
+    // No living player on the map: retain the encounter's mercenary fallback.
+    return _EventRandomEnemy(boss);
+}
+
+void _EventFocusWarlord(Critter& boss)
+{
+    if(boss.Param[EVENT_BOSS_VARIANT_PARAM] != EVENT_BOSS_WARLORD_VARIANT)
+        return;
+    Critter@ target = _EventWarlordPriorityTarget(boss);
+    if(!valid(target) || _EventCurrentAttackTarget(boss) == target.Id)
+        return;
+
+    boss.ErasePlane(AI_PLANE_ATTACK, true);
+    boss.AddEnemyInStack(target.Id);
+    AddAttackPlane(boss, 220, target, true);
+}
+
+uint e_EventWarlordTarget(array<uint>@ vals)
+{
+    Critter@ boss = GetCritter(vals[0]);
+    if(!valid(boss) || boss.IsDead() ||
+       boss.Param[EVENT_BOSS_VARIANT_PARAM] != EVENT_BOSS_WARLORD_VARIANT)
+        return 0;
+    _EventFocusWarlord(boss);
+    return EVENT_WARLORD_TARGET_INTERVAL;
 }
 
 void _EventFocusSlave(Critter& slave, Critter& boss, Critter@ target)
@@ -1053,13 +1160,52 @@ void _EventUpdateSlaveGuard(Critter& boss)
     boss.ParamBase[ST_PLASMA_RESIST] = 45 + guard;
     boss.ParamBase[ST_FIRE_RESIST] = 45 + guard;
     boss.ParamBase[ST_ELECTRO_RESIST] = 45 + guard;
-    // Explosions deliberately bypass Living Shield. Collars and player explosives
-    // are the positional counterplay to the otherwise very durable guard bonus.
-    boss.ParamBase[ST_EXPLODE_RESIST] = 25;
+    int blastStacks = boss.Param[EVENT_SLAVE_BLAST_STACK_PARAM];
+    if(blastStacks > 0)
+    {
+        boss.ParamBase[ST_EXPLODE_RESIST] = EVENT_SLAVE_BLAST_BASE_DR +
+                                            blastStacks * EVENT_SLAVE_BLAST_DR;
+        boss.StatBase[ST_EXPLODE_ABSORB] = blastStacks * EVENT_SLAVE_BLAST_DT;
+    }
+    else
+    {
+        boss.ParamBase[ST_EXPLODE_RESIST] = EVENT_SLAVE_BASE_EXPLODE_DR;
+        boss.StatBase[ST_EXPLODE_ABSORB] = 0;
+    }
 
     if(uint(boss.Param[EVENT_SLAVE_GUARD_PARAM]) != alive && _EventMapHasEnemies(boss))
         boss.Say(SAY_NORM_ON_HEAD, "Living Shield: " + alive + " captive(s)");
     boss.ParamBase[EVENT_SLAVE_GUARD_PARAM] = int(alive);
+}
+
+// Called by main.fos immediately before an event slave's collar deals damage.
+// Each explosion contributes its own ten-second stack, so a simultaneous chain
+// rapidly hardens the Slave Master against the remaining blasts.
+void _EventSlaveExploded(Critter& slave)
+{
+    if(!slave.IsNpc() || slave.Param[EVENT_SLAVE_MARKER_PARAM] != EVENT_SLAVE_MARKER)
+        return;
+    Critter@ boss = GetCritter(uint(slave.Param[EVENT_SLAVE_BOSS_PARAM]));
+    if(!valid(boss) || boss.IsDead() ||
+       boss.Param[EVENT_BOSS_VARIANT_PARAM] != EVENT_BOSS_SLAVE_MASTER_VARIANT)
+        return;
+
+    boss.ParamBase[EVENT_SLAVE_BLAST_STACK_PARAM]++;
+    _EventUpdateSlaveGuard(boss);   // apply before this collar's ExplodeEx call
+    array<uint> vals = { boss.Id };
+    CreateTimeEvent(AFTER(EVENT_SLAVE_BLAST_DURATION),
+                    "e_EventSlaveBlastStackExpire", vals, false);
+}
+
+uint e_EventSlaveBlastStackExpire(array<uint>@ vals)
+{
+    Critter@ boss = GetCritter(vals[0]);
+    if(!valid(boss) || boss.IsDead())
+        return 0;
+    if(boss.Param[EVENT_SLAVE_BLAST_STACK_PARAM] > 0)
+        boss.ParamBase[EVENT_SLAVE_BLAST_STACK_PARAM]--;
+    _EventUpdateSlaveGuard(boss);
+    return 0;
 }
 
 uint e_EventSlaveMasterState(array<uint>@ vals)
@@ -1074,7 +1220,13 @@ uint e_EventSlaveMasterState(array<uint>@ vals)
        boss.Stat[ST_CURRENT_HP] * 100 <= maxHp * 30)
     {
         boss.ParamBase[EVENT_SLAVE_PHASE_PARAM] = 1;
-        boss.StatBase[ST_MELEE_DAMAGE] = 35;
+        // Rage raises the complete normal melee hit (weapon + Melee Damage) by
+        // 150%, rather than applying a small flat bonus to Melee Damage alone.
+        int normalDamage = boss.Stat[ST_MELEE_DAMAGE];
+        ProtoItem@ weapon = GetProtoItem(PID_SUPER_CATTLE_PROD);
+        if(valid(weapon))
+            normalDamage += _WeaponDmg(weapon, 0);
+        boss.StatBase[ST_MELEE_DAMAGE] += normalDamage * EVENT_SLAVE_RAGE_DAMAGE_PERCENT / 100;
         boss.ParamBase[ST_ACTION_POINTS] = 2;
         boss.Say(SAY_SHOUT, "NO WITNESSES! ALL COLLARS ARMED!");
         array<Critter@> slaves;
@@ -1168,8 +1320,8 @@ void _EventBossMapIn(Map& map, Critter& cr)
         AddAttackPlane(npcs[i], 180, cr, true);
     }
 
-    // Slave Master starts with four captives. Additional entrants raise the live
-    // target to five or six without inflating individual slave stats.
+    // Slave Master starts with 20 captives. Each additional living player raises
+    // the target by two; entry immediately fills the newly unlocked capacity.
     for(uint i = 0; i < n; i++)
     {
         if(npcs[i].Param[ST_NPC_BOSS] == 0 ||
@@ -1570,102 +1722,86 @@ class AtkSlaveWhip : IAttack
     {}
 };
 
-class AtkSlaveFreshStock : IAttack
+// Fresh Stock is independent from the random attack selector: every 30 seconds
+// it adds up to eight captives, stopping at the current player-scaled limit.
+uint e_EventSlaveFreshStock(array<uint>@ vals)
 {
-    CBoss@ boss;
-    AtkSlaveFreshStock(CBoss@ b)
+    Critter@ boss = GetCritter(vals[0]);
+    if(!valid(boss) || boss.IsDead() || boss.Param[EVENT_SLAVE_PHASE_PARAM] != 0)
+        return 0;
+    Map@ map = boss.GetMap();
+    if(valid(map) && _EventMapHasEnemies(boss))
     {
-        @this.boss = @b;
-    }
-    void AttackPrepareStart()
-    {}
-    void AttackCommence()
-    {
-        Critter@ c = GetCritter(boss.critterList[0]);
-        if(!valid(c) || !_EventMapHasEnemies(c) || c.Param[EVENT_SLAVE_PHASE_PARAM] != 0)
-            return;
-        Map@ map = c.GetMap();
-        if(!valid(map))
-            return;
-        uint spawned = _EventTopUpSlaves(c, _EventSlaveTargetCount(map), 2);
+        uint spawned = _EventTopUpSlaves(boss, _EventSlaveTargetCount(map),
+                                         EVENT_SLAVE_RESPAWN_BATCH);
         if(spawned > 0)
-            c.Say(SAY_SHOUT, "FRESH STOCK! COLLARS ON!");
+            boss.Say(SAY_SHOUT, "FRESH STOCK! COLLARS ON!");
     }
-    void AttackRecuperationEnd()
-    {}
-};
+    return EVENT_SLAVE_RESPAWN_TIME;
+}
 
-// A marked captive has four seconds to be killed. If still alive, the collar
-// detonates and the Slave Master heals; the blast can still hurt its owner.
-class AtkSlaveBloodPrice : IAttack
+// Mark one captive every ten seconds. Players retain the existing four-second,
+// player-hasted window to kill it before the collar detonates and heals the boss.
+uint e_EventSlaveBloodPrice(array<uint>@ vals)
 {
-    CBoss@ boss;
-    uint slaveId;
-    int healAmt;
-    AtkSlaveBloodPrice(CBoss@ b, int heal)
-    {
-        @this.boss = @b;
-        slaveId = 0;
-        healAmt = heal;
-    }
-    void AttackPrepareStart()
-    {
-        slaveId = 0;
-        Critter@ c = GetCritter(boss.critterList[0]);
-        if(!valid(c) || !_EventMapHasEnemies(c) || c.Param[EVENT_SLAVE_PHASE_PARAM] != 0)
-            return;
-        array<Critter@> slaves;
-        array<Critter@> candidates;
-        _EventGetSlaveMasterSlaves(c, slaves);
-        for(uint i = 0; i < slaves.length(); i++)
-            if(slaves[i].Param[EVENT_SLAVE_ARMED_PARAM] == 0 &&
-               slaves[i].Param[EVENT_SLAVE_SACRIFICE_PARAM] == 0)
-                candidates.insertLast(slaves[i]);
-        if(candidates.length() == 0)
-            return;
+    Critter@ boss = GetCritter(vals[0]);
+    if(!valid(boss) || boss.IsDead() || boss.Param[EVENT_SLAVE_PHASE_PARAM] != 0)
+        return 0;
+    if(!_EventMapHasEnemies(boss))
+        return EVENT_SLAVE_BLOOD_INTERVAL;
 
-        Critter@ sacrifice = candidates[Random(0, candidates.length() - 1)];
-        slaveId = sacrifice.Id;
-        sacrifice.ParamBase[EVENT_SLAVE_SACRIFICE_PARAM] = 1;
-        sacrifice.Say(SAY_SHOUT_ON_HEAD, "*MARKED FOR THE BLOOD PRICE*");
-        c.Say(SAY_SHOUT, "YOUR LIFE FOR MINE!");
+    array<Critter@> slaves;
+    array<Critter@> candidates;
+    _EventGetSlaveMasterSlaves(boss, slaves);
+    for(uint i = 0; i < slaves.length(); i++)
+        if(slaves[i].Param[EVENT_SLAVE_ARMED_PARAM] == 0 &&
+           slaves[i].Param[EVENT_SLAVE_SACRIFICE_PARAM] == 0)
+            candidates.insertLast(slaves[i]);
+    if(candidates.length() == 0)
+        return EVENT_SLAVE_BLOOD_INTERVAL;
 
-        Map@ map = c.GetMap();
-        if(valid(map))
-        {
-            uint16 sx = c.HexX, sy = c.HexY;
-            map.MoveHexByDir(sx, sy, Random(0, 5), 1);
-            sacrifice.DropPlanes();
-            AddWalkPlane(sacrifice, 230, PLANE_WANDER, c.Id, sx, sy,
-                         uint8(GetDirection(sacrifice.HexX, sacrifice.HexY, sx, sy)), true, 0);
-        }
-    }
-    void AttackCommence()
+    Critter@ sacrifice = candidates[Random(0, candidates.length() - 1)];
+    sacrifice.ParamBase[EVENT_SLAVE_SACRIFICE_PARAM] = 1;
+    sacrifice.Say(SAY_SHOUT_ON_HEAD, "*MARKED FOR THE BLOOD PRICE*");
+    boss.Say(SAY_SHOUT, "YOUR LIFE FOR MINE!");
+
+    Map@ map = boss.GetMap();
+    if(valid(map))
     {
-        if(slaveId == 0)
-            return;
-        Critter@ c = GetCritter(boss.critterList[0]);
-        Critter@ sacrifice = GetCritter(slaveId);
-        slaveId = 0;
-        if(!valid(c) || c.IsDead() || c.Param[EVENT_SLAVE_PHASE_PARAM] != 0 ||
-           !valid(sacrifice) || sacrifice.IsDead() ||
-           sacrifice.Param[EVENT_SLAVE_SACRIFICE_PARAM] == 0)
-            return;
-
-        sacrifice.ParamBase[EVENT_SLAVE_SACRIFICE_PARAM] = 0;
-        sacrifice.ToDead(ANIM2_DEAD_EXPLODE, c);
-        if(!c.IsDead())
-        {
-            int hp = c.Stat[ST_CURRENT_HP] + healAmt;
-            if(hp > c.Stat[ST_MAX_LIFE])
-                hp = c.Stat[ST_MAX_LIFE];
-            c.StatBase[ST_CURRENT_HP] = hp;
-            c.Say(SAY_SHOUT_ON_HEAD, "The blood price is paid!");
-        }
+        uint16 sx = boss.HexX, sy = boss.HexY;
+        map.MoveHexByDir(sx, sy, Random(0, 5), 1);
+        sacrifice.DropPlanes();
+        AddWalkPlane(sacrifice, 230, PLANE_WANDER, boss.Id, sx, sy,
+                     uint8(GetDirection(sacrifice.HexX, sacrifice.HexY, sx, sy)), true, 0);
     }
-    void AttackRecuperationEnd()
-    {}
-};
+
+    array<uint> resolve = { boss.Id, sacrifice.Id };
+    CreateTimeEvent(AFTER(EventBossScaledDelay(boss, EVENT_SLAVE_BLOOD_WINDOW)),
+                    "e_EventSlaveBloodPriceResolve", resolve, false);
+    return EVENT_SLAVE_BLOOD_INTERVAL;
+}
+
+uint e_EventSlaveBloodPriceResolve(array<uint>@ vals)
+{
+    Critter@ boss = GetCritter(vals[0]);
+    Critter@ sacrifice = GetCritter(vals[1]);
+    if(!valid(boss) || boss.IsDead() || boss.Param[EVENT_SLAVE_PHASE_PARAM] != 0 ||
+       !valid(sacrifice) || sacrifice.IsDead() ||
+       sacrifice.Param[EVENT_SLAVE_SACRIFICE_PARAM] == 0)
+        return 0;
+
+    sacrifice.ParamBase[EVENT_SLAVE_SACRIFICE_PARAM] = 0;
+    sacrifice.ToDead(ANIM2_DEAD_EXPLODE, boss);
+    if(!boss.IsDead())
+    {
+        int hp = boss.Stat[ST_CURRENT_HP] + EVENT_SLAVE_BLOOD_HEAL;
+        if(hp > boss.Stat[ST_MAX_LIFE])
+            hp = boss.Stat[ST_MAX_LIFE];
+        boss.StatBase[ST_CURRENT_HP] = hp;
+        boss.Say(SAY_SHOUT_ON_HEAD, "The blood price is paid!");
+    }
+    return 0;
+}
 
 
 // ---------------------------------------------------------------------------
@@ -1739,7 +1875,12 @@ class EventBossWarlord : CBoss
         scaleWithPlayers = true;
         Critter@ npc = map.AddNpc(NPC_PID_EnclaveGuard, x, y, 3, null, null, "_EventBossWarlordInit");
         if(valid(npc))
+        {
             AddCritter(npc);
+            array<uint> targetData = { npc.Id };
+            CreateTimeEvent(AFTER(EVENT_WARLORD_TARGET_INTERVAL),
+                            "e_EventWarlordTarget", targetData, true);
+        }
         // Barrage is announced, lands 5s later, then its Dynacords detonate after their normal 5s fuse.
         AddAttack(AtkDynacordBarrage(this), 6, REAL_SECOND(5), REAL_SECOND(6));
         AddAttack(AtkSuppression(this, 35, 75), 3, REAL_SECOND(3), REAL_SECOND(4));
@@ -1747,11 +1888,15 @@ class EventBossWarlord : CBoss
     }
     void aggressionStart()
     {
-        _EventBossAggroAll(GetCritter(critterList[0]));
+        Critter@ boss = GetCritter(critterList[0]);
+        _EventBossAggroAll(boss);
+        if(valid(boss))
+            _EventFocusWarlord(boss);
     }
     void bossSee(Critter& cr, Critter& shownCr)
     {
         _EventBossSee(cr, shownCr);
+        _EventFocusWarlord(cr);
     }
     bool bossAttacked(Critter& cr, Critter& attacker)
     {
@@ -1760,6 +1905,7 @@ class EventBossWarlord : CBoss
             cr.AddEnemyInStack(attacker.Id);
             AddAttackPlane(cr, 180, attacker, true);
         }
+        _EventFocusWarlord(cr);
         return true;
     }
     void bossKilled(Critter& cr, Critter@ attacker)
@@ -1844,11 +1990,13 @@ class EventBossSlaveMaster : CBoss
             AddCritter(npc);
             array<uint> stateData = { npc.Id };
             CreateTimeEvent(AFTER(REAL_SECOND(1)), "e_EventSlaveMasterState", stateData, true);
+            CreateTimeEvent(AFTER(EVENT_SLAVE_RESPAWN_TIME),
+                            "e_EventSlaveFreshStock", stateData, true);
+            CreateTimeEvent(AFTER(EVENT_SLAVE_BLOOD_INTERVAL),
+                            "e_EventSlaveBloodPrice", stateData, true);
         }
         AddAttack(AtkSlaveDetonation(this), 5, REAL_SECOND(5), REAL_SECOND(4));
         AddAttack(AtkSlaveWhip(this), 3, REAL_SECOND(2), REAL_SECOND(4));
-        AddAttack(AtkSlaveFreshStock(this), 2, REAL_SECOND(3), REAL_SECOND(8));
-        AddAttack(AtkSlaveBloodPrice(this, EVENT_SLAVE_BLOOD_HEAL), 2, REAL_SECOND(4), REAL_SECOND(6));
     }
     void aggressionStart()
     {
@@ -1942,16 +2090,17 @@ void _EventBossWarlordInit(Critter& b, bool firstTime)
     if(firstTime)
         b.ParamBase[ST_CURRENT_HP] = 1000;
     _EventBossCommonInit(b);
+    b.ParamBase[EVENT_BOSS_VARIANT_PARAM] = EVENT_BOSS_WARLORD_VARIANT;
     b.StatBase[ST_HEALING_RATE] = 18;
     b.ParamBase[ST_AGILITY] = 10;
+    b.ParamBase[ST_LUCK] = 13;
     b.ParamBase[ST_ARMOR_CLASS] = 70;
-    b.ParamBase[SK_BIG_GUNS] = 300;
+    b.ParamBase[SK_ENERGY_WEAPONS] = 300;
+    b.PerkBase[PE_BETTER_CRITICALS] = 2;
     b.ParamBase[MODE_UNLIMITED_AMMO] = 1;      // never runs out of ammo (also set in _EventBossCommonInit)
-    // Minigun instead of the Bozar: the Bozar has WEAPON_PERK_DEPLOY (only fires while deployed) and NPCs
-    // never deploy, so it could not shoot. The minigun is a mobile big gun the AI fires normally.
-    b.AddItem(PID_MINIGUN, 1);
-    b.AddItem(PID_5MM_AP, 500);                // loaded rounds so it starts firing immediately
-    b.SetFavoriteItem(SLOT_HAND1, PID_MINIGUN);
+    b.AddItem(PID_YK42B_PULSE_RIFLE, 1);
+    b.AddItem(PID_MICRO_FUSION_CELL, 500);     // loaded rounds so it starts firing immediately
+    b.SetFavoriteItem(SLOT_HAND1, PID_YK42B_PULSE_RIFLE);
 }
 
 void _EventBossHarbingerInit(Critter& b, bool firstTime)
@@ -1978,6 +2127,7 @@ void _EventBossSlaveMasterInit(Critter& b, bool firstTime)
     b.ParamBase[EVENT_BOSS_VARIANT_PARAM] = EVENT_BOSS_SLAVE_MASTER_VARIANT;
     b.ParamBase[EVENT_SLAVE_GUARD_PARAM] = 0;
     b.ParamBase[EVENT_SLAVE_PHASE_PARAM] = 0;
+    b.ParamBase[EVENT_SLAVE_BLAST_STACK_PARAM] = 0;
     b.StatBase[ST_HEALING_RATE] = 0;
     b.ParamBase[ST_STRENGTH] = 10;
     b.ParamBase[ST_AGILITY] = 9;
@@ -1988,7 +2138,8 @@ void _EventBossSlaveMasterInit(Critter& b, bool firstTime)
     b.ParamBase[ST_PLASMA_RESIST] = 45;
     b.ParamBase[ST_FIRE_RESIST] = 45;
     b.ParamBase[ST_ELECTRO_RESIST] = 45;
-    b.ParamBase[ST_EXPLODE_RESIST] = 25;
+    b.ParamBase[ST_EXPLODE_RESIST] = EVENT_SLAVE_BASE_EXPLODE_DR;
+    b.StatBase[ST_EXPLODE_ABSORB] = 0;
     b.AddItem(PID_SUPER_CATTLE_PROD, 1);
     b.AddItem(PID_SMALL_ENERGY_CELL, 500);
     b.SetFavoriteItem(SLOT_HAND1, PID_SUPER_CATTLE_PROD);
@@ -2067,13 +2218,32 @@ uint _EventMinionMax(int variant)
     if(variant == 2)
         return 40;   // The Harbinger -- swarms of weak fodder
     if(variant == EVENT_BOSS_SLAVE_MASTER_VARIANT)
-        return 4;    // Slave Master -- durable captives; party size raises this after entry
+        return EVENT_SLAVE_BASE_CAP;   // player count raises this after entry
     return 18;       // The Abomination -- a pack of deathclaws
 }
 
 // ---------------------------------------------------------------------------
-//  The Abomination's pack: sequential limb-crippling ("dismember") targeting
+//  Warlord Kaine and the Abomination: forced called-shot targeting
 // ---------------------------------------------------------------------------
+// Close targets get torso shots. Beyond ten hexes Kaine cripples both legs in
+// sequence, then switches to groin shots for the rest of that target's life.
+int _EventWarlordAim(Critter& npc, Critter& target)
+{
+    if(npc.Stat[ST_NPC_BOSS] == 0 || npc.Stat[ST_TEAM_ID] != EVENT_BOSS_TEAM ||
+       npc.Param[EVENT_BOSS_VARIANT_PARAM] != EVENT_BOSS_WARLORD_VARIANT)
+        return -1;
+
+    uint distance = GetDistantion(npc.HexX, npc.HexY, target.HexX, target.HexY);
+    if(distance <= 10)
+        return HIT_LOCATION_TORSO;
+    if(target.Damage[DAMAGE_LEFT_LEG] == 0)
+        return HIT_LOCATION_LEFT_LEG;
+    if(target.Damage[DAMAGE_RIGHT_LEG] == 0)
+        return HIT_LOCATION_RIGHT_LEG;
+    return HIT_LOCATION_GROIN;
+}
+
+// The Abomination's pack: sequential limb-crippling ("dismember") targeting.
 // The deathclaw minions gnaw a victim apart limb by limb. The whole pack piles
 // onto the SAME limb (a per-target, pseudo-random pick) until it is crippled,
 // then moves on to the next -- always saving the head for last. Returns the hit
@@ -2192,6 +2362,7 @@ void SpawnEventMinions(Map& map, uint16 cx, uint16 cy, int variant, uint count, 
                 m.ParamBase[ST_ELECTRO_RESIST] = EVENT_SLAVE_ENERGY_RESIST;
                 m.ParamBase[ST_EXPLODE_RESIST] = EVENT_SLAVE_EXPLODE_RESIST;
                 m.ParamBase[SK_CLOSE_COMBAT] = 180;
+                m.PerkBase[PE_DEMOLITION_EXPERT] = 1;
                 m.StatBase[ST_KILL_EXPERIENCE] = 0;
                 Item@ collar = m.AddItem(PID_EXPLOSIVE_COLLAR, 1);
                 if(valid(collar))

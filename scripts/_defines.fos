@@ -400,6 +400,7 @@
 #define WEAPON_PERK_CRITLESS                     (19)
 #define WEAPON_PERK_DEPLOY                       (20) // Heavy weapon: must Deploy (bipod) before it can fire; blocks movement while deployed
 #define WEAPON_PERK_GUARDED_STANCE               (21) // +10 AC while this weapon is held in the active hand
+#define WEAPON_PERK_OVERLOAD                     (22) // Electro hit consumes Persistent: +2 base damage per point, up to +100%
 #define DEPLOY_HOLD_FRAME                        (1)  // Frame of the weapon shoot animation held while deployed (aiming pose)
 #define DEPLOY_ANIM_ON                           (1)  // critter_action actionExt: apply the deploy pose (client)
 #define DEPLOY_ANIM_OFF                          (2)  // critter_action actionExt: remove the deploy pose (client)

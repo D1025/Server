@@ -126,6 +126,7 @@ import void   InitPerks() from "perks";
 import void   InitProduction() from "production";
 import void   InitShufflingSpawns() from "shuffling_spawner";
 import void   InitEventBossWM() from "eventboss";
+import void   _EventSlaveExploded(Critter& slave) from "eventboss";
 import bool   IsArenaItem(Item@ item) from "arena";
 import void   LogAction(Critter& cr, string& s) from "logging_critter";
 import void   NpcProcessLevel(Critter& cr) from "parameters";
@@ -1288,6 +1289,11 @@ void NpcSmokeTrackVisible(Critter& npc, Critter@ target)   // Export - main_plan
 
     int idx = NpcSmokeFindMemory(npc.Id, target.Id, true);
     NpcSmokeMemory@ memory = NpcSmokeMemories[idx];
+    Map@ map = npc.GetMap();
+    bool sameSmokeEpisode = memory.active && valid(map) &&
+                            (SmokeOnFireLine(map, npc.HexX, npc.HexY, target.HexX, target.HexY) ||
+                             NpcSmokeTouchesHex(map, npc.HexX, npc.HexY) ||
+                             NpcSmokeTouchesHex(map, target.HexX, target.HexY));
     if(memory.lastSeen == 0)
     {
         memory.prevX = target.HexX;
@@ -1302,10 +1308,16 @@ void NpcSmokeTrackVisible(Critter& npc, Critter@ target)   // Export - main_plan
     memory.lastX = target.HexX;
     memory.lastY = target.HexY;
     memory.lastSeen = __FullSecond;
-    memory.lostAt = 0;
-    memory.forgetAt = 0;
-    memory.searchStep = 0;
-    memory.active = false;
+    if(!sameSmokeEpisode)
+    {
+        // A clean sight line arms a new memory. A one-hex glimpse
+        // inside the same cloud does not: otherwise melee NPCs repeatedly reset
+        // their search and charge the very same last-known hex forever.
+        memory.lostAt = 0;
+        memory.forgetAt = 0;
+        memory.searchStep = 0;
+        memory.active = false;
+    }
 }
 
 bool NpcSmokeGetLastKnown(Critter& npc, uint targetId, uint16& hx, uint16& hy)
@@ -1397,6 +1409,86 @@ bool NpcSmokeAttacksTarget(Critter& npc, uint targetId)
     return false;
 }
 
+// Smoke responses run outside main_planes.fos tactical positioning, so they
+// need their own view of allied occupancy and in-flight destinations. Without
+// this every NPC independently picks the same nearest hex before any of them
+// arrives there.
+void NpcSmokeCollectFormation(Critter& npc, uint targetId, array<Critter@>& allies,
+                              array<uint16>& reservedX, array<uint16>& reservedY)
+{
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return;
+
+    array<Critter@> critters;
+    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, critters);
+    for(uint i = 0; i < count; i++)
+    {
+        Critter@ ally = critters[i];
+        if(!valid(ally) || ally.Id == npc.Id)
+            continue;
+        bool sharedTarget = targetId != 0 && NpcSmokeAttacksTarget(ally, targetId);
+        if((targetId != 0 && !sharedTarget) ||
+           (!NpcSmokeIsAlly(npc, ally) &&
+            (!sharedTarget || IsCurrentEnemy(npc, ally.Id) || IsCurrentEnemy(ally, npc.Id))))
+            continue;                                           // untagged encounter mobs may coordinate on one foe
+
+        allies.insertLast(ally);
+        array<NpcPlane@> moves;
+        for(uint kind = 0; kind < 2; kind++)
+        {
+            moves.resize(0);
+            ally.GetPlanes(kind == 0 ? PLANE_SMOKE_RESPONSE : PLANE_TACTICAL_POSITION, moves);
+            for(uint p = 0; p < moves.length(); p++)
+            {
+                if(valid(moves[p]) && moves[p].Type == AI_PLANE_WALK &&
+                   moves[p].IdentifierExt == targetId)
+                {
+                    reservedX.insertLast(moves[p].Walk_HexX);
+                    reservedY.insertLast(moves[p].Walk_HexY);
+                }
+            }
+        }
+    }
+}
+
+bool NpcSmokeIsReserved(array<uint16>& reservedX, array<uint16>& reservedY,
+                        uint16 hx, uint16 hy)
+{
+    for(uint i = 0; i < reservedX.length(); i++)
+        if(reservedX[i] == hx && reservedY[i] == hy)
+            return true;
+    return false;
+}
+
+uint NpcSmokeReservationsNear(array<uint16>& reservedX, array<uint16>& reservedY,
+                              uint16 hx, uint16 hy)
+{
+    uint count = 0;
+    for(uint i = 0; i < reservedX.length(); i++)
+        if(GetDistantion(hx, hy, reservedX[i], reservedY[i]) <= 1)
+            count++;
+    return count;
+}
+
+uint NpcSmokeCrowdAt(array<Critter@>& allies, uint16 hx, uint16 hy)
+{
+    uint crowd = 0;
+    for(uint i = 0; i < allies.length(); i++)
+        if(valid(allies[i]) && GetDistantion(hx, hy, allies[i].HexX, allies[i].HexY) <= 1)
+            crowd++;
+    return crowd;
+}
+
+uint NpcSmokeCorpsesAt(array<Critter@>& corpses, uint16 hx, uint16 hy)
+{
+    uint count = 0;
+    for(uint i = 0; i < corpses.length(); i++)
+        if(valid(corpses[i]) && corpses[i].HexX == hx && corpses[i].HexY == hy)
+            count++;
+    return count;
+}
+
 bool NpcSmokeFindBurstUse(Critter& npc, int& use, bool requireReady)
 {
     uint8 mode = 0;
@@ -1468,7 +1560,10 @@ bool NpcSmokeHasPendingResponse(Critter& npc)
 {
     array<NpcPlane@> pending;
     npc.GetPlanes(PLANE_SMOKE_RESPONSE, pending);
-    return pending.length() > 0;
+    if(pending.length() > 0)
+        return true;
+    npc.GetPlanes(PLANE_TACTICAL_POSITION, pending);
+    return pending.length() > 0;                                // never compete with visible-combat positioning
 }
 
 bool NpcSmokeAddWait(Critter& npc, NpcPlane& attackPlane, uint targetId)
@@ -1510,12 +1605,18 @@ bool NpcSmokeTouchesHex(Map& map, uint16 hx, uint16 hy)
     return false;
 }
 
-bool NpcSmokeFindPosition(Critter& npc, uint16 targetX, uint16 targetY, uint desiredDist,
-                          bool requireClearShot, bool retreat, uint16& bestX, uint16& bestY)
+bool NpcSmokeFindPosition(Critter& npc, uint targetId, uint16 targetX, uint16 targetY,
+                          uint desiredDist, bool requireClearShot, bool retreat,
+                          uint16& bestX, uint16& bestY)
 {
     Map@ map = npc.GetMap();
     if(!valid(map))
         return false;
+    array<Critter@> allies;
+    array<uint16> reservedX;
+    array<uint16> reservedY;
+    NpcSmokeCollectFormation(npc, targetId, allies, reservedX, reservedY);
+
     int bestScore = -100000;
     uint seedDir = npc.Id % 6;
     for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
@@ -1527,6 +1628,7 @@ bool NpcSmokeFindPosition(Critter& npc, uint16 targetX, uint16 targetY, uint des
             uint16 hy = npc.HexY;
             map.MoveHexByDir(hx, hy, dir, step);
             if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+               NpcSmokeIsReserved(reservedX, reservedY, hx, hy) ||
                valid(map.GetItem(hx, hy, PID_SMOKE_HEX)) || valid(map.GetItem(hx, hy, PID_GAS_HEX)))
                 continue;
             if(requireClearShot && (!NpcSmokePhysicalLine(map, hx, hy, targetX, targetY) ||
@@ -1541,6 +1643,8 @@ bool NpcSmokeFindPosition(Critter& npc, uint16 targetX, uint16 targetY, uint des
                 score += int(dist) * 25;
             else
                 score -= ABS(int(dist) - int(desiredDist)) * 12;
+            score -= int(NpcSmokeCrowdAt(allies, hx, hy)) * 120;
+            score -= int(NpcSmokeReservationsNear(reservedX, reservedY, hx, hy)) * 160;
             if(score > bestScore)
             {
                 bestScore = score;
@@ -1555,12 +1659,17 @@ bool NpcSmokeFindPosition(Critter& npc, uint16 targetX, uint16 targetY, uint des
 // Pick a nearby, reachable cloud-free hex. Ranged NPCs prefer keeping distance
 // from the last known target, but path length dominates so they leave the smoke
 // instead of running halfway across the encounter.
-bool NpcSmokeFindExit(Critter& npc, uint16 targetX, uint16 targetY, bool knowTarget,
-                      bool keepDistance, uint16& bestX, uint16& bestY)
+bool NpcSmokeFindExit(Critter& npc, uint targetId, uint16 targetX, uint16 targetY,
+                      bool knowTarget, bool keepDistance, uint16& bestX, uint16& bestY)
 {
     Map@ map = npc.GetMap();
     if(!valid(map))
         return false;
+
+    array<Critter@> allies;
+    array<uint16> reservedX;
+    array<uint16> reservedY;
+    NpcSmokeCollectFormation(npc, targetId, allies, reservedX, reservedY);
 
     int bestScore = -100000;
     uint seedDir = npc.Id % 6;
@@ -1573,6 +1682,7 @@ bool NpcSmokeFindExit(Critter& npc, uint16 targetX, uint16 targetY, bool knowTar
             uint16 hy = npc.HexY;
             map.MoveHexByDir(hx, hy, dir, step);
             if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+               NpcSmokeIsReserved(reservedX, reservedY, hx, hy) ||
                valid(map.GetItem(hx, hy, PID_SMOKE_HEX)) || valid(map.GetItem(hx, hy, PID_GAS_HEX)))
                 continue;
 
@@ -1583,6 +1693,8 @@ bool NpcSmokeFindExit(Critter& npc, uint16 targetX, uint16 targetY, bool knowTar
             int score = 2000 - int(path) * 180 - int(step) * 8;
             if(NpcSmokeTouchesHex(map, hx, hy))
                 score -= 180;                                  // leave the edge when a clean exit exists
+            score -= int(NpcSmokeCrowdAt(allies, hx, hy)) * 120;
+            score -= int(NpcSmokeReservationsNear(reservedX, reservedY, hx, hy)) * 160;
             if(knowTarget)
             {
                 int dist = int(GetDistantion(hx, hy, targetX, targetY));
@@ -1599,6 +1711,74 @@ bool NpcSmokeFindExit(Critter& npc, uint16 targetX, uint16 targetY, bool knowTar
         }
     }
     return bestScore > -100000;
+}
+
+// Reserve a real hex around the last-known target instead of asking every melee
+// NPC to walk to the target coordinate with cut=1. The first ring supplies the
+// six attack slots; overflow waits on the complete second/third rings. A staged
+// NPC only advances when a first-ring slot actually opens, so it does not orbit
+// between equally blocked approach hexes.
+bool NpcSmokeFindAdvance(Critter& npc, uint targetId, uint16 targetX, uint16 targetY,
+                         uint16& bestX, uint16& bestY, uint& bestRing)
+{
+    Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
+
+    array<Critter@> allies;
+    array<uint16> reservedX;
+    array<uint16> reservedY;
+    NpcSmokeCollectFormation(npc, targetId, allies, reservedX, reservedY);
+    array<Critter@> corpses;
+    map.GetCrittersHex(targetX, targetY, 3, FIND_DEAD, corpses);
+
+    int bestScore = -100000;
+    uint preferredDir = npc.Id % 6;
+    uint16 hx = targetX;
+    uint16 hy = targetY;
+    for(uint ring = 1; ring <= 3; ring++)
+    {
+        // Standard full hex ring: move its starting corner out once, then
+        // traverse all six sides. This evaluates 6*ring slots, not six rays.
+        map.MoveHexByDir(hx, hy, 4, 1);
+        for(uint side = 0; side < 6; side++)
+        {
+            for(uint step = 0; step < ring; step++)
+            {
+                map.MoveHexByDir(hx, hy, side, 1);
+                if(!map.IsHexPassed(hx, hy) || !map.IsHexRaked(hx, hy) ||
+                   valid(map.GetCritter(hx, hy)) ||
+                   NpcSmokeIsReserved(reservedX, reservedY, hx, hy))
+                    continue;
+
+                uint path = map.GetPathLength(npc, hx, hy, 0);
+                if(path == 0 || path > 12)
+                    continue;
+
+                int sector = GetDirection(targetX, targetY, hx, hy);
+                int sectorDelta = ABS(sector - int(preferredDir));
+                if(sectorDelta > 3)
+                    sectorDelta = 6 - sectorDelta;
+                int score = 4000 - int(ring) * 1000 - int(path) * 55 - sectorDelta * 25;
+                score -= int(NpcSmokeCrowdAt(allies, hx, hy)) * 130;
+                score -= int(NpcSmokeReservationsNear(reservedX, reservedY, hx, hy)) * 180;
+                score -= int(NpcSmokeCorpsesAt(corpses, hx, hy)) * 350;
+                if(score > bestScore)
+                {
+                    bestScore = score;
+                    bestX = hx;
+                    bestY = hy;
+                    bestRing = ring;
+                }
+            }
+        }
+    }
+
+    if(bestScore <= -100000)
+        return false;
+    if(bestRing > 1 && GetDistantion(npc.HexX, npc.HexY, targetX, targetY) <= 3)
+        return false;                                           // already staged: hold until an attack slot opens
+    return true;
 }
 
 bool NpcSmokeAddMove(Critter& npc, NpcPlane& attackPlane, uint targetId,
@@ -1667,16 +1847,31 @@ uint NpcSmokeBlastRadius(Critter& npc, Item@ weapon)
     return radius;
 }
 
-bool NpcSmokeBlastSafe(Critter& npc, uint16 tx, uint16 ty, uint radius)
+bool NpcSmokeBlastAllowed(Critter& npc, uint targetId, uint16 tx, uint16 ty,
+                          uint radius, bool allowAllyHits, uint& allyHits)
 {
+    allyHits = 0;
     if(GetDistantion(npc.HexX, npc.HexY, tx, ty) <= radius + SMOKE_SAFE_BLAST_PADDING)
-        return false;
+        return false;                                           // never accept self-damage as smoke clearing
     Map@ map = npc.GetMap();
+    if(!valid(map))
+        return false;
     array<Critter@> critters;
     map.GetCrittersHex(tx, ty, radius + SMOKE_SAFE_BLAST_PADDING, FIND_LIFE_AND_KO, critters);
     for(uint i = 0; i < critters.length(); i++)
-        if(valid(critters[i]) && !IsCurrentEnemy(npc, critters[i].Id))
+    {
+        Critter@ other = critters[i];
+        if(!valid(other) || IsCurrentEnemy(npc, other.Id))
+            continue;
+
+        bool ally = NpcSmokeIsAlly(npc, other);
+        if(!ally && targetId != 0 && other.IsNpc() &&
+           !IsCurrentEnemy(other, npc.Id) && NpcSmokeAttacksTarget(other, targetId))
+            ally = true;                                        // untagged encounter squad attacking the same foe
+        if(!allowAllyHits || !ally)
             return false;
+        allyHits++;
+    }
     return true;
 }
 
@@ -1727,10 +1922,12 @@ bool NpcSmokeBlindFireSafe(Critter& npc, uint16 tx, uint16 ty, ProtoItem& weapon
 }
 
 // Search the irregular cloud instead of trusting one hex on the direct ray.
-// Dense, target-relevant smoke is preferred, but every candidate is checked for
-// range, line and blast safety so a blocked first choice does not cancel the role.
+// Dense, target-relevant smoke is preferred. The normal pass requires full
+// blast safety; the grenade-only fallback may accept allied collateral after
+// every safe candidate has failed, while self/neutral safety remains mandatory.
 bool NpcSmokeFindCloudAim(Critter& npc, NpcSmokeMemory& memory, Item& payload,
-                          bool launcher, int use, uint blastRadius, uint16& tx, uint16& ty)
+                          bool launcher, int use, uint blastRadius, bool allowAllyHits,
+                          uint16& tx, uint16& ty)
 {
     Map@ map = npc.GetMap();
     if(!valid(map))
@@ -1752,7 +1949,9 @@ bool NpcSmokeFindCloudAim(Critter& npc, NpcSmokeMemory& memory, Item& payload,
                                                smoke.HexX, smoke.HexY);
         if(nearTarget > SMOKE_CLOUD_AIM_RADIUS && nearNpc > SMOKE_CLOUD_AIM_RADIUS && !onFireLane)
             continue;
-        if(!NpcSmokeBlastSafe(npc, smoke.HexX, smoke.HexY, blastRadius))
+        uint allyHits = 0;
+        if(!NpcSmokeBlastAllowed(npc, memory.targetId, smoke.HexX, smoke.HexY,
+                                 blastRadius, allowAllyHits, allyHits))
             continue;
         if(launcher)
         {
@@ -1765,7 +1964,7 @@ bool NpcSmokeFindCloudAim(Critter& npc, NpcSmokeMemory& memory, Item& payload,
             continue;
 
         int score = int(NpcSmokeCloudDensity(map, smoke.HexX, smoke.HexY)) * 120 -
-                    int(nearTarget) * 18 - int(nearNpc) * 3;
+                    int(nearTarget) * 18 - int(nearNpc) * 3 - int(allyHits) * 1000;
         if(onFireLane)
             score += 90;
         if(score > bestScore)
@@ -1788,23 +1987,30 @@ bool NpcSmokeTryGrenade(Critter& npc, NpcSmokeMemory& memory)
     if(!valid(map))
         return false;
     uint16[] nadePids = { PID_FRAG_GRENADE, PID_PLASMA_GRENADE, PID_PULSE_GRENADE };
-    for(uint i = 0; i < nadePids.length(); i++)
+    // First exhaust every friendly-safe grenade option. Only the second pass
+    // accepts allied casualties, and even then cloud aiming minimizes their count.
+    for(uint riskPass = 0; riskPass < 2; riskPass++)
     {
-        Item@ nade = npc.GetItem(nadePids[i], -1);
-        if(!valid(nade))
-            continue;
-        uint16 tx = 0, ty = 0;
-        uint radius = NpcSmokeBlastRadius(npc, nade);
-        if(!NpcSmokeFindCloudAim(npc, memory, nade, false, 0, radius, tx, ty))
-            continue;
+        bool allowAllyHits = riskPass != 0;
+        for(uint i = 0; i < nadePids.length(); i++)
+        {
+            Item@ nade = npc.GetItem(nadePids[i], -1);
+            if(!valid(nade))
+                continue;
+            uint16 tx = 0, ty = 0;
+            uint radius = NpcSmokeBlastRadius(npc, nade);
+            if(!NpcSmokeFindCloudAim(npc, memory, nade, false, 0, radius,
+                                     allowAllyHits, tx, ty))
+                continue;
 
-        CommenceThrowing(npc, map, nade, tx, ty);
-        SmokeNadeCdIds.insertLast(npc.Id);
-        SmokeNadeCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_NADE_CD_MS));
-        NpcSmokeSetGroupGrenadeCooldown(npc);
-        if(Random(0, 2) == 0)
-            npc.Say(SAY_NORM_ON_HEAD, "Frag out!");
-        return true;
+            CommenceThrowing(npc, map, nade, tx, ty);
+            SmokeNadeCdIds.insertLast(npc.Id);
+            SmokeNadeCdUntil.insertLast(__FullSecond + REAL_MS(SMOKE_AGGRO_NADE_CD_MS));
+            NpcSmokeSetGroupGrenadeCooldown(npc);
+            if(Random(0, 2) == 0)
+                npc.Say(SAY_NORM_ON_HEAD, "Frag out!");
+            return true;
+        }
     }
     return false;
 }
@@ -1821,7 +2027,7 @@ bool NpcSmokeTryLauncher(Critter& npc, NpcSmokeMemory& memory, Item& hand)
     uint16 tx = 0, ty = 0;
     int use = _WeaponModeUse(hand.Mode);
     uint radius = uint(MAX(1, HexShotBlastRadius(hand, npc)));
-    if(!NpcSmokeFindCloudAim(npc, memory, hand, true, use, radius, tx, ty))
+    if(!NpcSmokeFindCloudAim(npc, memory, hand, true, use, radius, false, tx, ty))
         return false;
 
     Map@ map = npc.GetMap();
@@ -1949,7 +2155,7 @@ bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target)   /
         if(npc.Param[ST_DEPLOYED] != 0)
             ExitDeploy(npc);
         uint16 ex = 0, ey = 0;
-        if(NpcSmokeFindExit(npc, memory.lastX, memory.lastY, true, true, ex, ey))
+        if(NpcSmokeFindExit(npc, target.Id, memory.lastX, memory.lastY, true, true, ex, ey))
             NpcSmokeAddMove(npc, attackPlane, target.Id, ex, ey, 0);
         else
             NpcSmokeAddWait(npc, attackPlane, target.Id);
@@ -1979,7 +2185,7 @@ bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target)   /
             ExitDeploy(npc);
         }
         uint16 ex = 0, ey = 0;
-        if(NpcSmokeFindExit(npc, memory.lastX, memory.lastY, true, true, ex, ey))
+        if(NpcSmokeFindExit(npc, target.Id, memory.lastX, memory.lastY, true, true, ex, ey))
             NpcSmokeAddMove(npc, attackPlane, target.Id, ex, ey, 0);
         else
             NpcSmokeAddWait(npc, attackPlane, target.Id);
@@ -1996,7 +2202,8 @@ bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target)   /
             return true;
         }
         uint16 rx = 0, ry = 0;
-        if(NpcSmokeFindPosition(npc, memory.lastX, memory.lastY, uint(maxDist), false, true, rx, ry))
+        if(NpcSmokeFindPosition(npc, target.Id, memory.lastX, memory.lastY,
+                                uint(maxDist), false, true, rx, ry))
         {
             if(NpcSmokeAddMove(npc, attackPlane, target.Id, rx, ry, 0))
                 memory.searchStep++;
@@ -2019,31 +2226,39 @@ bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target)   /
 
     if(melee)
     {
-        // Melee presses the last known position, then projects a couple of hexes
-        // along the last observed movement instead of waiting at the smoke edge.
+        // Melee reserves a distinct attack/staging slot around the last-known
+        // position. Only an NPC that got a first-ring slot projects the target's
+        // previous movement; overflow holds its staging hex until a slot opens.
+        if(memory.searchStep >= SMOKE_MAX_REPOSITION_STEPS)
+        {
+            NpcSmokeAddWait(npc, attackPlane, target.Id);
+            return true;
+        }
         uint16 tx = memory.lastX;
         uint16 ty = memory.lastY;
         if(memory.searchStep > 0 && (memory.prevX != memory.lastX || memory.prevY != memory.lastY))
             map.MoveHexByDir(tx, ty, GetDirection(memory.prevX, memory.prevY, memory.lastX, memory.lastY),
                              MIN(memory.searchStep, uint(2)));
-        if(!map.IsHexPassed(tx, ty) &&
-           !FindFirstFreeHex(map, tx, ty, GetDirection(npc.HexX, npc.HexY, tx, ty), 4))
-        {
-            NpcSmokeAddWait(npc, attackPlane, target.Id);
-            return true;
-        }
         if(hpPct < 35)
         {
             uint16 rx = 0, ry = 0;
-            if(NpcSmokeFindPosition(npc, memory.lastX, memory.lastY, 4, false, true, rx, ry))
+            if(NpcSmokeFindPosition(npc, target.Id, memory.lastX, memory.lastY,
+                                    4, false, true, rx, ry))
             {
                 memory.searchStep++;
                 NpcSmokeAddMove(npc, attackPlane, target.Id, rx, ry, 0);
                 return true;
             }
         }
-        memory.searchStep++;
-        if(!NpcSmokeAddMove(npc, attackPlane, target.Id, tx, ty, 1))
+        uint16 slotX = 0, slotY = 0;
+        uint slotRing = 0;
+        if(NpcSmokeFindAdvance(npc, target.Id, tx, ty, slotX, slotY, slotRing) &&
+           NpcSmokeAddMove(npc, attackPlane, target.Id, slotX, slotY, 0))
+        {
+            if(slotRing == 1)
+                memory.searchStep++;
+        }
+        else
             NpcSmokeAddWait(npc, attackPlane, target.Id);
         return true;
     }
@@ -2054,10 +2269,17 @@ bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target)   /
     {
         if(memory.searchStep > 0)
             NpcSmokeAddWait(npc, attackPlane, target.Id);
-        else if(NpcSmokeAddMove(npc, attackPlane, target.Id, memory.lastX, memory.lastY, 2))
-            memory.searchStep++;
         else
-            NpcSmokeAddWait(npc, attackPlane, target.Id);
+        {
+            uint16 slotX = 0, slotY = 0;
+            uint slotRing = 0;
+            if(NpcSmokeFindAdvance(npc, target.Id, memory.lastX, memory.lastY,
+                                   slotX, slotY, slotRing) &&
+               NpcSmokeAddMove(npc, attackPlane, target.Id, slotX, slotY, 0))
+                memory.searchStep++;
+            else
+                NpcSmokeAddWait(npc, attackPlane, target.Id);
+        }
         return true;
     }
 
@@ -2095,7 +2317,8 @@ bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target)   /
     uint16 fx = 0, fy = 0;
     if(memory.searchStep >= SMOKE_MAX_REPOSITION_STEPS)
         NpcSmokeAddWait(npc, attackPlane, target.Id);             // hold a chosen sector; do not orbit the cloud
-    else if(NpcSmokeFindPosition(npc, memory.lastX, memory.lastY, desired, true, false, fx, fy))
+    else if(NpcSmokeFindPosition(npc, target.Id, memory.lastX, memory.lastY,
+                                 desired, true, false, fx, fy))
     {
         memory.searchStep++;
         NpcSmokeAddMove(npc, attackPlane, target.Id, fx, fy, 0);
@@ -3820,10 +4043,10 @@ void TrySmokeEvade(Critter& cr)
     }
 
     uint16 bestX = 0, bestY = 0;
-    if(!NpcSmokeFindExit(cr, foeX, foeY, knowFoe, true, bestX, bestY))
+    uint targetId = valid(foe) ? foe.Id : 0;
+    if(!NpcSmokeFindExit(cr, targetId, foeX, foeY, knowFoe, true, bestX, bestY))
         return;                                                  // boxed in, keep fighting blind
 
-    uint targetId = valid(foe) ? foe.Id : 0;
     AddWalkPlane(cr, AI_PLANE_ATTACK_PRIORITY + 5, PLANE_SMOKE_RESPONSE,
                  targetId, bestX, bestY, 6, true, 0);
     if(Random(0, 3) == 0)
@@ -4106,6 +4329,7 @@ void ExplodeCollarOnDeath(Critter& cr, Map@ map)
         radius += EXPLOSIVE_COLLAR_EXPERT_RADIUS_BONUS;
     }
 
+    _EventSlaveExploded(cr);
     DeleteItem(collar);
     // The final argument only selects ExplodeEx's door-damage profile.
     ExplodeEx(map, cr.HexX, cr.HexY, PID_EXPLODE_ROCKET, radius, damage,
