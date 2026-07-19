@@ -464,7 +464,9 @@ bool start()
         {
             // in case of changes, remember about editing cheats@ExecMapGrids
             allMaps[m].SetEvent(MAP_EVENT_LOOP_3, "cheats@_LockMap");
-            allMaps[m].SetLoopTime(3, 500);
+            // New arrivals are locked in map_critter_in. This loop is only a
+            // low-frequency safety refresh, not a 2 Hz scan of every map.
+            allMaps[m].SetLoopTime(3, 60000);
             SetTimeoutForAll(allMaps[m], TO_TRANSFER, REAL_SECOND(2238));
             noGridsMaps++;
         }
@@ -4976,6 +4978,10 @@ void critter_respawn(Critter& cr)
 void map_critter_in(Map& map, Critter& cr)
 {
 	speedboost(cr);
+    // Maps without exit grids used to discover new critters by scanning every
+    // map twice per second. Lock the entering critter immediately instead.
+    if(_MapHasMode(map, MAP_MODE_NO_GRIDS))
+        _SetTimeout(cr, TO_TRANSFER, REAL_SECOND(2238) + REAL_MS(800));
     if(!map.IsTurnBased())
         SetWalkRunTimeForNpcs(map, 0, false);
     RemoveArenaItems(cr);

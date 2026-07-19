@@ -5217,7 +5217,7 @@ void ExecMapGrids(Critter& player, bool enable)
 
             _MapSetMode(map, MAP_MODE_NO_GRIDS);
             map.SetEvent(MAP_EVENT_LOOP_3, "_LockMap");
-            map.SetLoopTime(3, 500);
+            map.SetLoopTime(3, 60000);
             SetTimeoutForAll(map, TO_TRANSFER, REAL_SECOND(2238));
         }
 
@@ -11951,7 +11951,15 @@ void SetTimeoutForAll(Map& map, int timeout, int time)
 
 void _LockMap(Map& map)
 {
-    SetTimeoutForAll(map, TO_TRANSFER, REAL_SECOND(2238) + REAL_MS(800));
+    array<Critter@> crits;
+    uint count = map.GetCritters(0, FIND_ALL, crits);
+    int refreshBelow = REAL_MINUTE(5);
+    int lockTime = REAL_SECOND(2238) + REAL_MS(800);
+    for(uint i = 0; i < count; i++)
+    {
+        if(crits[i].Timeout[TO_TRANSFER] <= refreshBelow)
+            _SetTimeout(crits[i], TO_TRANSFER, lockTime);
+    }
 }
 
 void _RemoveItems(Map& map, Critter& cr)
