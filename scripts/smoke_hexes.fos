@@ -54,6 +54,7 @@ class SmokeCloudInfo
     uint   expireSecond; // absolute game time the cloud dissolves at
     uint16 hexPid;       // PID_SMOKE_HEX or PID_GAS_HEX
     uint   ownerId;      // thrower, credited for gas damage kills
+    uint[] itemIds;      // all hex items ever created for this cloud; stale ids are validated before use
 }
 array<SmokeCloudInfo> Clouds;
 
@@ -69,7 +70,10 @@ uint RegisterCloud( uint mapId, uint16 centerX, uint16 centerY, uint16 hexPid, u
     info.ownerId = ownerId;
     for( uint i = 0, l = Clouds.length(); i < l; i++ )
     {
-        if( !Clouds[ i ].alive )
+        // A killed cloud can still have spread/tick events carrying its slot
+        // index. Reuse only after its original lifetime so those events cannot
+        // attach old hexes to a newly registered cloud.
+        if( !Clouds[ i ].alive && Clouds[ i ].expireSecond <= __FullSecond )
         {
             Clouds[ i ] = info;
             return i;
@@ -132,7 +136,7 @@ uint e_SmokeSpread( uint[] @ values )
 
     uint[] ids;
     if( step == 0 )
-        AddSmoke( map, centerX, centerY, ids, hexPid );
+        AddSmoke( map, centerX, centerY, ids, hexPid, values[ 5 ] );
     else
     {
         uint maxRing = MIN( step, SMOKE_MAX_RADIUS );
@@ -153,7 +157,7 @@ uint e_SmokeSpread( uint[] @ values )
                     if( r == 1 )
                         chance += 25;                // inner ring always decent - it screens the thrower
                     if( Random( 1, 100 ) <= chance )
-                        AddSmoke( map, hexX, hexY, ids, hexPid );
+                        AddSmoke( map, hexX, hexY, ids, hexPid, values[ 5 ] );
                 }
             }
         }
@@ -171,7 +175,7 @@ uint e_SmokeSpread( uint[] @ values )
 }
 
 // One smoke/gas hex; smothers ground fire on the spot (see fire_hexes.fos)
-void AddSmoke( Map@ map, uint16 hexX, uint16 hexY, uint[]& ids, uint16 hexPid )
+void AddSmoke( Map@ map, uint16 hexX, uint16 hexY, uint[]& ids, uint16 hexPid, uint cloudIdx )
 {
     if( !valid( map ) )
         return;
@@ -188,6 +192,8 @@ void AddSmoke( Map@ map, uint16 hexX, uint16 hexY, uint[]& ids, uint16 hexPid )
     if( valid( item ) )
     {
         ids.insertLast( item.Id );
+        if( CloudAlive( cloudIdx ) )
+            Clouds[ cloudIdx ].itemIds.insertLast( item.Id );
         item.SetScript( "_SmokeInit" );
     }
 }
@@ -363,7 +369,7 @@ uint e_CorridorExpired( uint[] @ values )
         int    cloudIdx = CloudCovering( map.Id, hx, hy );
         if( cloudIdx < 0 )
             continue; // owning cloud died or dissolved meanwhile - the gap stays
-        AddSmoke( map, hx, hy, ids, Clouds[ cloudIdx ].hexPid );
+        AddSmoke( map, hx, hy, ids, Clouds[ cloudIdx ].hexPid, uint( cloudIdx ) );
         if( Clouds[ cloudIdx ].expireSecond > expireSecond )
             expireSecond = Clouds[ cloudIdx ].expireSecond;
     }
@@ -402,13 +408,16 @@ void RefreshCorridorArea( Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, u
 void SmokeDispelArea( Map& map, uint16 hexX, uint16 hexY, uint radius )
 {
     uint wipeRadius = radius + 2;
-
     array<uint16> killedX;
     array<uint16> killedY;
+    bool removedAny = false;
     for( uint i = 0, l = Clouds.length(); i < l; i++ )
     {
-        if( Clouds[ i ].alive && Clouds[ i ].mapId == map.Id
-            && GetDistantion( hexX, hexY, Clouds[ i ].centerX, Clouds[ i ].centerY ) <= radius + 1 )
+        if( !Clouds[ i ].alive || Clouds[ i ].mapId != map.Id )
+            continue;
+
+        uint cloudDistance = GetDistantion( hexX, hexY, Clouds[ i ].centerX, Clouds[ i ].centerY );
+        if( cloudDistance <= radius + 1 )
         {
             Clouds[ i ].alive = false;
             killedX.insertLast( Clouds[ i ].centerX );
@@ -416,24 +425,27 @@ void SmokeDispelArea( Map& map, uint16 hexX, uint16 hexY, uint radius )
         }
     }
 
-    array<Item@> items;
-    map.GetItems( PID_SMOKE_HEX, items );
-    map.GetItems( PID_GAS_HEX, items );
-    if( items.length() == 0 )
-        return;
-
-    bool removedAny = false;
-    for( uint i = 0, l = items.length(); i < l; i++ )
+    // Work from per-cloud ids instead of scanning every map item twice for
+    // every explosion. This preserves the old blast/core removal radii.
+    for( uint i = 0, l = Clouds.length(); i < l; i++ )
     {
-        if( !valid( items[ i ] ) )
+        if( Clouds[ i ].mapId != map.Id )
             continue;
-        bool wipe = GetDistantion( hexX, hexY, items[ i ].HexX, items[ i ].HexY ) <= wipeRadius;
-        for( uint k = 0, kl = killedX.length(); !wipe && k < kl; k++ )
-            wipe = GetDistantion( killedX[ k ], killedY[ k ], items[ i ].HexX, items[ i ].HexY ) <= SMOKE_MAX_RADIUS + 1;
-        if( wipe )
+
+        for( uint k = 0, kl = Clouds[ i ].itemIds.length(); k < kl; k++ )
         {
-            DeleteItem( items[ i ] );
-            removedAny = true;
+            Item@ item = GetItem( Clouds[ i ].itemIds[ k ] );
+            if( !valid( item ) || item.MapId != map.Id || item.GetProtoId() != Clouds[ i ].hexPid )
+                continue;
+
+            bool wipe = GetDistantion( hexX, hexY, item.HexX, item.HexY ) <= wipeRadius;
+            for( uint n = 0, nl = killedX.length(); !wipe && n < nl; n++ )
+                wipe = GetDistantion( killedX[ n ], killedY[ n ], item.HexX, item.HexY ) <= SMOKE_MAX_RADIUS + 1;
+            if( wipe )
+            {
+                DeleteItem( item );
+                removedAny = true;
+            }
         }
     }
     if( removedAny )
