@@ -32,6 +32,7 @@ import int  _EventWarlordAim(Critter& npc, Critter& target) from "eventboss";
 import int  _AbominationMinionAim(Critter& npc, Critter& target) from "eventboss";
 import void NpcSmokeTrackVisible(Critter& npc, Critter@ target) from "main";
 import bool NpcSmokeAggroHold(Critter& npc, NpcPlane& attackPlane, Critter@ target) from "main";
+import bool SmokeOnFireLine(Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx, uint16 toHy) from "smoke_hexes";
 
 // Tactical path searches are intentionally throttled: npc_plane_run is a hot path
 // and a large encounter must not evaluate a full set of destinations every frame.
@@ -1288,6 +1289,10 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
         bool       perkScopeRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_SCOPE_RANGE);
         bool       perkLongRange = WeaponHasProtoPerk(weapon, WEAPON_PERK_LONG_RANGE);
         bool       perkSkilleless = WeaponHasProtoPerk(weapon, WEAPON_PERK_SKILLESS);
+        Map@        attackMap = npc.GetMap();
+        bool        smokeEngagement = valid(attackMap) &&
+                                      SmokeOnFireLine(attackMap, npc.HexX, npc.HexY,
+                                                      target.HexX, target.HexY);
 
         if(!npc.IsCanWalk())
         {
@@ -1516,6 +1521,15 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
                         best = hi;                                          // badly hurt: full fall-back
                     else if(hpPct < 40)
                         best = MAX(best, (best + hi) / 2);                  // hurt: give ground
+                }
+                if(smokeEngagement)
+                {
+                    // A temporary shot corridor must not make a ranged D_Charge
+                    // unit dive into the cloud. Hold at least five hexes away
+                    // (or the weapon's existing larger safety minimum).
+                    lo = MIN(hi, MAX(lo, 5));
+                    best = MAX(best, lo);
+                    r1 = uint(lo);
                 }
                 r0 = CLAMP(best, lo, hi);
             }
@@ -2013,6 +2027,8 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
     Map@ map = npc.GetMap();
     if(!valid(map))
         return false;
+    if(SmokeOnFireLine(map, npc.HexX, npc.HexY, target.HexX, target.HexY))
+        return false;                                           // smoke response owns movement when the corridor closes
 
     array<Critter@> allies;
     array<uint16> reservedX;
@@ -2092,14 +2108,9 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
                !TacticalHasLine(map, hx, hy, target.HexX, target.HexY))
                 continue;
 
-            uint path = map.GetPathLength(npc, hx, hy, 0);
-            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
-                continue;
-
             // The nearest position that fixes the problem wins. Cover and desired
             // range have deliberately small weights compared with actual travel.
-            int score = 1000 - int(path) * 70 -
-                        ABS(int(dist) - int(preferredDist)) * 4;
+            int score = 1000 - ABS(int(dist) - int(preferredDist)) * 4;
             if(TacticalHasNearCover(map, hx, hy, target))
                 score += 40;
             score -= int(TacticalCrowdAt(allies, hx, hy)) * 80;
@@ -2114,6 +2125,13 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
                 score += 120;
             if(score <= bestScore)
                 continue;
+
+            // Pathfinding is the dominant cost. A candidate whose path-free
+            // score already loses cannot recover because travel only subtracts.
+            uint path = map.GetPathLength(npc, hx, hy, 0);
+            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
+                continue;
+            score -= int(path) * 70;
 
             if(score > bestScore)
             {
