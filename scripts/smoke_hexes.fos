@@ -167,9 +167,9 @@ uint e_SmokeSpread( uint[] @ values )
     {
         uint delayMs = SMOKE_LIFETIME_MS - step * ( SMOKE_RING_FADE_MS + SMOKE_SPREAD_STEP_MS );
         CreateTimeEvent( AFTER( REAL_MS( delayMs ) ), "e_DeleteSmokeRing", ids, true );
+        RefreshArea( map, centerX, centerY, SMOKE_REFRESH_RADIUS );
     }
 
-    RefreshArea( map, centerX, centerY, SMOKE_REFRESH_RADIUS );
     values[ 3 ]++;
     return REAL_MS( SMOKE_SPREAD_STEP_MS );
 }
