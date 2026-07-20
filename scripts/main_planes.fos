@@ -43,6 +43,7 @@ import bool SmokeOnFireLine(Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx,
 #define TACTICAL_MELEE_EVADE_CD_MS     (5500)
 #define TACTICAL_MELEE_STATE_PRUNE_MS  (30000)
 #define TACTICAL_PATH_CANDIDATE_LIMIT  (uint(4))
+#define TACTICAL_ALLY_SCAN_RADIUS       (uint(12))
 uint[] TacticalPositionIds;
 uint[] TacticalPositionUntil;
 uint[] TacticalMeleeNpcIds;
@@ -1650,7 +1651,12 @@ void TacticalCollectAllies(Map& map, Critter& npc, Critter& target,
                            array<uint16>& reservedY)
 {
     array<Critter@> critters;
-    uint count = map.GetCritters(0, FIND_ONLY_NPC | FIND_LIFE, critters);
+    // GetCritters() synchronizes every NPC on the map. With concurrent logic that
+    // turns a local formation query into hundreds of cross-thread object waits.
+    // Only nearby allies can crowd the candidate hexes or reserve the short
+    // reposition paths considered below.
+    uint count = map.GetCrittersHex(npc.HexX, npc.HexY, TACTICAL_ALLY_SCAN_RADIUS,
+                                    FIND_ONLY_NPC | FIND_LIFE, critters);
     for(uint i = 0; i < count; i++)
     {
         Critter@ ally = critters[i];
