@@ -42,6 +42,7 @@ import bool SmokeOnFireLine(Map& map, uint16 fromHx, uint16 fromHy, uint16 toHx,
 #define TACTICAL_MELEE_REACTION_MAX_MS (1800)
 #define TACTICAL_MELEE_EVADE_CD_MS     (5500)
 #define TACTICAL_MELEE_STATE_PRUNE_MS  (30000)
+#define TACTICAL_PATH_CANDIDATE_LIMIT  (uint(4))
 uint[] TacticalPositionIds;
 uint[] TacticalPositionUntil;
 uint[] TacticalMeleeNpcIds;
@@ -1832,6 +1833,30 @@ bool TacticalIsReserved(array<uint16>& reservedX, array<uint16>& reservedY,
     return false;
 }
 
+// Pathfinding is much more expensive than the geometric/LOS score, especially
+// under Wine on a small vCPU. Keep only the strongest candidates during the
+// cheap scan and ask the pathfinder about those after the scan is complete.
+void TacticalQueuePathCandidate(int score, uint16 hx, uint16 hy,
+                                array<int>& scores, array<uint16>& hexX,
+                                array<uint16>& hexY)
+{
+    uint place = 0;
+    while(place < scores.length() && scores[place] >= score)
+        place++;
+    if(place >= TACTICAL_PATH_CANDIDATE_LIMIT)
+        return;
+
+    scores.insertAt(place, score);
+    hexX.insertAt(place, hx);
+    hexY.insertAt(place, hy);
+    if(scores.length() > TACTICAL_PATH_CANDIDATE_LIMIT)
+    {
+        scores.removeLast();
+        hexX.removeLast();
+        hexY.removeLast();
+    }
+}
+
 bool TacticalWeaponFireProfile(ProtoItem@ weapon, uint& maxDist, bool& cascade)
 {
     if(!valid(weapon))
@@ -1966,9 +1991,9 @@ bool TacticalStageWhenBlocked(Map& map, Critter& npc, NpcPlane& attackPlane,
         currentScore -= int(TacticalCrowdAt(allies, npc.HexX, npc.HexY)) * 55;
     }
 
-    int bestScore = -100000;
-    uint16 bestX = 0;
-    uint16 bestY = 0;
+    array<int> candidateScores;
+    array<uint16> candidateX;
+    array<uint16> candidateY;
     uint seedDir = npc.Id % 6;
     for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
     {
@@ -1993,20 +2018,24 @@ bool TacticalStageWhenBlocked(Map& map, Critter& npc, NpcPlane& attackPlane,
                 score += 100;
             score -= int(TacticalCrowdAt(allies, hx, hy)) * 55;
             score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 75;
-            if(score <= bestScore)
-                continue;
+            TacticalQueuePathCandidate(score, hx, hy, candidateScores, candidateX, candidateY);
+        }
+    }
 
-            uint path = map.GetPathLength(npc, hx, hy, 0);
-            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
-                continue;
-            score -= int(path) * 25;
-
-            if(score > bestScore)
-            {
-                bestScore = score;
-                bestX = hx;
-                bestY = hy;
-            }
+    int bestScore = -100000;
+    uint16 bestX = 0;
+    uint16 bestY = 0;
+    for(uint i = 0; i < candidateScores.length(); i++)
+    {
+        uint path = map.GetPathLength(npc, candidateX[i], candidateY[i], 0);
+        if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
+            continue;
+        int score = candidateScores[i] - int(path) * 25;
+        if(score > bestScore)
+        {
+            bestScore = score;
+            bestX = candidateX[i];
+            bestY = candidateY[i];
         }
     }
 
@@ -2084,9 +2113,9 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
             currentScore += 120;
     }
 
-    int bestScore = -100000;
-    uint16 bestX = 0;
-    uint16 bestY = 0;
+    array<int> candidateScores;
+    array<uint16> candidateX;
+    array<uint16> candidateY;
     uint seedDir = npc.Id % 6;
     for(uint dirOffset = 0; dirOffset < 6; dirOffset++)
     {
@@ -2123,22 +2152,24 @@ bool TacticalRepositionRanged(Critter& npc, NpcPlane& attackPlane, Critter@ targ
                 score -= 150;
             if(!TacticalTargetCanAttack(map, target, hx, hy, threatRanged, threatDist))
                 score += 120;
-            if(score <= bestScore)
-                continue;
+            TacticalQueuePathCandidate(score, hx, hy, candidateScores, candidateX, candidateY);
+        }
+    }
 
-            // Pathfinding is the dominant cost. A candidate whose path-free
-            // score already loses cannot recover because travel only subtracts.
-            uint path = map.GetPathLength(npc, hx, hy, 0);
-            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
-                continue;
-            score -= int(path) * 70;
-
-            if(score > bestScore)
-            {
-                bestScore = score;
-                bestX = hx;
-                bestY = hy;
-            }
+    int bestScore = -100000;
+    uint16 bestX = 0;
+    uint16 bestY = 0;
+    for(uint i = 0; i < candidateScores.length(); i++)
+    {
+        uint path = map.GetPathLength(npc, candidateX[i], candidateY[i], 0);
+        if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
+            continue;
+        int score = candidateScores[i] - int(path) * 70;
+        if(score > bestScore)
+        {
+            bestScore = score;
+            bestX = candidateX[i];
+            bestY = candidateY[i];
         }
     }
 
@@ -2190,9 +2221,9 @@ bool TacticalRepositionMelee(Critter& npc, NpcPlane& attackPlane, Critter@ targe
             currentScore -= 250;
     }
 
-    int bestScore = -100000;
-    uint16 bestX = 0;
-    uint16 bestY = 0;
+    array<int> candidateScores;
+    array<uint16> candidateX;
+    array<uint16> candidateY;
     uint seedDir = npc.Id % 6;
     for(uint ring = 1; ring <= attackReach; ring++)
     {
@@ -2212,20 +2243,24 @@ bool TacticalRepositionMelee(Critter& npc, NpcPlane& attackPlane, Critter@ targe
             score -= int(TacticalReservationsNear(reservedX, reservedY, hx, hy)) * 80;
             if(TacticalInFriendlyFireLane(allies, target, hx, hy))
                 score -= 250;
-            if(score <= bestScore)
-                continue;
+            TacticalQueuePathCandidate(score, hx, hy, candidateScores, candidateX, candidateY);
+        }
+    }
 
-            uint path = map.GetPathLength(npc, hx, hy, 0);
-            if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
-                continue;
-            score -= int(path) * 25;
-
-            if(score > bestScore)
-            {
-                bestScore = score;
-                bestX = hx;
-                bestY = hy;
-            }
+    int bestScore = -100000;
+    uint16 bestX = 0;
+    uint16 bestY = 0;
+    for(uint i = 0; i < candidateScores.length(); i++)
+    {
+        uint path = map.GetPathLength(npc, candidateX[i], candidateY[i], 0);
+        if(path == 0 || path > TACTICAL_MAX_REPOSITION_PATH)
+            continue;
+        int score = candidateScores[i] - int(path) * 25;
+        if(score > bestScore)
+        {
+            bestScore = score;
+            bestX = candidateX[i];
+            bestY = candidateY[i];
         }
     }
 
