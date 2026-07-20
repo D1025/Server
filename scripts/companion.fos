@@ -145,73 +145,49 @@ bool PositionTaken(uint16 hx, uint16 hy)
     return false;
 }
 
+bool FindCompanionHomeHex(Map& map, uint16& x, uint16& y, uint8& dir)
+{
+    array<uint8> entires;
+    for(uint8 i = ENTIRE_COMPANION; i < ENTIRE_COMPANION_DIRS_END; i++)
+    {
+        // Parsing every coordinate here created several temporary arrays. Only
+        // the existence and later the count of the selected entire are needed.
+        if(map.CountEntire(i) > 0)
+            entires.insertLast(i);
+    }
+    if(entires.length() == 0)
+        return false;
+
+    uint8 entireNumber = entires[Random(0, entires.length() - 1)];
+    if(entireNumber == ENTIRE_COMPANION)
+        dir = uint8(Random(0, 5));
+    else
+        dir = uint8(entireNumber - ENTIRE_COMPANION_DIRS_BEG);
+
+    uint count = map.CountEntire(entireNumber);
+    return count > 0 && GetEntireFreeHex(map, entireNumber, x, y, Random(0, count - 1));
+}
+
 // New version by worldremaker
 bool MoveToFreeHex(Critter& cr)
 {
     if(!valid(cr))
-		return false;
-	
-	Map@ map = cr.GetMap();
-	if(!valid(map))
-		return false;
-		
-	PutAwayItems(cr);
-	
-	uint8  dir;
-	uint16 x, y;
-	x = y = dir = 0;
-	
-	// New system for gathering ENT hexes on map.
-	uint8[] entires;
-	uint8 tablelenght = 0;
-	for(uint8 i = ENTIRE_COMPANION; i < ENTIRE_COMPANION_DIRS_END; i++)
-	{
-		array<Entire> enter_entires;
-		if(ParseEntires(map, enter_entires, i) > 0)
-		{
-			tablelenght++;
-			entires.resize(tablelenght);
-			entires[tablelenght-1] = i;
-		}
-	}
-	//shuffle_array(entires, uint8);
-		
-	uint8 entireNumber = entires[(Random(0, (entires.length()-1)))];
-	if(entireNumber == ENTIRE_COMPANION)
-	{
-		dir = Random(0, 5);
-	}
-	else
-	{
-		switch(entireNumber)
-		{
-			case ENTIRE_COMPANION_DIRS_BEG : dir = 0; break;
-			case 103 : dir = 1; break;
-			case 104 : dir = 2; break;
-			case 105 : dir = 3; break;
-			case 106 : dir = 4; break;
-			case ENTIRE_COMPANION_DIRS_END : dir = 5; break;
-			default : dir = 0; break;
-		}
-	}
+        return false;
 
-	array<Entire> moveto_entires;
-	if(ParseEntires(map, moveto_entires, entireNumber) == 0)
-		return false;
-	
-	Entire@ entire = moveto_entires[Random(0, (moveto_entires.length() - 1))];
-	if(!valid(entire))
-		return false;
-	
-	if(GetEntireFreeHex(cr.GetMap(), entireNumber, x, y, Random(0, (moveto_entires.length() - 1))))
-	{
-		/*if(PositionTaken(x, y))
-			continue;*/
-			
-		cr.SetHomePos(x, y, dir);
-		return true;
-	}
-	return false;
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+        return false;
+
+    PutAwayItems(cr);
+
+    uint8 dir = 0;
+    uint16 x = 0;
+    uint16 y = 0;
+    if(!FindCompanionHomeHex(map, x, y, dir))
+        return false;
+
+    cr.SetHomePos(x, y, dir);
+    return true;
 }
 //Old version
 /* bool MoveToFreeHex(Critter& cr)
@@ -253,69 +229,19 @@ bool MoveToFreeHex(Critter& cr)
 void MoveCompToFreeHex(Critter& cr)
 {
     if(!valid(cr))
-		return;
-	
-	Map@ map = cr.GetMap();
-	if(!valid(map))
-		return;
-		
-	PutAwayItems(cr);
-	
-	uint8  dir;
-	uint16 x, y;
-	uint EntireSelector;
-	x = y = dir = 0;
-	
-	// New system for gathering ENT hexes on map.
-	uint8[] entires;
-	uint8 tablelenght = 0;
-	for(uint8 i = ENTIRE_COMPANION; i < ENTIRE_COMPANION_DIRS_END; i++)
-	{
-		array<Entire> enter_entires;
-		if(ParseEntires(map, enter_entires, i) > 0)
-		{
-			tablelenght++;
-			entires.resize(tablelenght);
-			entires[tablelenght-1] = i;
-		}
-	}
-	//shuffle_array(entires, uint8);
-		
-	uint8 entireNumber = entires[(Random(0, (entires.length()-1)))];
-	if(entireNumber == ENTIRE_COMPANION)
-	{
-		dir = Random(0, 5);
-	}
-	else
-	{
-		switch(entireNumber)
-		{
-			case ENTIRE_COMPANION_DIRS_BEG : dir = 0; break;
-			case 103 : dir = 1; break;
-			case 104 : dir = 2; break;
-			case 105 : dir = 3; break;
-			case 106 : dir = 4; break;
-			case ENTIRE_COMPANION_DIRS_END : dir = 5; break;
-			default : dir = 0; break;
-		}
-	}
+        return;
 
-	array<Entire> moveto_entires;
-	if(ParseEntires(map, moveto_entires, entireNumber) == 0)
-		return;
-	
-	EntireSelector = Random(0, (moveto_entires.length() - 1));
-	Entire@ entire = moveto_entires[EntireSelector];
-	if(!valid(entire))
-		return;
-	
-	if(GetEntireFreeHex(cr.GetMap(), entireNumber, x, y, EntireSelector))
-	{
-		/*if(PositionTaken(x, y))
-			continue;*/
-			
-		cr.SetHomePos(x, y, dir);				
-	}
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+        return;
+
+    PutAwayItems(cr);
+
+    uint8 dir = 0;
+    uint16 x = 0;
+    uint16 y = 0;
+    if(FindCompanionHomeHex(map, x, y, dir))
+        cr.SetHomePos(x, y, dir);
 }
 
 //old version
@@ -394,10 +320,16 @@ uint e_UpdateCompanions(array<uint>@ values)
     DLog("Updating companions...");
     #endif
 
-    if(Random(0, 1) == 0)
+    // This event replenishes the public companion pool. Creating one after the
+    // pool is already full made it grow without a limit and caused a large NPC
+    // creation/transit spike every other update.
+    if(Companions.length() < COMPANION_INITIAL_SPAWNS && Random(0, 1) == 0)
         CreateCompanion();
 
-    for(uint i = 0; i < Companions.length(); i++)
+    // Validate and update in one pass. GetCritter() synchronizes the object for
+    // the lifetime of this script context, so doing two passes only repeated the
+    // lookup and retained all locks before useful work began.
+    for(uint i = 0; i < Companions.length();)
     {
         Critter@ cr = GetCritter(Companions[i]);
         if(!valid(cr))
@@ -406,6 +338,7 @@ uint e_UpdateCompanions(array<uint>@ values)
             DLog(Companions[i] + " is no longer valid, removing from array.");
             #endif
             Companions.removeAt(i);
+            continue;
         }
         #ifdef DEBUG_COMPANION
         else
@@ -416,13 +349,6 @@ uint e_UpdateCompanions(array<uint>@ values)
             DLog("	 y: "+ cr.HexY);
         }
         #endif
-    }
-
-    for(uint i = 0; i < Companions.length(); i++)
-    {
-        Critter@ cr = GetCritter(Companions[i]);
-        if(!valid(cr))
-            continue;
 
         if(Random(0, 2) == 0)
         {
@@ -526,6 +452,7 @@ uint e_UpdateCompanions(array<uint>@ values)
 
             }
         }
+        i++;
     }
 	
 	/*Map@ SanFran = GetMapByPid(MAP_SanFranChina, 0);
