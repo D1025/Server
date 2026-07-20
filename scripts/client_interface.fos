@@ -456,7 +456,12 @@ uint PingGraphColor(uint ping)
 void DrawPingGraph()
 {
     uint tick = GetTick();
-    if(__Ping > 0 && (PingGraphSampleTick == 0 || tick - PingGraphSampleTick >= PING_GRAPH_SAMPLE_PERIOD))
+    if(__Ping == 0)
+    {
+        PingGraphSamples.resize(0);
+        PingGraphSampleTick = 0;
+    }
+    else if(PingGraphSampleTick == 0 || tick - PingGraphSampleTick >= PING_GRAPH_SAMPLE_PERIOD)
     {
         if(PingGraphSamples.length() >= PING_GRAPH_SAMPLE_COUNT)
             PingGraphSamples.removeAt(0);
