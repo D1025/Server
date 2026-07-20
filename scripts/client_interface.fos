@@ -436,6 +436,93 @@ int CurrentCommandY=0;
 Sprite& CommandAttackSprite = LoadSprite("command_attack.png", int(PT_ART_INTRFACE));
 Sprite& CommandDefendSprite = LoadSprite("command_defend.png", int(PT_ART_INTRFACE));*/
 
+#define PING_GRAPH_SAMPLE_COUNT    (10)
+#define PING_GRAPH_SAMPLE_PERIOD   (1000)
+
+array<uint> PingGraphSamples;
+uint PingGraphSampleTick = 0;
+
+uint PingGraphColor(uint ping)
+{
+    if(ping == 0)
+        return COLOR_LGRAY;
+    if(ping < 100)
+        return COLOR_LGREEN;
+    if(ping < 200)
+        return COLOR_ORANGE;
+    return COLOR_LRED;
+}
+
+void DrawPingGraph()
+{
+    uint tick = GetTick();
+    if(__Ping > 0 && (PingGraphSampleTick == 0 || tick - PingGraphSampleTick >= PING_GRAPH_SAMPLE_PERIOD))
+    {
+        if(PingGraphSamples.length() >= PING_GRAPH_SAMPLE_COUNT)
+            PingGraphSamples.removeAt(0);
+
+        PingGraphSamples.insertLast(__Ping);
+        PingGraphSampleTick = tick;
+    }
+
+    const int width = 96;
+    const int height = 26;
+    const int textHeight = 10;
+    const int x = __ScreenWidth - width - 5;
+    const int y = 27;
+    const int graphTop = y + textHeight;
+    const int graphHeight = height - textHeight;
+    const int background = int(0x80000000);
+    const int border = int(0x806A6456);
+
+    int[] backgroundPoints =
+    {
+        x,         y,          background,
+        x + width, y,          background,
+        x + width, y + height, background,
+        x,         y + height, background
+    };
+    DrawPrimitive(DRAW_PRIMITIVE_TRIANGLEFAN, backgroundPoints);
+
+    int[] framePoints =
+    {
+        x,         graphTop,          border,
+        x + width, graphTop,          border,
+        x + width, graphTop + graphHeight, border,
+        x,         graphTop + graphHeight, border,
+        x,         graphTop,          border
+    };
+    DrawPrimitive(DRAW_PRIMITIVE_LINESTRIP, framePoints);
+
+    DrawText(__Ping > 0 ? "Ping " + __Ping + " ms" : "Ping --", x + 2, y, width - 4, textHeight,
+             PingGraphColor(__Ping), FONT_FALLOUT, FT_CENTERR | FT_NOBREAK);
+
+    if(PingGraphSamples.length() < 2)
+        return;
+
+    uint graphMax = 100;
+    for(uint i = 0; i < PingGraphSamples.length(); i++)
+        if(PingGraphSamples[i] > graphMax)
+            graphMax = PingGraphSamples[i];
+    graphMax = ((graphMax + 49) / 50) * 50;
+
+    int[] graphPoints;
+    int firstSlot = PING_GRAPH_SAMPLE_COUNT - int(PingGraphSamples.length());
+    for(uint i = 0; i < PingGraphSamples.length(); i++)
+    {
+        uint ping = PingGraphSamples[i];
+        uint plottedPing = ping < graphMax ? ping : graphMax;
+        int pointX = x + 1 + (firstSlot + int(i)) * (width - 2) / (PING_GRAPH_SAMPLE_COUNT - 1);
+        int pointY = graphTop + graphHeight - 1 - int(plottedPing * uint(graphHeight - 2) / graphMax);
+        int color = int(PingGraphColor(ping));
+
+        graphPoints.insertLast(pointX);
+        graphPoints.insertLast(pointY);
+        graphPoints.insertLast(color);
+    }
+    DrawPrimitive(DRAW_PRIMITIVE_LINESTRIP, graphPoints);
+}
+
 
 
 
@@ -704,6 +791,7 @@ void render_iface(uint layer)
             DrawText( "FOnline: New Dawn", 0, 5, __ScreenWidth-5, 10, 0, FONT_FALLOUT, FT_CENTERR );
             string date = DateTimeToString( __FullSecond );
             DrawText( date, 0, 15, __ScreenWidth-5, 10, 0, FONT_FALLOUT, FT_CENTERR );
+            DrawPingGraph();
         }
         if(__ConfigOnHeadAwareness > 0)
             DrawCritterOnHead();
