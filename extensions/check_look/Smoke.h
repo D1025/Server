@@ -13,8 +13,7 @@ struct SmokeCtx
 	bool corridorAtOpp;      // live shot corridor covers target's hex
 };
 
-extern bool AnySmoke;
-
+bool HasAnySmoke();
 bool MapHasSmoke( uint mapId );
 void ComputeSmokeCtx( Map& map, uint16 cx, uint16 cy, uint16 ox, uint16 oy, int dist, SmokeCtx& ctx );
 uint MsSinceMove( Critter& cr );

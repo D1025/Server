@@ -35,7 +35,10 @@ static int GetUtilityParamBonus(const Critter& cr, uint param)
 // TODO: multihex bonus to look distance (once multihex works properly)
 
 bool isCompiler=false;
-bool Init=false;
+volatile long Init=0;
+CRITICAL_SECTION LookInitLocker;
+CRITICAL_SECTION LookDistsLocker;
+CRITICAL_SECTION LookSmokeLocker;
 
 extern uint8* Lookup;
 extern void InitLookup();
@@ -48,9 +51,11 @@ extern bool IsMoving(Critter& cr);
 
 void InitLook() // generation
 {
+	LookLockGuard guard(LookInitLocker);
+	if(Init) return;
 	InitLookup();
 	InitDists();
-	Init=true;
+	InterlockedExchange(&Init, 1);
 }
 
 int __stdcall DllMain(void* module, unsigned long reason, void* reserved)
@@ -58,6 +63,9 @@ int __stdcall DllMain(void* module, unsigned long reason, void* reserved)
 	switch(reason)
 	{
 	case 1: // Process attach
+		InitializeCriticalSection(&LookInitLocker);
+		InitializeCriticalSection(&LookDistsLocker);
+		InitializeCriticalSection(&LookSmokeLocker);
 		break;
 	case 2: // Thread attach
 		break;
@@ -70,6 +78,9 @@ int __stdcall DllMain(void* module, unsigned long reason, void* reserved)
 				FinishLookup();
 				FinishDists();
 			}
+			DeleteCriticalSection(&LookSmokeLocker);
+			DeleteCriticalSection(&LookDistsLocker);
+			DeleteCriticalSection(&LookInitLocker);
 		}
 		break;
 	}
@@ -79,6 +90,14 @@ int __stdcall DllMain(void* module, unsigned long reason, void* reserved)
 FONLINE_DLL_ENTRY(compiler)
 {
 	isCompiler=compiler;
+}
+
+// The server checks for this marker before allowing native callbacks from this
+// DLL to execute concurrently. Old binaries without the marker remain safe by
+// falling back to the serialized path.
+EXPORT bool ConcurrentExecutionSafe()
+{
+	return true;
 }
 
 int CheckOccluder(uint16 hx, uint16 hy, uint16 tx, uint16 ty, Map& map)
@@ -160,7 +179,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 	// smoke cloud rules (Smoke.cpp, synced from smoke_hexes.fos). Placed before
 	// the LookMinimum return so smoke works inside the always-visible range too;
 	// dist<=1 stays a hard visibility floor. Teammates ignore smoke entirely.
-	if(AnySmoke && MapHasSmoke(map.Data.MapId))
+	if(HasAnySmoke() && MapHasSmoke(map.Data.MapId))
 	{
 		bool teammates = (cr.Params[ST_TEAM_ID] == opponent.Params[ST_TEAM_ID] && cr.Params[ST_TEAM_ID] >= 200);
 

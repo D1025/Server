@@ -5,6 +5,8 @@
 #include <vector>
 
 vector<WallDist*> Dists;
+extern volatile long Init;
+extern void InitLook();
 
 WallDist::WallDist(const ProtoMap* proto)
 {
@@ -63,6 +65,8 @@ void WallDist::prepare()
 
 WallDist* GetProtoDists(Map& map)
 {
+	if(!Init) InitLook();
+	LookLockGuard guard(LookDistsLocker);
 	WallDist** wd=&(Dists[map.Proto->Pid]);
 	if(!*wd) *wd=new WallDist(map.Proto);
 	return *wd;
@@ -70,12 +74,14 @@ WallDist* GetProtoDists(Map& map)
 
 void InitDists()
 {
+	LookLockGuard guard(LookDistsLocker);
 	Dists.resize(MAX_PROTO_MAPS);
 	for(auto it=Dists.begin(),end=Dists.end();it!=end;++it) *it=NULL;
 }
 
 void FinishDists()
 {
+	LookLockGuard guard(LookDistsLocker);
 	for(auto it=Dists.begin(),end=Dists.end();it!=end;++it)
 		delete *it;
 }

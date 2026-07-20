@@ -1,7 +1,8 @@
 // Smoke cloud registry + LOS helpers for check_look().
 // Scripts (smoke_hexes.fos) own the smoke items and mirror every add/remove here;
 // this file only answers "how much smoke sits on this line" style questions.
-// State is unlocked globals, same single-logic-thread assumption as TickDiff/WallDist.
+// Registry access is protected because visibility checks run on multiple logic
+// workers while smoke scripts may add/remove entries.
 
 #include <windows.h>
 #include <map>
@@ -13,7 +14,7 @@
 using namespace std;
 
 extern uint8* Lookup;
-extern bool Init;
+extern volatile long Init;
 extern void InitLook();
 extern int TickDiff;
 
@@ -34,7 +35,7 @@ struct SmokeMapState
 // typedefs also dodge the std::map vs "Map& map" parameter name clash below
 typedef map<uint, SmokeMapState> SmokeMapReg; // key = map id
 static SmokeMapReg SmokeMaps;
-bool AnySmoke = false;
+static volatile long AnySmoke = 0;
 
 #define HEX_KEY( hx, hy ) ( ( uint( hy ) << 16 ) | uint( hx ) )
 
@@ -80,8 +81,14 @@ static bool HexTouchesSmoke( SmokeMapState& state, uint16 hx, uint16 hy )
 	return false;
 }
 
+bool HasAnySmoke()
+{
+	return InterlockedCompareExchange(&AnySmoke, 0, 0) != 0;
+}
+
 bool MapHasSmoke( uint mapId )
 {
+	LookLockGuard guard(LookSmokeLocker);
 	SmokeMapReg::iterator it = SmokeMaps.find( mapId );
 	return it != SmokeMaps.end() && !it->second.hexes.empty();
 }
@@ -95,6 +102,7 @@ uint MsSinceMove( Critter& cr )
 // Walks the LOS line like TraceWall (same Lookup index math) and fills ctx
 void ComputeSmokeCtx( Map& map, uint16 cx, uint16 cy, uint16 ox, uint16 oy, int dist, SmokeCtx& ctx )
 {
+	LookLockGuard guard(LookSmokeLocker);
 	ctx.effCount = 0;
 	ctx.distBeyond = 0x7FFFFFFF;
 	ctx.crIn = ctx.oppIn = ctx.crAdjacent = ctx.corridorAtObserver = ctx.corridorAtOpp = false;
@@ -140,12 +148,14 @@ void ComputeSmokeCtx( Map& map, uint16 cx, uint16 cy, uint16 ox, uint16 oy, int 
 
 EXPORT void Map_SmokeAdd( Map& map, uint16 hx, uint16 hy )
 {
+	LookLockGuard guard(LookSmokeLocker);
 	SmokeMaps[ map.Data.MapId ].hexes[ HEX_KEY( hx, hy ) ]++;
-	AnySmoke = true;
+	InterlockedExchange(&AnySmoke, 1);
 }
 
 EXPORT void Map_SmokeRemove( Map& map, uint16 hx, uint16 hy )
 {
+	LookLockGuard guard(LookSmokeLocker);
 	SmokeMapReg::iterator it = SmokeMaps.find( map.Data.MapId );
 	if( it == SmokeMaps.end() )
 		return;
@@ -157,7 +167,7 @@ EXPORT void Map_SmokeRemove( Map& map, uint16 hx, uint16 hy )
 	if( it->second.hexes.empty() )
 	{
 		SmokeMaps.erase( it );
-		AnySmoke = !SmokeMaps.empty();
+		InterlockedExchange(&AnySmoke, SmokeMaps.empty() ? 0 : 1);
 	}
 }
 
@@ -166,6 +176,7 @@ EXPORT void Map_SmokeRemove( Map& map, uint16 hx, uint16 hy )
 // RefreshVisible orchestration otherwise.
 EXPORT bool Map_SmokeCorridor( Map& map, uint16 hx, uint16 hy, uint16 tx, uint16 ty, uint durationMs )
 {
+	LookLockGuard guard(LookSmokeLocker);
 	SmokeMapReg::iterator it = SmokeMaps.find( map.Data.MapId );
 	if( it == SmokeMaps.end() || it->second.hexes.empty() )
 		return false;
@@ -223,6 +234,7 @@ EXPORT bool Map_SmokeCorridor( Map& map, uint16 hx, uint16 hy, uint16 tx, uint16
 // a short vision lane does not remove the physical screening.
 EXPORT bool Map_SmokeOnLine( Map& map, uint16 hx, uint16 hy, uint16 tx, uint16 ty )
 {
+	LookLockGuard guard(LookSmokeLocker);
 	SmokeMapReg::iterator it = SmokeMaps.find( map.Data.MapId );
 	if( it == SmokeMaps.end() || it->second.hexes.empty() )
 		return false;

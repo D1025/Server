@@ -1,5 +1,25 @@
+#ifndef CHECK_LOOK_DEFINES_H
+#define CHECK_LOOK_DEFINES_H
+
+#include <windows.h>
 #include "../fonline2238.h"
 #include "../../scripts/ITEMPID.H"
+
+extern CRITICAL_SECTION LookInitLocker;
+extern CRITICAL_SECTION LookDistsLocker;
+extern CRITICAL_SECTION LookSmokeLocker;
+
+class LookLockGuard
+{
+private:
+	CRITICAL_SECTION* Locker;
+	LookLockGuard(const LookLockGuard&);
+	LookLockGuard& operator=(const LookLockGuard&);
+
+public:
+	explicit LookLockGuard(CRITICAL_SECTION& locker): Locker(&locker) { EnterCriticalSection(Locker); }
+	~LookLockGuard() { LeaveCriticalSection(Locker); }
+};
 
 #define MAX_PROTO_MAPS		(30000)
 
@@ -48,3 +68,5 @@
 #define OCCLUDER_DIST (2) // 2 only, no reason to be more overkill
 
 #define MAX_WALLS_DIST	(5)
+
+#endif // CHECK_LOOK_DEFINES_H
