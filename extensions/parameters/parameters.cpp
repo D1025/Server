@@ -67,6 +67,7 @@ EXPORT int getParam_Hp(CritterMutual& cr, uint);
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint);
 EXPORT int getParam_MaxAp(CritterMutual& cr, uint);
 EXPORT int getParam_Ap(CritterMutual& cr, uint);
+EXPORT int getParam_ApRegeneration(CritterMutual& cr, uint);
 EXPORT int getParam_MaxMoveAp(CritterMutual& cr, uint);
 EXPORT int getParam_MoveAp(CritterMutual& cr, uint);
 EXPORT int getParam_MaxWeight(CritterMutual& cr, uint);
@@ -442,6 +443,15 @@ EXPORT int getParam_Ap(CritterMutual& cr, uint)
 	int val = cr.Params[ST_CURRENT_AP];
 	val /= AP_DIVIDER;
 	return CLAMP(val, -9999, 9999);
+}
+
+EXPORT int getParam_ApRegeneration(CritterMutual& cr, uint)
+{
+	int val = 100 + cr.Params[ST_AP_REGENERATION];
+	int utilityValue = GetUtilityParamBonus(cr, ST_AP_REGENERATION);
+	if (utilityValue > 0)
+		val += getParam_Agility(cr, 0) * utilityValue;
+	return CLAMP(val, 1, 10000);
 }
 
 EXPORT int getParam_MaxMoveAp(CritterMutual& cr, uint)

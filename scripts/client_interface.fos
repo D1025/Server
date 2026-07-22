@@ -2122,9 +2122,14 @@ string item_description(ItemCl& item, int lookType)
 
             if(item.Proto.Utility_Value != 0)
             {
-                string utilityParam = GetMsgStr(TEXTMSG_GAME, STR_SKILL_NAME(item.Proto.Utility_Param));
                 string utilityValue = item.Proto.Utility_Value > 0 ? "+" + item.Proto.Utility_Value : "" + item.Proto.Utility_Value;
-                result += "\nEquipped utility bonus: " + utilityValue + " " + utilityParam + ".";
+                if(item.Proto.Utility_Param == ST_AP_REGENERATION)
+                    result += "\nEquipped utility bonus: " + utilityValue + "% AP regeneration per Agility.";
+                else
+                {
+                    string utilityParam = GetMsgStr(TEXTMSG_GAME, STR_SKILL_NAME(item.Proto.Utility_Param));
+                    result += "\nEquipped utility bonus: " + utilityValue + " " + utilityParam + ".";
+                }
             }
             if(FLAG(item.Proto.Utility_Flags, UTILITY_FLAG_MEDICAL))
             {

@@ -31,7 +31,7 @@ void InitializeGame()                  // Export
     __TurnBasedTick = 30000;
     __Breaktime = 1200;
     __TimeoutTransfer = 0;
-    __ApRegeneration = 4000;
+    __ApRegeneration = 3; // Base real-time AP regenerated per second
     __RtApCostCritterWalk = 0;  // 1 AP == 100, maximim 255
     __RtApCostCritterRun = 0;   // 1 AP == 100, maximim 255
     __RtApCostMoveItemContainer = 0;
@@ -216,6 +216,7 @@ void InitializeGame()                  // Export
     SetParameterGetBehaviour(ST_LEVEL, dllName + "getParam_Level");
     SetParameterGetBehaviour(ST_ACTION_POINTS, dllName + "getParam_MaxAp");
     SetParameterGetBehaviour(ST_CURRENT_AP, dllName + "getParam_Ap");
+    SetParameterGetBehaviour(ST_AP_REGENERATION, dllName + "getParam_ApRegeneration");
     SetParameterGetBehaviour(ST_MAX_MOVE_AP, dllName + "getParam_MaxMoveAp");
     SetParameterGetBehaviour(ST_MOVE_AP, dllName + "getParam_MoveAp");
     SetParameterGetBehaviour(ST_CARRY_WEIGHT, dllName + "getParam_MaxWeight");

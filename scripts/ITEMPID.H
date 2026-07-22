@@ -586,6 +586,7 @@
 #define PID_RIOT_SHIELD                      (25592)
 #define PID_PERSONAL_SHIELD_GENERATOR        (25593)
 #define PID_EXPLOSIVE_COLLAR                 (25594)
+#define PID_ADRENALINE_REGULATOR             (25595)
 
 //Tools
     //Tech

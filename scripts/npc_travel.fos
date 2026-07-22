@@ -923,6 +923,7 @@ void critter_init(Critter& npc, bool firstTime)
             PID_BACKPACK,
             PID_TALISMAN,
             PID_RIOT_SHIELD,
+            PID_ADRENALINE_REGULATOR,
             PID_BOBBLEHEAD_STRENGTH,
             PID_BOBBLEHEAD_PERCEPTION,
             PID_BOBBLEHEAD_ENDURANCE,

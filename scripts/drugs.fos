@@ -625,6 +625,8 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
                 if(stat == ST_MAX_LIFE && amount < 0)
                     cr.StatBase[ST_CURRENT_HP] = MIN(cr.StatBase[ST_CURRENT_HP], GetActualMaxHp(cr));
             }
+            else if(stat == ST_AP_REGENERATION)
+                cr.StatBase[stat] += amount;
             else if(stat == ST_CURRENT_HP)
             {
                 amount = ApplyPoisonHealingReduction(cr, drugPid, amount);
@@ -700,6 +702,8 @@ void DropDrug(Critter& cr, uint16 drugPid, uint stage)
                 amount = -amount;
             if(stat < STAT_EXT_BEGIN)
                 cr.StatBase[STAT_EXT_BEGIN + stat] += amount;
+            else if(stat == ST_AP_REGENERATION)
+                cr.StatBase[stat] += amount;
         }
     }
 }

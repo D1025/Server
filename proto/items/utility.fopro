@@ -177,6 +177,24 @@ Material=1
 LightColor=-16777216
 
 [Proto]
+ProtoId=25595
+Type=5
+PicMap=art\items\box2.frm
+PicInv=art\inven\hymgpart.frm
+Flags=134217758
+DisableEgg=1
+Stackable=0
+Slot=4
+Weight=907
+Volume=1
+SoundId=48
+Cost=2000
+Material=2
+LightColor=-16777216
+Utility_Param=195
+Utility_Value=1
+
+[Proto]
 ProtoId=570
 Type=5
 PicMap=art\items\smalbox2.frm

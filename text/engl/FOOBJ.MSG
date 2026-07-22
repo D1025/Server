@@ -9863,6 +9863,8 @@ a58ew64v}
 {2559301}{}{A compact defensive field generator. While equipped as utility, it completely blocks one instance of damage, then recharges for one minute. Bracketed hit points indicate that the shield is ready.}
 {2559400}{}{Explosive Collar}
 {2559401}{}{A lethal collar with a dead man's switch. When its wearer dies, the collar is destroyed and explodes in a 3-hex radius, dealing explosive damage equal to 25% of the wearer's maximum Hit Points. Placeholder artwork.}
+{2559500}{}{Adrenaline Regulator}
+{2559501}{}{A compact metabolic regulator. While equipped as utility, it increases AP regeneration by 1% for each point of current Agility.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 {2999100}{}{Laboratory Keycard}

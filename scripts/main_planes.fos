@@ -1603,7 +1603,7 @@ bool npc_plane_run(Critter& npc, NpcPlane& plane, int reason, uint& r0, uint& r1
         {
             ap -= npc.Stat[ST_CURRENT_AP];
             if(ap > 0)
-                r2 = (ap * __ApRegeneration) / npc.Stat[ST_ACTION_POINTS] + 50;
+                r2 = (ap * 100000) / (__ApRegeneration * npc.Stat[ST_AP_REGENERATION]) + 50;
         }
 
         return true;

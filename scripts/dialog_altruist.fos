@@ -101,6 +101,19 @@ void r_Give(Critter& player, Critter@ npc, int val)
         player.StatBase[ST_EXPERIENCE] += (exp - player.StatBase[ST_EXPERIENCE]);
         return;
     }
+    case 5:
+    {
+        int level = player.Stat[ST_LEVEL];
+		if(level > 120 && player.GetAccess() == ACCESS_CLIENT)
+        {
+            player.Say(SAY_NORM_ON_HEAD, "No, wait.");
+            return;
+        }
+        level += 30;
+        int exp = level * (level - 1) * 500;
+        player.StatBase[ST_EXPERIENCE] += (exp - player.StatBase[ST_EXPERIENCE]);
+        return;
+    }
     case 2:
         player.AddItem(41, 100000);
         break;

@@ -679,6 +679,7 @@
 #define ST_PERSISTENT_DOT           (192) // Persistent damage-over-time pool
 #define ST_PERSISTENT_DOT_LAST_ENEMY_ID (193) // Last critter id that applied persistent damage-over-time
 #define ST_DEPLOYED                 (194) // Deploy state (0=off, 1=immobile, 2=mobile Powered Bipod - see deploy.fos DEPLOY_STATE_*); replicated to other clients (see main.fos SetSendParameter), transient (cleared on init/login)
+#define ST_AP_REGENERATION          (195) // Derived regeneration percent; base value stores additive percentage points
 
 /// Skills
 #define SKILL_BEGIN                              (__SkillBegin)

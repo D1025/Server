@@ -1442,6 +1442,11 @@
 {101641}{}{Back}
 {101651}{}{Backpack}
 
+# ST_AP_REGENERATION
+{101951}{}{AP Regeneration}
+{101952}{}{The rate at which Action Points regenerate in real-time combat. The value shown is AP per second.}
+{101953}{}{AP Regen./s}
+
 ####################################################################################################################################
 #
 #		Skills (with SKILL.MSG + 3000)

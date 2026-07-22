@@ -121,7 +121,7 @@ const int[] DrugEffects =
     ST_STRENGTH,        -2,      2,      0,          0,     0,
     // druto ST_NORMAL_RESIST,       -10,     10,      0,          0,     0,
 	ST_NORMAL_RESIST,       -10,     10,      0,          0,     0,
-    -1,         0,      0,      0,          0,     0,
+    ST_AP_REGENERATION,    20,    -20,      0,          0,     0,
 // PID_JET_ANTIDOTE
     -1,      0,             0,      0,          0,     0,
     -1,         0,      0,      0,          0,     0,
