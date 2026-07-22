@@ -86,7 +86,16 @@ void DrawChosenTabs() // Export
         return;
 
     // duplicated later
-    if(chosen.Stat[ST_UNSPENT_PERKS] > 0 || chosen.Stat[ST_UNSPENT_SKILL_POINTS] > 0)
+    uint classOptions = uint(chosen.Stat[ST_CLASS_OPTIONS]);
+    bool deathclawPending = (chosen.Stat[ST_CLASS_ID] == CLASS_NONE &&
+                             ((classOptions >> CLASS_OPTION_4_SHIFT) & CLASS_OPTION_VALUE_MASK) == CLASS_DEATHCLAW_PENDING_MARKER) ||
+                            (chosen.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW &&
+                             (((classOptions >> CLASS_OPTION_1_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0 ||
+                              ((classOptions >> CLASS_OPTION_2_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0 ||
+                              ((classOptions >> CLASS_OPTION_3_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0));
+    bool classSelectionPending = chosen.Stat[ST_LEVEL] >= CLASS_SELECTION_LEVEL &&
+                                 (chosen.Stat[ST_CLASS_ID] == CLASS_NONE || deathclawPending);
+    if(chosen.Stat[ST_UNSPENT_PERKS] > 0 || chosen.Stat[ST_UNSPENT_SKILL_POINTS] > 0 || classSelectionPending)
         LevelUp = true;
     else
         LevelUp = false;
@@ -110,6 +119,8 @@ void DrawChosenTabs() // Export
             if(chosen.Stat[u] > 0)
                 ex += GetMsgStr(TEXTMSG_GAME, 100000 + (u * 10) + 1) + ": " + chosen.Stat[u] + "\n";
         }
+        if(classSelectionPending)
+            ex += GetMsgStr(TEXTMSG_GAME, STR_CLASS_TITLE_NAME) + ": " + GetMsgStr(TEXTMSG_GAME, STR_CLASS_NAME(CLASS_NONE)) + "\n";
 
         DrawTab(GetMsgStr(TEXTMSG_GAME, STR_LEVELUP_TITLE), COLOR_DGREEN, ex);
     }

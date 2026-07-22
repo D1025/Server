@@ -150,6 +150,8 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 {
 	if(!Init) InitLook();
 	if(_CritHasExtMode(opponent,MODE_EXT_GOD)) return false;
+	if(opponent.Params[ST_CLASS_ID] == CLASS_DEATHCLAW &&
+	   opponent.Params[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_UNDERGROUND) return false;
 
 	if((uint)opponent.Params[TO_GOD_MODE] > FOnline->FullSecond) return false;
 
@@ -276,6 +278,13 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
 		}
 
 		int sk = opponent.Params[SK_SNEAK] + opponent.Params[ST_EXT_SNEAK] + GetUtilityParamBonus(opponent, SK_SNEAK);
+		uint deathclawHide = ((uint)opponent.Params[ST_CLASS_OPTIONS] >> CLASS_OPTION_2_SHIFT) & CLASS_OPTION_VALUE_MASK;
+		if(opponent.Params[ST_CLASS_ID] == CLASS_DEATHCLAW && deathclawHide == CLASS_DEATHCLAW_HIDE_CHAMELEON)
+		{
+			int agility = CLAMP(opponent.Params[ST_AGILITY] + opponent.Params[ST_AGILITY_EXT] +
+			                    GetUtilityParamBonus(opponent, ST_AGILITY), 1, 30);
+			sk += min(75, agility * 5);
+		}
 
 		// bonuses before clamp
 

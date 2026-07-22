@@ -1,0 +1,1564 @@
+//
+// FOnline: AfterTimes
+//
+// Central player class registry, lifecycle and active ability dispatch.
+//
+
+#include "_macros.fos"
+#include "_basetypes.fos"
+#include "minigames_h.fos"
+
+import void VerboseAction(Critter& cr, string& text) from "utils";
+import void VerboseAction(Critter& cr, Critter& target, string& text) from "utils";
+import int GetActualMaxHp(Critter@ cr) from "utils";
+import void speedboost(Critter& cr) from "critter_item_movement";
+
+const int[] ClassRegistryIds =
+{
+    CLASS_SOLDIER,
+    CLASS_SUPER_MUTANT,
+    CLASS_MARKSMAN,
+    CLASS_DEATHCLAW,
+    CLASS_PARAMEDIC
+};
+
+const string[] ClassRegistryNames =
+{
+    "Soldier",
+    "Super Mutant",
+    "Marksman",
+    "Deathclaw",
+    "Paramedic"
+};
+
+const bool[] ClassRegistryImplemented =
+{
+    true,
+    true,
+    true,
+    true,
+    true
+};
+
+class MarksmanPreparationState
+{
+    uint   critterId;
+    uint   mapId;
+    uint16 hexX;
+    uint16 hexY;
+    uint   stillSince;
+}
+
+class MarksmanExecutionMark
+{
+    uint        targetId;
+    uint        sourceId;
+    uint        sourceTeamKey;
+    uint        mapId;
+    int         executeHp;
+    uint        expireTick;
+    array<uint> eligibleIds;
+    array<uint> viewerIds;
+}
+
+class ParamedicDeathRecord
+{
+    uint targetId;
+    uint mapId;
+    uint diedAt;
+    uint deathAnimation;
+}
+
+class ParamedicReviveRequest
+{
+    uint sourceId;
+    uint targetId;
+    uint expireTick;
+}
+
+class DeathclawBurrowState
+{
+    uint   critterId;
+    uint   mapId;
+    uint16 originX;
+    uint16 originY;
+    uint16 targetX;
+    uint16 targetY;
+    uint   burrowAt;
+    uint   emergeAt;
+    uint   recoverAt;
+    int    previousHide;
+    int    phase;
+    uint   travelDistance;
+    uint   travelStep;
+    uint16 lineX;
+    uint16 lineY;
+}
+
+dictionary MarksmanPreparationStates;
+array<MarksmanExecutionMark> MarksmanExecutionMarks;
+dictionary MarksmanExecutionTargetCounts;
+array<ParamedicDeathRecord> ParamedicDeathRecords;
+array<ParamedicReviveRequest> ParamedicReviveRequests;
+array<DeathclawBurrowState> DeathclawBurrowStates;
+
+bool Class_IsRegistered(int classId) // Export
+{
+    for(uint i = 0; i < ClassRegistryIds.length(); i++)
+        if(ClassRegistryIds[i] == classId)
+            return true;
+    return false;
+}
+
+bool Class_IsImplemented(int classId) // Export
+{
+    for(uint i = 0; i < ClassRegistryIds.length(); i++)
+        if(ClassRegistryIds[i] == classId)
+            return ClassRegistryImplemented[i];
+    return false;
+}
+
+string Class_GetName(int classId) // Export
+{
+    for(uint i = 0; i < ClassRegistryIds.length(); i++)
+        if(ClassRegistryIds[i] == classId)
+            return ClassRegistryNames[i];
+    return "None";
+}
+
+string Class_GetAbilityName(int classId)
+{
+    if(classId == CLASS_SOLDIER)
+        return "Combat Rush";
+    if(classId == CLASS_SUPER_MUTANT)
+        return "FEV Rush";
+    if(classId == CLASS_MARKSMAN)
+        return "Execution Mark";
+    if(classId == CLASS_PARAMEDIC)
+        return "Revive";
+    if(classId == CLASS_DEATHCLAW)
+        return "Deathclaw instinct";
+    return "Class ability";
+}
+
+bool Class_IsSuperMutantLeatherArmor(Item@ armor)
+{
+    if(!valid(armor) || armor.GetType() != ITEM_TYPE_ARMOR || armor.Proto.Slot != SLOT_ARMOR)
+        return false;
+
+    uint armorPid = armor.GetProtoId();
+    return armorPid == PID_LEATHER_JACKET || armorPid == PID_CURED_LEATHER_ARMOR ||
+           armorPid == PID_LEATHER_ARMOR || armorPid == PID_LEATHER_ARMOR_MK_II;
+}
+
+bool Class_IsSuperMutantMetalArmor(Item@ armor)
+{
+    if(!valid(armor) || armor.GetType() != ITEM_TYPE_ARMOR || armor.Proto.Slot != SLOT_ARMOR)
+        return false;
+
+    uint armorPid = armor.GetProtoId();
+    return armorPid == PID_METAL_ARMOR || armorPid == PID_METAL_ARMOR_MK_II;
+}
+
+bool Class_IsSuperMutantArmor(Item@ armor)
+{
+    return Class_IsSuperMutantLeatherArmor(armor) || Class_IsSuperMutantMetalArmor(armor);
+}
+
+uint Class_GetSuperMutantCrType(Item@ armor)
+{
+    if(Class_IsSuperMutantLeatherArmor(armor))
+        return CRTYPE_MUTANT_LEATHER;
+    if(Class_IsSuperMutantMetalArmor(armor))
+        return CRTYPE_MUTANT_METAL;
+    return CRTYPE_MUTANT;
+}
+
+void Class_ApplySuperMutantIdentity(Critter& cr)
+{
+    if(!cr.IsPlayer() || cr.Param[ST_CLASS_ID] != CLASS_SUPER_MUTANT)
+        return;
+
+    cr.StatBase[ST_BASE_CRTYPE] = CRTYPE_MUTANT;
+    cr.StatBase[ST_BODY_TYPE] = BT_SUPER_MUTANT;
+    uint crType = Class_GetSuperMutantCrType(cr.GetItem(0, SLOT_ARMOR));
+    if(cr.CrType != crType)
+        cr.ChangeCrType(crType);
+}
+
+uint Class_GetOption(uint options, uint option) // Export
+{
+    uint shift;
+    switch(option)
+    {
+    case 1: shift = CLASS_OPTION_1_SHIFT; break;
+    case 2: shift = CLASS_OPTION_2_SHIFT; break;
+    case 3: shift = CLASS_OPTION_3_SHIFT; break;
+    case 4: shift = CLASS_OPTION_4_SHIFT; break;
+    default: return 0;
+    }
+    return (options >> shift) & CLASS_OPTION_VALUE_MASK;
+}
+
+uint Class_SetOption(uint options, uint option, uint value)
+{
+    uint shift;
+    switch(option)
+    {
+    case 1: shift = CLASS_OPTION_1_SHIFT; break;
+    case 2: shift = CLASS_OPTION_2_SHIFT; break;
+    case 3: shift = CLASS_OPTION_3_SHIFT; break;
+    case 4: shift = CLASS_OPTION_4_SHIFT; break;
+    default: return options;
+    }
+    uint mask = uint(CLASS_OPTION_VALUE_MASK) << shift;
+    return (options & ~mask) | ((value & CLASS_OPTION_VALUE_MASK) << shift);
+}
+
+bool Class_HasCompleteDeathclawOptions(Critter& cr)
+{
+    uint options = uint(cr.Param[ST_CLASS_OPTIONS]);
+    return Class_GetOption(options, 1) >= 1 && Class_GetOption(options, 1) <= 3 &&
+           Class_GetOption(options, 2) >= 1 && Class_GetOption(options, 2) <= 3 &&
+           Class_GetOption(options, 3) >= 1 && Class_GetOption(options, 3) <= 3;
+}
+
+bool Class_IsDeathclawWeaponUse(ProtoItem& proto, uint use)
+{
+    if(use > 2)
+        return false;
+    int skill = _WeaponSkill(proto, use);
+    if(skill == SK_CLOSE_COMBAT)
+        return true;
+    if(skill != SK_THROWING)
+        return false;
+    int damageType = _WeaponDmgType(proto, use);
+    return damageType == DAMAGE_PLASMA || damageType == DAMAGE_EMP || damageType == DAMAGE_EXPLODE;
+}
+
+bool Class_IsDeathclawWeapon(Item@ item) // Export
+{
+    if(!valid(item) || item.GetType() != ITEM_TYPE_WEAPON)
+        return true;
+
+    uint activeUses = item.Proto.Weapon_ActiveUses;
+    for(uint use = 0; use < 3; use++)
+        if((activeUses & (1 << use)) != 0 && Class_IsDeathclawWeaponUse(item.Proto, use))
+            return true;
+    return false;
+}
+
+void Class_ApplyDeathclawIdentity(Critter& cr)
+{
+    if(!cr.IsPlayer() || cr.Param[ST_CLASS_ID] != CLASS_DEATHCLAW || !Class_HasCompleteDeathclawOptions(cr))
+        return;
+
+    uint hide = Class_GetOption(uint(cr.Param[ST_CLASS_OPTIONS]), 2);
+    // The classic variant uses the exact 2D maclaw model from the Abomination
+    // (NPC_PID_MotherDeathclaw uses CrType 51). Its 1.5x boss size is separate.
+    // NPC_PID_DesertStalker uses the visible 2D madeth model (CrType 100).
+    uint crType = hide == CLASS_DEATHCLAW_HIDE_HARDENED ? CRTYPE_DEATHCLAW : CRTYPE_DEATHCLAW_SPECIAL;
+    cr.StatBase[ST_BASE_CRTYPE] = crType;
+    cr.StatBase[ST_BODY_TYPE] = hide == CLASS_DEATHCLAW_HIDE_HARDENED ? BT_DEADCLAW : BT_DESERT_STALKER;
+    cr.ParamBase[ST_SCALE_FACTOR] = 1000;
+    cr.ParamBase[MODE_RANGE_HTH] = Class_GetOption(uint(cr.Param[ST_CLASS_OPTIONS]), 1) == CLASS_DEATHCLAW_CLAWS_LONG ? 1 : 0;
+    if(cr.CrType != crType)
+        cr.ChangeCrType(crType);
+}
+
+MarksmanPreparationState@ Class_GetMarksmanPreparationState(uint critterId)
+{
+    MarksmanPreparationState@ state;
+    if(MarksmanPreparationStates.get("" + critterId, @state))
+        return state;
+    return null;
+}
+
+void Class_ForgetMarksmanPreparationState(uint critterId)
+{
+    MarksmanPreparationStates.delete("" + critterId);
+}
+
+void Class_ResetMarksmanPreparation(Critter& cr)
+{
+    MarksmanPreparationState@ state = Class_GetMarksmanPreparationState(cr.Id);
+    if(@state == null)
+    {
+        @state = MarksmanPreparationState();
+        state.critterId = cr.Id;
+        MarksmanPreparationStates.set("" + cr.Id, @state);
+    }
+
+    Map@ map = cr.GetMap();
+    state.mapId = valid(map) ? map.Id : 0;
+    state.hexX = cr.HexX;
+    state.hexY = cr.HexY;
+    state.stillSince = ELAPSED_TIME;
+    if(cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_MARKSMAN_PREPARED)
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+}
+
+void Class_StartMarksmanPreparation(Critter& cr)
+{
+    cr.EraseTimeEvents(CTE_CLASS_PREPARED);
+    Class_ForgetMarksmanPreparationState(cr.Id);
+    if(!cr.IsPlayer() || cr.Param[ST_CLASS_ID] != CLASS_MARKSMAN)
+        return;
+
+    Class_ResetMarksmanPreparation(cr);
+    cr.AddTimeEvent("cte_MarksmanPreparation", REAL_MS(CLASS_MARKSMAN_PREPARED_CHECK_MS), CTE_CLASS_PREPARED);
+}
+
+uint cte_MarksmanPreparation(Critter& cr, int, uint&)
+{
+    if(!cr.IsPlayer() || cr.Param[ST_CLASS_ID] != CLASS_MARKSMAN)
+    {
+        if(cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_MARKSMAN_PREPARED)
+            cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        Class_ForgetMarksmanPreparationState(cr.Id);
+        return 0;
+    }
+
+    MarksmanPreparationState@ state = Class_GetMarksmanPreparationState(cr.Id);
+    if(@state == null)
+    {
+        Class_ResetMarksmanPreparation(cr);
+        @state = Class_GetMarksmanPreparationState(cr.Id);
+    }
+
+    Map@ map = cr.GetMap();
+    if(cr.IsDead() || cr.IsKnockout() || !valid(map))
+    {
+        if(cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_MARKSMAN_PREPARED)
+            cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        state.mapId = valid(map) ? map.Id : 0;
+        state.hexX = cr.HexX;
+        state.hexY = cr.HexY;
+        state.stillSince = ELAPSED_TIME;
+        return REAL_MS(CLASS_MARKSMAN_PREPARED_CHECK_MS);
+    }
+
+    if(state.mapId != map.Id || state.hexX != cr.HexX || state.hexY != cr.HexY)
+    {
+        state.mapId = map.Id;
+        state.hexX = cr.HexX;
+        state.hexY = cr.HexY;
+        state.stillSince = ELAPSED_TIME;
+        if(cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_MARKSMAN_PREPARED)
+            cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+    }
+    else if(cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_NONE &&
+            ELAPSED_TIME >= state.stillSince + REAL_SECOND(CLASS_MARKSMAN_PREPARED_DELAY))
+    {
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_MARKSMAN_PREPARED;
+    }
+
+    return REAL_MS(CLASS_MARKSMAN_PREPARED_CHECK_MS);
+}
+
+bool Class_ConsumeMarksmanPrepared(Critter& cr) // Export
+{
+    if(cr.Param[ST_CLASS_ID] != CLASS_MARKSMAN ||
+       cr.Param[ST_CLASS_EFFECT] != CLASS_EFFECT_MARKSMAN_PREPARED)
+        return false;
+
+    cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+    Class_ResetMarksmanPreparation(cr);
+    return true;
+}
+
+uint Class_GetGroupRootId(Critter& cr)
+{
+    Critter@ leader = cr.GetFollowLeader();
+    return valid(leader) ? leader.Id : cr.Id;
+}
+
+bool Class_AreTeammates(Critter& first, Critter& second)
+{
+    if(first.Id == second.Id)
+        return true;
+
+    int firstMinigame = _getMinigameTeamAndId(first.Param[ST_MINIGAME_DATA]);
+    int secondMinigame = _getMinigameTeamAndId(second.Param[ST_MINIGAME_DATA]);
+    if(firstMinigame != 0 || secondMinigame != 0)
+        return firstMinigame != 0 && firstMinigame == secondMinigame;
+
+    Critter@ firstLeader = first.GetFollowLeader();
+    Critter@ secondLeader = second.GetFollowLeader();
+    if((valid(firstLeader) || valid(secondLeader)) && Class_GetGroupRootId(first) == Class_GetGroupRootId(second))
+        return true;
+
+    int firstTeam = first.Stat[ST_TEAM_ID];
+    int secondTeam = second.Stat[ST_TEAM_ID];
+    return firstTeam > FACTION_NONE && firstTeam == secondTeam;
+}
+
+void Class_ApplyMedicalCooldown(Critter& healer, Critter& target, int timeout, uint duration) // Export
+{
+    // A Paramedic routes the first cooldown of each type to a fresh patient. If that
+    // patient already has the matching cooldown (or this is a self-heal), it stays on
+    // the healer. First Aid and Doctor call this hook independently.
+    if(healer.Param[ST_CLASS_ID] == CLASS_PARAMEDIC && healer.Id != target.Id && target.Timeout[timeout] == 0)
+        _SetTimeout(target, timeout, duration);
+    else
+        _SetTimeout(healer, timeout, duration);
+}
+
+int Class_FindParamedicDeathRecord(uint targetId)
+{
+    for(uint i = 0; i < ParamedicDeathRecords.length(); i++)
+        if(ParamedicDeathRecords[i].targetId == targetId)
+            return int(i);
+    return -1;
+}
+
+void Class_ForgetParamedicDeathRecord(uint targetId)
+{
+    int index = Class_FindParamedicDeathRecord(targetId);
+    if(index >= 0)
+        ParamedicDeathRecords.removeAt(index);
+}
+
+void Class_RecordParamedicDeath(Critter& target)
+{
+    if(!target.IsPlayer())
+        return;
+
+    int index = Class_FindParamedicDeathRecord(target.Id);
+    if(index < 0)
+    {
+        ParamedicDeathRecord record;
+        record.targetId = target.Id;
+        ParamedicDeathRecords.insertLast(record);
+        index = int(ParamedicDeathRecords.length() - 1);
+    }
+
+    ParamedicDeathRecord@ record = ParamedicDeathRecords[index];
+    record.mapId = target.GetMapId();
+    record.diedAt = ELAPSED_TIME;
+    record.deathAnimation = target.Anim2Dead;
+}
+
+bool Class_IsDestructiveParamedicDeath(uint animation)
+{
+    return animation == ANIM2_DEAD_PULSE_DUST || animation == ANIM2_DEAD_EXPLODE ||
+           animation == ANIM2_DEAD_FUSED;
+}
+
+bool Class_CanParamedicReviveBody(Critter& target)
+{
+    int index = Class_FindParamedicDeathRecord(target.Id);
+    if(index < 0)
+        return false;
+
+    ParamedicDeathRecord@ record = ParamedicDeathRecords[index];
+    return target.IsPlayer() && target.IsDead() && target.GetMapId() == record.mapId &&
+           ELAPSED_TIME <= record.diedAt + REAL_SECOND(CLASS_PARAMEDIC_REVIVE_MAX_DEATH_AGE) &&
+           !Class_IsDestructiveParamedicDeath(record.deathAnimation);
+}
+
+int Class_FindParamedicReviveRequest(uint sourceId)
+{
+    for(uint i = 0; i < ParamedicReviveRequests.length(); i++)
+        if(ParamedicReviveRequests[i].sourceId == sourceId)
+            return int(i);
+    return -1;
+}
+
+void Class_RemoveParamedicReviveRequestsForCritter(uint critterId)
+{
+    for(uint i = 0; i < ParamedicReviveRequests.length();)
+    {
+        if(ParamedicReviveRequests[i].sourceId == critterId || ParamedicReviveRequests[i].targetId == critterId)
+        {
+            ParamedicReviveRequests.removeAt(i);
+            continue;
+        }
+        i++;
+    }
+}
+
+void Class_QueueParamedicRevive(Critter& source, Critter& target)
+{
+    int index = Class_FindParamedicReviveRequest(source.Id);
+    if(index < 0)
+    {
+        ParamedicReviveRequest request;
+        request.sourceId = source.Id;
+        ParamedicReviveRequests.insertLast(request);
+        index = int(ParamedicReviveRequests.length() - 1);
+    }
+
+    ParamedicReviveRequest@ request = ParamedicReviveRequests[index];
+    request.targetId = target.Id;
+    request.expireTick = ELAPSED_TIME + REAL_SECOND(CLASS_PARAMEDIC_REVIVE_MAX_DEATH_AGE);
+}
+
+uint Class_GetMarksmanTeamKey(Critter& cr)
+{
+    uint minigame = uint(_getMinigameTeamAndId(cr.Param[ST_MINIGAME_DATA]));
+    if(minigame != 0)
+        return 0x10000000 | minigame;
+
+    uint team = uint(MAX(0, cr.Stat[ST_TEAM_ID]));
+    if(team > FACTION_NONE)
+        return 0x20000000 | (team & 0x0FFFFFFF);
+
+    return 0x30000000 | (Class_GetGroupRootId(cr) & 0x0FFFFFFF);
+}
+
+void Class_SendExecutionMarkHide(MarksmanExecutionMark& mark)
+{
+    for(uint i = 0; i < mark.viewerIds.length(); i++)
+    {
+        Critter@ viewer = GetCritter(mark.viewerIds[i]);
+        if(valid(viewer) && viewer.IsPlayer())
+            viewer.RunClientScript("client_critter_onhead@Class_HideExecutionMark", int(mark.targetId), 0, 0, null, null);
+    }
+}
+
+void Class_SendExecutionMarkShow(MarksmanExecutionMark& mark)
+{
+    for(uint i = 0; i < mark.viewerIds.length(); i++)
+    {
+        Critter@ viewer = GetCritter(mark.viewerIds[i]);
+        if(valid(viewer) && viewer.IsPlayer())
+            viewer.RunClientScript("client_critter_onhead@Class_ShowExecutionMark", int(mark.targetId), mark.executeHp,
+                                   int(REAL_SECOND(CLASS_MARKSMAN_MARK_DURATION)), null, null);
+    }
+}
+
+bool Class_HasExecutionMarkForTarget(uint targetId)
+{
+    uint count = 0;
+    return MarksmanExecutionTargetCounts.get("" + targetId, count) && count > 0;
+}
+
+void Class_IndexExecutionMarkTarget(uint targetId)
+{
+    string key = "" + targetId;
+    uint count = 0;
+    MarksmanExecutionTargetCounts.get(key, count);
+    MarksmanExecutionTargetCounts.set(key, count + 1);
+}
+
+void Class_UnindexExecutionMarkTarget(uint targetId)
+{
+    string key = "" + targetId;
+    uint count = 0;
+    if(!MarksmanExecutionTargetCounts.get(key, count) || count <= 1)
+        MarksmanExecutionTargetCounts.delete(key);
+    else
+        MarksmanExecutionTargetCounts.set(key, count - 1);
+}
+
+void Class_PruneExecutionMarks()
+{
+    for(uint i = 0; i < MarksmanExecutionMarks.length();)
+    {
+        Critter@ target = GetCritter(MarksmanExecutionMarks[i].targetId);
+        bool remove = MarksmanExecutionMarks[i].expireTick <= ELAPSED_TIME || !valid(target) || target.IsDead() ||
+                      target.GetMapId() != MarksmanExecutionMarks[i].mapId;
+        if(remove)
+        {
+            Class_SendExecutionMarkHide(MarksmanExecutionMarks[i]);
+            Class_UnindexExecutionMarkTarget(MarksmanExecutionMarks[i].targetId);
+            MarksmanExecutionMarks.removeAt(i);
+            continue;
+        }
+        i++;
+    }
+}
+
+void Class_RemoveExecutionMarksForCritter(uint critterId)
+{
+    for(uint i = 0; i < MarksmanExecutionMarks.length();)
+    {
+        if(MarksmanExecutionMarks[i].targetId == critterId || MarksmanExecutionMarks[i].sourceId == critterId)
+        {
+            Class_SendExecutionMarkHide(MarksmanExecutionMarks[i]);
+            Class_UnindexExecutionMarkTarget(MarksmanExecutionMarks[i].targetId);
+            MarksmanExecutionMarks.removeAt(i);
+            continue;
+        }
+        i++;
+    }
+}
+
+void Class_ScheduleExecutionMarkExpiry(MarksmanExecutionMark& mark)
+{
+    uint[] values = { mark.targetId, mark.sourceTeamKey, mark.expireTick };
+    CreateTimeEvent(AFTER(REAL_SECOND(CLASS_MARKSMAN_MARK_DURATION)), "e_ClassExecutionMarkExpire", values, false);
+}
+
+uint e_ClassExecutionMarkExpire(array<uint>@ values)
+{
+    if(values.length() < 3)
+        return 0;
+
+    for(uint i = 0; i < MarksmanExecutionMarks.length(); i++)
+    {
+        MarksmanExecutionMark@ mark = MarksmanExecutionMarks[i];
+        if(mark.targetId != values[0] || mark.sourceTeamKey != values[1] || mark.expireTick != values[2] ||
+           mark.expireTick > ELAPSED_TIME)
+            continue;
+
+        Class_SendExecutionMarkHide(mark);
+        Class_UnindexExecutionMarkTarget(mark.targetId);
+        MarksmanExecutionMarks.removeAt(i);
+        break;
+    }
+    return 0;
+}
+
+bool Class_ApplyExecutionMark(Critter& source, Critter& target)
+{
+    Map@ map = source.GetMap();
+    if(!valid(map))
+        return false;
+
+    int maximumHp = GetActualMaxHp(target);
+    if(maximumHp <= 0)
+        return false;
+
+    Class_PruneExecutionMarks();
+
+    MarksmanExecutionMark mark;
+    mark.targetId = target.Id;
+    mark.sourceId = source.Id;
+    mark.sourceTeamKey = Class_GetMarksmanTeamKey(source);
+    mark.mapId = map.Id;
+    int executePercent = target.IsNpc() && target.Stat[ST_NPC_BOSS] != 0 ?
+                         CLASS_MARKSMAN_BOSS_EXECUTE_PERCENT : CLASS_MARKSMAN_EXECUTE_PERCENT;
+    mark.executeHp = MAX(1, maximumHp * executePercent / 100);
+    mark.expireTick = ELAPSED_TIME + REAL_SECOND(CLASS_MARKSMAN_MARK_DURATION);
+
+    array<Critter@> candidates;
+    map.GetCritters(0, FIND_LIFE_AND_KO, candidates);
+    for(uint i = 0; i < candidates.length(); i++)
+    {
+        if(!valid(candidates[i]) || !Class_AreTeammates(source, candidates[i]))
+            continue;
+        mark.eligibleIds.insertLast(candidates[i].Id);
+        if(candidates[i].IsPlayer())
+            mark.viewerIds.insertLast(candidates[i].Id);
+    }
+    if(mark.eligibleIds.find(source.Id) < 0)
+        mark.eligibleIds.insertLast(source.Id);
+    if(mark.viewerIds.find(source.Id) < 0)
+        mark.viewerIds.insertLast(source.Id);
+    if(target.IsPlayer() && mark.viewerIds.find(target.Id) < 0)
+        mark.viewerIds.insertLast(target.Id);
+
+    for(uint i = 0; i < MarksmanExecutionMarks.length(); i++)
+    {
+        if(MarksmanExecutionMarks[i].targetId == mark.targetId &&
+           MarksmanExecutionMarks[i].sourceTeamKey == mark.sourceTeamKey)
+        {
+            mark.executeHp = MIN(mark.executeHp, MarksmanExecutionMarks[i].executeHp);
+            Class_SendExecutionMarkHide(MarksmanExecutionMarks[i]);
+            MarksmanExecutionMarks[i] = mark;
+            Class_SendExecutionMarkShow(MarksmanExecutionMarks[i]);
+            Class_ScheduleExecutionMarkExpiry(MarksmanExecutionMarks[i]);
+            return true;
+        }
+    }
+
+    MarksmanExecutionMarks.insertLast(mark);
+    Class_IndexExecutionMarkTarget(mark.targetId);
+    Class_SendExecutionMarkShow(MarksmanExecutionMarks[MarksmanExecutionMarks.length() - 1]);
+    Class_ScheduleExecutionMarkExpiry(MarksmanExecutionMarks[MarksmanExecutionMarks.length() - 1]);
+    return true;
+}
+
+bool Class_TryExecuteMarkedTarget(Critter& attacker, Critter& target) // Export
+{
+    if(attacker.Id == target.Id || target.IsDead() || MarksmanExecutionMarks.length() == 0 ||
+       !Class_HasExecutionMarkForTarget(target.Id))
+        return false;
+
+    Class_PruneExecutionMarks();
+    if(!Class_HasExecutionMarkForTarget(target.Id))
+        return false;
+    for(uint i = 0; i < MarksmanExecutionMarks.length(); i++)
+    {
+        MarksmanExecutionMark@ mark = MarksmanExecutionMarks[i];
+        if(mark.targetId != target.Id || mark.eligibleIds.find(attacker.Id) < 0 ||
+           target.Stat[ST_CURRENT_HP] > mark.executeHp)
+            continue;
+
+        uint sourceId = mark.sourceId;
+        Class_SendExecutionMarkHide(mark);
+        Class_UnindexExecutionMarkTarget(mark.targetId);
+        MarksmanExecutionMarks.removeAt(i);
+
+        attacker.Say(SAY_NETMSG, "Execution Mark triggered.");
+        Critter@ source = GetCritter(sourceId);
+        if(valid(source) && source.IsPlayer() && source.Id != attacker.Id)
+            source.Say(SAY_NETMSG, "Your Execution Mark was triggered.");
+        if(target.IsPlayer())
+            target.Say(SAY_NETMSG, "You were executed under Execution Mark.");
+        VerboseAction(target, "is executed");
+        return true;
+    }
+    return false;
+}
+
+int Class_FindDeathclawBurrowState(uint critterId)
+{
+    for(uint i = 0; i < DeathclawBurrowStates.length(); i++)
+        if(DeathclawBurrowStates[i].critterId == critterId)
+            return int(i);
+    return -1;
+}
+
+void Class_CancelDeathclawBurrow(Critter& cr, bool interrupted)
+{
+    int index = Class_FindDeathclawBurrowState(cr.Id);
+    bool wasBurrowing = index >= 0 || cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_BURROWING ||
+                        cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_UNDERGROUND ||
+                        cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RECOVERY;
+    if(index >= 0)
+    {
+        if(DeathclawBurrowStates[index].phase >= 1)
+        {
+            cr.ModeBase[MODE_HIDE] = DeathclawBurrowStates[index].previousHide;
+            cr.RefreshVisible();
+        }
+        DeathclawBurrowStates.removeAt(index);
+    }
+    else if(cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_UNDERGROUND)
+    {
+        cr.ModeBase[MODE_HIDE] = 0;
+        cr.RefreshVisible();
+    }
+    cr.EraseTimeEvents(CTE_CLASS_DEATHCLAW_BURROW);
+    if(cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_BURROWING ||
+       cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_UNDERGROUND ||
+       cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RECOVERY)
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+    if(wasBurrowing)
+        cr.Wait(0);
+    if(interrupted)
+    {
+        _SetTimeout(cr, TO_CLASS_ABILITY, REAL_SECOND(CLASS_DEATHCLAW_BURROW_INTERRUPT_COOLDOWN));
+        cr.Say(SAY_NETMSG, "Burrow was interrupted. Cooldown reduced to 10 seconds.");
+    }
+}
+
+bool Class_IsDeathclawActionLocked(Critter& cr) // Export
+{
+    if(cr.Param[ST_CLASS_ID] != CLASS_DEATHCLAW)
+        return false;
+    int effect = cr.Param[ST_CLASS_EFFECT];
+    return effect == CLASS_EFFECT_DEATHCLAW_BURROWING || effect == CLASS_EFFECT_DEATHCLAW_UNDERGROUND ||
+           effect == CLASS_EFFECT_DEATHCLAW_RECOVERY;
+}
+
+bool Class_IsDeathclawUntargetable(Critter& cr) // Export
+{
+    return cr.Param[ST_CLASS_ID] == CLASS_DEATHCLAW &&
+           cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_UNDERGROUND;
+}
+
+void Class_MoveDeathclawUnderground(Critter& cr, Map& map, DeathclawBurrowState& state)
+{
+    uint duration = state.emergeAt - state.burrowAt;
+    uint elapsed = ELAPSED_TIME > state.burrowAt ? MIN(ELAPSED_TIME - state.burrowAt, duration) : 0;
+    uint desiredStep = duration > 0 ? state.travelDistance * elapsed / duration : state.travelDistance;
+    if(desiredStep <= state.travelStep)
+        return;
+
+    uint16 moveX = state.lineX;
+    uint16 moveY = state.lineY;
+    for(uint step = state.travelStep; step < desiredStep && (moveX != state.targetX || moveY != state.targetY); step++)
+    {
+        uint8 lineDirection = GetDirection(moveX, moveY, state.targetX, state.targetY);
+        map.MoveHexByDir(moveX, moveY, lineDirection, 1);
+    }
+    state.travelStep = desiredStep;
+    state.lineX = moveX;
+    state.lineY = moveY;
+
+    if(moveX == cr.HexX && moveY == cr.HexY)
+        return;
+
+    uint8 direction = GetDirection(cr.HexX, cr.HexY, moveX, moveY);
+    cr.MoveToHexSilent(moveX, moveY, direction);
+}
+
+uint cte_DeathclawBurrow(Critter& cr, int, uint&)
+{
+    int index = Class_FindDeathclawBurrowState(cr.Id);
+    if(index < 0 || cr.Param[ST_CLASS_ID] != CLASS_DEATHCLAW)
+    {
+        Class_CancelDeathclawBurrow(cr, false);
+        return 0;
+    }
+
+    DeathclawBurrowState@ state = DeathclawBurrowStates[index];
+    Map@ map = cr.GetMap();
+    if(cr.IsDead() || !valid(map) || map.Id != state.mapId)
+    {
+        Class_CancelDeathclawBurrow(cr, false);
+        return 0;
+    }
+
+    if(state.phase == 0)
+    {
+        if(cr.IsKnockout() || cr.HexX != state.originX || cr.HexY != state.originY)
+        {
+            Class_CancelDeathclawBurrow(cr, true);
+            return 0;
+        }
+        if(ELAPSED_TIME >= state.burrowAt)
+        {
+            state.previousHide = cr.Mode[MODE_HIDE];
+            cr.ModeBase[MODE_HIDE] = 1;
+            cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_DEATHCLAW_UNDERGROUND;
+            state.phase = 1;
+            cr.RefreshVisible();
+            VerboseAction(cr, "burrows underground");
+        }
+    }
+    else if(state.phase == 1 && ELAPSED_TIME >= state.emergeAt)
+    {
+        bool reachedTarget = cr.HexX == state.targetX && cr.HexY == state.targetY;
+        if(!reachedTarget)
+        {
+            uint8 finalDirection = GetDirection(cr.HexX, cr.HexY, state.targetX, state.targetY);
+            reachedTarget = cr.MoveToHexSilent(state.targetX, state.targetY, finalDirection);
+        }
+        if(!reachedTarget)
+            cr.Say(SAY_NETMSG, "Burrow destination became blocked; you emerge at the last free underground position.");
+
+        cr.ModeBase[MODE_HIDE] = state.previousHide;
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_DEATHCLAW_RECOVERY;
+        state.phase = 2;
+        // Keep the visible emerging animation locked; the lightweight
+        // underground movement intentionally preserves the original lock.
+        cr.Wait(CLASS_DEATHCLAW_BURROW_RECOVERY * 1000);
+        cr.RefreshVisible();
+        VerboseAction(cr, "emerges from underground");
+    }
+    else if(state.phase == 1)
+    {
+        Class_MoveDeathclawUnderground(cr, map, state);
+    }
+    else if(state.phase == 2 && ELAPSED_TIME >= state.recoverAt)
+    {
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        cr.Wait(0);
+        DeathclawBurrowStates.removeAt(index);
+        return 0;
+    }
+
+    return REAL_MS(CLASS_DEATHCLAW_BURROW_MOVE_MS);
+}
+
+bool Class_TryDeathclawBurrow(Critter& cr, uint16 targetX, uint16 targetY)
+{
+    Map@ map = cr.GetMap();
+    if(!valid(map) || targetX >= map.GetWidth() || targetY >= map.GetHeight() ||
+       !map.IsHexPassed(targetX, targetY) || valid(map.GetCritter(targetX, targetY)))
+    {
+        cr.Say(SAY_NETMSG, "Burrow requires a free destination hex.");
+        return false;
+    }
+
+    uint path = map.GetPathLength(cr, targetX, targetY, 0);
+    if(path == 0 || path > CLASS_DEATHCLAW_BURROW_RANGE)
+    {
+        cr.Say(SAY_NETMSG, "Burrow requires a reachable hex within 60 tiles.");
+        return false;
+    }
+
+    Class_CancelDeathclawBurrow(cr, false);
+    DeathclawBurrowState state;
+    state.critterId = cr.Id;
+    state.mapId = map.Id;
+    state.originX = cr.HexX;
+    state.originY = cr.HexY;
+    state.targetX = targetX;
+    state.targetY = targetY;
+    state.burrowAt = ELAPSED_TIME + REAL_SECOND(CLASS_DEATHCLAW_BURROW_CHANNEL);
+    state.emergeAt = state.burrowAt + REAL_SECOND(CLASS_DEATHCLAW_BURROW_UNDERGROUND);
+    state.recoverAt = state.emergeAt + REAL_SECOND(CLASS_DEATHCLAW_BURROW_RECOVERY);
+    state.previousHide = cr.Mode[MODE_HIDE];
+    state.phase = 0;
+    state.travelDistance = GetDistantion(cr.HexX, cr.HexY, targetX, targetY);
+    state.travelStep = 0;
+    state.lineX = cr.HexX;
+    state.lineY = cr.HexY;
+    DeathclawBurrowStates.insertLast(state);
+
+    cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_DEATHCLAW_BURROWING;
+    cr.Wait((CLASS_DEATHCLAW_BURROW_CHANNEL + CLASS_DEATHCLAW_BURROW_UNDERGROUND + CLASS_DEATHCLAW_BURROW_RECOVERY) * 1000);
+    if(!cr.AddTimeEvent("cte_DeathclawBurrow", REAL_MS(CLASS_DEATHCLAW_BURROW_MOVE_MS), CTE_CLASS_DEATHCLAW_BURROW))
+    {
+        Class_CancelDeathclawBurrow(cr, false);
+        cr.Say(SAY_NETMSG, "Burrow could not be started.");
+        return false;
+    }
+    _SetTimeout(cr, TO_CLASS_ABILITY, REAL_SECOND(CLASS_DEATHCLAW_BURROW_COOLDOWN));
+
+    VerboseAction(cr, "starts burrowing");
+    cr.Say(SAY_NETMSG, "Burrow started. You will go underground in 2 seconds.");
+    return true;
+}
+
+uint cte_DeathclawRage(Critter& cr, int, uint&)
+{
+    if(cr.Param[ST_CLASS_ID] == CLASS_DEATHCLAW && cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RAGE)
+    {
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        speedboost(cr);
+        cr.Say(SAY_NETMSG, "Rage has ended.");
+    }
+    return 0;
+}
+
+bool Class_TryDeathclawRage(Critter& cr)
+{
+    cr.EraseTimeEvents(CTE_CLASS_DEATHCLAW_RAGE);
+    cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_DEATHCLAW_RAGE;
+    if(!cr.AddTimeEvent("cte_DeathclawRage", REAL_SECOND(CLASS_DEATHCLAW_RAGE_DURATION), CTE_CLASS_DEATHCLAW_RAGE))
+    {
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        cr.Say(SAY_NETMSG, "Rage could not be activated.");
+        return false;
+    }
+    _SetTimeout(cr, TO_CLASS_ABILITY, REAL_SECOND(CLASS_DEATHCLAW_RAGE_COOLDOWN));
+    speedboost(cr);
+    VerboseAction(cr, "enters a predatory rage");
+    cr.Say(SAY_NETMSG, "Rage activated for 10 seconds: +25% melee damage and +20% movement speed, with reduced AC and DR.");
+    return true;
+}
+
+bool Class_TryForceDeathclawSneak(Critter& cr) // Export
+{
+    if(cr.Param[ST_CLASS_ID] != CLASS_DEATHCLAW ||
+       Class_GetOption(uint(cr.Param[ST_CLASS_OPTIONS]), 3) != CLASS_DEATHCLAW_MISC_CAMOUFLAGE)
+        return false;
+    if(cr.Timeout[TO_CLASS_ABILITY] > 0)
+    {
+        int seconds = MAX(1, cr.Timeout[TO_CLASS_ABILITY] / __TimeMultiplier);
+        cr.Say(SAY_NETMSG, "Predator's Camouflage is recharging. " + seconds + " seconds remaining.");
+        return false;
+    }
+
+    _SetTimeout(cr, TO_CLASS_ABILITY, REAL_SECOND(CLASS_DEATHCLAW_CAMOUFLAGE_COOLDOWN));
+    VerboseAction(cr, "vanishes with Predator's Camouflage");
+    cr.Say(SAY_NETMSG, "Predator's Camouflage forced Sneak despite hostile observers.");
+    return true;
+}
+
+void Class_ClearTransientEffects(Critter& cr)
+{
+    if(!cr.IsPlayer())
+        return;
+    bool rageActive = cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RAGE;
+    cr.EraseTimeEvents(CTE_CLASS_FEV_RUSH);
+    cr.EraseTimeEvents(CTE_CLASS_DEATHCLAW_RAGE);
+    Class_CancelDeathclawBurrow(cr, false);
+    if(cr.Param[ST_CLASS_EFFECT] != CLASS_EFFECT_NONE)
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+    if(rageActive)
+        speedboost(cr);
+}
+
+int Class_ApplyIncomingDamage(Critter& target, int damage) // Export
+{
+    if(damage <= 0 || !target.IsPlayer() || target.Param[ST_CLASS_ID] != CLASS_SUPER_MUTANT ||
+       target.Param[ST_CLASS_EFFECT] != CLASS_EFFECT_SUPER_MUTANT_FEV_RUSH)
+        return damage;
+
+    return damage * (100 - CLASS_SUPER_MUTANT_FEV_REDUCTION) / 100;
+}
+
+void Class_Initialize(Critter& cr, bool) // Export
+{
+    if(!cr.IsPlayer())
+        return;
+
+    // Invalid legacy values are cleared; valid choices are permanent.
+    if(cr.Param[ST_CLASS_ID] != CLASS_NONE && !Class_IsRegistered(cr.Param[ST_CLASS_ID]))
+        cr.ParamBase[ST_CLASS_ID] = CLASS_NONE;
+
+    uint options = uint(cr.Param[ST_CLASS_OPTIONS]);
+    bool pendingDeathclaw = cr.Param[ST_CLASS_ID] == CLASS_NONE &&
+                            Class_GetOption(options, 4) == CLASS_DEATHCLAW_PENDING_MARKER;
+    if((cr.Param[ST_CLASS_ID] == CLASS_NONE && !pendingDeathclaw) || cr.Param[ST_CLASS_ID] == CLASS_SOLDIER ||
+       cr.Param[ST_CLASS_ID] == CLASS_SUPER_MUTANT ||
+       cr.Param[ST_CLASS_ID] == CLASS_MARKSMAN || cr.Param[ST_CLASS_ID] == CLASS_PARAMEDIC)
+        cr.ParamBase[ST_CLASS_OPTIONS] = 0;
+
+    Class_ApplySuperMutantIdentity(cr);
+    Class_ApplyDeathclawIdentity(cr);
+
+    // Active effects never survive login; their shared cooldown intentionally does.
+    Class_ClearTransientEffects(cr);
+    Class_StartMarksmanPreparation(cr);
+}
+
+bool Class_TrySelect(Critter& cr, int classId) // Export
+{
+    if(!cr.IsPlayer() || cr.Param[ST_LEVEL] < CLASS_SELECTION_LEVEL)
+        return false;
+    if(cr.Param[ST_UNSPENT_PERKS] > 0)
+    {
+        cr.Say(SAY_NETMSG, "Choose all available perks before selecting a class.");
+        return false;
+    }
+    if(cr.Param[ST_CLASS_ID] != CLASS_NONE || !Class_IsRegistered(classId))
+        return false;
+    if(Class_GetOption(uint(cr.Param[ST_CLASS_OPTIONS]), 4) == CLASS_DEATHCLAW_PENDING_MARKER)
+        return false;
+
+    if(classId == CLASS_SUPER_MUTANT)
+    {
+        Item@ armor = cr.GetItem(0, SLOT_ARMOR);
+        if(valid(armor) && !Class_IsSuperMutantArmor(armor))
+        {
+            cr.Say(SAY_NETMSG, "Remove your current armor before becoming a Super Mutant. Only Leather and Metal armor can be worn afterwards.");
+            return false;
+        }
+    }
+
+    if(classId == CLASS_DEATHCLAW)
+    {
+        Item@ armor = cr.GetItem(0, SLOT_ARMOR);
+        if(valid(armor))
+        {
+            cr.Say(SAY_NETMSG, "Remove your armor before becoming a Deathclaw. Deathclaws cannot wear armor.");
+            return false;
+        }
+
+        uint options = Class_SetOption(0, 4, CLASS_DEATHCLAW_PENDING_MARKER);
+        cr.ParamBase[ST_CLASS_OPTIONS] = int(options);
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        cr.Say(SAY_NETMSG, "Deathclaw selected. Now choose your claw, hide and instinct upgrades.");
+        return true;
+    }
+
+    cr.ParamBase[ST_CLASS_ID] = classId;
+    cr.ParamBase[ST_CLASS_OPTIONS] = 0;
+    cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+    if(classId == CLASS_MARKSMAN)
+        Class_StartMarksmanPreparation(cr);
+    else if(classId == CLASS_SUPER_MUTANT)
+        Class_ApplySuperMutantIdentity(cr);
+    cr.Say(SAY_NETMSG, "Class selected: " + Class_GetName(classId) + ".");
+    return true;
+}
+
+bool Class_TrySelectOption(Critter& cr, int stage, int choice) // Export
+{
+    if(!cr.IsPlayer() || cr.Param[ST_LEVEL] < CLASS_SELECTION_LEVEL || stage < 1 || stage > 3 || choice < 1 || choice > 3)
+        return false;
+    if(cr.Param[ST_UNSPENT_PERKS] > 0)
+    {
+        cr.Say(SAY_NETMSG, "Choose all available perks before continuing class selection.");
+        return false;
+    }
+
+    uint options = uint(cr.Param[ST_CLASS_OPTIONS]);
+    bool pending = (cr.Param[ST_CLASS_ID] == CLASS_NONE && Class_GetOption(options, 4) == CLASS_DEATHCLAW_PENDING_MARKER) ||
+                   cr.Param[ST_CLASS_ID] == CLASS_DEATHCLAW;
+    if(!pending)
+        return false;
+
+    int expectedStage = 1;
+    while(expectedStage <= 3 && Class_GetOption(options, uint(expectedStage)) != 0)
+        expectedStage++;
+    if(stage != expectedStage)
+        return false;
+
+    if(stage == 3)
+    {
+        if(valid(cr.GetItem(0, SLOT_ARMOR)))
+        {
+            cr.Say(SAY_NETMSG, "Remove your armor before completing the Deathclaw transformation.");
+            return false;
+        }
+        if(!Class_IsDeathclawWeapon(cr.GetItem(0, SLOT_HAND1)) || !Class_IsDeathclawWeapon(cr.GetItem(0, SLOT_HAND2)))
+        {
+            cr.Say(SAY_NETMSG, "Remove ranged weapons from both hands. A Deathclaw can use only melee weapons and grenades.");
+            return false;
+        }
+    }
+
+    options = Class_SetOption(options, uint(stage), uint(choice));
+    if(stage < 3)
+    {
+        cr.ParamBase[ST_CLASS_OPTIONS] = int(options);
+        cr.Say(SAY_NETMSG, stage == 1 ? "Claw upgrade selected. Now choose your hide." : "Hide upgrade selected. Now choose your instinct.");
+        return true;
+    }
+
+    options = Class_SetOption(options, 4, 0);
+    cr.ParamBase[ST_CLASS_OPTIONS] = int(options);
+    cr.ParamBase[ST_CLASS_ID] = CLASS_DEATHCLAW;
+    cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+    Class_ApplyDeathclawIdentity(cr);
+    cr.Say(SAY_NETMSG, "Class selected: Deathclaw.");
+    return true;
+}
+
+void Class_OnFinish(Critter& cr) // Export
+{
+    Class_RemoveExecutionMarksForCritter(cr.Id);
+    Class_RemoveParamedicReviveRequestsForCritter(cr.Id);
+    Class_ForgetParamedicDeathRecord(cr.Id);
+    Class_ClearTransientEffects(cr);
+    if(cr.IsPlayer())
+    {
+        cr.EraseTimeEvents(CTE_CLASS_PREPARED);
+        Class_ForgetMarksmanPreparationState(cr.Id);
+    }
+}
+
+void Class_OnDeath(Critter& cr) // Export
+{
+    Class_RemoveExecutionMarksForCritter(cr.Id);
+    Class_RemoveParamedicReviveRequestsForCritter(cr.Id);
+    Class_RecordParamedicDeath(cr);
+    Class_ClearTransientEffects(cr);
+    if(cr.IsPlayer() && cr.Param[ST_CLASS_ID] == CLASS_MARKSMAN)
+        Class_ResetMarksmanPreparation(cr);
+}
+
+void Class_OnRespawn(Critter& cr) // Export
+{
+    Class_RemoveParamedicReviveRequestsForCritter(cr.Id);
+    Class_ForgetParamedicDeathRecord(cr.Id);
+    Class_ClearTransientEffects(cr);
+    if(cr.IsPlayer())
+        Class_StartMarksmanPreparation(cr);
+}
+
+void Class_OnMapChange(Critter& cr) // Export
+{
+    Class_RemoveExecutionMarksForCritter(cr.Id);
+    Class_RemoveParamedicReviveRequestsForCritter(cr.Id);
+    Class_ClearTransientEffects(cr);
+    if(cr.IsPlayer() && cr.Param[ST_CLASS_ID] == CLASS_MARKSMAN)
+        Class_ResetMarksmanPreparation(cr);
+}
+
+void Class_OnIdle(Critter& cr) // Export
+{
+    if(!cr.IsPlayer())
+        return;
+
+    array<uint> indexes;
+    bool tracking = cr.GetTimeEvents(CTE_CLASS_PREPARED, indexes, null, null) != 0;
+    if(cr.Param[ST_CLASS_ID] == CLASS_MARKSMAN && !tracking)
+        Class_StartMarksmanPreparation(cr);
+    else if(cr.Param[ST_CLASS_ID] != CLASS_MARKSMAN && tracking)
+    {
+        cr.EraseTimeEvents(CTE_CLASS_PREPARED);
+        Class_ForgetMarksmanPreparationState(cr.Id);
+    }
+}
+
+bool Class_TrySoldierCombatRush(Critter& cr)
+{
+    const int apDivider = 100;
+    int currentAp = cr.ParamBase[ST_CURRENT_AP];
+    int maximumAp = cr.Stat[ST_ACTION_POINTS] * apDivider;
+    if(currentAp >= maximumAp)
+    {
+        cr.Say(SAY_NETMSG, "Combat Rush cannot be used while your Action Points are full.");
+        return false;
+    }
+
+    int restoredApRaw = MIN(CLASS_SOLDIER_COMBAT_RUSH_AP * apDivider, maximumAp - currentAp);
+    cr.ParamBase[ST_CURRENT_AP] = currentAp + restoredApRaw;
+    _SetTimeout(cr, TO_CLASS_ABILITY, REAL_SECOND(CLASS_SOLDIER_COMBAT_RUSH_COOLDOWN));
+    VerboseAction(cr, "uses Combat Rush");
+
+    string restoredAp = "" + restoredApRaw / apDivider;
+    int restoredFraction = restoredApRaw % apDivider;
+    if(restoredFraction > 0)
+        restoredAp += "." + (restoredFraction < 10 ? "0" : "") + restoredFraction;
+    cr.Say(SAY_NETMSG, "Combat Rush restored " + restoredAp + " AP.");
+    return true;
+}
+
+uint cte_SuperMutantFevRush(Critter& cr, int, uint&)
+{
+    if(cr.Param[ST_CLASS_ID] == CLASS_SUPER_MUTANT &&
+       cr.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_SUPER_MUTANT_FEV_RUSH)
+    {
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        cr.Say(SAY_NETMSG, "FEV Rush has ended.");
+    }
+    return 0;
+}
+
+bool Class_TrySuperMutantFevRush(Critter& cr)
+{
+    cr.EraseTimeEvents(CTE_CLASS_FEV_RUSH);
+    cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_SUPER_MUTANT_FEV_RUSH;
+    if(!cr.AddTimeEvent("cte_SuperMutantFevRush", REAL_SECOND(CLASS_SUPER_MUTANT_FEV_DURATION), CTE_CLASS_FEV_RUSH))
+    {
+        cr.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+        cr.Say(SAY_NETMSG, "FEV Rush could not be activated.");
+        return false;
+    }
+    _SetTimeout(cr, TO_CLASS_ABILITY, REAL_SECOND(CLASS_SUPER_MUTANT_FEV_COOLDOWN));
+
+    VerboseAction(cr, "uses FEV Rush");
+    cr.Say(SAY_NETMSG, "FEV Rush activated: incoming damage is reduced by 40% for 8 seconds.");
+    return true;
+}
+
+bool Class_TryMarksmanExecutionMark(Critter& cr, uint targetId)
+{
+    Critter@ target = GetCritter(targetId);
+    Map@ map = cr.GetMap();
+    if(!valid(target) || !valid(map) || target.Id == cr.Id || target.GetMapId() != map.Id || !target.IsLife())
+    {
+        cr.Say(SAY_NETMSG, "Execution Mark requires a living target on your map.");
+        return false;
+    }
+    if(!cr.IsSee(target))
+    {
+        cr.Say(SAY_NETMSG, "You cannot mark a target you cannot see.");
+        return false;
+    }
+    if(Class_AreTeammates(cr, target))
+    {
+        cr.Say(SAY_NETMSG, "Execution Mark cannot target a teammate.");
+        return false;
+    }
+    if(!Class_ApplyExecutionMark(cr, target))
+    {
+        cr.Say(SAY_NETMSG, "Execution Mark could not be applied to that target.");
+        return false;
+    }
+
+    _SetTimeout(cr, TO_CLASS_ABILITY, REAL_SECOND(CLASS_MARKSMAN_MARK_COOLDOWN));
+    VerboseAction(cr, "uses Execution Mark");
+    VerboseAction(target, "is marked for execution");
+
+    int maximumHp = GetActualMaxHp(target);
+    int executePercent = target.IsNpc() && target.Stat[ST_NPC_BOSS] != 0 ?
+                         CLASS_MARKSMAN_BOSS_EXECUTE_PERCENT : CLASS_MARKSMAN_EXECUTE_PERCENT;
+    int executeHp = MAX(1, maximumHp * executePercent / 100);
+    cr.Say(SAY_NETMSG, "Execution Mark applied for 20 seconds. Execute at " + executeHp + " HP or lower.");
+    if(target.IsPlayer())
+        target.Say(SAY_NETMSG, "Execution Mark applied. Execution threshold: " + executeHp + " HP.");
+    return true;
+}
+
+void Class_EndParamedicReviveChannel(Critter& source)
+{
+    if(source.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_PARAMEDIC_REVIVING)
+        source.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_NONE;
+}
+
+bool Class_TryParamedicRevive(Critter& source, uint targetId)
+{
+    Critter@ target = GetCritter(targetId);
+    Map@ map = source.GetMap();
+    if(!valid(target) || !valid(map) || target.Id == source.Id || !target.IsPlayer() || !target.IsDead() ||
+       target.GetMapId() != map.Id)
+    {
+        source.Say(SAY_NETMSG, "Revive requires the body of another player on your map.");
+        return false;
+    }
+    if(!source.IsSee(target))
+    {
+        source.Say(SAY_NETMSG, "You cannot revive a body you cannot see.");
+        return false;
+    }
+    if(GetCrittersDistantion(source, target) > CLASS_PARAMEDIC_REVIVE_MAX_DISTANCE)
+    {
+        source.Say(SAY_NETMSG, "Move closer to the body before starting Revive.");
+        return false;
+    }
+    if(!Class_AreTeammates(source, target))
+    {
+        source.Say(SAY_NETMSG, "Revive can only be used on an ally.");
+        return false;
+    }
+
+    int recordIndex = Class_FindParamedicDeathRecord(target.Id);
+    if(recordIndex < 0 || !Class_CanParamedicReviveBody(target))
+    {
+        source.Say(SAY_NETMSG, "That body can no longer be revived.");
+        return false;
+    }
+
+    ParamedicDeathRecord@ record = ParamedicDeathRecords[recordIndex];
+    uint channelDuration = REAL_SECOND(CLASS_PARAMEDIC_REVIVE_CHANNEL);
+    if(ELAPSED_TIME + channelDuration > record.diedAt + REAL_SECOND(CLASS_PARAMEDIC_REVIVE_MAX_DEATH_AGE) ||
+       target.Timeout[TO_REPLICATION] <= int(channelDuration))
+    {
+        source.Say(SAY_NETMSG, "There is not enough time left to revive that body.");
+        return false;
+    }
+
+    _SetTimeout(source, TO_CLASS_ABILITY, REAL_SECOND(CLASS_PARAMEDIC_REVIVE_COOLDOWN));
+    source.ParamBase[ST_CLASS_EFFECT] = CLASS_EFFECT_PARAMEDIC_REVIVING;
+
+    uint[] values =
+    {
+        source.Id,
+        target.Id,
+        map.Id,
+        uint(source.HexX),
+        uint(source.HexY),
+        ELAPSED_TIME + channelDuration
+    };
+    CreateTimeEvent(AFTER(REAL_MS(CLASS_PARAMEDIC_REVIVE_CHECK_MS)), "e_ParamedicRevive", values, false);
+
+    VerboseAction(source, target, "starts reviving TARGET");
+    source.Say(SAY_NETMSG, "Revive started. Stay still for 4 seconds.");
+    target.Say(SAY_NETMSG, source.Name + " is attempting to revive you.");
+    return true;
+}
+
+uint e_ParamedicRevive(array<uint>@ values)
+{
+    if(values.length() < 6)
+        return 0;
+
+    Critter@ source = GetCritter(values[0]);
+    if(!valid(source) || source.Param[ST_CLASS_ID] != CLASS_PARAMEDIC ||
+       source.Param[ST_CLASS_EFFECT] != CLASS_EFFECT_PARAMEDIC_REVIVING)
+        return 0;
+
+    if(source.IsKnockout())
+    {
+        Class_EndParamedicReviveChannel(source);
+        _SetTimeout(source, TO_CLASS_ABILITY, REAL_SECOND(CLASS_PARAMEDIC_REVIVE_KO_COOLDOWN));
+        source.Say(SAY_NETMSG, "Revive was interrupted by knockdown. Cooldown reduced to 10 seconds.");
+        return 0;
+    }
+    if(source.IsDead())
+    {
+        Class_EndParamedicReviveChannel(source);
+        return 0;
+    }
+
+    Map@ map = source.GetMap();
+    if(!valid(map) || map.Id != values[2] || source.HexX != uint16(values[3]) || source.HexY != uint16(values[4]))
+    {
+        Class_EndParamedicReviveChannel(source);
+        source.Say(SAY_NETMSG, "Revive was interrupted by movement.");
+        return 0;
+    }
+
+    Critter@ target = GetCritter(values[1]);
+    if(!valid(target) || !target.IsPlayer() || !target.IsDead() || target.GetMapId() != map.Id ||
+       target.Timeout[TO_REPLICATION] == 0 || !Class_CanParamedicReviveBody(target) ||
+       GetCrittersDistantion(source, target) > CLASS_PARAMEDIC_REVIVE_MAX_DISTANCE)
+    {
+        Class_EndParamedicReviveChannel(source);
+        source.Say(SAY_NETMSG, "Revive failed because the body is no longer available.");
+        return 0;
+    }
+
+    if(ELAPSED_TIME < values[5])
+        return REAL_MS(CLASS_PARAMEDIC_REVIVE_CHECK_MS);
+
+    Map@ targetMap = target.GetMap();
+    bool hadDeadBlocker = target.Stat[ST_DEAD_BLOCKER_ID] != 0;
+    if(hadDeadBlocker)
+    {
+        Item@ blocker = ::GetItem(target.Stat[ST_DEAD_BLOCKER_ID]);
+        if(valid(blocker))
+            DeleteItem(blocker);
+        target.StatBase[ST_DEAD_BLOCKER_ID] = 0;
+    }
+
+    if(!target.ToLife())
+    {
+        if(hadDeadBlocker && valid(targetMap))
+        {
+            Item@ replacement = targetMap.AddItem(target.HexX, target.HexY, PID_UNVISIBLE_BLOCK, 1);
+            if(valid(replacement))
+                target.StatBase[ST_DEAD_BLOCKER_ID] = replacement.Id;
+        }
+        Class_EndParamedicReviveChannel(source);
+        source.Say(SAY_NETMSG, "Revive failed because the body could not stand up here.");
+        return 0;
+    }
+
+    _SetTimeout(target, TO_REPLICATION, 0);
+    _CritUnsetMode(target, MODE_NO_LOOT);
+    _CritUnsetMode(target, MODE_NO_STEAL);
+    target.StatBase[ST_CURRENT_HP] = MAX(1, GetActualMaxHp(target) * 25 / 100);
+    target.StatBase[ST_CURRENT_AP] = 0;
+    Class_ForgetParamedicDeathRecord(target.Id);
+    Class_EndParamedicReviveChannel(source);
+
+    VerboseAction(source, target, "revives TARGET");
+    source.Say(SAY_NETMSG, "Revive successful. Your ally returned with 25% HP and 0 AP.");
+    target.Say(SAY_NETMSG, "You were revived by " + source.Name + " with 25% HP and 0 AP.");
+    return 0;
+}
+
+bool Class_TryUseAbilityInternal(Critter& cr, uint targetId, bool allowParamedicAction)
+{
+    if(!cr.IsPlayer())
+        return false;
+
+    int classId = cr.Param[ST_CLASS_ID];
+    if(classId == CLASS_NONE)
+        return false;
+    if(!Class_IsImplemented(classId))
+    {
+        cr.Say(SAY_NETMSG, Class_GetName(classId) + " does not have an active class ability yet.");
+        return false;
+    }
+
+    string abilityName = Class_GetAbilityName(classId);
+    if(classId == CLASS_DEATHCLAW)
+    {
+        uint instinct = Class_GetOption(uint(cr.Param[ST_CLASS_OPTIONS]), 3);
+        abilityName = instinct == CLASS_DEATHCLAW_MISC_BURROW ? "Burrow" :
+                      (instinct == CLASS_DEATHCLAW_MISC_RAGE ? "Rage" : "Predator's Camouflage");
+    }
+    if(cr.IsDead() || cr.IsKnockout())
+    {
+        cr.Say(SAY_NETMSG, abilityName + " cannot be used while you are dead or knocked out.");
+        return false;
+    }
+
+    Map@ map = cr.GetMap();
+    if(!valid(map))
+    {
+        cr.Say(SAY_NETMSG, abilityName + " can only be used on a local map.");
+        return false;
+    }
+    if(map.IsTurnBased())
+    {
+        cr.Say(SAY_NETMSG, abilityName + " is unavailable during turn-based combat.");
+        return false;
+    }
+    if(cr.IsBusy() && classId != CLASS_SOLDIER && !(allowParamedicAction && classId == CLASS_PARAMEDIC))
+    {
+        cr.Say(SAY_NETMSG, "Finish your current action before using " + abilityName + ".");
+        return false;
+    }
+    if(cr.Timeout[TO_CLASS_ABILITY] > 0)
+    {
+        int cooldownSeconds = MAX(1, cr.Timeout[TO_CLASS_ABILITY] / __TimeMultiplier);
+        cr.Say(SAY_NETMSG, abilityName + " is recharging. " + cooldownSeconds + " second" + (cooldownSeconds == 1 ? "" : "s") + " remaining.");
+        return false;
+    }
+
+    switch(classId)
+    {
+    case CLASS_SOLDIER:
+        return Class_TrySoldierCombatRush(cr);
+    case CLASS_SUPER_MUTANT:
+        return Class_TrySuperMutantFevRush(cr);
+    case CLASS_MARKSMAN:
+        return Class_TryMarksmanExecutionMark(cr, targetId);
+    case CLASS_DEATHCLAW:
+    {
+        uint instinct = Class_GetOption(uint(cr.Param[ST_CLASS_OPTIONS]), 3);
+        if(instinct == CLASS_DEATHCLAW_MISC_RAGE)
+            return Class_TryDeathclawRage(cr);
+        if(instinct == CLASS_DEATHCLAW_MISC_CAMOUFLAGE)
+        {
+            cr.Say(SAY_NETMSG, "Predator's Camouflage activates automatically when hostile observers would prevent Sneak.");
+            return true;
+        }
+        cr.Say(SAY_NETMSG, "Burrow requires a destination hex.");
+        return false;
+    }
+    case CLASS_PARAMEDIC:
+        return Class_TryParamedicRevive(cr, targetId);
+    default:
+        break;
+    }
+
+    return false;
+}
+
+bool Class_TryUseAbility(Critter& cr, uint targetId) // Export
+{
+    return Class_TryUseAbilityInternal(cr, targetId, false);
+}
+
+bool Class_TryUseQueuedParamedicRevive(Critter& cr, Critter& target) // Export
+{
+    int index = Class_FindParamedicReviveRequest(cr.Id);
+    if(index < 0)
+        return false;
+
+    uint requestedTargetId = ParamedicReviveRequests[index].targetId;
+    uint expireTick = ParamedicReviveRequests[index].expireTick;
+    ParamedicReviveRequests.removeAt(index);
+    if(requestedTargetId != target.Id)
+        return false;
+
+    if(ELAPSED_TIME > expireTick)
+    {
+        cr.Say(SAY_NETMSG, "Revive was cancelled because the approach took too long.");
+        return true;
+    }
+
+    Class_TryUseAbilityInternal(cr, target.Id, true);
+    return true;
+}
+
+void unsafe_QueueParamedicRevive(Critter& player, int targetId, int, int, string@, array<int>@) // Export
+{
+    if(player.Param[ST_CLASS_ID] != CLASS_PARAMEDIC || targetId <= 0)
+        return;
+
+    Critter@ target = GetCritter(uint(targetId));
+    if(!valid(target) || target.Id == player.Id || !target.IsPlayer() || !target.IsDead() ||
+       target.GetMapId() != player.GetMapId())
+    {
+        player.Say(SAY_NETMSG, "Revive requires the body of another player on your map.");
+        return;
+    }
+
+    Class_QueueParamedicRevive(player, target);
+}
+
+// Client -> server entry point. All state and cooldown validation remains authoritative here.
+void unsafe_TryUseClassAbility(Critter& player, int targetId, int, int, string@, array<int>@) // Export
+{
+    Class_TryUseAbility(player, targetId > 0 ? uint(targetId) : 0);
+}
+
+void unsafe_TryDeathclawBurrow(Critter& player, int hexX, int hexY, int, string@, array<int>@) // Export
+{
+    if(player.Param[ST_CLASS_ID] != CLASS_DEATHCLAW ||
+       Class_GetOption(uint(player.Param[ST_CLASS_OPTIONS]), 3) != CLASS_DEATHCLAW_MISC_BURROW)
+        return;
+    if(player.IsDead() || player.IsKnockout())
+    {
+        player.Say(SAY_NETMSG, "Burrow cannot be used while dead or knocked out.");
+        return;
+    }
+    Map@ map = player.GetMap();
+    if(!valid(map) || map.IsTurnBased())
+    {
+        player.Say(SAY_NETMSG, "Burrow can only be used on a real-time local map.");
+        return;
+    }
+    if(player.IsBusy())
+    {
+        player.Say(SAY_NETMSG, "Finish your current action before using Burrow.");
+        return;
+    }
+    if(player.Timeout[TO_CLASS_ABILITY] > 0)
+    {
+        int seconds = MAX(1, player.Timeout[TO_CLASS_ABILITY] / __TimeMultiplier);
+        player.Say(SAY_NETMSG, "Burrow is recharging. " + seconds + " seconds remaining.");
+        return;
+    }
+    if(hexX < 0 || hexY < 0 || hexX > 65535 || hexY > 65535)
+        return;
+    Class_TryDeathclawBurrow(player, uint16(hexX), uint16(hexY));
+}

@@ -188,6 +188,121 @@ class DeployBind : BaseBind
     }
 };
 
+bool ClassAbilityTargeting = false;
+int ClassAbilityTargetingClass = CLASS_NONE;
+int ClassAbilityPreviousCursor = CURSOR_DEFAULT;
+
+string ClassAbilityTargetingName()
+{
+    if(ClassAbilityTargetingClass == CLASS_PARAMEDIC)
+        return "Revive";
+    if(ClassAbilityTargetingClass == CLASS_DEATHCLAW)
+        return "Burrow";
+    return "Execution Mark";
+}
+
+void ClassAbilityCancelTargeting() // Export - client_io
+{
+    if(!ClassAbilityTargeting)
+        return;
+    ClassAbilityTargeting = false;
+    ClassAbilityTargetingClass = CLASS_NONE;
+    ChangeCursor(ClassAbilityPreviousCursor);
+}
+
+bool ClassAbilityMouseDown(int click) // Export - client_io
+{
+    if(!ClassAbilityTargeting)
+        return false;
+
+    if(click == MOUSE_CLICK_RIGHT)
+    {
+        string abilityName = ClassAbilityTargetingName();
+        ClassAbilityCancelTargeting();
+        Message(abilityName + " targeting cancelled.");
+        return true;
+    }
+    if(click != MOUSE_CLICK_LEFT)
+        return false;
+
+    if(ClassAbilityTargetingClass == CLASS_DEATHCLAW)
+    {
+        uint16 hexX = 0;
+        uint16 hexY = 0;
+        if(!GetMonitorHex(__MouseX, __MouseY, hexX, hexY))
+        {
+            Message("Burrow: select a destination hex.");
+            return true;
+        }
+        RunServerScriptUnsafe("classes@unsafe_TryDeathclawBurrow", hexX, hexY, 0, "", null);
+        ClassAbilityCancelTargeting();
+        return true;
+    }
+
+    CritterCl@ target = GetMonitorCritter(__MouseX, __MouseY);
+    if(!valid(target))
+    {
+        Message(ClassAbilityTargetingName() + ": select a critter.");
+        return true;
+    }
+
+    if(ClassAbilityTargetingClass == CLASS_PARAMEDIC)
+    {
+        CritterCl@ chosen = GetChosen();
+        if(!valid(chosen) || !target.IsPlayer() || !target.IsDead() || target.Id == chosen.Id)
+        {
+            Message("Revive: select another player's dead body.");
+            return true;
+        }
+
+        RunServerScriptUnsafe("classes@unsafe_QueueParamedicRevive", target.Id, 0, 0, "", null);
+        uint[] action = { CHOSEN_USE_SKL_ON_CRITTER, SK_FIRST_AID, target.Id, 0, 0, 0, 0 };
+        SetChosenActions(action);
+        ClassAbilityCancelTargeting();
+        return true;
+    }
+
+    RunServerScriptUnsafe("classes@unsafe_TryUseClassAbility", target.Id, 0, 0, "", null);
+    ClassAbilityCancelTargeting();
+    return true;
+}
+
+class ClassAbilityBind : BaseBind
+{
+    void Exec()
+    {
+        CritterCl@ chosen = GetChosen();
+        if(!valid(chosen) || chosen.Stat[ST_CLASS_ID] == CLASS_NONE)
+            return;
+
+        uint deathclawInstinct = chosen.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW ?
+                                 (uint(chosen.Stat[ST_CLASS_OPTIONS]) >> CLASS_OPTION_3_SHIFT) & CLASS_OPTION_VALUE_MASK : 0;
+        if(chosen.Stat[ST_CLASS_ID] == CLASS_MARKSMAN || chosen.Stat[ST_CLASS_ID] == CLASS_PARAMEDIC ||
+           (chosen.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW && deathclawInstinct == CLASS_DEATHCLAW_MISC_BURROW))
+        {
+            string abilityName = chosen.Stat[ST_CLASS_ID] == CLASS_PARAMEDIC ? "Revive" :
+                                 (chosen.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW ? "Burrow" : "Execution Mark");
+            if(ClassAbilityTargeting)
+            {
+                ClassAbilityCancelTargeting();
+                Message(abilityName + " targeting cancelled.");
+            }
+            else
+            {
+                ClassAbilityPreviousCursor = GetCurrentCursor();
+                ClassAbilityTargeting = true;
+                ClassAbilityTargetingClass = chosen.Stat[ST_CLASS_ID];
+                ChangeCursor(CURSOR_USE_SKILL);
+                Message(abilityName + (chosen.Stat[ST_CLASS_ID] == CLASS_PARAMEDIC ?
+                        ": select an allied player's body." : (chosen.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW ?
+                        ": select a free destination hex." : ": select an enemy.")));
+            }
+            return;
+        }
+        RunServerScriptUnsafe("classes@unsafe_TryUseClassAbility", 0, 0, 0, "", null);
+    }
+};
+
 // (Removed: the "U" Power Armor exit keybind. Leave the suit via Traps on yourself instead.)
 
 class DropallBind : BaseBind

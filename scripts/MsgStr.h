@@ -385,6 +385,11 @@
 #define STR_KILLS_DESC                  (4058)
 #define STR_TRAITS_DESC                 (4061)
 
+#define STR_CLASS_TITLE_NAME            (4200)
+#define STR_CLASS_TITLE_DESC            (4201)
+#define STR_CLASS_NAME                  # (classId) (4208 + (classId) * 2)
+#define STR_CLASS_DESC                  # (classId) (4209 + (classId) * 2)
+
 #define STR_GAIN_LEVELUP				(4090)
 #define STR_GAIN_EXPERIENCE				(4091)
 

@@ -17,6 +17,58 @@ import int GUI_GetActiveScreen() from "client_gui";
 import bool IsHexInSmoke(uint16 hexX, uint16 hexY) from "client_interface";
 
 array<CritterCl@> crs;
+uint[] ClassExecutionMarkTargets;
+int[] ClassExecutionMarkHp;
+uint[] ClassExecutionMarkExpires;
+
+int Class_FindExecutionMark(uint targetId)
+{
+	for(uint i = 0; i < ClassExecutionMarkTargets.length(); i++)
+		if(ClassExecutionMarkTargets[i] == targetId)
+			return int(i);
+	return -1;
+}
+
+void Class_ShowExecutionMark(int targetId, int executeHp, int duration, string@, array<int>@) // Export
+{
+	if(targetId <= 0 || executeHp <= 0 || duration <= 0)
+		return;
+	int index = Class_FindExecutionMark(uint(targetId));
+	if(index < 0)
+	{
+		ClassExecutionMarkTargets.insertLast(uint(targetId));
+		ClassExecutionMarkHp.insertLast(executeHp);
+		ClassExecutionMarkExpires.insertLast(ELAPSED_TIME + uint(duration));
+		return;
+	}
+	ClassExecutionMarkHp[index] = executeHp;
+	ClassExecutionMarkExpires[index] = ELAPSED_TIME + uint(duration);
+}
+
+void Class_HideExecutionMark(int targetId, int, int, string@, array<int>@) // Export
+{
+	int index = Class_FindExecutionMark(uint(MAX(0, targetId)));
+	if(index < 0)
+		return;
+	ClassExecutionMarkTargets.removeAt(index);
+	ClassExecutionMarkHp.removeAt(index);
+	ClassExecutionMarkExpires.removeAt(index);
+}
+
+int Class_GetExecutionMarkHp(uint targetId)
+{
+	int index = Class_FindExecutionMark(targetId);
+	if(index < 0)
+		return 0;
+	if(ClassExecutionMarkExpires[index] <= ELAPSED_TIME)
+	{
+		ClassExecutionMarkTargets.removeAt(index);
+		ClassExecutionMarkHp.removeAt(index);
+		ClassExecutionMarkExpires.removeAt(index);
+		return 0;
+	}
+	return ClassExecutionMarkHp[index];
+}
 
 void InitCritterOnHead()	//export
 {
@@ -116,6 +168,35 @@ void DrawCritterOnHead()	//export
 		// Deploy marker - shown to everyone, regardless of awareness settings.
 		if(crs[i].Param[ST_DEPLOYED] != 0)
 			name = name + "\n|" + COLOR_RGB(255, 160, 0) + " [Deployed]";
+
+		// Prepared Shot marker - replicated class state, visible like Deployed.
+		if(crs[i].Param[ST_CLASS_ID] == CLASS_MARKSMAN &&
+		   crs[i].Param[ST_CLASS_EFFECT] == CLASS_EFFECT_MARKSMAN_PREPARED)
+			name = name + "\n|" + COLOR_RGB(230, 184, 64) + " [Prepared]";
+
+		if(crs[i].Param[ST_CLASS_ID] == CLASS_PARAMEDIC &&
+		   crs[i].Param[ST_CLASS_EFFECT] == CLASS_EFFECT_PARAMEDIC_REVIVING)
+			name = name + "\n|" + COLOR_RGB(72, 192, 232) + " [Reviving]";
+
+		if(crs[i].Param[ST_CLASS_ID] == CLASS_SUPER_MUTANT &&
+		   crs[i].Param[ST_CLASS_EFFECT] == CLASS_EFFECT_SUPER_MUTANT_FEV_RUSH)
+			name = name + "\n|" + COLOR_RGB(80, 220, 80) + " [FEV Rush]";
+
+		if(crs[i].Param[ST_CLASS_ID] == CLASS_DEATHCLAW)
+		{
+			if(crs[i].Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_BURROWING)
+				name = name + "\n|" + COLOR_RGB(170, 120, 70) + " [Burrowing]";
+			else if(crs[i].Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_UNDERGROUND)
+				name = name + "\n|" + COLOR_RGB(110, 80, 50) + " [Underground]";
+			else if(crs[i].Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RAGE)
+				name = name + "\n|" + COLOR_RGB(220, 55, 35) + " [Rage]";
+			else if(crs[i].Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RECOVERY)
+				name = name + "\n|" + COLOR_RGB(190, 135, 75) + " [Emerging]";
+		}
+
+		int executionHp = Class_GetExecutionMarkHp(crs[i].Id);
+		if(executionHp > 0)
+			name = name + "\n|" + COLOR_RGB(230, 64, 48) + " [Execution <= " + executionHp + " HP]";
 
 		
 

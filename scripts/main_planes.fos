@@ -18,6 +18,7 @@
 #include "traps_h.fos"
 #include "npc_roles_h.fos"
 #include "companion.fos"
+#include "classes_h.fos"
 
 
 import int  RawToHit(Critter& cr, Critter& target, ProtoItem@ weapon, uint8 weaponUse, ProtoItem@ ammo) from "combat";
@@ -443,13 +444,13 @@ void RamIntoCritter(Critter& npc, uint targetId, bool returnHome)
         npc.SetDir(_TurnAround(dir));
         _CritAnimatePunch(npc);
 
-        int ramForce = Random(-2, 2) + npc.StatBase[ST_MELEE_DAMAGE] + npc.StatBase[ST_STRENGTH] - target.StatBase[ST_STRENGTH];
+        int ramForce = Random(-2, 2) + npc.Stat[ST_MELEE_DAMAGE] + npc.Stat[ST_STRENGTH] - target.Stat[ST_STRENGTH];
         if(ramForce < -2)
             npc.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(Random(0, 1) == 0), 4, npc.HexX, npc.HexY);
         if(ramForce > -4)
             target.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(Random(0, 1) == 0), 8, target.HexX, target.HexY);
         if(ramForce > 0)
-            target.StatBase[ST_CURRENT_HP] -= ramForce;
+            target.StatBase[ST_CURRENT_HP] -= Class_ApplyIncomingDamage(target, ramForce);
 
         if(returnHome)
         {

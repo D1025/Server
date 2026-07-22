@@ -320,11 +320,47 @@ void changedParam_UnspentPerks(CritterCl& cr, uint, int oldValue)   // client
 
     if(cr.ParamBase[ST_UNSPENT_PERKS] > 0 && GUI_GetActiveScreen() == CLIENT_SCREEN_CHARACTER)
         ShowScreen(CLIENT_SCREEN_PERK, 0, 0, 0);
+    else if(oldValue > 0 && cr.ParamBase[ST_UNSPENT_PERKS] == 0 && cr.Stat[ST_LEVEL] >= CLASS_SELECTION_LEVEL)
+    {
+        uint options = uint(cr.ParamBase[ST_CLASS_OPTIONS]);
+        bool classPending = cr.ParamBase[ST_CLASS_ID] == CLASS_NONE ||
+                            (cr.ParamBase[ST_CLASS_ID] == CLASS_DEATHCLAW &&
+                             (((options >> CLASS_OPTION_1_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0 ||
+                              ((options >> CLASS_OPTION_2_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0 ||
+                              ((options >> CLASS_OPTION_3_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0));
+        if(classPending)
+            ShowScreen(CLIENT_SCREEN_PERK, 0, 0, 0);
+    }
 }
 
 void changedParam_UnspentTag(CritterCl& cr, uint, int oldValue)   // client
 {
     
+}
+
+void changedParam_ClassSelection(CritterCl& cr, uint, int) // client
+{
+    if(!cr.IsChosen() || cr.Stat[ST_LEVEL] < CLASS_SELECTION_LEVEL)
+        return;
+
+    uint options = uint(cr.ParamBase[ST_CLASS_OPTIONS]);
+    bool pendingDeathclaw = (cr.ParamBase[ST_CLASS_ID] == CLASS_NONE &&
+                             ((options >> CLASS_OPTION_4_SHIFT) & CLASS_OPTION_VALUE_MASK) == CLASS_DEATHCLAW_PENDING_MARKER) ||
+                            (cr.ParamBase[ST_CLASS_ID] == CLASS_DEATHCLAW &&
+                             (((options >> CLASS_OPTION_1_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0 ||
+                              ((options >> CLASS_OPTION_2_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0 ||
+                              ((options >> CLASS_OPTION_3_SHIFT) & CLASS_OPTION_VALUE_MASK) == 0));
+    bool completeDeathclaw = cr.ParamBase[ST_CLASS_ID] == CLASS_DEATHCLAW &&
+                             ((options >> CLASS_OPTION_1_SHIFT) & CLASS_OPTION_VALUE_MASK) != 0 &&
+                             ((options >> CLASS_OPTION_2_SHIFT) & CLASS_OPTION_VALUE_MASK) != 0 &&
+                             ((options >> CLASS_OPTION_3_SHIFT) & CLASS_OPTION_VALUE_MASK) != 0;
+    if(completeDeathclaw && cr.ParamBase[ST_UNSPENT_PERKS] == 0 && GUI_GetActiveScreen() == CLIENT_SCREEN_PERK)
+    {
+        ShowScreen(CLIENT_SCREEN_NONE, 0, 0, 0);
+        return;
+    }
+    if(pendingDeathclaw)
+        ShowScreen(CLIENT_SCREEN_PERK, 0, 0, 0);
 }
 
 void changedParam_Hide(CritterCl& cr, uint, int oldValue)   // client

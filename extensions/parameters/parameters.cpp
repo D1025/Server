@@ -140,6 +140,46 @@ int GetUtilityParamBonus(CritterMutual& cr, uint param)
     return utility->Proto->Utility_Value;
 }
 
+static uint GetClassOption(CritterMutual& cr, uint slot)
+{
+    return ((uint)cr.Params[ST_CLASS_OPTIONS] >> ((slot - 1) * 8)) & 0xFF;
+}
+
+static bool IsDeathclaw(CritterMutual& cr)
+{
+    return cr.Params[ST_CLASS_ID] == CLASS_DEATHCLAW;
+}
+
+static int GetDeathclawNaturalDR(int damageType)
+{
+    switch(damageType)
+    {
+    case DAMAGE_NORMAL:  return 30;
+    case DAMAGE_LASER:   return 40;
+    case DAMAGE_FIRE:    return 25;
+    case DAMAGE_PLASMA:  return 35;
+    case DAMAGE_ELECTR:  return 30;
+    case DAMAGE_EMP:     return 500;
+    case DAMAGE_EXPLODE: return 30;
+    default: return 0;
+    }
+}
+
+static int GetDeathclawNaturalDT(int damageType)
+{
+    switch(damageType)
+    {
+    case DAMAGE_NORMAL:  return 5;
+    case DAMAGE_LASER:   return 4;
+    case DAMAGE_FIRE:    return 3;
+    case DAMAGE_PLASMA:  return 4;
+    case DAMAGE_ELECTR:  return 3;
+    case DAMAGE_EMP:     return 0;
+    case DAMAGE_EXPLODE: return 4;
+    default: return 0;
+    }
+}
+
 static bool IsHealingItemWithExtraApCost(const Item& item)
 {
 	switch(item.GetProtoId())
@@ -378,7 +418,10 @@ EXPORT int getParam_Luck(CritterMutual& cr, uint)
 
 EXPORT int getParam_Skill(CritterMutual& cr, uint index)
 {
-	return cr.Params[index] + GetUtilityParamBonus(cr, index);
+	int value = cr.Params[index] + GetUtilityParamBonus(cr, index);
+	if(index == SK_SNEAK && IsDeathclaw(cr) && GetClassOption(cr, 2) == CLASS_DEATHCLAW_HIDE_CHAMELEON)
+		value += min(75, getParam_Agility(cr, 0) * 5);
+	return value;
 }
 
 EXPORT int getParam_Hp(CritterMutual& cr, uint)
@@ -413,7 +456,13 @@ EXPORT int getParam_HpRl(CritterMutual& cr, uint)
 
 EXPORT int getParam_MaxLife(CritterMutual& cr, uint)
 {
-	int val = cr.Params[ST_MAX_LIFE] + CLAMP(cr.Params[ST_LEVEL], 0, 30)* getParam_Endurance(cr, 0)/2 + cr.Params[ST_MAX_LIFE_EXT];
+	int level = CLAMP(cr.Params[ST_LEVEL], 0, 30);
+	int endurance = getParam_Endurance(cr, 0);
+	int val;
+	if (cr.Params[ST_CLASS_ID] == CLASS_SUPER_MUTANT)
+		val = cr.Params[ST_MAX_LIFE] + level * (getParam_Strength(cr, 0) + endurance) / 2 + cr.Params[ST_MAX_LIFE_EXT];
+	else
+		val = cr.Params[ST_MAX_LIFE] + level * endurance / 2 + cr.Params[ST_MAX_LIFE_EXT];
 	return CLAMP(val, 1, 9999);
 }
 
@@ -448,6 +497,8 @@ EXPORT int getParam_Ap(CritterMutual& cr, uint)
 EXPORT int getParam_ApRegeneration(CritterMutual& cr, uint)
 {
 	int val = 100 + cr.Params[ST_AP_REGENERATION];
+	if (cr.Params[ST_CLASS_ID] == CLASS_SOLDIER)
+		val += CLASS_SOLDIER_REGEN_BONUS;
 	int utilityValue = GetUtilityParamBonus(cr, ST_AP_REGENERATION);
 	if (utilityValue > 0)
 		val += getParam_Agility(cr, 0) * utilityValue;
@@ -502,6 +553,11 @@ EXPORT int getParam_HealingRate(CritterMutual& cr, uint)
 	int val = cr.Params[ST_HEALING_RATE] + cr.Params[ST_HEALING_RATE_EXT] + 3 * getParam_Charisma(cr, 0);
 
 	if(cr.Params[TRAIT_FAST_METABOLISM]) val += 10;
+	if(cr.Params[ST_CLASS_ID] == CLASS_SUPER_MUTANT)
+	{
+		val = max(val, 0);
+		val = (val * (100 + 3 * getParam_Luck(cr, 0)) + 50) / 100;
+	}
 
 	// Legacy armor healing-rate upgrade disabled.
 
@@ -528,6 +584,12 @@ int GetRunningAc(CritterMutual& cr)
 {
 	int val = cr.Params[ST_ARMOR_CLASS] + cr.Params[ST_ARMOR_CLASS_EXT];
 	val += getParam_Agility(cr, 0);
+	if(IsDeathclaw(cr))
+	{
+		val += CLASS_DEATHCLAW_BASE_AC;
+		if(GetClassOption(cr, 2) == CLASS_DEATHCLAW_HIDE_EVASIVE)
+			val += min(30, getParam_Agility(cr, 0) * 3);
+	}
 
 	const Item* activeWeapon = cr.ItemSlotMain;
 	if(activeWeapon->IsWeapon() && activeWeapon->Proto->WeaponHasPerk(WEAPON_PERK_GUARDED_STANCE))
@@ -546,7 +608,14 @@ int GetRunningAc(CritterMutual& cr)
 	const Item* armor = cr.ItemSlotArmor;
 	if(armor->GetId() && armor->IsArmor()) val += armor->Proto->Armor_AC + checkBonus(armor, BONUS_ARMOR_AC);
 
-	return CLAMP(val, 0, 95);
+	return IsDeathclaw(cr) ? CLAMP(val, -95, 95) : CLAMP(val, 0, 95);
+}
+
+static int ApplyDeathclawRageAc(CritterMutual& cr, int value)
+{
+	if(IsDeathclaw(cr) && cr.Params[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RAGE && value > 0)
+		value /= 2;
+	return CLAMP(value, -95, 95);
 }
 
 EXPORT int getParam_Ac(CritterMutual& cr, uint)
@@ -554,10 +623,13 @@ EXPORT int getParam_Ac(CritterMutual& cr, uint)
 	if(!IsRunning(cr))
 	{
 		int StandingAC = GetRunningAc(cr);
-		return StandingAC; // todo: turn based
+		return ApplyDeathclawRageAc(cr, StandingAC); // todo: turn based
 	}
 	// if(!IsRunning(cr)) return 0; // todo: turn based
-	return GetRunningAc(cr) + (cr.Params[PE_LIVEWIRE] ? getParam_Agility(cr, 0) : 0);
+	int value = GetRunningAc(cr);
+	if(!IsDeathclaw(cr) && cr.Params[PE_LIVEWIRE])
+		value += getParam_Agility(cr, 0);
+	return ApplyDeathclawRageAc(cr, value);
 }
 
 EXPORT int getParam_DamageResistance(CritterMutual& cr, uint index)
@@ -700,11 +772,11 @@ EXPORT int Critter_GetAC(CritterMutual& cr)
 	if(!IsRunning(cr))
 	{
 		int StandingAC = GetRunningAc(cr);
-		return StandingAC; // todo: turn based
+		return ApplyDeathclawRageAc(cr, StandingAC); // todo: turn based
 	}
 	
 	// if(!IsRunning(cr)) return 0; // todo: turn based
-	return GetRunningAc(cr);
+	return ApplyDeathclawRageAc(cr, GetRunningAc(cr));
 }
 
 EXPORT int Critter_GetDR(CritterMutual& cr, uint dmgType)
@@ -854,7 +926,9 @@ uint GetAttackDistantion(CritterMutual& cr, Item& item, uint8 mode)
 		if(IsGrenadeAttack(item, use))
 			dist += 3 * getArmorPerkStacks(cr.ItemSlotArmor, ARMOR_PERK_GRENADIER_RIG);
 	}
-	if(cr.Params[MODE_RANGE_HTH]) dist += cr.Params[MODE_RANGE_HTH]; // reach for HtH weapons AND creature natural attacks (value-based; 1 = classic +1)
+	if(cr.Params[MODE_RANGE_HTH] &&
+	   (cr.Params[ST_CLASS_ID] != CLASS_DEATHCLAW || item.Proto->Weapon_Skill[use] == SKILL_OFFSET(SK_CLOSE_COMBAT)))
+		dist += cr.Params[MODE_RANGE_HTH]; // Deathclaw Long Claws never extend grenade range.
 	dist += GetMultihex(cr);
 	dist += dist * checkBonus(item, UPGRADE_WEAPON_PERK_INCREASED_RANGE) / 100;
 	if(item.Proto->WeaponHasPerk(WEAPON_PERK_SCOPE_RANGE) && cr.Params[PE_SHARPSHOOTER])
@@ -1012,6 +1086,15 @@ int GetArmoredDR(CritterMutual& cr, int dmgType, const Item* armor)
 			val += (armor->GetDeteriorationProc()!=100)?drVal:0;
 	}
 
+	if(IsDeathclaw(cr))
+	{
+		val += GetDeathclawNaturalDR(dmgType);
+		if(dmgType != DAMAGE_EMP && GetClassOption(cr, 2) == CLASS_DEATHCLAW_HIDE_HARDENED)
+			val += min(20, getParam_Endurance(cr, 0) * 2);
+		if(dmgType != DAMAGE_EMP && cr.Params[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RAGE)
+			val = val * 85 / 100;
+	}
+
 	if(dmgType == DAMAGE_EMP) return CLAMP(val, 0, 999);
 	return CLAMP(val, 0, 90);
 }
@@ -1039,6 +1122,13 @@ int GetArmoredDT(CritterMutual& cr, int dmgType, const Item* armor)
 			val += dtVal;
 		else
 			val += (armor->GetDeteriorationProc()!=100)?dtVal:0;
+	}
+
+	if(IsDeathclaw(cr))
+	{
+		val += GetDeathclawNaturalDT(dmgType);
+		if(dmgType != DAMAGE_EMP && GetClassOption(cr, 2) == CLASS_DEATHCLAW_HIDE_HARDENED)
+			val += min(5, getParam_Endurance(cr, 0) / 3);
 	}
 
 	return CLAMP(val, 0, 999);
@@ -1186,11 +1276,12 @@ EXPORT bool Critter_IsMoving(Critter& cr)
 
 bool IsRunning(CritterMutual& cr)
 {
+	if(!FOnline->CritterTypes[cr.BaseType].CanRun) return false;
 	if(getParam_Timeout(cr,TO_BATTLE)>100000) return cr.Params[ST_TURN_BASED_AC]>0;
 #ifdef __SERVER
-	return Critter_IsMoving(cr) && (cr.IsRuning || !FOnline->CritterTypes[cr.BaseType].CanRun);
+	return Critter_IsMoving(cr) && cr.IsRuning;
 #endif
 #ifdef __CLIENT
-	return cr.MoveSteps.size() && (cr.IsRuning || !FOnline->CritterTypes[cr.BaseType].CanRun);
+	return cr.MoveSteps.size() && cr.IsRuning;
 #endif
 }

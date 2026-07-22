@@ -639,6 +639,42 @@
 {4115}{}{Next Level: %d}
 
 #
+# Player classes
+#
+{4200}{}{Class}
+{4201}{}{A permanent specialization chosen once after reaching level 40.}
+{4208}{}{Unselected}
+{4209}{}{No class has been selected. Class selection becomes available at level 40.}
+{4210}{}{Soldier}
+{4211}{}{A versatile combatant. Regenerates AP 20% faster and can restore up to 10 AP with Combat Rush.}
+{4212}{}{Super Mutant}
+{4213}{}{A walking-only mutant with Strength-and-Endurance HP scaling and Luck-enhanced Healing Rate. Can wear Leather and Metal armor, each with its own mutant appearance. FEV Rush reduces final incoming damage by 40% for 8 seconds.}
+{4214}{}{Marksman}
+{4215}{}{After 2 seconds without moving, gains a Prepared Shot: +20 accuracy and +30% final damage with a qualifying single shot from at least 8 hexes. Execution Mark exposes a target to team execution for 20 seconds.}
+{4216}{}{Deathclaw}
+{4217}{}{An unarmored predator. Choose one claw, hide and instinct upgrade. Hardened Scales use the classic Deathclaw body; Evasive or Chameleon Hide use the Desert Stalker body.}
+{4218}{}{Paramedic}
+{4219}{}{A support specialist. First Aid and Doctor route their first cooldown to a fresh patient; Revive restores a nearby allied player after a 4-second channel.}
+{4220}{}{Long Claws}
+{4221}{}{Natural and melee attacks gain 1 hex of reach.}
+{4222}{}{Venomous Claws}
+{4223}{}{A successful direct melee hit that deals damage applies 8 poison, reduced normally by poison resistance.}
+{4224}{}{Mutilating Claws}
+{4225}{}{Called direct melee attacks deal 50% more damage to the targeted limb without increasing main HP damage.}
+{4226}{}{Hardened Scales}
+{4227}{}{Gain DT and DR based on Endurance against every damage type except EMP. Uses the classic Deathclaw body.}
+{4228}{}{Evasive Hide}
+{4229}{}{Gain up to 30 Armor Class based on Agility. Uses the Desert Stalker body.}
+{4230}{}{Chameleon Hide}
+{4231}{}{Gain up to 75 Sneak based on Agility. Uses the Desert Stalker body.}
+{4232}{}{Burrow}
+{4233}{}{Choose a free hex within 60 tiles. After 2 seconds you burrow and travel underground in a straight line for 3 seconds, then visibly emerge for 1 second. Cooldown: 90 seconds.}
+{4234}{}{Rage}
+{4235}{}{For 10 seconds gain 25% direct melee damage and 20% movement speed, but lose positive AC and non-EMP resistance. Cooldown: 60 seconds.}
+{4236}{}{Predator's Camouflage}
+{4237}{}{Sneak may be forced while a hostile player is watching. Only a forced entry starts the 45-second class cooldown.}
+
+#
 # Damage info texts
 #
 

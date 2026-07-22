@@ -29,6 +29,11 @@ array<BindList> bindlists;
 dictionary      KeyMap;
 dictionary      KeyMapRaw;
 
+// Mouse buttons use their own slots; keyboard input occupies byte-sized DIK codes.
+#define BIND_MOUSE_BUTTON_4  (256)
+#define BIND_MOUSE_BUTTON_5  (257)
+#define BIND_INPUT_COUNT     (258)
+
 uint8           CurrentAim = HIT_LOCATION_UNCALLED;
 
 uint8 GetCurrentAim() // export
@@ -79,6 +84,20 @@ bool AddAimBind(string& cfgkey, uint8 num)
 
 bool ProcessBind(uint8 key)   // export
 {
+    return ProcessBindIndex(key);
+}
+
+bool ProcessMouseBind(int click) // export
+{
+    if(click == MOUSE_CLICK_EXT0)
+        return ProcessBindIndex(BIND_MOUSE_BUTTON_4);
+    if(click == MOUSE_CLICK_EXT1)
+        return ProcessBindIndex(BIND_MOUSE_BUTTON_5);
+    return false;
+}
+
+bool ProcessBindIndex(uint key)
+{
     int mainScreen = GUI_GetActiveMainScreen();
     int screen = GUI_GetActiveScreen();
     if(mainScreen == CLIENT_MAIN_SCREEN_REGISTRATION ||
@@ -86,13 +105,15 @@ bool ProcessBind(uint8 key)   // export
        screen == CLIENT_SCREEN_SAY /*||
                                       screen == CLIENT_SCREEN_INPUT_BOX*/)
         return false;
+    if(key >= bindlists.length())
+        return false;
     return bindlists[key].TryRun();
 }
 
 bool InitBinds() // export
 {
     InitKeyMap();
-    bindlists.resize(255);
+    bindlists.resize(BIND_INPUT_COUNT);
     bool ret = true;
     ret = ret && InitGMBinds();
     ret = ret && InitAimBinds();
@@ -113,6 +134,7 @@ bool InitBinds() // export
     ret = ret && InitCenterChosenBind();
 	ret = ret && InitRepairAtHexBind();
     ret = ret && InitDeployBind();
+    ret = ret && InitClassAbilityBind();
     return ret;
 }
 
@@ -254,6 +276,15 @@ bool InitDeployBind()
     DeployBind bnd;
     if(!valid(s))
         return TryAddBind("Y", bnd);
+    return TryAddBind(s, bnd);
+}
+
+bool InitClassAbilityBind()
+{
+    string@ s = GetConfigValue(CONFIG_FILE, "Bindings", "ClassAbility");
+    ClassAbilityBind bnd;
+    if(!valid(s))
+        return TryAddBind("K", bnd);
     return TryAddBind(s, bnd);
 }
 
@@ -431,6 +462,12 @@ void InitKeyMap()
     KeyMapRaw.set("Num *", DIK_MULTIPLY);
     KeyMapRaw.set("Num -", DIK_SUBTRACT);
     KeyMapRaw.set("Num +", DIK_ADD);
+    // FATConfig displays spaces and persists them as underscores.
+    KeyMapRaw.set("Mouse_Button_4", BIND_MOUSE_BUTTON_4);
+    KeyMapRaw.set("Mouse_Button_5", BIND_MOUSE_BUTTON_5);
+    // Compact aliases are accepted for manually edited configurations.
+    KeyMapRaw.set("Mouse4", BIND_MOUSE_BUTTON_4);
+    KeyMapRaw.set("Mouse5", BIND_MOUSE_BUTTON_5);
 
     KeyMap.set("DIK_ESCAPE", DIK_ESCAPE);
     KeyMap.set("DIK_1", DIK_1);

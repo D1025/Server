@@ -18,6 +18,7 @@
 #include "backend_h.fos"
 #include "broadcast_h.fos"
 #include "caravans_h.fos"
+#include "classes_h.fos"
 #include "config_h.fos"
 #include "config_file_h.fos"
 #include "critter_age_h.fos"
@@ -265,6 +266,9 @@ bool start()
     // Agility
     SetSendParameter(ST_AGILITY, true);
     SetSendParameter(ST_AGILITY_EXT, true);
+    SetSendParameter(ST_CLASS_ID, true);
+    SetSendParameter(ST_CLASS_OPTIONS, true);
+    SetSendParameter(ST_CLASS_EFFECT, true);
     // Hit points, uses Strenght and Endurance
     SetSendParameter(ST_MAX_LIFE, true, "Utils.dll@_AllowParameterIfAwareness");
     SetSendParameter(ST_MAX_LIFE_EXT, true, "Utils.dll@_AllowParameterIfAwareness");
@@ -2950,6 +2954,12 @@ bool critter_use_item(Critter& cr, Item& item, Critter@ targetCr, Item@ targetIt
 //
 bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetItem, Scenery@ targetScen)
 {
+    // Revive reuses the ordinary First Aid chosen action so the engine walks the
+    // Paramedic to the selected body before the class channel begins.
+    if(skill == SK_FIRST_AID && valid(targetCr) && !valid(targetItem) && !valid(targetScen) &&
+       Class_TryUseQueuedParamedicRevive(cr, targetCr))
+        return true;
+
     if(skill == SK_FIRST_AID && !valid(targetItem) && !valid(targetScen) && cr.Timeout[TO_SK_FIRST_AID] > 0)
     {
         if(!valid(targetCr))
@@ -3378,6 +3388,11 @@ bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetIt
                                 continue;
                         }
                     }
+                    if(Class_TryForceDeathclawSneak(cr))
+                    {
+                        cr.ModeBase[MODE_HIDE] = 1;
+                        return true;
+                    }
                     cr.Say(SAY_NETMSG, "You can't enter sneak while being seen by players who aren't in your team, unless they are sneaking.");
                     return true;
                 }
@@ -3642,6 +3657,7 @@ void critter_init(Critter& cr, bool firstTime)
 	speedboost(cr);
     cr.ClearExtEvents();
     CleanupDeploy(cr); // Deploy must never persist across a session/login
+    Class_Initialize(cr, firstTime);
 
     if(MustInitWalkProcessing)
     {
@@ -4131,6 +4147,7 @@ uint e_CritterInit_XFire(array<int>@ data)
 
 void critter_finish(Critter& cr, bool toDelete)
 {
+	Class_OnFinish(cr);
 	speedboost(cr);
     ClearAttackReactionCache(cr);
     speedboost_forget(cr);
@@ -4413,6 +4430,7 @@ void TryUndeployNpc(Critter& cr)
 
 void critter_idle(Critter& cr)
 {
+	Class_OnIdle(cr);
 	speedboost(cr);
     TrySmokeEvade(cr);
     TryClearDeployLine(cr);
@@ -4659,6 +4677,7 @@ void critter_dead(Critter& cr, Critter@ killer)
     //if(!valid(cr) || !valid(killer))
 		//return;
 
+	Class_OnDeath(cr);
 	CleanupDeploy(cr); // Clear deploy flag / movement lock on death
 	// A power-armored PLAYER keeps the suit on the corpse: it drops to the ground only when the body
 	// vanishes (respawn / corpse deletion) or someone uses Traps on the dead body. True NPCs never
@@ -4963,6 +4982,7 @@ uint e_DeathSpeech(array<uint>@ values)
 // Call on something critter reswapned.
 void critter_respawn(Critter& cr)
 {
+	Class_OnRespawn(cr);
 	speedboost(cr);
     if(cr.Stat[ST_DEAD_BLOCKER_ID] != 0)
     {
@@ -5182,6 +5202,7 @@ uint e_refresh_fov( uint[] @ values )
 // Call on something critter out from map.
 void map_critter_out(Map& map, Critter& cr)
 {
+	Class_OnMapChange(cr);
 	speedboost(cr);
     RemoveArenaItems(cr);
 
@@ -5684,6 +5705,15 @@ void player_levelup(Critter& player, uint skillIndex, uint skillUp, uint perkInd
             player.SkillBase[skillIndex] = skillVal;
             player.StatBase[ST_UNSPENT_SKILL_POINTS] -= needPoints;
         }
+    }
+    else if(perkIndex >= CLASS_SELECTION_BEGIN && perkIndex <= CLASS_SELECTION_END)
+    {
+        Class_TrySelect(player, int(perkIndex) - CLASS_SELECTION_CODE_BASE);
+    }
+    else if(perkIndex >= CLASS_OPTION_SELECTION_BEGIN && perkIndex <= CLASS_OPTION_SELECTION_END)
+    {
+        Class_TrySelectOption(player, int((perkIndex - CLASS_OPTION_SELECTION_CODE_BASE) / 10),
+                              int((perkIndex - CLASS_OPTION_SELECTION_CODE_BASE) % 10));
     }
     else if(perkIndex >= PERK_BEGIN && perkIndex <= PERK_END)
     {

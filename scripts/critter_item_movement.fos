@@ -44,6 +44,60 @@ bool _IsPoweredBodyArmor(Item@ item)
            (item.Proto.Armor_Perk == ARMOR_PERK_POWERED || item.Proto.Armor_Perk_2 == ARMOR_PERK_POWERED || item.Proto.Armor_Perk_3 == ARMOR_PERK_POWERED);
 }
 
+// Super Mutants receive armor stats from these families and use their matching mutant sprite.
+// Kept client-safe so inventory prediction and authoritative server validation agree.
+bool _IsSuperMutantLeatherArmor(Item@ item)
+{
+    if(!valid(item) || item.GetType() != ITEM_TYPE_ARMOR || item.Proto.Slot != SLOT_ARMOR)
+        return false;
+
+    uint armorPid = item.GetProtoId();
+    return armorPid == PID_LEATHER_JACKET || armorPid == PID_CURED_LEATHER_ARMOR ||
+           armorPid == PID_LEATHER_ARMOR || armorPid == PID_LEATHER_ARMOR_MK_II;
+}
+
+bool _IsSuperMutantMetalArmor(Item@ item)
+{
+    if(!valid(item) || item.GetType() != ITEM_TYPE_ARMOR || item.Proto.Slot != SLOT_ARMOR)
+        return false;
+
+    uint armorPid = item.GetProtoId();
+    return armorPid == PID_METAL_ARMOR || armorPid == PID_METAL_ARMOR_MK_II;
+}
+
+bool _IsSuperMutantArmor(Item@ item)
+{
+    return _IsSuperMutantLeatherArmor(item) || _IsSuperMutantMetalArmor(item);
+}
+
+uint _GetSuperMutantCrType(Item@ armor)
+{
+    if(_IsSuperMutantLeatherArmor(armor))
+        return CRTYPE_MUTANT_LEATHER;
+    if(_IsSuperMutantMetalArmor(armor))
+        return CRTYPE_MUTANT_METAL;
+    return CRTYPE_MUTANT;
+}
+
+bool _IsDeathclawWeapon(Item@ item)
+{
+    if(!valid(item) || item.GetType() != ITEM_TYPE_WEAPON)
+        return true;
+
+    uint activeUses = item.Proto.Weapon_ActiveUses;
+    for(uint use = 0; use < 3; use++)
+    {
+        if((activeUses & (1 << use)) == 0)
+            continue;
+        int skill = _WeaponSkill(item.Proto, use);
+        int damageType = _WeaponDmgType(item.Proto, use);
+        if(skill == SK_CLOSE_COMBAT ||
+           (skill == SK_THROWING && (damageType == DAMAGE_PLASMA || damageType == DAMAGE_EMP || damageType == DAMAGE_EXPLODE)))
+            return true;
+    }
+    return false;
+}
+
 // True for a weapon carrying the Deploy proto perk (same fields WeaponProtoPerkStacks checks).
 bool _IsDeployWeapon(Item@ item)
 {
@@ -173,15 +227,24 @@ bool critter_check_move_item(Critter& cr, Item& item, uint8 toSlot, Item@ itemSw
         return false;
 
     // Weapon animation
+    if((toSlot == SLOT_HAND1 || toSlot == SLOT_HAND2) && cr.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW && !_IsDeathclawWeapon(item))
+        return false;
+
     if(toSlot == SLOT_HAND1)
     {
-        if(item.GetType() == ITEM_TYPE_WEAPON && !IsCritterAnim1(cr.CrType, item.Proto.Weapon_Anim1))
+        if(item.GetType() == ITEM_TYPE_WEAPON && cr.Stat[ST_CLASS_ID] != CLASS_DEATHCLAW &&
+           !IsCritterAnim1(cr.CrType, item.Proto.Weapon_Anim1))
             return false;
     }
 
     // Armor animation
     if(toSlot == SLOT_ARMOR)
     {
+        if(cr.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW)
+            return false;
+        if(cr.Stat[ST_CLASS_ID] == CLASS_SUPER_MUTANT)
+            return _IsSuperMutantArmor(item);
+
         bool can = true;
         if(item.GetType() != ITEM_TYPE_ARMOR || item.Proto.Slot != SLOT_ARMOR)
         {
@@ -324,7 +387,13 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
     // Armor changing
     if(item.GetType() == ITEM_TYPE_ARMOR && (fromSlot == SLOT_ARMOR || toSlot == SLOT_ARMOR))
     {
-        if(GetCritterAnimType(cr.CrType) != ANIM_TYPE_3D)
+        if(cr.Stat[ST_CLASS_ID] == CLASS_SUPER_MUTANT)
+        {
+            uint crType = _GetSuperMutantCrType(cr.GetItem(0, SLOT_ARMOR));
+            if(cr.CrType != crType)
+                cr.ChangeCrType(crType);
+        }
+        else if(GetCritterAnimType(cr.CrType) != ANIM_TYPE_3D)
         {
             // Default dude
             bool isMale = (cr.Stat[ST_GENDER] == GENDER_MALE);
@@ -505,8 +574,7 @@ void critter_move_item(Critter& cr, Item& item, uint8 fromSlot)
 
 int GetMaxLife(Critter& cr)
 {
-    int val = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT]) / 2;
-    return CLAMP(val, 1, 9999);
+    return CLAMP(cr.Stat[ST_MAX_LIFE], 1, 9999);
 }
 
 uint GetKiloOfCocaineStage(Critter& cr)
@@ -551,7 +619,8 @@ void speedboost(Critter& cr)
     uint weapon2Pid = valid(weapon2) ? weapon2.ProtoId : 0;
     string state = "" + skill + "|" + penalty + "|" + armorPid + "|" + weapon1Pid + "|" + weapon2Pid + "|" + skillNum1 + "|" + skillNum2 + "|" +
                    cr.Perk[PE_BONUS_HTH_DAMAGE] + "|" + cr.Perk[PE_BONUS_MOVE] + "|" + cr.Trait[TRAIT_SMALL_FRAME] + "|" + cr.Trait[TRAIT_BRUISER] + "|" +
-                   cr.Trait[TRAIT_ARMOR_TRAINING] + "|" + (berserkActive ? 1 : 0) + "|" + cocaineStage;
+                   cr.Trait[TRAIT_ARMOR_TRAINING] + "|" + (berserkActive ? 1 : 0) + "|" + cocaineStage + "|" + cr.Stat[ST_CLASS_ID] + "|" + cr.CrType +
+                   "|" + cr.Stat[ST_CLASS_EFFECT];
 
     string key = "" + cr.Id;
     string lastState;
@@ -584,6 +653,9 @@ void speedboost(Critter& cr)
 
     if (cr.Trait[TRAIT_BERSERKER]==1 && berserkActive)
     	bonus+=20;
+
+    if(cr.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW && cr.Stat[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RAGE)
+        bonus += CLASS_DEATHCLAW_RAGE_MOVE_BONUS;
 
     // Kilo of cocaine movement phases:
     // stage 1 (first 10s): +100 movement speed equivalent
@@ -622,9 +694,29 @@ void speedboost(Critter& cr)
         }
 	}
 		
-    int runTime = CLAMP(200 - bonus + penalty, 100, 300);                    // Formula
+    int speedFactor = CLAMP(200 - int(bonus) + int(penalty), 100, 300);
+    int runTime = speedFactor;
     if(cr.Stat[ST_RUN_TIME] != runTime)
 	    cr.StatBase[ST_RUN_TIME] = runTime;
+
+    if(cr.Stat[ST_CLASS_ID] == CLASS_SUPER_MUTANT)
+    {
+        int walkTime = CLASS_SUPER_MUTANT_BASE_WALK_TIME * speedFactor / 200;
+        walkTime = CLAMP(walkTime, CLASS_SUPER_MUTANT_BASE_WALK_TIME / 2,
+                         CLASS_SUPER_MUTANT_BASE_WALK_TIME * 3 / 2);
+        if(cr.Stat[ST_WALK_TIME] != walkTime)
+            cr.StatBase[ST_WALK_TIME] = walkTime;
+    }
+    else if(cr.Stat[ST_CLASS_ID] == CLASS_DEATHCLAW && cr.CrType == CRTYPE_DEATHCLAW)
+    {
+        // The Abomination's classic maclaw sprite has no run animation. Apply
+        // movement modifiers (including Rage) to its walking time instead.
+        int walkTime = CLASS_DEATHCLAW_BASE_WALK_TIME * speedFactor / 200;
+        walkTime = CLAMP(walkTime, CLASS_DEATHCLAW_BASE_WALK_TIME / 2,
+                         CLASS_DEATHCLAW_BASE_WALK_TIME * 3 / 2);
+        if(cr.Stat[ST_WALK_TIME] != walkTime)
+            cr.StatBase[ST_WALK_TIME] = walkTime;
+    }
 	}
 }
 #endif

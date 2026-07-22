@@ -1,0 +1,32 @@
+//
+// FOnline: AfterTimes
+//
+// Shared player class hooks.
+//
+
+#ifndef __CLASSES_H__
+#define __CLASSES_H__
+
+#ifdef __SERVER
+import bool Class_IsRegistered(int classId) from "classes";
+import bool Class_IsImplemented(int classId) from "classes";
+import uint Class_GetOption(uint options, uint option) from "classes";
+import bool Class_TrySelect(Critter& cr, int classId) from "classes";
+import bool Class_TrySelectOption(Critter& cr, int stage, int choice) from "classes";
+import void Class_Initialize(Critter& cr, bool firstTime) from "classes";
+import void Class_OnFinish(Critter& cr) from "classes";
+import void Class_OnDeath(Critter& cr) from "classes";
+import void Class_OnRespawn(Critter& cr) from "classes";
+import void Class_OnMapChange(Critter& cr) from "classes";
+import void Class_OnIdle(Critter& cr) from "classes";
+import void Class_ApplyMedicalCooldown(Critter& healer, Critter& target, int timeout, uint duration) from "classes";
+import bool Class_TryUseQueuedParamedicRevive(Critter& cr, Critter& target) from "classes";
+import bool Class_ConsumeMarksmanPrepared(Critter& cr) from "classes";
+import bool Class_TryExecuteMarkedTarget(Critter& attacker, Critter& target) from "classes";
+import int Class_ApplyIncomingDamage(Critter& target, int damage) from "classes";
+import bool Class_TryForceDeathclawSneak(Critter& cr) from "classes";
+import bool Class_IsDeathclawActionLocked(Critter& cr) from "classes";
+import bool Class_IsDeathclawUntargetable(Critter& cr) from "classes";
+#endif
+
+#endif // __CLASSES_H__

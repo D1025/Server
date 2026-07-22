@@ -137,6 +137,20 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
     if(dist > wpnMaxDist)
         return 0;
 
+    uint16 ammoPid = valid(ammo) ? ammo.ProtoId : 0;
+    bool isRocket = ammoPid == PID_EXPLOSIVE_ROCKET || ammoPid == PID_40MM_GRENADE ||
+                    ammoPid == PID_ROCKET_AP || ammoPid == PID_ROBO_ROCKET_AMMO;
+    bool isFlamethrower = weapon.ProtoId == PID_FLAMER || weapon.ProtoId == PID_IMPROVED_FLAMETHROWER ||
+                          weapon.ProtoId == PID_FIRE_GECKO_FLAME_WEAPON;
+    bool hasBlastArea = WeaponHasProtoPerk(weapon, WEAPON_PERK_BLAST) ||
+                        UpgradeWeaponBonus(realWeapon, UPGRADE_WEAPON_PERK_BLAST) > 0;
+    bool marksmanPrepared = chosen.Param[ST_CLASS_ID] == CLASS_MARKSMAN &&
+                            chosen.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_MARKSMAN_PREPARED &&
+                            _WeaponRound(weapon, use) <= 1 &&
+                            (skillNum == SK_RIFLES || skillNum == SK_ENERGY_WEAPONS) &&
+                            dist >= CLASS_MARKSMAN_PRECISION_MIN_DISTANCE &&
+                            !isRocket && !isFlamethrower && !hasBlastArea;
+
     int toHit = int(chosen.Skill[skillNum]);
 	
 	if(valid(realWeapon) && (realWeapon.Proto.ProtoId == PID_NEEDLER_PISTOL)) toHit = int(MAX(chosen.Skill[SK_PISTOLS], chosen.Skill[SK_DOCTOR])); // 25-07-2013 Cubik: przy uzywaniu Needlera do celnosci brany jest max(sg,doc)
@@ -228,6 +242,8 @@ int to_hit(CritterCl& chosen, CritterCl& target, ProtoItem& weapon, uint8 weapon
     if(skillNum == SK_CLOSE_COMBAT)
         hitMod /= 2;
     toHit -= hitMod;
+    if(marksmanPrepared)
+        toHit += CLASS_MARKSMAN_PREPARED_ACCURACY;
     toHit = CLAMP(toHit, 0, 100);
 
     return toHit;

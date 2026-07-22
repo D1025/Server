@@ -93,6 +93,21 @@ import void DrawIcons() from "client_faction_icons";
 #define AW_COLOR_FACTION_NAME   COLOR_DGREEN
 #define AW_COLOR_FACTION_RANK   COLOR_LGRAY
 
+uint AwarenessClassColor(int classId)
+{
+    if(classId == CLASS_SOLDIER)
+        return COLOR_RGB(176, 176, 96);
+    if(classId == CLASS_SUPER_MUTANT)
+        return COLOR_RGB(80, 200, 80);
+    if(classId == CLASS_MARKSMAN)
+        return COLOR_RGB(230, 184, 64);
+    if(classId == CLASS_DEATHCLAW)
+        return COLOR_RGB(220, 72, 48);
+    if(classId == CLASS_PARAMEDIC)
+        return COLOR_RGB(72, 192, 232);
+    return COLOR_GRAY;
+}
+
 #define CtrlPressed         ( GUI_IsKeyPressed( DIK_LCONTROL ) || GUI_IsKeyPressed( DIK_RCONTROL ) )
 #define OnlyCtrlPressed     ( CtrlPressed && !ShiftPressed && !AltPressed )
 #define ShiftPressed        ( GUI_IsKeyPressed( DIK_LSHIFT ) || GUI_IsKeyPressed( DIK_RSHIFT ) )
@@ -945,6 +960,16 @@ void render_iface(uint layer)
                                         _item += " [" + item.AmmoCount + "/" + GetWeaponMaxAmmoDisplay(item) + "]";
                                 }
                             }
+
+                            int observedClass = cr.Stat[ST_CLASS_ID];
+                            if(cr.IsPlayer() && observedClass >= CLASS_SOLDIER && observedClass <= CLASS_PARAMEDIC)
+                            {
+                                string classText = GetMsgStr(TEXTMSG_GAME, STR_CLASS_NAME(observedClass));
+                                DrawText(classText, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20,
+                                         AwarenessClassColor(observedClass), FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
+                                dy -= 10;
+                            }
+
                             DrawText(_item, __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, (valid(item) && item.GetType() == ITEM_TYPE_WEAPON) ? AW_COLOR_WEAPON : COLOR_GRAY, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
                             dy -= 10;
 
@@ -2819,6 +2844,10 @@ string critter_description(CritterCl& cr, int lookType)
 
         if(valid(chosen) && chosen.Perk[PE_AWARENESS] > 0)
         {
+            int observedClass = cr.Stat[ST_CLASS_ID];
+            if(cr.IsPlayer() && observedClass >= CLASS_SOLDIER && observedClass <= CLASS_PARAMEDIC)
+                result += " " + GetMsgStr(TEXTMSG_GAME, STR_CLASS_TITLE_NAME) + ": " + GetMsgStr(TEXTMSG_GAME, STR_CLASS_NAME(observedClass)) + ".";
+
             result += " ";
             result += GetMsgStr(TEXTMSG_GAME, STR_CRIT_LOOK_HP(gender));
             result = ReplaceText(result, "CUR", cr.Stat[ST_CURRENT_HP]);

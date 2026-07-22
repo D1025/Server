@@ -499,6 +499,11 @@
 #define CTE_NO_RUN                               (1339)
 #define CTE_PERSISTENT_DOT                       (1340)
 #define CTE_MELEE_NO_RUN                         (1341)
+#define CTE_CLASS_PREPARED                       (1342)
+#define CTE_CLASS_FEV_RUSH                       (1343)
+#define CTE_CLASS_DEATHCLAW_BURROW               (1344)
+#define CTE_CLASS_DEATHCLAW_RAGE                 (1345)
+#define CTE_CLASS_DEATHCLAW_RECOVERY             (1346)
 
 // Parameters
 /// Stats
@@ -651,12 +656,99 @@
 #define ST_DESCRIPTION2                          (139)
 #define ST_DEFAULT_ARMOR_PID                     (140)
 #define ST_DEFAULT_UTILITY_PID                   (141)
+#define ST_CLASS_ID                              (142) // Registered player class id
 #define ST_OVERRIDE_CRTYPE                       (143)
 #define ST_TURN_BASED_HEX                        (144)
-#define ST_UNUSED_145                            (145)
+#define ST_CLASS_OPTIONS                         (145) // Four neutral 8-bit class option slots
 #define ST_FACTION_UPDATE_SEQ                    (146)
 #define ST_MINIGAME_DATA                         (147) // custom minigame data (first byte is reserved to store minigame team and id)
 #define ST_CRITICAL_POWER                        (148)
+#define ST_CLASS_EFFECT                          (149) // Transient active class effect
+
+// Player classes
+#define CLASS_NONE                               (0)
+#define CLASS_SOLDIER                            (1)
+#define CLASS_SUPER_MUTANT                       (2)
+#define CLASS_MARKSMAN                           (3)
+#define CLASS_DEATHCLAW                          (4)
+#define CLASS_PARAMEDIC                          (5)
+
+#define CLASS_SELECTION_LEVEL                    (40)
+#define CLASS_SELECTION_CODE_BASE                (1000)
+#define CLASS_SELECTION_BEGIN                    (CLASS_SELECTION_CODE_BASE + CLASS_SOLDIER)
+#define CLASS_SELECTION_END                      (CLASS_SELECTION_CODE_BASE + CLASS_PARAMEDIC)
+
+#define CLASS_OPTION_SELECTION_CODE_BASE         (1100)
+#define CLASS_OPTION_SELECTION_BEGIN             (1111)
+#define CLASS_OPTION_SELECTION_END               (1133)
+
+#define CLASS_OPTION_VALUE_MASK                  (0xFF)
+#define CLASS_OPTION_1_SHIFT                     (0)
+#define CLASS_OPTION_2_SHIFT                     (8)
+#define CLASS_OPTION_3_SHIFT                     (16)
+#define CLASS_OPTION_4_SHIFT                     (24)
+
+#define CLASS_EFFECT_NONE                        (0)
+#define CLASS_EFFECT_MARKSMAN_PREPARED           (1)
+#define CLASS_EFFECT_PARAMEDIC_REVIVING           (2)
+#define CLASS_EFFECT_SUPER_MUTANT_FEV_RUSH        (3)
+#define CLASS_EFFECT_DEATHCLAW_BURROWING          (4)
+#define CLASS_EFFECT_DEATHCLAW_UNDERGROUND        (5)
+#define CLASS_EFFECT_DEATHCLAW_RAGE               (6)
+#define CLASS_EFFECT_DEATHCLAW_RECOVERY           (7)
+
+#define CLASS_DEATHCLAW_PENDING_MARKER            (CLASS_DEATHCLAW)
+#define CLASS_DEATHCLAW_CLAWS_LONG                (1)
+#define CLASS_DEATHCLAW_CLAWS_VENOMOUS            (2)
+#define CLASS_DEATHCLAW_CLAWS_MUTILATING          (3)
+#define CLASS_DEATHCLAW_HIDE_HARDENED              (1)
+#define CLASS_DEATHCLAW_HIDE_EVASIVE               (2)
+#define CLASS_DEATHCLAW_HIDE_CHAMELEON             (3)
+#define CLASS_DEATHCLAW_MISC_BURROW                (1)
+#define CLASS_DEATHCLAW_MISC_RAGE                  (2)
+#define CLASS_DEATHCLAW_MISC_CAMOUFLAGE            (3)
+
+#define CLASS_DEATHCLAW_BASE_AC                   (-30)
+#define CLASS_DEATHCLAW_BASE_WALK_TIME            (192) // CRTYPE_DEATHCLAW/maclaw base
+#define CLASS_DEATHCLAW_BURROW_CHANNEL            (2)
+#define CLASS_DEATHCLAW_BURROW_UNDERGROUND        (3)
+#define CLASS_DEATHCLAW_BURROW_RECOVERY           (1)
+#define CLASS_DEATHCLAW_BURROW_RANGE              (60)
+#define CLASS_DEATHCLAW_BURROW_MOVE_MS            (100)
+#define CLASS_DEATHCLAW_BURROW_COOLDOWN           (90)
+#define CLASS_DEATHCLAW_BURROW_INTERRUPT_COOLDOWN (10)
+#define CLASS_DEATHCLAW_RAGE_DURATION             (10)
+#define CLASS_DEATHCLAW_RAGE_COOLDOWN             (60)
+#define CLASS_DEATHCLAW_RAGE_DAMAGE               (25)
+#define CLASS_DEATHCLAW_RAGE_MOVE_BONUS           (40)
+#define CLASS_DEATHCLAW_CAMOUFLAGE_COOLDOWN       (45)
+#define CLASS_DEATHCLAW_VENOM_POISON              (8)
+
+#define CLASS_SOLDIER_REGEN_BONUS                (20) // Additive AP regeneration percentage points
+#define CLASS_SOLDIER_COMBAT_RUSH_AP             (10)
+#define CLASS_SOLDIER_COMBAT_RUSH_COOLDOWN       (45) // Seconds
+
+#define CLASS_SUPER_MUTANT_BASE_WALK_TIME         (500) // CRTYPE_MUTANT base from CritterTypes.cfg
+#define CLASS_SUPER_MUTANT_FEV_DURATION           (8)   // Seconds
+#define CLASS_SUPER_MUTANT_FEV_COOLDOWN           (60)  // Seconds
+#define CLASS_SUPER_MUTANT_FEV_REDUCTION          (40)  // Final incoming damage percentage
+
+#define CLASS_MARKSMAN_PREPARED_DELAY            (2)  // Seconds without movement
+#define CLASS_MARKSMAN_PREPARED_CHECK_MS         (500)
+#define CLASS_MARKSMAN_PREPARED_ACCURACY         (20)
+#define CLASS_MARKSMAN_PREPARED_DAMAGE           (30) // Final damage percentage
+#define CLASS_MARKSMAN_PRECISION_MIN_DISTANCE    (8)
+#define CLASS_MARKSMAN_MARK_DURATION             (20) // Seconds
+#define CLASS_MARKSMAN_MARK_COOLDOWN             (60) // Seconds
+#define CLASS_MARKSMAN_EXECUTE_PERCENT           (20)
+#define CLASS_MARKSMAN_BOSS_EXECUTE_PERCENT      (5)
+
+#define CLASS_PARAMEDIC_REVIVE_CHANNEL            (4)   // Seconds
+#define CLASS_PARAMEDIC_REVIVE_COOLDOWN           (300) // Seconds
+#define CLASS_PARAMEDIC_REVIVE_KO_COOLDOWN        (10)  // Seconds
+#define CLASS_PARAMEDIC_REVIVE_MAX_DISTANCE       (2)
+#define CLASS_PARAMEDIC_REVIVE_MAX_DEATH_AGE      (30)  // Seconds
+#define CLASS_PARAMEDIC_REVIVE_CHECK_MS           (250)
 
 // Initial values of animation 3d layers
 #ifdef PLAYERS_3D
@@ -1152,6 +1244,7 @@
 #define TO_KILO_OF_COCAINE                       (986)
 #define TO_UTILITY_COOLDOWN                      (987)
 #define TO_TALISMAN_IMMUNITY                     (988)
+#define TO_CLASS_ABILITY                         (989)
 
 #define ST_EX_IDX                                (999)
 #define PARAMS_COUNT                             (1000)

@@ -28,6 +28,7 @@
 #include "mapdata_h.fos"
 #include "MsgStr.h"
 #include "combat_h.fos"
+#include "classes_h.fos"
 #include "_npc_pids.fos"
 #include "linetracer_h.fos"
 
@@ -151,6 +152,7 @@ class AttackStruct
     ProtoItem@ Ammo = null;
     bool       SilentDeathEffect = false;
     bool       InYourFaceEffect = false;
+	bool       MarksmanPrepared = false;
 	bool       DamageOnly = false; // suppress crit/KD/limb effects for replicated damage
 	uint16     ammoPid;
 	uint16     weaponPid;
@@ -751,6 +753,13 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     int perception = cr.Stat[ST_PERCEPTION];
     int dist = GetDistantion(hx, hy, target.HexX, target.HexY);
     attack.Dist = dist;
+    bool isMarksmanPrecisionAttack = cr.Param[ST_CLASS_ID] == CLASS_MARKSMAN &&
+                                     weaponSubtype == WS_GUN && !isBurst && ammoRound <= 1 &&
+                                     (skillNum == SK_RIFLES || skillNum == SK_ENERGY_WEAPONS) &&
+                                     dist >= CLASS_MARKSMAN_PRECISION_MIN_DISTANCE &&
+                                     !isRocket && !isFlamethrower && !hasBlastArea;
+    if(isMarksmanPrecisionAttack)
+        attack.MarksmanPrepared = Class_ConsumeMarksmanPrepared(cr);
     int acc = dist;
     int accloss = (crIsPlayer ? (perception - 2) * distmod1 : (perception * distmod1));
     int sharpshooter = 2 * cr.Perk[PE_SHARPSHOOTER];
@@ -769,6 +778,8 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
         toHit += 40;
     if(target.GetMultihex() > 0)
         toHit += 15;
+    if(attack.MarksmanPrepared)
+        toHit += CLASS_MARKSMAN_PREPARED_ACCURACY;
 
     toHit = CLAMP(toHit, 0, 100);
 
@@ -1557,6 +1568,9 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
 
 void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCritical, bool intentionally, array<CombatRes>& results, int CriticalChance)
 {
+	if(Class_IsDeathclawUntargetable(target))
+		return;
+
 	Item@ usedArmor = _GetCritterArmor(target);
 	
     int      dmgMul = attack.DmgMul;
@@ -1863,7 +1877,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			}
 			msgEff = eff;
 			if(target.Mode[MODE_NO_DROP] != 0 && FLAG(eff, HF_CRIPPLED_RIGHT_ARM)) {
-			    //int enemyStat = ((critLevel-2) * -5) + target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT];
+			    //int enemyStat = ((critLevel-2) * -5) + target.Stat[ST_STRENGTH];
 			    //int attackerStat =attacker.Stat[ST_LUCK] + attacker.Stat[ST_LUCK_EXT];
 			    //if (enemyStat > attackerStat) {
                 //    UNSETFLAG(eff, HF_DROPPED_WEAPON);
@@ -1891,7 +1905,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     if(validAttacker && !attack.DamageOnly && attack.IsUnarmed && !isSewingAttack && attacker.Trait[TRAIT_GRAPPLER] > 0)
     {
         int bonus = (valid(realWeaponTarget) && WeaponHasProtoPerk(realWeaponTarget.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0) - (valid(realWeapon) && WeaponHasProtoPerk(realWeapon.Proto, WEAPON_PERK_HAND_TO_HAND) ? 1 : 0);
-        if(target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT] + bonus < attacker.Stat[ST_STRENGTH] + attacker.Stat[ST_STRENGTH_EXT])
+        if(target.Stat[ST_STRENGTH] + bonus < attacker.Stat[ST_STRENGTH])
         {
             SETFLAG(eff, HF_KNOCKDOWN);
         }
@@ -2114,6 +2128,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
     bool perkKnockback = false;
     int  perkKnockDist = 0;
     int  knockDmg = 0;
+    bool executionTriggered = false;
     
     if(target.Mode[MODE_INVULNERABLE] != 0)
         eff = 0;
@@ -2175,17 +2190,29 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             totalDmg /= 2;
     }
 
-    totalDmg = ApplyUtilityProtection(target, totalDmg);
+    if(attack.MarksmanPrepared && totalDmg > 0)
+        totalDmg += totalDmg * CLASS_MARKSMAN_PREPARED_DAMAGE / 100;
 
-    // Qualify perk knockback from the damage that will actually be applied to HP.
+    bool deathclawDirectMelee = validAttacker && attacker.Param[ST_CLASS_ID] == CLASS_DEATHCLAW &&
+                                (attack.WeaponSubtype == WS_MELEE || attack.WeaponSubtype == WS_UNARMED);
+    uint deathclawClaws = deathclawDirectMelee ? Class_GetOption(uint(attacker.Param[ST_CLASS_OPTIONS]), 1) : 0;
+    if(deathclawDirectMelee && attacker.Param[ST_CLASS_EFFECT] == CLASS_EFFECT_DEATHCLAW_RAGE && totalDmg > 0)
+        totalDmg += totalDmg * CLASS_DEATHCLAW_RAGE_DAMAGE / 100;
+
+    totalDmg = ApplyUtilityProtection(target, totalDmg);
+    // FEV Rush changes HP damage only. Keep damage-driven knockback based on the
+    // pre-FEV result so non-damage effects are not weakened by the class active.
+    knockDmg = totalDmg;
+    totalDmg = Class_ApplyIncomingDamage(target, totalDmg);
+
+    // Qualify perk knockback from post-soak damage before the HP-only FEV modifier.
     // Stonewall reduces this effect by one hex per full five points of Strength.
     // A reduced distance of zero prevents both displacement and knockdown.
-    knockDmg = totalDmg;
     if(hasKnockbackPerk && knockDmg >= KNOCKBACK_MIN_POST_SOAK_DAMAGE)
     {
         perkKnockDist = knockDmg / KNOCKBACK_DAMAGE_DIVISOR;
         if(target.Perk[PE_STONEWALL] != 0)
-            perkKnockDist -= (target.Stat[ST_STRENGTH] + target.Stat[ST_STRENGTH_EXT]) / 5;
+            perkKnockDist -= target.Stat[ST_STRENGTH] / 5;
         perkKnockback = perkKnockDist > 0;
     }
     if(perkKnockback)
@@ -2218,6 +2245,10 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             }
             //END
             target.StatBase[ST_CURRENT_HP] -= totalDmg;
+            if(deathclawDirectMelee && deathclawClaws == CLASS_DEATHCLAW_CLAWS_VENOMOUS)
+                AffectPoison(target, CLASS_DEATHCLAW_VENOM_POISON);
+            if(validAttacker && attacker.Id != target.Id)
+                executionTriggered = Class_TryExecuteMarkedTarget(attacker, target);
             if(target.Trait[TRAIT_DEAD_MAN_WALKING] > 0 && target.Stat[ST_CURRENT_HP] < 0)
                 _SetTimeout(target, TO_HEALING, REAL_SECOND(3));
             if(validAttacker)
@@ -2241,12 +2272,18 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             {
             case HIT_LOCATION_EYES:
                 target.StatBase[ST_HP_HEAD] -= totalDamageToLimb;
+                if(deathclawClaws == CLASS_DEATHCLAW_CLAWS_MUTILATING)
+                    target.StatBase[ST_HP_HEAD] -= totalDamageToLimb / 2;
                 break;
             case HIT_LOCATION_HEAD:
                  target.StatBase[ST_HP_HEAD] -= totalDmg;
+                 if(deathclawClaws == CLASS_DEATHCLAW_CLAWS_MUTILATING)
+                     target.StatBase[ST_HP_HEAD] -= totalDmg / 2;
                  break;
             case HIT_LOCATION_LEFT_ARM:
                 target.StatBase[ST_HP_LA] -= totalDamageToLimb;
+                if(deathclawClaws == CLASS_DEATHCLAW_CLAWS_MUTILATING)
+                    target.StatBase[ST_HP_LA] -= totalDamageToLimb / 2;
 
                 if (strengthReq < 0 || totalDamageToLimb >= maxLimbHp/2+strengthReq*10) {
                     SETFLAG(eff, HF_DROPPED_WEAPON);
@@ -2254,15 +2291,21 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 break;
             case HIT_LOCATION_RIGHT_ARM:
                 target.StatBase[ST_HP_RA] -= totalDamageToLimb;
+                if(deathclawClaws == CLASS_DEATHCLAW_CLAWS_MUTILATING)
+                    target.StatBase[ST_HP_RA] -= totalDamageToLimb / 2;
                 if (strengthReq < 0 || totalDamageToLimb >= maxLimbHp/2+strengthReq*10) {
                     SETFLAG(eff, HF_DROPPED_WEAPON);
                 }
                 break;
             case HIT_LOCATION_LEFT_LEG:
                 target.StatBase[ST_HP_LL] -= totalDamageToLimb;
+                if(deathclawClaws == CLASS_DEATHCLAW_CLAWS_MUTILATING)
+                    target.StatBase[ST_HP_LL] -= totalDamageToLimb / 2;
                 break;
             case HIT_LOCATION_RIGHT_LEG:
                 target.StatBase[ST_HP_RL] -= totalDamageToLimb;
+                if(deathclawClaws == CLASS_DEATHCLAW_CLAWS_MUTILATING)
+                    target.StatBase[ST_HP_RL] -= totalDamageToLimb / 2;
                 break;
             default:
                 break;
@@ -2303,7 +2346,12 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
             // Blinded
             if(FLAG(eff, HF_BLINDED))
                 target.DamageBase[DAMAGE_EYE] = 1;
-            if(target.Stat[ST_CURRENT_HP] < 1)
+            if(executionTriggered)
+            {
+                target.StatBase[ST_CURRENT_HP] = MIN(target.Stat[ST_CURRENT_HP], 0);
+                isDead = true;
+            }
+            else if(target.Stat[ST_CURRENT_HP] < 1)
             {
                 int deadHitPoints = target.Trait[TRAIT_DEAD_MAN_WALKING] > 0 ? __DeadHitPoints : __DeadHitPoints / 6;
                 if(target.Stat[ST_CURRENT_HP] > deadHitPoints && IsHumanoid(target) && target.Mode[MODE_NO_KNOCK] == 0)
@@ -2487,6 +2535,28 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 target.SetDir(0);
                 anim2Dead = ANIM2_DEAD_EXPLODE;
             }
+
+        }
+
+        if(executionTriggered && target.Param[MODE_SPECIAL_DEAD] == 0)
+        {
+            switch(dmgType)
+            {
+            case DAMAGE_NORMAL:
+                anim2Dead = burst ? ANIM2_DEAD_BLOODY_BURST : ANIM2_DEAD_BLOODY_SINGLE;
+                break;
+            case DAMAGE_FIRE:
+                anim2Dead = ANIM2_DEAD_BURN_RUN;
+                break;
+            case DAMAGE_ELECTR:
+                anim2Dead = ANIM2_DEAD_PULSE_DUST;
+                break;
+            case DAMAGE_EXPLODE:
+                anim2Dead = ANIM2_DEAD_EXPLODE;
+                break;
+            default:
+                break;
+            }
         }
 
         if(targetIsPlayer)
@@ -2637,7 +2707,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                     else
                         knockDist /= KNOCKBACK_DAMAGE_DIVISOR;
                     if(target.Perk[PE_STONEWALL] != 0)
-                        knockDist -= (target.Stat[ST_STRENGTH]+target.Stat[ST_STRENGTH_EXT]+target.Stat[ST_ENDURANCE]+target.Stat[ST_ENDURANCE_EXT])/5;
+                        knockDist -= (target.Stat[ST_STRENGTH] + target.Stat[ST_ENDURANCE]) / 5;
                     knockDist--;
                 }
 //Log("knockDist = " + knockDist);				
@@ -3379,6 +3449,7 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 
     bool talismanImmune = cr.Timeout[TO_TALISMAN_IMMUNITY] > 0;
     totalDmg = ApplyUtilityProtection(cr, totalDmg);
+    totalDmg = Class_ApplyIncomingDamage(cr, totalDmg);
     if(talismanImmune)
     {
         eff = 0;
@@ -3480,6 +3551,7 @@ void WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
         return;
 
     dmg = ApplyUtilityProtection(victim, dmg);
+    dmg = Class_ApplyIncomingDamage(victim, dmg);
     if(dmg <= 0)
         return;
 
@@ -3955,6 +4027,7 @@ uint cte_PersistentDot(Critter& cr, int identifier, uint& rate)
     if(cr.Mode[MODE_INVULNERABLE] == 0 && tickDamage > 0)
     {
         tickDamage = ApplyUtilityProtection(cr, tickDamage);
+        tickDamage = Class_ApplyIncomingDamage(cr, tickDamage);
         cr.StatBase[ST_CURRENT_HP] -= tickDamage;
         int sourceAttackerId = cr.Stat[ST_PERSISTENT_DOT_LAST_ENEMY_ID];
         if(sourceAttackerId > 0)

@@ -31,6 +31,9 @@ import void DialogImageKey(uint8 key, string& keyText) from "client_interface";
 #endif
 
 import bool ProcessBind(uint8 key) from "client_keybinds";
+import bool ProcessMouseBind(int click) from "client_keybinds";
+import bool ClassAbilityMouseDown(int click) from "client_keybinds";
+import void ClassAbilityCancelTargeting() from "client_keybinds";
 
 import int stringReplaceText(string& s, string@ f, string@ t) from "config_file";
 
@@ -148,6 +151,7 @@ bool TryRtsMove()
 // Called on mouse/keyboard input lost (alt-tab, minimize, lost focus).
 void input_lost()
 {
+    ClassAbilityCancelTargeting();
     ThrowingInputLost();
     HexShotingInputLost();
     HexThrowingInputLost();
@@ -341,6 +345,17 @@ bool mouse_down(int click)
 {
     if(click == MOUSE_CLICK_EXT0)
         MouseButton4Held = true;
+
+    if(ClassAbilityMouseDown(click))
+        return true;
+
+    if(ProcessMouseBind(click))
+    {
+        // An assigned Mouse 4 bind takes precedence over its legacy follower modifier.
+        if(click == MOUSE_CLICK_EXT0)
+            MouseButton4Held = false;
+        return true;
+    }
 
     if(GUI_GetActiveScreen() == CLIENT_MAIN_SCREEN_GAME)
     {

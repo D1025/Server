@@ -85,6 +85,7 @@
 #define CRTYPE_MOLERAT                   (19)
 #define CRTYPE_NIGHTKIN                  (20)
 #define CRTYPE_MUTANT                    (21)
+#define CRTYPE_MUTANT_LEATHER            (20)                // MAMTN2 - Super Mutant leather armor
 #define CRTYPE_SCORPION                  (22)
 #define CRTYPE_FLOATER                   (23)
 #define CRTYPE_RAT                       (24)
@@ -176,6 +177,7 @@
 #define CRTYPE_MALE_CADESERT             (114)
 #define CRTYPE_KHAN_LONGHAIR             (119)
 #define CRTYPE_LIEUTANANT                (120)
+#define CRTYPE_MUTANT_METAL              (120)               // MALIEU - Super Mutant metal armor
 #define CRTYPE_VC_TURRET                 (121)
 // 122 : Player->Long Haid Dude
 // 123 : Player->Long Haid Dude
