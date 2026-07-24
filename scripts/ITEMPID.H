@@ -671,7 +671,7 @@
 #define PID_BRIEFCASE                       (72)
 #define PID_MUTAGENIC_SYRUM                 (329) //Иньекция от мутации
 #define PID_HEART_PILLS                     (333) //Таблетки от серца
-#define PID_SPECTACLES                      (415) //Eye glasses
+#define PID_SPECTACLES                      (415) // +5 FoV passive utility
 #define PID_OXYGEN_TANK                     (417)
 #define PID_POISON_TANK                     (418)
 #define PID_HOWITZER_SHELL                  (430) //Ammo of turret in SAD

@@ -42,6 +42,7 @@ import void WearItem(Critter& cr, Item& item, int wearCount) from "repair";
 import void ExitDeploy(Critter& cr) from "deploy";
 import bool IsDeployed(Critter& cr) from "deploy";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
+import int  GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 
 import void MolotovBlast( Map& map, uint16 hexX, uint16 hexY, uint16 firePid, uint ownerId ) from "fire_hexes";
@@ -1602,6 +1603,17 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	bool     attackerIsPaszczur = (valid(attacker) ? attacker.GetProtoId()==NPC_PID_PASHTSHUUR : false);
 	uint16 	 weapPid = attack.weaponPid;
 	const ProtoItem@ attackWeaponProto = valid(realWeapon) ? realWeapon.Proto : GetProtoItem(weapPid);
+	uint8    use = _WeaponModeUse(attack.weaponMode);
+    bool     andStayBackKnockback = false;
+    if(isShotgun && rounds > 1 && validAttacker && attacker.Perk[PE_AND_STAY_BACK] != 0 &&
+       valid(attackWeaponProto))
+    {
+        int shotgunMaxDist = _WeaponMaxDist(attackWeaponProto, use);
+        if(valid(realWeapon))
+            shotgunMaxDist += UpgradeWeaponRangeBonus(realWeapon, shotgunMaxDist);
+        int shotgunTargetDist = GetDistantion(attacker.HexX, attacker.HexY, target.HexX, target.HexY);
+        andStayBackKnockback = shotgunTargetDist <= shotgunMaxDist / 2;
+    }
 
 	bool     isSwingThrustWeapon = (valid(realWeapon) ? (weapPid == 517 || weapPid == 160 || weapPid == 236 || weapPid == 530 || weapPid == 9676 || weapPid == 4 || weapPid == 116 || weapPid == 383 || weapPid == 6 || weapPid == 399 || weapPid == 115 || weapPid == 319 || weapPid == 622 || weapPid == 522 || weapPid == 600 || weapPid == 610 || weapPid == 289) : false);
     bool     isThrustThrowWeapon = (valid(realWeapon) ? (weapPid == 9916 || weapPid == 618 || weapPid == 320 || weapPid == 280 || weapPid == 7) : false);
@@ -1641,7 +1653,6 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 	//#################################################
 	//### IMPLEMENTACJA melee attack swing i thrust ###
     //#################################################
-	uint8 use=_WeaponModeUse(attack.weaponMode);
     bool isSewingAttack = IsSewingAttackByPidUse(weapPid, use);
     bool isMeleeWeaponAttack = IsProtoMeleeWeaponAttack(attackWeaponProto, use);
     bool hasCritless = valid(attackWeaponProto) && WeaponHasProtoPerk(attackWeaponProto, WEAPON_PERK_CRITLESS);
@@ -1991,18 +2002,18 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 
 
     int damage = attack.Damage + attack.BonusDmg + attack.Damage * attack.SelectWeaponBonus(UPGRADE_WEAPON_PERK_ENHANCED_DAMAGE) / 100;
-    // Overload turns the target's stored Persistent damage into immediate raw
-    // electro damage before DT/DR. One pool point grants two damage, but the
-    // bonus can never exceed this attack's base roll (at most double damage).
+    int overloadFlatDamage = 0;
+    // Overload consumes up to half of this attack's base roll from the target's
+    // Persistent pool. Each consumed point becomes two flat electro damage,
+    // added after critical multipliers, DT and DR.
     if(hasWeaponOverload && dmgType == DAMAGE_ELECTR &&
        target.Mode[MODE_INVULNERABLE] == 0 && attack.Damage > 0)
     {
         int persistentPool = MAX(0, target.Stat[ST_PERSISTENT_DOT]);
         int persistentUsed = MIN(persistentPool, attack.Damage / 2);
-        int overloadBonus = persistentUsed * 2;
-        if(overloadBonus > 0)
+        overloadFlatDamage = persistentUsed * 2;
+        if(overloadFlatDamage > 0)
         {
-            damage += overloadBonus;
             int persistentLeft = persistentPool - persistentUsed;
             target.StatBase[ST_PERSISTENT_DOT] = persistentLeft;
             if(persistentLeft <= 0)
@@ -2044,6 +2055,8 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         if(rawDmg > 0)
             totalDmg += rawDmg;
     }
+
+    totalDmg += overloadFlatDamage;
 	
     if(validAttacker)
     {
@@ -2062,7 +2075,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 		    totalDmg *= 0.80;
 
 		if(attack.InYourFaceEffect)
-		    totalDmg /= 2;
+		    totalDmg = totalDmg * 60 / 100;
 
 		if(rounds > 1 && attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] != 0 && attack.Dist > 15)
             totalDmg += totalDmg * attack.Attacker.Perk[PE_MORE_RANGED_DAMAGE] * 15/ 100;
@@ -2261,9 +2274,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                 target.StatBase[ST_HP_RL] -= totalDmg/2;
             }
             int totalDamageToLimb = totalDmg * limbDamageMultiplayer / 4;
-            int maxLimbHp = GetActualMaxHp(target) / (target.Perk[PE_IRON_GRIP] == 0 ? 2 : 1);
-            if (target.Trait[TRAIT_SMALL_FRAME] !=0)
-                maxLimbHp=(maxLimbHp*9)/10;
+            int maxLimbHp = GetActualMaxLimbHp(target);
 
             int strengthReq = 0;
             if(valid(realWeaponTarget))
@@ -2682,7 +2693,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 			target.ToDead(anim2Dead, attacker);
     }
     else 
-	if(isKo || (isShotgun && rounds >1 && attacker.Perk[PE_AND_STAY_BACK] !=0) || knockbackFromCrit || perkKnockback)
+	if(isKo || andStayBackKnockback || knockbackFromCrit || perkKnockback)
     {
         //Log("isKo = True");
 		int  maxAp = target.Stat[ST_ACTION_POINTS];
@@ -2702,7 +2713,7 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
 				//Log(" bron jest WS_MELEE");
                 if(!perkKnockback)
                 {
-                    if(isShotgun && rounds > 1 && attacker.Perk[PE_AND_STAY_BACK]!=0)
+                    if(andStayBackKnockback)
                         knockDist /= 5;
                     else
                         knockDist /= KNOCKBACK_DAMAGE_DIVISOR;
@@ -2720,9 +2731,13 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
                     uint16 slamFromHx = target.HexX, slamFromHy = target.HexY;
                     map.GetHexCoordWall(target.HexX, target.HexY, knockHx, knockHy, 180.0f, knockDist);
 
-                    // Wall-slam: obrazenia gdy przeszkoda zatrzymala odrzut wczesniej niz zamierzono (patrz ApplyWallSlam).
+                    // Wall-slam: dolicz obrazenia celu do zwyklego wyniku trafienia.
+                    // Ewentualna druga postac dostaje osobny, standardowy wynik trafienia.
                     uint8 slamDir = valid(attacker) ? GetDirection(attacker.HexX, attacker.HexY, slamFromHx, slamFromHy) : 0;
-                    ApplyWallSlam(map, target, attacker, slamFromHx, slamFromHy, knockHx, knockHy, knockDist, WALL_SLAM_DMG_PER_HEX, slamDir);
+                    int wallSlamDamage = ApplyWallSlamToCombatResults(map, target, attacker, slamFromHx, slamFromHy, knockHx, knockHy, knockDist, WALL_SLAM_DMG_PER_HEX, slamDir, results);
+                    totalDmg += wallSlamDamage;
+                    if(target.IsDead())
+                        isDead = true;
 
                     if(!target.IsDead())
                         target.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(attackFront), 0, knockHx, knockHy);
@@ -2994,6 +3009,18 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
         return;
     }
 
+    // An explosion is uncalled area damage even when its projectile hit a
+    // critter directly, so the impact target must not receive a critical hit.
+    isCritical = false;
+
+    // Demolition Expert's description promises +25% explosive damage. Armed
+    // charges use their separate ExplodeEx path and bake the bonus in there;
+    // this applies it to combat explosions without double-dipping those items.
+    int preExpertDamage = attack.Damage;
+    if(attack.DmgType == DAMAGE_EXPLODE && valid(attack.Attacker) &&
+       attack.Attacker.Perk[PE_DEMOLITION_EXPERT] != 0)
+        attack.Damage += attack.Damage * 25 / 100;
+
     ProtoItem@ proto = GetProtoItem(weapPid);
     int protoBlastPerkStacks = WeaponProtoPerkStacks(proto, WEAPON_PERK_BLAST);
     int upgradeBlastRadius = UpgradeWeaponBonus(attack.RealWeapon, UPGRADE_WEAPON_PERK_BLAST);
@@ -3012,6 +3039,9 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
             radius += uint(upgradeBlastRadius);
 
     }
+
+    if(isExplodeRocket)
+        radius += 1;
 
     if(valid(attack.Attacker) && attack.Attacker.Perk[PE_DEMOLITION_EXPERT] != 0 && radius > 1)
         radius += 1;
@@ -3060,9 +3090,8 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
     if(validTarget)
     {
         targetId = target.Id;
-		int CriticalChance; 
-		if(isCritical) CriticalChance=100;
-        ApplyDamage(attack, target, 1, isCritical, intentionally, results, CriticalChance);
+		int CriticalChance = 0;
+		ApplyDamage(attack, target, 1, isCritical, intentionally, results, CriticalChance);
 		// tutaj już powinno byc tak, że zaczyna typa palic i chuj
 		if(weapPid==PID_MOLOTOV_COCKTAIL)
 		{
@@ -3094,6 +3123,8 @@ void CommenceExplosion(AttackStruct& attack, Map@ map, uint16 tx, uint16 ty, Cri
 				//critsHit[i].AddTimeEvent("cte_Burn",GetBurnDuration(critsHit[i]),CTE_BURN);
 			}
 			}
+
+    attack.Damage = preExpertDamage;
 }
 
 void CommenceExplosionEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, Critter@ target, uint weapPid, bool isCritical, uint intentionallyId, bool isRocket, bool isExplodeRocket)   // export
@@ -3117,15 +3148,58 @@ void CommenceExplosionHexEx(Critter@ attacker, Map@ map, uint16 tx, uint16 ty, C
 {
     array<CombatRes> results;
     AttackStruct     attack;
-    @attack.Attacker = attacker;
-    attack.Aim = HIT_LOCATION_UNCALLED;
-    @attack.RealWeapon = usedWeapon;
     ProtoItem@ proto = GetProtoItem(weapPid);
+    if(!valid(proto))
+        return;
 
-    attack.Damage = _WeaponDmg(proto, 0);
-    attack.DmgType = _WeaponDmgType(proto, 0);
-    attack.WeaponPerk = proto.Weapon_Perk;
+    uint8 weaponMode = valid(usedWeapon) ? usedWeapon.Mode : 0;
+    uint8 use = _WeaponModeUse(weaponMode);
+    int skillNum = _WeaponSkill(proto, use);
+    bool isUnarmed = IsUnarmedStyleWeapon(proto);
+    uint8 weaponSubtype = (skillNum == SK_PISTOLS || skillNum == SK_BIG_GUNS ||
+                           skillNum == SK_ENERGY_WEAPONS || skillNum == SK_DOCTOR ||
+                           skillNum == SK_RIFLES) ? WS_GUN :
+                          ((skillNum == SK_THROWING) ? WS_THROWING :
+                           (isUnarmed ? WS_UNARMED : WS_MELEE));
+    bool perkPenetrate = WeaponHasProtoPerk(proto, WEAPON_PERK_PENETRATE) ||
+                         UpgradeWeaponBonus(usedWeapon, UPGRADE_WEAPON_PERK_PENETRATE) > 0;
+    ProtoItem@ ammo = (ammoPid > 0 ? GetProtoItem(ammoPid) : null);
+
+    @attack.Attacker = attacker;
+    @attack.RealWeapon = usedWeapon;
+    @attack.Ammo = ammo;
+    attack.set_Aim(HIT_LOCATION_UNCALLED);
+    attack.CombatMessage = true;
+    attack.IsUnarmed = isUnarmed;
+    attack.WeaponSubtype = weaponSubtype;
+    attack.WeaponPerk = (isUnarmed && proto.Weapon_UnarmedArmorPiercing) ?
+                        WEAPON_PERK_PENETRATE :
+                        (perkPenetrate ? WEAPON_PERK_PENETRATE : proto.Weapon_Perk);
+    attack.Damage = _WeaponDmg(proto, use);
+    attack.DmgType = _WeaponDmgType(proto, use);
+    attack.weaponMode = int8(weaponMode);
     attack.weaponPid = weapPid;
+    attack.TargetId = valid(target) ? target.Id : 0;
+    if(valid(attacker))
+    {
+        attack.Hx = attacker.HexX;
+        attack.Hy = attacker.HexY;
+        attack.Dist = GetDistantion(attacker.HexX, attacker.HexY, tx, ty);
+        if(weaponSubtype == WS_GUN)
+            attack.Damage += attack.Damage * attacker.Perk[PE_BONUS_RANGED_DAMAGE] * 10 / 100;
+    }
+
+    if(valid(ammo))
+    {
+        attack.DRMod = ammo.Ammo_DrMod;
+        attack.DMMod = ammo.Ammo_DmgMult;
+        attack.DDMod = ammo.Ammo_DmgDiv;
+        attack.ACMod = ammo.Ammo_AcMod;
+        if(attack.DMMod == 0)
+            attack.DMMod = 1;
+        if(attack.DDMod == 0)
+            attack.DDMod = 1;
+    }
     if(ammoPid > 0)
         attack.ammoPid = ammoPid;
 
@@ -3538,31 +3612,30 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
 // Jesli heks za miejscem ladowania zajmuje zywa postac -> obrazenia dzielone na pol dla obojga.
 // Moze dobic (srodowiskowy kill); zabojstwo przypisywane 'killer' (reputacja/loot/eventy ida przez critter_dead).
 
-// Zadaje pojedynczej ofierze surowe obrazenia od uderzenia (redukcja fizycznymi DT/DR); przy zgonie przyznaje killa sprawcy.
-void WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
+// Zadaje pojedynczej ofierze surowe obrazenia od uderzenia (redukcja fizycznymi DT/DR);
+// przy zgonie przyznaje killa sprawcy i zwraca faktycznie zadane obrazenia.
+int WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
 {
     // 'dmg' to obrazenia surowe (przed resistami). Redukcja odpornosciami fizycznymi
     // (DT/DR z armora), tak jak blok obrazen z broni (~combat.fos:1922).
     dmg -= victim.GetDT(DAMAGE_NORMAL);
     if(dmg <= 0)
-        return;
+        return 0;
     dmg -= (dmg * CLAMP(victim.GetDR(DAMAGE_NORMAL), 0, 95)) / 100;
     if(dmg <= 0)
-        return;
+        return 0;
 
     dmg = ApplyUtilityProtection(victim, dmg);
     dmg = Class_ApplyIncomingDamage(victim, dmg);
     if(dmg <= 0)
-        return;
+        return 0;
 
     victim.StatBase[ST_CURRENT_HP] -= dmg;
-    if(victim.IsPlayer())
-        victim.Say(SAY_NETMSG, "|0xFF8000 You are slammed into a wall for " + dmg + " hit points!");   // orange = the received-damage combat colour (client_combat.fos MsgDefColor)
 
     // Prog smierci - lustro bloku obrazen (~combat.fos:2200).
     int deadFloor = victim.Trait[TRAIT_DEAD_MAN_WALKING] > 0 ? __DeadHitPoints : __DeadHitPoints / 6;
     if(victim.Stat[ST_CURRENT_HP] > deadFloor || victim.IsDead())
-        return;
+        return dmg;
 
     // Srodowiskowy kill.
     victim.ToDead(ANIM2_DEAD_FRONT, killer);
@@ -3575,6 +3648,8 @@ void WallSlamHurt(Critter& victim, int dmg, Critter@ killer)
         if(victim.IsPlayer())
             killer.ParamBase[KILL_BEGIN + BT_PLAYER]++;
     }
+
+    return dmg;
 }
 
 // Zwraca zywa postac stojaca na danym heksie (pomijajac 'exclude'), albo null.
@@ -3588,19 +3663,47 @@ Critter@ WallSlamBlocker(Map& map, uint16 hx, uint16 hy, Critter& exclude)
     return null;
 }
 
-void ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, uint16 fromHy, uint16 knockHx, uint16 knockHy, int knockDist, int dmgPerHex, uint8 knockDir)   // Export
+// Dodaje obrazenia wall slamu jako zwykly komunikat o trafieniu dla obserwatorow i ofiary.
+void AddWallSlamCombatResult(Critter& victim, Critter@ killer, int dmg, array<CombatRes>& results)
+{
+    if(dmg <= 0)
+        return;
+
+    array<uint> sendEff(5);
+    sendEff[0] = victim.IsDead() ? CMSG_HIT_DEAD : CMSG_HIT;
+    sendEff[1] = victim.Id;
+    sendEff[2] = valid(killer) ? killer.Id : 0;
+    sendEff[3] = uint(dmg);
+    sendEff[4] = 0;
+
+    Critter@[] source = { victim };
+    array<Critter@> crits;
+    if(@victim.GetMap() != null)
+    {
+        victim.GetMap().GetCrittersSeeing(source, true, FIND_ALL | FIND_ONLY_PLAYERS, crits);
+        for(int i = 0, j = crits.length(); i < j; i++)
+            if(crits[i].Id != victim.Id)
+                AddEff(crits[i], sendEff, results);
+    }
+
+    AddEff(victim, sendEff, results);
+}
+
+// Zwraca obrazenia zadane odrzucanemu celowi. Wynik dla niego dolacza wywolujacy
+// do glownego trafienia; wynik dla ewentualnej drugiej postaci powstaje tutaj.
+int ApplyWallSlamToCombatResults(Map& map, Critter& target, Critter@ killer, uint16 fromHx, uint16 fromHy, uint16 knockHx, uint16 knockHy, int knockDist, int dmgPerHex, uint8 knockDir, array<CombatRes>& results)
 {
     if(knockDist <= 0 || dmgPerHex <= 0)
-        return;
+        return 0;
 
     int actual   = int(GetDistantion(fromHx, fromHy, knockHx, knockHy));
     int absorbed = knockDist - actual;              // nieprzebyte heksy odrzutu (zatrzymane przez przeszkode)
     if(absorbed < 1)                                // odrzut poszedl na cala zamierzona odleglosc -> nic nie uderzylo
-        return;
+        return 0;
 
     int slamDmg = absorbed * dmgPerHex;             // surowe obrazenia (przed resistami): nieprzebyte heksy * dmg/hex
     if(slamDmg <= 0)
-        return;
+        return 0;
 
     // Przeszkoda stoi jeden heks za miejscem ladowania, w kierunku lotu.
     uint8  dir = (actual > 0) ? GetDirection(fromHx, fromHy, knockHx, knockHy) : knockDir;
@@ -3611,14 +3714,24 @@ void ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, ui
     if(valid(slammed))
     {
         // Wpadniecie na inna postac - obrazenia na pol dla obojga.
-        WallSlamHurt(target,  slamDmg / 2, killer);
-        WallSlamHurt(slammed, slamDmg / 2, killer);
+        int targetDamage = WallSlamHurt(target, slamDmg / 2, killer);
+        int slammedDamage = WallSlamHurt(slammed, slamDmg / 2, killer);
+        AddWallSlamCombatResult(slammed, killer, slammedDamage, results);
         // Postac, w ktora wpadl odrzucony cel, zostaje przewrocona (KD).
         if(!slammed.IsDead() && slammed.Mode[MODE_NO_KNOCK] == 0)
             slammed.ToKnockout(KNOCKOUT_ANIM2_DEFAULT(true), 0, slammed.HexX, slammed.HexY);
+        return targetDamage;
     }
-    else
-        WallSlamHurt(target, slamDmg, killer);
+
+    return WallSlamHurt(target, slamDmg, killer);
+}
+
+void ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, uint16 fromHy, uint16 knockHx, uint16 knockHy, int knockDist, int dmgPerHex, uint8 knockDir)   // Export
+{
+    array<CombatRes> results;
+    int targetDamage = ApplyWallSlamToCombatResults(map, target, killer, fromHx, fromHy, knockHx, knockHy, knockDist, dmgPerHex, knockDir, results);
+    AddWallSlamCombatResult(target, killer, targetDamage, results);
+    FlushResults(results);
 }
 
 void InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId)   // Export
@@ -3971,6 +4084,7 @@ void ApplyVampirismLifeSteal(Critter@ attacker, Critter@ target, int dealtDamage
     int vampirismHealLimb = vampirismHeal / 2;
     if(vampirismHealLimb > 0)
     {
+        attacker.StatBase[ST_HP_HEAD] += vampirismHealLimb;
         attacker.StatBase[ST_HP_LA] += vampirismHealLimb;
         attacker.StatBase[ST_HP_RA] += vampirismHealLimb;
         attacker.StatBase[ST_HP_LL] += vampirismHealLimb;

@@ -19,6 +19,7 @@
 #ifndef __FOLLOWER_COMMON__
 import bool AddToFollowerlist(Critter& master, Critter& follower) from "follower_common";
 #endif
+import int GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 // Deprecate this in the future, maybe now.
 uint e_DisableBagRefresh(array<uint>@ values)
@@ -189,11 +190,12 @@ class CMerc : IMerc
 			SpawnedNpc.StatBase[ST_MAX_LIFE] -= 10;			
 
             SpawnedNpc.StatBase[ST_CURRENT_HP] = SpawnedNpc.Stat[ST_MAX_LIFE];
-            SpawnedNpc.StatBase[ST_HP_HEAD] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
-            SpawnedNpc.StatBase[ST_HP_LA] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
-            SpawnedNpc.StatBase[ST_HP_RA] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
-            SpawnedNpc.StatBase[ST_HP_LL] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
-            SpawnedNpc.StatBase[ST_HP_RL] = SpawnedNpc.Stat[ST_MAX_LIFE] / 2;
+            int maxLimbHp = GetActualMaxLimbHp(SpawnedNpc);
+            SpawnedNpc.StatBase[ST_HP_HEAD] = maxLimbHp;
+            SpawnedNpc.StatBase[ST_HP_LA] = maxLimbHp;
+            SpawnedNpc.StatBase[ST_HP_RA] = maxLimbHp;
+            SpawnedNpc.StatBase[ST_HP_LL] = maxLimbHp;
+            SpawnedNpc.StatBase[ST_HP_RL] = maxLimbHp;
 			SpawnedNpc.StatBase[ST_FREE_BARTER_PLAYER] = master.Id;
 
             if(!AddToFollowerlist(master, SpawnedNpc))

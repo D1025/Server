@@ -217,13 +217,13 @@ int HexShotBlastRadius(ItemMutual@ item, CritterMutual@ cr)
         radius += protoBlastPerkStacks;
         if(upgradeBonusRadius > 0)
             radius += upgradeBonusRadius;
-
-        if(item.AmmoPid == PID_EXPLOSIVE_ROCKET || item.AmmoPid == PID_40MM_GRENADE)
-            radius += 1;
-
-        if(valid(cr) && cr.Perk[PE_DEMOLITION_EXPERT] > 0 && radius > 1)
-            radius += 1;
     }
+
+    if(item.AmmoPid == PID_EXPLOSIVE_ROCKET || item.AmmoPid == PID_40MM_GRENADE)
+        radius += 1;
+
+    if(valid(cr) && cr.Perk[PE_DEMOLITION_EXPERT] > 0 && radius > 1)
+        radius += 1;
 
     return radius;
 }

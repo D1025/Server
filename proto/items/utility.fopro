@@ -192,7 +192,7 @@ Cost=2000
 Material=2
 LightColor=-16777216
 Utility_Param=195
-Utility_Value=1
+Utility_Value=0
 
 [Proto]
 ProtoId=570

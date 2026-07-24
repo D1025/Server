@@ -220,7 +220,7 @@ EXPORT bool check_look(Map& map, Critter& cr, Critter& opponent)
     int front_range=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]+GetUtilityParamBonus(cr, ST_PERCEPTION)),1,30));
 	if(cr.Params[PE_SHARPSHOOTER]) front_range+=2*cr.Params[PE_SHARPSHOOTER];
     front_range*=3;
-    front_range+= cr.Params[ST_BONUS_LOOK];
+    front_range+= cr.Params[ST_BONUS_LOOK] + GetUtilityParamBonus(cr, ST_BONUS_LOOK);
     if (isWeaponScoped)
     	front_range+=5;
 	front_range+=(int)(FOnline->LookNormal);
@@ -390,7 +390,7 @@ int GetEngineLook(Critter& cr)
 {
 	int look=(cr.Params[DAMAGE_EYE]!=0)?1:(CLAMP((cr.Params[ST_PERCEPTION]+cr.Params[ST_PERCEPTION_EXT]+GetUtilityParamBonus(cr, ST_PERCEPTION)),1,30));
     look*=3;
-    look+= cr.Params[ST_BONUS_LOOK];
+    look+= cr.Params[ST_BONUS_LOOK] + GetUtilityParamBonus(cr, ST_BONUS_LOOK);
 	look+=(int)(FOnline->LookNormal);
     if( look < (int) FOnline->LookMinimum )
         look = FOnline->LookMinimum;

@@ -32,6 +32,7 @@ import bool     IsHumanoid(Critter@ cr) from "utils";
 import void     VerboseExperience(Critter& cr, int xpDiff, int levelDiff) from "utils";
 import void 	AddScore(Critter@ cr, uint score, uint points) from "utils";
 import int      GetActualMaxHp(Critter@ cr) from "utils";
+import int      GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 int getParamDialog_Reputation(Critter@ master, Critter@ slave, uint index)
 {
@@ -77,9 +78,7 @@ void changedParam_HeadHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_HEAD];
-    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp=(maxHp*9)/10;
+    int maxHp = GetActualMaxLimbHp(cr);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_HEAD] = maxHp;
@@ -96,9 +95,7 @@ void changedParam_LArmHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_LA];
-    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp=(maxHp*9)/10;
+    int maxHp = GetActualMaxLimbHp(cr);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_LA] = maxHp;
@@ -115,9 +112,7 @@ void changedParam_RArmHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_RA];
-    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp=(maxHp*9)/10;
+    int maxHp = GetActualMaxLimbHp(cr);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_RA] = maxHp;
@@ -134,9 +129,7 @@ void changedParam_LLegHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_LL];
-    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp=(maxHp*9)/10;
+    int maxHp = GetActualMaxLimbHp(cr);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_LL] = maxHp;
@@ -153,9 +146,7 @@ void changedParam_RLegHp(Critter& cr, uint, int oldValue)   // server
         return;
     }
     int curHp = cr.StatBase[ST_HP_RL];
-    int maxHp = GetActualMaxHp(cr) / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxHp=(maxHp*9)/10;
+    int maxHp = GetActualMaxLimbHp(cr);
     if(curHp > maxHp)
     {
         cr.StatBase[ST_HP_RL] = maxHp;
@@ -522,6 +513,17 @@ void CritterGenerate(array<int>& data)     // Export to client_main@player_data_
     _param_[ST_SEQUENCE] += _param_[ST_PERCEPTION] * 2;
 
 	_param_[ST_HEALING_RATE] += 3 * _param_[ST_CHARISMA];
+
+    // ST_NORMAL_RESIST is repurposed only as a presentation row in the client
+    // registration screen. Mirror the equipment-free part of speedboost();
+    // the server still generates and uses normal damage resistance normally.
+    int movementBonus = _param_[SK_RUNNING] / 6;
+    if(_param_[TRAIT_SMALL_FRAME] != 0)
+        movementBonus += 20;
+    int movementPenalty = _param_[TRAIT_BRUISER] != 0 ? 20 : 0;
+    int runTimePreview = CLAMP(200 - movementBonus + movementPenalty, 100, 300);
+    _param_[ST_NORMAL_RESIST] = (200 - runTimePreview) / 2; // Keep identical to ~ms.
+
     if(_param_[TRAIT_FAST_METABOLISM] != 0)
 	{
         _param_[ST_HEALING_RATE] += 10;
@@ -616,9 +618,7 @@ bool CritterGenerateCheck(array<int>& data)     // Export to client_main@player_
 void ResetNpcCombatPools(Critter& npc)
 {
     int maxHp = GetActualMaxHp(npc);
-    int maxLimbHp = maxHp / (npc.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if(npc.Trait[TRAIT_SMALL_FRAME] != 0)
-        maxLimbHp = (maxLimbHp * 9) / 10;
+    int maxLimbHp = GetActualMaxLimbHp(npc);
 
     npc.StatBase[ST_CURRENT_HP] = maxHp;
     npc.StatBase[ST_HP_HEAD] = maxLimbHp;

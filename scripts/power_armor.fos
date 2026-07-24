@@ -30,11 +30,22 @@ bool IsInPowerArmor(Critter& cr)   // Export
     return valid(armor) && ArmorHasProtoPerk(armor.Proto, ARMOR_PERK_POWERED);
 }
 
+bool CanEnterPowerArmor(Critter& cr)   // Export
+{
+    int classId = cr.Param[ST_CLASS_ID];
+    return classId != CLASS_DEATHCLAW && classId != CLASS_SUPER_MUTANT;
+}
+
 // Climb into a power armor that lies on the ground.
 void EnterPowerArmor(Critter& cr, Item& groundArmor)   // Export
 {
     if(!cr.IsLife())
         return;
+    if(!CanEnterPowerArmor(cr))
+    {
+        cr.Say(SAY_NETMSG, "Your class cannot wear power armor.");
+        return;
+    }
     if(IsInPowerArmor(cr))
     {
         cr.Say(SAY_NETMSG, "You are already wearing a power armor.");

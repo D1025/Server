@@ -179,6 +179,7 @@ import void CallMobsToTakeBase(uint playerid, uint location, uint baseLocId, uin
 import void SpawnBCReward(uint16 locPid) from "base_control";
 import bool IsNukaColaWorker(Critter& mob) from "mob_dynamic";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
+import int  GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 dictionary    ItemPids;
 dictionary    VarIds;
@@ -3862,9 +3863,7 @@ void critter_init(Critter& cr, bool firstTime)
 
         CritterGenerate(cr);
         int maxHp = GetActualMaxHp(cr);
-        int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP]==1 ? 1 : 2);
-        if (cr.Trait[TRAIT_SMALL_FRAME] !=0)
-            maxLimbHp=(maxLimbHp*9)/10;
+        int maxLimbHp = GetActualMaxLimbHp(cr);
         cr.StatBase[ST_CURRENT_HP] = maxHp;
         cr.StatBase[ST_HP_HEAD] = maxLimbHp;
         cr.StatBase[ST_HP_LA] = maxLimbHp;
@@ -4438,12 +4437,20 @@ void critter_idle(Critter& cr)
     int actualMaxHp = GetActualMaxHp(cr);
     if(cr.Stat[ST_CURRENT_HP] > actualMaxHp)
         cr.StatBase[ST_CURRENT_HP] = actualMaxHp;
+    int actualMaxLimbHp = GetActualMaxLimbHp(cr);
+    bool hasHealableLimbDamage =
+        (cr.DamageBase[DAMAGE_EYE] == 0 && cr.Stat[ST_HP_HEAD] < actualMaxLimbHp) ||
+        (cr.DamageBase[DAMAGE_LEFT_ARM] == 0 && cr.Stat[ST_HP_LA] < actualMaxLimbHp) ||
+        (cr.DamageBase[DAMAGE_RIGHT_ARM] == 0 && cr.Stat[ST_HP_RA] < actualMaxLimbHp) ||
+        (cr.DamageBase[DAMAGE_LEFT_LEG] == 0 && cr.Stat[ST_HP_LL] < actualMaxLimbHp) ||
+        (cr.DamageBase[DAMAGE_RIGHT_LEG] == 0 && cr.Stat[ST_HP_RL] < actualMaxLimbHp);
 
     // Healing
     if(cr.Timeout[TO_HEALING] == 0)
     {
         //druto
-		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 && cr.Stat[ST_CURRENT_HP] < actualMaxHp)
+		if(!cr.IsDead() && cr.Mode[MODE_NO_HEAL] == 0 &&
+           (cr.Stat[ST_CURRENT_HP] < actualMaxHp || hasHealableLimbDamage))
         {
             int hpFromHealingRate = 15;
 

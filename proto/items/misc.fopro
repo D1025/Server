@@ -52,12 +52,16 @@ Type=5
 PicMap=art\items\smalbox2.frm
 PicInv=art\inven\glasses.frm
 Flags=134217758
-Stackable=1
+DisableEgg=1
+Stackable=0
+Slot=4
 Volume=1
 SoundId=48
 Cost=50
 Material=1
 LightColor=-16777216
+Utility_Param=101
+Utility_Value=5
 
 [Proto]
 ProtoId=433

@@ -43,6 +43,15 @@ import int  ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal) from "utils"
 // Dumbed Down Drugs (only two stages)
 #define SPECIAL_DRUG                      # (_pid) ((_pid) == PID_MENTATS || (_pid) == PID_BUFFOUT || (_pid) == PID_PSYCHO || (_pid) == PID_JET || (_pid) == PID_BEER || (_pid) == PID_NUKA_COLA || (_pid) == PID_CIGARETTES || (_pid) == PID_SUPER_STIMPAK)
 
+int GetDrugApRegenerationModifier(uint16 drugPid)
+{
+    if(drugPid == PID_PSYCHO || drugPid == PID_BUFFOUT)
+        return -10;
+    if(drugPid == PID_NUKA_COLA)
+        return 10;
+    return 0;
+}
+
 bool IsDrugCooldownActive(Critter& cr, uint pid)
 {
     if(pid == PID_STIMPAK)
@@ -651,6 +660,14 @@ uint ProcessDrug(Critter& cr, uint16 drugPid, uint& rate)
                 cr.SayMsg(SAY_NETMSG, TEXTMSG_GAME, STR_DRUG_STAT_LOSE, "$name @msg game " + STR_PARAM_NAME(stat) + "@$value" + (-statVal));
         }
 
+        int apRegenerationModifier = GetDrugApRegenerationModifier(drugPid);
+        if(stage == 1)
+            apRegenerationModifier = -apRegenerationModifier;
+        if((stage == 0 && cr.Trait[TRAIT_CHEM_RESISTANT] == 1 && apRegenerationModifier < 0) ||
+           (stage == 1 && cr.Trait[TRAIT_CHEM_RESISTANT] == 1 && apRegenerationModifier > 0))
+            apRegenerationModifier = 0;
+        cr.StatBase[ST_AP_REGENERATION] += apRegenerationModifier;
+
         durationTimer = GetDrugStageDurationTimer(drugPid, stage, flags);
         SetDrugTimer(cr, drugPid, durationTimer);
     }
@@ -704,6 +721,14 @@ void DropDrug(Critter& cr, uint16 drugPid, uint stage)
                 cr.StatBase[STAT_EXT_BEGIN + stat] += amount;
             else if(stat == ST_AP_REGENERATION)
                 cr.StatBase[stat] += amount;
+        }
+
+        if(stage == 1)
+        {
+            int apRegenerationModifier = GetDrugApRegenerationModifier(drugPid);
+            if(cr.Trait[TRAIT_CHEM_RESISTANT] == 1 && apRegenerationModifier < 0)
+                apRegenerationModifier = 0;
+            cr.StatBase[ST_AP_REGENERATION] -= apRegenerationModifier;
         }
     }
 }

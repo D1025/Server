@@ -15,6 +15,7 @@
 #include "classes_h.fos"
 
 import bool TryRepairItem(Critter& cr, Item& item) from "repair";
+import int GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 const uint SKILL_WEARINESS_MESSAGE_COOLDOWN = 1000;
 dictionary SkillWearinessMessageTick;
@@ -139,9 +140,7 @@ void ConsumeMedicalUtilityStack(Item@ utility)
 
 bool _CritAtLeastOneLimbNotOnFull(Critter& cr)
 {
-    int maxHp = cr.StatBase[ST_MAX_LIFE] / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME] == 1)
-        maxHp = (maxHp * 9) / 10;
+    int maxHp = GetActualMaxLimbHp(cr);
     return cr.Stat[ST_HP_HEAD] < maxHp && cr.Stat[ST_HP_LA] < maxHp && cr.Stat[ST_HP_RA] < maxHp && cr.Stat[ST_HP_LL] < maxHp && cr.Stat[ST_HP_RL] < maxHp;
 }
 

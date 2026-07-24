@@ -181,7 +181,7 @@
 {8600}{}{Scout Handbook}
 {8601}{}{A practical scouting guide. While equipped in the utility slot, it increases Outdoorsman by 30 points.}
 {8700}{}{Buffout}
-{8701}{}{Highly advanced steroids. While in effect, they increase strength and endurance. Very addictive.}
+{8701}{}{Highly advanced steroids. While in effect, they increase Strength and Endurance but reduce AP regeneration by 10%. Very addictive.}
 {8800}{}{Watch}
 {8801}{}{An expensive watch. Not really working, but it still looks nice.}
 {8900}{}{Motor}
@@ -219,7 +219,7 @@
 {10500}{}{Key}
 {10501}{}{A special key of some sort.}
 {10600}{}{Nuka-Cola}
-{10601}{}{A bottle of Nuka-Cola, the flavored softdrink of the post-nuclear world. Warm and flat.}
+{10601}{}{A warm, flat soft drink. While in effect, it grants +1 Agility and +10% AP regeneration, but reduces maximum AP by 2.}
 {10700}{}{Bones}
 {10701}{}{A collection of strange bones.}
 {10800}{}{Bones}
@@ -227,7 +227,7 @@
 {10900}{}{Rad-X}
 {10901}{}{Anti-radiation chems to be taken before exposure. No known side effects.}
 {11000}{}{Psycho}
-{11001}{}{An unique delivery system filled with strange and unknown chemicals of probably military origin. It is supposed to increase the combat potential of a soldier.}
+{11001}{}{A military combat drug. While in effect, it improves physical combat performance but reduces Perception and AP regeneration by 10%.}
 {11100}{}{.44 Magnum FMJ}
 {11101}{}{A brick of ammunition, .44 Magnum caliber, full metal jacket.}
 {11200}{}{Urn}
@@ -792,7 +792,7 @@
 {41400}{}{Vault 15 Shack Key}
 {41401}{}{A standard key.}
 {41500}{}{Spectacles}
-{41501}{}{A set of spectacles for eye correction.}
+{41501}{}{A set of corrective spectacles. While equipped as utility, they increase FoV by 5 hexes.}
 {41600}{}{Empty Jet Canister}
 {41601}{}{An empty jet canister, much like thousands of others.}
 {41700}{}{Oxygen Tank}
@@ -9864,7 +9864,7 @@ a58ew64v}
 {2559400}{}{Explosive Collar}
 {2559401}{}{A lethal collar with a dead man's switch. When its wearer dies, the collar is destroyed and explodes in a 3-hex radius, dealing explosive damage equal to 25% of the wearer's maximum Hit Points. Placeholder artwork.}
 {2559500}{}{Adrenaline Regulator}
-{2559501}{}{A compact metabolic regulator. While equipped as utility, it increases AP regeneration by 1% for each point of current Agility.}
+{2559501}{}{A compact metabolic regulator. Its utility effect is currently inactive.}
 {2999000}{}{Cocaine Brick}
 {2999001}{}{A compressed brick of pure stimulant. First comes a rush, then a crash, then enforced rest. Many people think it's just baking powder. Of course, they're right.}
 {2999100}{}{Laboratory Keycard}

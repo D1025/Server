@@ -75,7 +75,7 @@ const int[] DrugEffects =
 // PID_NUKA_COLA, special
     ADDICTION_NUKA_COLA,     15,            600,      2,        2, 1200,
     ST_AGILITY,         1,     -1,      0,          0,     0,
-    ST_ACTION_POINTS,         0,      0,      0,         -1,     1,
+    ST_ACTION_POINTS,        -2,      2,      0,         -1,     1,
     -1,         0,      0,      0,          0,     0,
     -1,         0,      0,      0,          0,     0,
     -1,         0,      0,      0,          0,     0,

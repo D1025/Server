@@ -205,9 +205,32 @@ void ClassAbilityCancelTargeting() // Export - client_io
 {
     if(!ClassAbilityTargeting)
         return;
+
+    int currentCursor = GetCurrentCursor();
+    int previousCursor = ClassAbilityPreviousCursor;
     ClassAbilityTargeting = false;
     ClassAbilityTargetingClass = CLASS_NONE;
-    ChangeCursor(ClassAbilityPreviousCursor);
+    ClassAbilityPreviousCursor = CURSOR_DEFAULT;
+
+    // A normal cancel restores the cursor used before targeting. If another
+    // control has already selected a different cursor, preserve that choice.
+    if(currentCursor == CURSOR_USE_SKILL)
+        ChangeCursor(previousCursor);
+}
+
+void ClassAbilityCancelIfCursorChanged() // Export - client_io
+{
+    if(!ClassAbilityTargeting || GetCurrentCursor() == CURSOR_USE_SKILL)
+        return;
+
+    string abilityName = ClassAbilityTargetingName();
+    ClassAbilityCancelTargeting();
+    Message(abilityName + " targeting cancelled.");
+}
+
+bool ClassAbilityIsTargeting() // Export - client_io
+{
+    return ClassAbilityTargeting;
 }
 
 bool ClassAbilityMouseDown(int click) // Export - client_io

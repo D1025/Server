@@ -83,6 +83,7 @@ import void CompleteRepair(Item& item) from "repair";
 import void SpawnArena(Map@ map, uint16 size_x, uint16 size_y, uint16 hx, uint16 hy, uint min_room_x, uint min_room_y, uint min_path) from "arena_generator";
 import void DropDrugsEffectsHinkley(Critter& cr) from "drugs";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
+import int  GetActualMaxLimbHp(Critter@ cr) from "utils";
 //import void RemoveBonus(Item@ it) from "item_bonus";
 
 // Player ST_VAR* used:
@@ -2453,9 +2454,7 @@ void OnTeleportToLobby(Critter& cr)   // export
     if(cr.IsDead())
         cr.ToLife();
     int maxHp = GetActualMaxHp(cr);
-    int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxLimbHp=(maxLimbHp*9)/10;
+    int maxLimbHp = GetActualMaxLimbHp(cr);
     cr.StatBase[ST_CURRENT_HP] = maxHp;
     cr.StatBase[ST_HP_HEAD] = maxLimbHp;
     cr.StatBase[ST_HP_LA] = maxLimbHp;
@@ -2498,10 +2497,8 @@ void OnTeleportToLobby(Critter& cr)   // export
 
 void OnTeleportToArena(Critter& cr)   // export
 {
-    int maxHp = cr.StatBase[ST_MAX_LIFE] + CLAMP(cr.StatBase[ST_LEVEL],0,30) * (cr.StatBase[ST_ENDURANCE]+cr.StatBase[ST_ENDURANCE_EXT]) / 2;
-    int maxLimbHp = maxHp / (cr.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
-    if (cr.Trait[TRAIT_SMALL_FRAME]!=0)
-        maxLimbHp=(maxLimbHp*9)/10;
+    int maxHp = GetActualMaxHp(cr);
+    int maxLimbHp = GetActualMaxLimbHp(cr);
     cr.StatBase[ST_CURRENT_HP] = maxHp;
     cr.StatBase[ST_HP_HEAD] = maxLimbHp;
     cr.StatBase[ST_HP_LA] = maxLimbHp;

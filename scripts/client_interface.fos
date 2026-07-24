@@ -897,7 +897,9 @@ void render_iface(uint layer)
                         int dy = -10;
                         if(chosen.Perk[PE_LIVING_ANATOMY] != 0)
                         {
-                            int maxHp = cr.Param[ST_MAX_LIFE] / (cr.Param[PE_IRON_GRIP] == 1 ? 1 : 2);
+                            int maxHp = cr.Param[ST_MAX_LIFE];
+                            if(cr.Param[PE_IRON_GRIP] > 0)
+                                maxHp = maxHp * 3 / 2;
                             if (cr.Param[TRAIT_SMALL_FRAME]!=0)
                                 maxHp=(maxHp*9)/10;
                             DrawText(((cr.Param[ST_HP_LL] * 100 / maxHp) + "% Legs ") +((cr.Param[ST_HP_RL] * 100 / maxHp) + "% "), __MouseX + 15, __MouseY + dy, __ScreenWidth, 20, AW_COLOR_FACTION_NAME, FONT_FALLOUT, FT_ALIGN | FT_BORDERED);
@@ -2150,6 +2152,8 @@ string item_description(ItemCl& item, int lookType)
                 string utilityValue = item.Proto.Utility_Value > 0 ? "+" + item.Proto.Utility_Value : "" + item.Proto.Utility_Value;
                 if(item.Proto.Utility_Param == ST_AP_REGENERATION)
                     result += "\nEquipped utility bonus: " + utilityValue + "% AP regeneration per Agility.";
+                else if(item.Proto.Utility_Param == ST_BONUS_LOOK)
+                    result += "\nEquipped utility bonus: " + utilityValue + " FoV.";
                 else
                 {
                     string utilityParam = GetMsgStr(TEXTMSG_GAME, STR_SKILL_NAME(item.Proto.Utility_Param));
@@ -3286,7 +3290,9 @@ void DrawIndicators()
         return;
     ItemCl@ item = chosen.GetItem(0, SLOT_HAND1);
 
-    int     maxHp = chosen.Param[ST_MAX_LIFE] / (chosen.Perk[PE_IRON_GRIP] == 1 ? 1 : 2);
+    int     maxHp = chosen.Param[ST_MAX_LIFE];
+    if(chosen.Perk[PE_IRON_GRIP] > 0)
+        maxHp = maxHp * 3 / 2;
     if (chosen.Param[TRAIT_SMALL_FRAME]!=0)
         maxHp=(maxHp*9)/10;
     int     curHeadHp = chosen.Param[ST_HP_HEAD];

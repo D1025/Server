@@ -64,7 +64,13 @@ void RebuildFog(CritterCl& cr)
     ProtoItem@ weapon1 = cr.GetSlotProto(SLOT_HAND1, mode);
     if ( valid(weapon1) && WeaponHasProtoPerk(weapon1, WEAPON_PERK_SCOPE_RANGE))
         isWeaponScoped=true;
-    uint   cSight = cr.IsLife() ? __LookNormal + cr.Stat[ST_PERCEPTION] * 3 + cr.Param[PE_SHARPSHOOTER] * 6 + (isWeaponScoped ? 5 : 0) : __LookMinimum;
+    int utilityFovBonus = 0;
+    ItemCl@ utility = cr.GetItem(0, SLOT_UTILITY);
+    if(valid(utility) && !FLAG(utility.BrokenFlags, BI_BROKEN) &&
+       utility.Proto.Utility_Param == ST_BONUS_LOOK)
+        utilityFovBonus = utility.Proto.Utility_Value;
+    uint   cSight = cr.IsLife() ? __LookNormal + cr.Stat[ST_PERCEPTION] * 3 + cr.Param[PE_SHARPSHOOTER] * 6 +
+                                  utilityFovBonus + (isWeaponScoped ? 5 : 0) : __LookMinimum;
 
     // Do not rebuild if there's no need for it
     if(!MapChanged && LastDir == cDir && LastHexX == cX && LastHexY == cY && LastSight == cSight)

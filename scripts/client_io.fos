@@ -34,6 +34,8 @@ import bool ProcessBind(uint8 key) from "client_keybinds";
 import bool ProcessMouseBind(int click) from "client_keybinds";
 import bool ClassAbilityMouseDown(int click) from "client_keybinds";
 import void ClassAbilityCancelTargeting() from "client_keybinds";
+import void ClassAbilityCancelIfCursorChanged() from "client_keybinds";
+import bool ClassAbilityIsTargeting() from "client_keybinds";
 
 import int stringReplaceText(string& s, string@ f, string@ t) from "config_file";
 
@@ -73,6 +75,7 @@ int PrevMouseY = __MouseY;
 bool RtsMoveCursorPreview = false;
 int RtsCursorBeforeMove = CURSOR_DEFAULT;
 bool MouseButton4Held = false;
+int ClassAbilityCapturedClick = -1;
 
 #define RTS_LEFT_INTERACT  (0)
 #define RTS_LEFT_ATTACK    (1)
@@ -97,6 +100,7 @@ void SetRtsLeftAction(uint8 action)
 void ApplyRtsCursor()
 {
     ChangeCursor(__ConfigRtsLeftAction == RTS_LEFT_ATTACK ? CURSOR_USE_WEAPON : CURSOR_DEFAULT);
+    ClassAbilityCancelIfCursorChanged();
 }
 
 void SyncRtsLeftActionFromCursor()
@@ -166,6 +170,7 @@ void input_lost()
     }
     RtsMoveCursorPreview = false;
     MouseButton4Held = false;
+    ClassAbilityCapturedClick = -1;
 
     GUI_InputLost();
 }
@@ -211,6 +216,7 @@ bool key_down(uint8 key, string& keyText)
     if(ProcessBind(key))
     {
         SyncRtsLeftActionFromCursor();
+        ClassAbilityCancelIfCursorChanged();
 
         bool newFog = __ConfigFog;
         if(newFog != oldFog)
@@ -346,8 +352,15 @@ bool mouse_down(int click)
     if(click == MOUSE_CLICK_EXT0)
         MouseButton4Held = true;
 
+    ClassAbilityCancelIfCursorChanged();
     if(ClassAbilityMouseDown(click))
+    {
+        // The matching mouse-up must not reach the weapon cursor after the
+        // ability restores the cursor that was active before targeting.
+        if(!ClassAbilityIsTargeting())
+            ClassAbilityCapturedClick = click;
         return true;
+    }
 
     if(ProcessMouseBind(click))
     {
@@ -512,6 +525,12 @@ bool mouse_up(int click)
     if(click == MOUSE_CLICK_EXT0)
         MouseButton4Held = false;
 
+    if(click == ClassAbilityCapturedClick)
+    {
+        ClassAbilityCapturedClick = -1;
+        return true;
+    }
+
     bool result = GUI_MouseUp(__MouseX, __MouseY, click);
 
     if(__RTSCombat && click == MOUSE_CLICK_RIGHT && RtsMoveCursorPreview)
@@ -523,6 +542,7 @@ bool mouse_up(int click)
             ChangeCursor(RtsCursorBeforeMove);
     }
 
+    ClassAbilityCancelIfCursorChanged();
     return result;
 }
 

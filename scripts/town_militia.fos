@@ -31,6 +31,8 @@
 #include "utils_h.fos"
 #include "world_common_h.fos"
 
+import int GetActualMaxLimbHp(Critter@ cr) from "utils";
+
 void r_BecomeMilitia(Critter& player, Critter@ cr)
 {
     if(!DisbandFollower(player, cr, true))
@@ -118,11 +120,12 @@ void critter_init(Critter& cr, bool firstTime)
         cr.StatBase[ST_PERCEPTION] = Random(7, 10);
         cr.StatBase[ST_MAX_LIFE] = Random(300, 350);
         cr.StatBase[ST_CURRENT_HP] = cr.StatBase[ST_MAX_LIFE];
-        cr.StatBase[ST_HP_HEAD] = cr.StatBase[ST_MAX_LIFE]/2;
-        cr.StatBase[ST_HP_LA] = cr.StatBase[ST_MAX_LIFE]/2;
-        cr.StatBase[ST_HP_RA] = cr.StatBase[ST_MAX_LIFE]/2;
-        cr.StatBase[ST_HP_LL] = cr.StatBase[ST_MAX_LIFE]/2;
-        cr.StatBase[ST_HP_RL] = cr.StatBase[ST_MAX_LIFE]/2;
+        int maxLimbHp = GetActualMaxLimbHp(cr);
+        cr.StatBase[ST_HP_HEAD] = maxLimbHp;
+        cr.StatBase[ST_HP_LA] = maxLimbHp;
+        cr.StatBase[ST_HP_RA] = maxLimbHp;
+        cr.StatBase[ST_HP_LL] = maxLimbHp;
+        cr.StatBase[ST_HP_RL] = maxLimbHp;
 
     }
 }

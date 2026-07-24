@@ -55,6 +55,7 @@
 
 import int  GetWearProcent(Item& item) from "repair";
 import void unsafe_ExecGMHelpCommand(Critter& player, int p0, int p1, int p2, string@ commandString, array<int>@ param4) from "unsafe_client";
+import int GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 array<uint> bags;   // Militia bags
 array<uint> mil_modoc_pids;
@@ -1896,11 +1897,12 @@ class CTown : ITown
                             if(crits[i].IsDead())
                                 crits[i].ToLife();
                             crits[i].StatBase[ST_CURRENT_HP] = crits[i].Stat[ST_MAX_LIFE];
-                            crits[i].StatBase[ST_HP_HEAD] = crits[i].Stat[ST_MAX_LIFE] /2;
-                            crits[i].StatBase[ST_HP_LA] = crits[i].Stat[ST_MAX_LIFE] /2;
-                            crits[i].StatBase[ST_HP_RA] = crits[i].Stat[ST_MAX_LIFE] /2;
-                            crits[i].StatBase[ST_HP_LL] = crits[i].Stat[ST_MAX_LIFE] /2;
-                            crits[i].StatBase[ST_HP_RL] = crits[i].Stat[ST_MAX_LIFE] /2;
+                            int maxLimbHp = GetActualMaxLimbHp(crits[i]);
+                            crits[i].StatBase[ST_HP_HEAD] = maxLimbHp;
+                            crits[i].StatBase[ST_HP_LA] = maxLimbHp;
+                            crits[i].StatBase[ST_HP_RA] = maxLimbHp;
+                            crits[i].StatBase[ST_HP_LL] = maxLimbHp;
+                            crits[i].StatBase[ST_HP_RL] = maxLimbHp;
                             // Log("done.");
                         }
                     }

@@ -3740,14 +3740,16 @@ void SetDeterioration(Item& item)
 }
 
 int GetActualMaxHp(Critter@ cr) {
-    int armorEnduranceBonus = 0;
-    Item@ armor = _CritGetItemArmor(cr);
-    if(valid(armor))
-        armorEnduranceBonus = UpgradeBonusValue(armor, BONUS_ARMOR_ENDURANCE);
+    return CLAMP(cr.Stat[ST_MAX_LIFE], 1, 9999);
+}
 
-    int endurance = cr.StatBase[ST_ENDURANCE] + cr.StatBase[ST_ENDURANCE_EXT] + armorEnduranceBonus;
-    int maxHp = cr.StatBase[ST_MAX_LIFE] + cr.StatBase[ST_MAX_LIFE_EXT] + CLAMP(cr.StatBase[ST_LEVEL], 0, 30) * endurance / 2;
-    return MAX(maxHp, 1);
+int GetActualMaxLimbHp(Critter@ cr) {
+    int maxLimbHp = GetActualMaxHp(cr);
+    if(cr.Perk[PE_IRON_GRIP] > 0)
+        maxLimbHp = maxLimbHp * 3 / 2;
+    if(cr.Trait[TRAIT_SMALL_FRAME] != 0)
+        maxLimbHp = maxLimbHp * 9 / 10;
+    return MAX(maxLimbHp, 1);
 }
 
 int ApplyVampirismSelfHealingPenalty(Critter@ cr, int heal)

@@ -1386,9 +1386,9 @@
 {100221}{}{Damage Threshold Explosion}
 {100222}{}{Damage Threshold Explosion}
 # ST_NORMAL_RESIST
-{100231}{}{Damage Resistance}
-{100232}{}{Any damage taken is reduced by this amount. Damage Resistance can be increased by wearing armor.}
-{100233}{}{Damage Res.}
+{100231}{}{Move Speed (%)}
+{100232}{}{Movement speed modifier, calculated in the same way as the ~ms command. Zero is the base speed; positive values are faster and negative values are slower.}
+{100233}{}{Move Speed (%)}
 # ST_LASER_RESIST
 {100241}{}{Damage Resistance Laser}
 {100242}{}{Damage Resistance Laser}
@@ -1739,7 +1739,7 @@
 {103362}{}{This perk gives you an additional +1 to Strength (up to 10), for purposes of determining range with thrown weapons only. This Perk will exceed a weapon's maximum range.}
 # PE_AND_STAY_BACK
 {103371}{}{And Stay Back}
-{103372}{}{Taking this perk grants a 100% chance to inflict a "knockback" effect on an enemy when using shotguns.}
+{103372}{}{Shotgun attacks that hit with multiple rounds knock enemies back within half of the weapon's maximum range.}
 # PE_PICKPOCKET
 {103381}{}{Pickpocket}
 {103382}{}{You are much more adept at stealing than a normal crook.  You can steal with the best of them, because with this Perk, you halve the size and facing modifiers when stealing from a person.}
@@ -1928,7 +1928,7 @@
 {104212}{}{You have large legs, you are able to shrug off leg shots that would floor others.}
 # PE_IRON_GRIP                (422)
 {104221}{}{Iron Limbs}
-{104222}{}{They will have to pry your gun from your cold dead hands, if they can ever take you to the ground. You suffer fewer weapon drops and your limbs are harder to cripple.}
+{104222}{}{Your limbs have 50% more Hit Points. You also suffer fewer weapon drops and your limbs are harder to cripple.}
 # PE_MAN_OF_STEEL             (423)
 {104231}{}{Man of Steel}
 {104232}{}{You are as tough as they come. Critical hits just don’t seem to affect you as much as they do others.}
@@ -1994,7 +1994,7 @@
 {104432}{}{Mastery in unarmed combat has given you the edge when it comes to damage.  You cause +15% critical chance with hand-to-hand and melee attacks.}
 # PE_IN_YOUR_FACE             (444)
 {104441}{}{In Your Face!}
-{104442}{}{You cut an intimidating figure and people cower when you are near. Opponents have a 50% chance of missing you when in an adjacent square.}
+{104442}{}{While fighting unarmed or with a close-combat weapon, you take 40% less damage from nearby opponents within your reach.}
 # PE_HIT_THE_GAPS             (445)
 {104451}{}{Hit the Gaps}
 {104452}{}{You are an expert at punching through the weak spots in armor. The Critical Power Modifier value of any armor is reduced by 100% }

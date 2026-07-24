@@ -11,6 +11,28 @@
 
 # include "_macros.fos"
 
+# ifdef __CLIENT
+// The engine uses the ST_NORMAL_RESIST row on both registration and character screens.
+// Redirect only that client-side presentation row to the movement-speed percentage;
+// server-side normal damage resistance and CritterCl::GetDR remain unchanged.
+int getParam_MoveSpeed(CritterCl& cr, uint)
+{
+    int runTime = cr.Param[ST_RUN_TIME];
+    if(runTime > 0)
+        return (200 - runTime) / 2; // Keep identical to ~ms.
+
+    // Registration has no server-calculated run time yet. Mirror the starting,
+    // equipment-free part of speedboost() so traits and Running update live.
+    int bonus = cr.Skill[SK_RUNNING] / 6;
+    if(cr.Trait[TRAIT_SMALL_FRAME] != 0)
+        bonus += 20;
+
+    int penalty = cr.Trait[TRAIT_BRUISER] != 0 ? 20 : 0;
+    int runTimePreview = CLAMP(200 - bonus + penalty, 100, 300);
+    return (200 - runTimePreview) / 2;
+}
+# endif
+
 void InitializeGame()                  // Export
 {
     /// Init global vars
@@ -231,8 +253,14 @@ void InitializeGame()                  // Export
     SetParameterGetBehaviour(ST_POISON_RESISTANCE, dllName + "getParam_PoisonResist");
 	//SetParameterGetBehaviour(ST_NPC_ROLE, dllName + "getParam_NpcRole");
 	//SetParameterGetBehaviour(ST_NPC_BOSS, dllName + "getParam_IsBoss");
+    # ifdef __CLIENT
+    SetParameterGetBehaviour(ST_NORMAL_RESIST, "config@getParam_MoveSpeed");
+    for(uint i = ST_LASER_RESIST; i <= ST_EXPLODE_RESIST; i++)
+        SetParameterGetBehaviour(i, dllName + "getParam_DamageResistance");
+    # else
     for(uint i = ST_NORMAL_RESIST; i <= ST_EXPLODE_RESIST; i++)
         SetParameterGetBehaviour(i, dllName + "getParam_DamageResistance");                                                   // changed roundings
+    # endif
     for(uint i = ST_NORMAL_ABSORB; i <= ST_EXPLODE_ABSORB; i++)
         SetParameterGetBehaviour(i, dllName + "getParam_DamageThreshold");                                                    // changed roundings
     for(uint i = TIMEOUT_BEGIN; i <= TIMEOUT_END; i++)
