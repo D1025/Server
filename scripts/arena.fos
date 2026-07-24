@@ -83,7 +83,6 @@ import void CompleteRepair(Item& item) from "repair";
 import void SpawnArena(Map@ map, uint16 size_x, uint16 size_y, uint16 hx, uint16 hy, uint min_room_x, uint min_room_y, uint min_path) from "arena_generator";
 import void DropDrugsEffectsHinkley(Critter& cr) from "drugs";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
-import int  GetActualMaxLimbHp(Critter@ cr) from "utils";
 //import void RemoveBonus(Item@ it) from "item_bonus";
 
 // Player ST_VAR* used:

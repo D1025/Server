@@ -96,6 +96,7 @@ import void       SetRequestedHelp(Critter& player, int minutes) from "utils";
 import Critter@   GetOnlineGM() from "utils";
 import void       Preprocess(Critter& player, string& commandString) from "utils";
 import bool       IsHumanoid(Critter@ cr) from "utils";
+import int        GetActualMaxLimbHp(Critter@ cr) from "utils";
 import uint       GetGroupIndex(Critter& cr) from "utils";
 import uint       GetGroupIndex(int st) from "utils";
 import void       SetGroupIndex(Critter& cr, uint val) from "utils";

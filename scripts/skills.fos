@@ -15,7 +15,6 @@
 #include "classes_h.fos"
 
 import bool TryRepairItem(Critter& cr, Item& item) from "repair";
-import int GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 const uint SKILL_WEARINESS_MESSAGE_COOLDOWN = 1000;
 dictionary SkillWearinessMessageTick;

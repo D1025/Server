@@ -31,8 +31,6 @@
 #include "utils_h.fos"
 #include "world_common_h.fos"
 
-import int GetActualMaxLimbHp(Critter@ cr) from "utils";
-
 void r_BecomeMilitia(Critter& player, Critter@ cr)
 {
     if(!DisbandFollower(player, cr, true))

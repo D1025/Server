@@ -42,7 +42,6 @@ import void WearItem(Critter& cr, Item& item, int wearCount) from "repair";
 import void ExitDeploy(Critter& cr) from "deploy";
 import bool IsDeployed(Critter& cr) from "deploy";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
-import int  GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 
 import void MolotovBlast( Map& map, uint16 hexX, uint16 hexY, uint16 firePid, uint ownerId ) from "fire_hexes";

@@ -19,7 +19,6 @@
 #ifndef __FOLLOWER_COMMON__
 import bool AddToFollowerlist(Critter& master, Critter& follower) from "follower_common";
 #endif
-import int GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 // Deprecate this in the future, maybe now.
 uint e_DisableBagRefresh(array<uint>@ values)

@@ -179,7 +179,6 @@ import void CallMobsToTakeBase(uint playerid, uint location, uint baseLocId, uin
 import void SpawnBCReward(uint16 locPid) from "base_control";
 import bool IsNukaColaWorker(Critter& mob) from "mob_dynamic";
 import int  GetActualMaxHp(Critter@ cr) from "utils";
-import int  GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 dictionary    ItemPids;
 dictionary    VarIds;

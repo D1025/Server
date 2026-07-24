@@ -55,7 +55,6 @@
 
 import int  GetWearProcent(Item& item) from "repair";
 import void unsafe_ExecGMHelpCommand(Critter& player, int p0, int p1, int p2, string@ commandString, array<int>@ param4) from "unsafe_client";
-import int GetActualMaxLimbHp(Critter@ cr) from "utils";
 
 array<uint> bags;   // Militia bags
 array<uint> mil_modoc_pids;
