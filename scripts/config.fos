@@ -257,7 +257,8 @@ void InitializeGame()                  // Export
     SetParameterGetBehaviour(ST_NORMAL_RESIST, "config@getParam_MoveSpeed");
     for(uint i = ST_LASER_RESIST; i <= ST_EXPLODE_RESIST; i++)
         SetParameterGetBehaviour(i, dllName + "getParam_DamageResistance");
-    # else
+    # endif
+    # ifndef __CLIENT
     for(uint i = ST_NORMAL_RESIST; i <= ST_EXPLODE_RESIST; i++)
         SetParameterGetBehaviour(i, dllName + "getParam_DamageResistance");                                                   // changed roundings
     # endif
