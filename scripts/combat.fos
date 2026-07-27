@@ -1508,7 +1508,9 @@ void CombatAttack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weaponM
     // Stuff like animations and effects
 
     // Shoot
-    if(_WeaponEffect(weapon, use) != 0)
+    // A combined melee/throw weapon may share a projectile effect between both
+    // modes (for example spears). Only ranged uses should launch that effect.
+    if(isRanged && _WeaponEffect(weapon, use) != 0)
     {
         if(useHex)
             map.RunFlyEffect(_WeaponEffect(weapon, use), cr, null, hx, hy, tx, ty);      // yeah, the target can be null (see: grenades, rocket launcher)
@@ -2376,6 +2378,15 @@ void ApplyDamage(AttackStruct& attack, Critter& target, uint rounds, bool isCrit
         // Add leaderboard score
         if(attack.IsUnarmed && validAttacker && attackerIsPlayer)
             AddScore(attacker, SCORE_UNARMED_DAMAGE, totalDmg);
+    }
+
+    // Boss weapons are part of their encounter kit. No critical effect may
+    // move one to inventory or the ground, even if a boss-specific script did
+    // not set MODE_NEGATE_CRIT_EFF.
+    if(target.Stat[ST_NPC_BOSS] != 0)
+    {
+        UNSETFLAG(eff, HF_DROPPED_WEAPON);
+        UNSETFLAG(msgEff, HF_DROPPED_WEAPON);
     }
 
     if(FLAG(eff, HF_DROPPED_WEAPON))
@@ -3327,7 +3338,7 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
     bool  wpnIsRemoved = _WeaponRemove(weapon, weaponUse);
     Map@  map = cr.GetMap();
 
-    if(cr.Mode[MODE_NO_DROP] != 0)
+    if(cr.Mode[MODE_NO_DROP] != 0 || cr.Stat[ST_NPC_BOSS] != 0)
         UNSETFLAG(eff, MF_WEAPON_DROPPED);
 
     if(FLAG(eff, MF_HIT_SELF) || FLAG(eff, MF_WEAPON_EXPLODED))        // Only one bullet because burst weapons do not have the ability
@@ -3426,7 +3437,8 @@ void CriticalFailure(Critter& cr, ProtoItem& weapon, uint8 weaponUse, ProtoItem@
         realWeapon.Update();
     }
 
-    if(cr.Mode[MODE_NO_DROP] != 0 || (cr.Perk[PE_IRON_GRIP] > 0 && Random(1, 10) <= cr.Stat[ST_ENDURANCE] - 5))
+    if(cr.Mode[MODE_NO_DROP] != 0 || cr.Stat[ST_NPC_BOSS] != 0 ||
+       (cr.Perk[PE_IRON_GRIP] > 0 && Random(1, 10) <= cr.Stat[ST_ENDURANCE] - 5))
         UNSETFLAG(eff, MF_WEAPON_DROPPED);
     if(cr.Mode[MODE_NO_LOOSE_LIMBS] != 0)
         UNSETFLAG(eff, MF_CRIPPLED_RANDOM_LIMB);

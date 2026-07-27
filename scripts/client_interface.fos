@@ -42,6 +42,7 @@
 import void DrawAchievements() from "achievements";
 
 import void BroadcastDraw() from "client_broadcast";
+import void DrawBossHud() from "client_eventboss";
 
 import void changedParam_Hide(CritterCl& cr, uint, int oldValue) from "parameters";
 import void CutsceneDraw() from "client_cutscene";
@@ -805,13 +806,15 @@ void render_iface(uint layer)
     {
         
 		
-		if( mainsc == CLIENT_MAIN_SCREEN_GAME )
+        if( mainsc == CLIENT_MAIN_SCREEN_GAME )
         {
             // Most Important Feature Ever Made By Human Race For FOnline Game
             DrawText( "FOnline: New Dawn", 0, 5, __ScreenWidth-5, 10, 0, FONT_FALLOUT, FT_CENTERR );
             string date = DateTimeToString( __FullSecond );
             DrawText( date, 0, 15, __ScreenWidth-5, 10, 0, FONT_FALLOUT, FT_CENTERR );
             DrawPingGraph();
+            if(!__GmapActive)
+                DrawBossHud();
         }
         if(__ConfigOnHeadAwareness > 0)
             DrawCritterOnHead();

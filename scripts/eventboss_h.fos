@@ -56,6 +56,16 @@ class CBoss
     uint            currentAttack;
     array<int>      attackPrepareTimes;
     array<int>      attackRecuperations;
+    array<string>   attackNames;
+    string          currentAttackName;
+    string          specialAttackName;
+    uint            specialAttackSerial;
+    string          hudAttackName;
+    uint            hudAttackSerial;
+    uint            hudAttackUntil;
+    array<uint>     trackedLegPlayerIds;
+    array<uint>     trackedLegMasks;
+    array<uint>     pendingBombPlayerIds;
 
     //
     bool patern;
@@ -74,6 +84,16 @@ class CBoss
         currentAttack = 0;
         attackPrepareTimes = array<int>(0);
         attackRecuperations = array<int>(0);
+        attackNames = array<string>(0);
+        currentAttackName = "";
+        specialAttackName = "";
+        specialAttackSerial = 0;
+        hudAttackName = "";
+        hudAttackSerial = 0;
+        hudAttackUntil = 0;
+        trackedLegPlayerIds = array<uint>(0);
+        trackedLegMasks = array<uint>(0);
+        pendingBombPlayerIds = array<uint>(0);
 
         patern = false;
         scaleWithPlayers = false;
@@ -85,13 +105,14 @@ class CBoss
         this.id = id;
     }
 
-    void AddAttack(IAttack@ attack, int chance, int timeBeforeAttack, int timeAfterAttack)
+    void AddAttack(IAttack@ attack, int chance, int timeBeforeAttack, int timeAfterAttack, string attackName)
     {
         attacks.insertLast(attack);
         attackChances.insertLast(chance);
         totalChance += chance;
         attackPrepareTimes.insertLast(timeBeforeAttack);
         attackRecuperations.insertLast(timeAfterAttack);
+        attackNames.insertLast(attackName);
     }
 
     void AddCritter(Critter& crit)
@@ -105,6 +126,27 @@ class CBoss
         crit.SetEvent(CRITTER_EVENT_FINISH, "_BossFinish");
         crit.SetEvent(CRITTER_EVENT_DEAD, "_BossDead");
         crit.ParamBase[ST_VAR0] = id;
+
+        // Each limb keeps its own break timestamp. Ten seconds after detecting a
+        // cripple, bosses clear the injury and restore that limb's HP completely.
+        array<uint> doctor = { crit.Id, 0, 0, 0, 0 };
+        CreateTimeEvent(0, "e_BossDoctor", doctor, true);
+    }
+
+    void AnnounceSpecialAttack(string attackName, uint duration)
+    {
+        specialAttackName = attackName;
+        specialAttackSerial++;
+        hudAttackName = attackName;
+        hudAttackSerial++;
+        hudAttackUntil = __FullSecond + REAL_SECOND(2);
+        array<uint> clearData = { id, specialAttackSerial };
+        CreateTimeEvent(AFTER(duration), "e_BossClearSpecialAttack", clearData, false);
+    }
+
+    string HudAttack()
+    {
+        return __FullSecond <= hudAttackUntil ? hudAttackName : "";
     }
 
     void MakeAgressive()
@@ -134,6 +176,10 @@ class CBoss
             }
             currentAttack = i;
         }
+        currentAttackName = attackNames[currentAttack];
+        hudAttackName = currentAttackName;
+        hudAttackSerial++;
+        hudAttackUntil = __FullSecond + REAL_SECOND(2);
         attacks[currentAttack].AttackPrepareStart();
         array<int> vals = { id };
         uint delay = uint(attackPrepareTimes[currentAttack]);
@@ -179,6 +225,52 @@ class CBoss
     {}
 
 };
+
+uint e_BossDoctor(array<uint>@ values)
+{
+    Critter@ boss = GetCritter(values[0]);
+    if(!valid(boss) || boss.IsDead() || boss.Stat[ST_NPC_BOSS] == 0)
+        return 0;
+
+    array<uint> damageParams =
+    {
+        DAMAGE_RIGHT_ARM, DAMAGE_LEFT_ARM, DAMAGE_RIGHT_LEG, DAMAGE_LEFT_LEG
+    };
+    array<uint> hpParams = { ST_HP_RA, ST_HP_LA, ST_HP_RL, ST_HP_LL };
+    int maxLimbHp = GetActualMaxLimbHp(boss);
+    bool repaired = false;
+
+    for(uint i = 0; i < damageParams.length(); i++)
+    {
+        if(boss.Damage[damageParams[i]] == 0)
+        {
+            values[i + 1] = 0;
+            continue;
+        }
+
+        if(values[i + 1] == 0)
+            values[i + 1] = __FullSecond;
+        else if(__FullSecond >= values[i + 1] + REAL_SECOND(10))
+        {
+            boss.DamageBase[damageParams[i]] = 0;
+            boss.StatBase[hpParams[i]] = maxLimbHp;
+            values[i + 1] = 0;
+            repaired = true;
+        }
+    }
+
+    if(repaired)
+        boss.Say(SAY_SHOUT_ON_HEAD, "*repairs crippled limbs*");
+    return REAL_SECOND(1);
+}
+
+uint e_BossClearSpecialAttack(array<uint>@ values)
+{
+    CBoss@ boss = GetBoss(values[0]);
+    if(valid(boss) && boss.specialAttackSerial == values[1])
+        boss.specialAttackName = "";
+    return 0;
+}
 
 uint e_CommenceAttack(array<int>@ vals)
 {

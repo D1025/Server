@@ -36,6 +36,43 @@ array<FGlobalProcessFunc@> GlobalProcessFunctions =
     GlobalProcessKick,
 };
 
+dictionary PendingGlobalTeleportX;
+dictionary PendingGlobalTeleportY;
+
+void QueueGlobalTeleport(uint critterId, uint worldX, uint worldY)   // export
+{
+    string key = "" + critterId;
+    PendingGlobalTeleportX.set(key, worldX);
+    PendingGlobalTeleportY.set(key, worldY);
+}
+
+void CancelGlobalTeleport(uint critterId)   // export
+{
+    string key = "" + critterId;
+    PendingGlobalTeleportX.delete(key);
+    PendingGlobalTeleportY.delete(key);
+}
+
+bool ApplyGlobalTeleport(Critter& cr, float& curX, float& curY, float& toX, float& toY, float& speed)
+{
+    string key = "" + cr.Id;
+    uint   worldX = 0;
+    uint   worldY = 0;
+    if(!PendingGlobalTeleportX.get(key, worldX) || !PendingGlobalTeleportY.get(key, worldY))
+        return false;
+
+    CancelGlobalTeleport(cr.Id);
+    curX = float(worldX);
+    curY = float(worldY);
+    toX = curX;
+    toY = curY;
+    speed = 0.0f;
+
+    array<Critter@>@ group = cr.GetGlobalGroup();
+    ScanZone(group, int(worldX) / __GlobalMapZoneLength, int(worldY) / __GlobalMapZoneLength);
+    return true;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Output:
 //  Critter& cr - who called this function, in most times is leader of group;
@@ -49,6 +86,13 @@ void global_process(int processType, Critter& cr, Item@ car,
                     float& curX, float& curY, float& toX, float& toY, float& speed,
                     uint& encounterDescriptor, bool& waitForAnswer)
 {
+    if(ApplyGlobalTeleport(cr, curX, curY, toX, toY, speed))
+    {
+        encounterDescriptor = 0;
+        waitForAnswer = false;
+        return;
+    }
+
     // Main processing is done here
     FGlobalProcessFunc@ func = GlobalProcessFunctions[processType];
     func(processType, cr, car, curX, curY, toX, toY, speed, encounterDescriptor, waitForAnswer);

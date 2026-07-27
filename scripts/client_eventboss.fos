@@ -1,0 +1,127 @@
+//
+// FOnline: AfterTimes
+// Worldmap event boss HUD
+//
+
+#include "_client_defines.fos"
+#include "_colors.fos"
+#include "_time.fos"
+
+bool   BossHudVisible = false;
+uint   BossHudUntil = 0;
+int    BossHudHp = 0;
+int    BossHudMaxHp = 1;
+int    BossHudVariant = 0;
+uint16 BossHudMapPid = 0;
+string BossHudAttack = "";
+uint   BossHudAttackUntil = 0;
+int    BossHudAttackSerial = -1;
+
+#define BOSS_HUD_ATTACK_TIME (REAL_SECOND(2) + REAL_SECOND(1) / 5)
+
+string BossHudTitle()
+{
+    if(BossHudVariant == 1)
+        return "Warlord Kaine";
+    if(BossHudVariant == 2)
+        return "The Harbinger";
+    if(BossHudVariant == 3)
+        return "Slave Master";
+    return "The Abomination";
+}
+
+void Update(int hp, int maxHp, int, string@ attack, array<int>@ data)
+{
+    BossHudHp = hp > 0 ? hp : 0;
+    BossHudMaxHp = maxHp > 0 ? maxHp : 1;
+    if(BossHudHp > BossHudMaxHp)
+        BossHudHp = BossHudMaxHp;
+    BossHudVariant = @data != null && data.length() > 1 ? data[1] : 0;
+    BossHudMapPid = @data != null && data.length() > 2 ? uint16(data[2]) : 0;
+    int attackSerial = @data != null && data.length() > 3 ? data[3] : 0;
+    if(attackSerial != BossHudAttackSerial)
+    {
+        BossHudAttackSerial = attackSerial;
+        BossHudAttack = @attack != null ? attack : "";
+        BossHudAttackUntil = BossHudAttack.length() > 0 ?
+                             ELAPSED_TIME + BOSS_HUD_ATTACK_TIME : 0;
+    }
+    BossHudUntil = ELAPSED_TIME + REAL_SECOND(3);
+    BossHudVisible = true;
+}
+
+void Clear(int, int, int, string@, array<int>@)
+{
+    BossHudVisible = false;
+    BossHudUntil = 0;
+    BossHudAttack = "";
+    BossHudAttackUntil = 0;
+    BossHudAttackSerial = -1;
+}
+
+void DrawBossHudRect(int x, int y, int width, int height, int color)
+{
+    int[] points =
+    {
+        x,         y,          color,
+        x + width, y,          color,
+        x + width, y + height, color,
+        x,         y + height, color
+    };
+    DrawPrimitive(DRAW_PRIMITIVE_TRIANGLEFAN, points);
+}
+
+void DrawBossHud()
+{
+    if(!BossHudVisible || __GmapActive || GetCurrentMapPid() != BossHudMapPid ||
+       ELAPSED_TIME > BossHudUntil)
+    {
+        BossHudVisible = false;
+        return;
+    }
+
+    int hudWidth = __ScreenWidth / 2;
+    if(hudWidth < 340)
+        hudWidth = 340;
+    if(hudWidth > 520)
+        hudWidth = 520;
+    if(hudWidth > __ScreenWidth - 32)
+        hudWidth = __ScreenWidth - 32;
+
+    int hudX = (__ScreenWidth - hudWidth) / 2;
+    int hudY = 2;
+    int green = int(COLOR_GREEN);
+    int lightGreen = int(COLOR_LGREEN);
+
+    // Fallout 3-style readout: a label, a thin phosphor line and no casing.
+    DrawText(BossHudTitle(), hudX, hudY, hudWidth, 11, uint(lightGreen), FONT_FALLOUT,
+             FT_CENTERX | FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+
+    int labelWidth = 22;
+    int valueWidth = 104;
+    int barX = hudX + labelWidth;
+    int barY = hudY + 15;
+    int barWidth = hudWidth - labelWidth - valueWidth - 6;
+    int barHeight = 5;
+    int innerWidth = barWidth - 2;
+    int fillWidth = innerWidth * BossHudHp / BossHudMaxHp;
+
+    DrawText("HP", hudX, barY - 3, labelWidth - 3, 11, uint(lightGreen), FONT_FALLOUT,
+             FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+    DrawBossHudRect(barX, barY, barWidth, barHeight, green);
+    DrawBossHudRect(barX + 1, barY + 1, innerWidth, barHeight - 2, int(0xD0001000));
+    if(fillWidth > 0)
+        DrawBossHudRect(barX + 1, barY + 1, fillWidth, barHeight - 2, lightGreen);
+
+    DrawText("" + BossHudHp + " / " + BossHudMaxHp,
+             barX + barWidth + 6, barY - 3, valueWidth, 11, uint(green), FONT_FALLOUT,
+             FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+
+    if(BossHudAttack.length() > 0 && ELAPSED_TIME <= BossHudAttackUntil)
+    {
+        int alertY = hudY + 26;
+        DrawText("WARNING // " + BossHudAttack, hudX, alertY, hudWidth, 11,
+                 uint(lightGreen), FONT_FALLOUT,
+                 FT_CENTERX | FT_CENTERY | FT_BORDERED | FT_NOBREAK);
+    }
+}

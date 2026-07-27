@@ -81,12 +81,15 @@ import bool            GetVarId(const string& in, int& out) from "main";
 import void            InitPrices() from "economy";
 import void            InjureCritter(Critter& cr, uint dmg, uint dmgType, uint8 dir, uint attackerId) from "combat";
 import void            ApplyWallSlam(Map& map, Critter& target, Critter@ killer, uint16 fromHx, uint16 fromHy, uint16 knockHx, uint16 knockHy, int knockDist, int dmgPerHex, uint8 knockDir) from "combat";
+import void            QueueGlobalTeleport(uint critterId, uint worldX, uint worldY) from "globalmap_group";
+import void            CancelGlobalTeleport(uint critterId) from "globalmap_group";
 import bool            IsGrenade(Item& item) from "throwing";
 import uint            numDigits(int number) from "critter_description";
 import void            SetCritterEvents(Critter& cr) from "logging_critter";
 import void            SetWear(Item& item, int wearProcent) from "repair";
 import int             stringReplaceText(string& s, string@ f, string@ t) from "config_file";
 import array<Critter@> WorldmapGetPlayers(uint zx, uint zy) from "worldmap_players";
+import void            WorldmapUpdateGroup(array<Critter@>& group) from "worldmap_players";
 import int             WorldmapGetTotalValue() from "worldmap";
 import void 		   AddBonuses(Item@ it, int magic) from "item_bonus";
 import void 		   MakeMasterwork(Item@ it, const string& crafter) from "item_bonus";
@@ -138,7 +141,7 @@ string[] commandlist =
     "findnpc", "flash", "foart",
     "gaintowncontrol", "gameinfo", "getclaim", "getclaimtime", "getcolor",
     "getitems", "getleader", "getleadertime", "getuvar", "getvar", "give",
-    "givemasterwork", "givelevelbook", "givekey", "goto", "gototeam",
+    "givemasterwork", "givelevelbook", "givekey", "goto", "gototeam", "gotozone",
     "heal", "healall", "help", "hideloc", "hidemap",
     "id2name", "iddqd", "idkfa", "inspect", "irradiate", "itemflags", "itemlight",
     "itemproto",
@@ -188,7 +191,7 @@ string[] gmcommandlist =
     "factioninfo", "factionnews", "factiononline", "findchars", "finditems",
     "findnpcs", "flash", "foart",
     "gameinfo", "getclaim", "getclaimtime", "getcolor", "getitems", "getleader",
-    "getleadertime", "getuvar", "getvar", "give", "givekey", "goto", "gototeam",
+    "getleadertime", "getuvar", "getvar", "give", "givekey", "goto", "gototeam", "gotozone",
     "heal", "healall", "help", "hideloc", "hidemap",
     "id2name", "inspect", "irradiate", "itemflags", "itemlight", "itemproto",
     "karma", "karmateam", "killmobs",
@@ -223,7 +226,7 @@ string[] testercommandlist =
     "cto",
     "devenable", "dismiss", "dismissteam", "dropitems",
     "finditems",
-    "gameinfo", "getcolor", "getvar", "goto", "gototeam",
+    "gameinfo", "getcolor", "getvar", "goto", "gototeam", "gotozone",
     "heal", "healall", "help",
     "id2name", "killmobs",
     "lastregistered", "listcommands", "listfactions", "listfollowers", "listmaps",
@@ -3210,6 +3213,54 @@ void ExecGoToCommand(array<string@>@ command, Critter@ player, Critter@ target, 
         player.Say(SAY_NETMSG, num + " players teleported to " + target.Name + " (" + target.GetMapId() + ")");
     else if(valid(It))
         player.Say(SAY_NETMSG, num + " players teleported to item " + It.Id + " (" + It.MapId + ")");
+}
+
+void ExecGoToZoneCommand(array<string@>@ command, Critter@ player)
+{
+    int zoneX = -1;
+    int zoneY = -1;
+    if(command.length() < 4 || !StrToInt(command[2], zoneX) || !StrToInt(command[3], zoneY))
+    {
+        player.Say(SAY_NETMSG, "Usage: gotozone <zoneX> <zoneY>");
+        return;
+    }
+
+    if(zoneX < 0 || zoneY < 0 || zoneX >= int(__GlobalMapWidth) || zoneY >= int(__GlobalMapHeight))
+    {
+        player.Say(SAY_NETMSG, "Invalid zone. Valid range: 0-" + (__GlobalMapWidth - 1) +
+                   " x 0-" + (__GlobalMapHeight - 1) + ".");
+        return;
+    }
+
+    if(__GlobalMapZoneLength == 0)
+    {
+        player.Say(SAY_NETMSG, "Global map zone length is invalid.");
+        return;
+    }
+
+    uint worldX = uint(zoneX) * __GlobalMapZoneLength + __GlobalMapZoneLength / 2;
+    uint worldY = uint(zoneY) * __GlobalMapZoneLength + __GlobalMapZoneLength / 2;
+
+    // Re-entering global forces the engine to run global_process, where the queued
+    // coordinates can be applied to the actual GlobalMapGroup.
+    if(player.GetMapId() == 0 && !player.TransitToMap(1, 0))
+    {
+        player.Say(SAY_NETMSG, "Couldn't leave the worldmap before teleporting.");
+        return;
+    }
+
+    QueueGlobalTeleport(player.Id, worldX, worldY);
+    if(!player.TransitToGlobal(false))
+    {
+        CancelGlobalTeleport(player.Id);
+        player.Say(SAY_NETMSG, "Couldn't teleport to worldmap zone " + zoneX + ":" + zoneY + ".");
+        return;
+    }
+
+    array<Critter@>@ group = player.GetGlobalGroup();
+    WorldmapUpdateGroup(group);
+    player.Say(SAY_NETMSG, "Teleported to worldmap zone " + zoneX + ":" + zoneY +
+               " (" + worldX + "," + worldY + ").");
 }
 
 void ExecDamageCommand(array<string@>@ command, Critter@ player, Critter@ target)
@@ -10819,6 +10870,8 @@ bool ExecCommand(Critter& player, string@ commandString)
         ExecGoToCommand(command, player, target, false);
     else if(command[1] == "gototeam")
         ExecGoToCommand(command, player, target, true);
+    else if(command[1] == "gotozone")
+        ExecGoToZoneCommand(command, player);
     else if(command[1] == "heal")
     {
         ExecHealCommand(command, player, target);

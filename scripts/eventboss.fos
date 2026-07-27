@@ -97,6 +97,8 @@ void AddBoss(CBoss@ boss)
 
 CBoss@ GetBoss(uint id)
 {
+    if(id >= bosses.length())
+        return null;
     return bosses[id];
 }
 
@@ -328,8 +330,8 @@ class MelchiorBoss : CBoss
         if(valid(melchior))
             AddCritter(melchior);
         patern = false;
-        AddAttack(DynamiteThrow(this, REAL_SECOND(4)), 1, REAL_SECOND(10), REAL_SECOND(4));
-        AddAttack(ImbaPunch(this), 1, REAL_SECOND(5), REAL_SECOND(5));
+        AddAttack(DynamiteThrow(this, REAL_SECOND(4)), 1, REAL_SECOND(10), REAL_SECOND(4), "Dynamite Throw");
+        AddAttack(ImbaPunch(this), 1, REAL_SECOND(5), REAL_SECOND(5), "Ground Punch");
     }
 
     void aggressionStart()
@@ -570,7 +572,7 @@ class GhostBoss : CBoss
         if(valid(ghost))
             AddCritter(ghost);
         patern = false;
-        AddAttack(SilentKill(this, REAL_SECOND(4)), 1, REAL_SECOND(16), REAL_SECOND(4));
+        AddAttack(SilentKill(this, REAL_SECOND(4)), 1, REAL_SECOND(16), REAL_SECOND(4), "Silent Kill");
         // AddAttack(ImbaPunch(this), 1, REAL_SECOND(5),REAL_SECOND(5));
         wasHit = false;
         victimId = 0;
@@ -760,9 +762,12 @@ class PatternBoss : CBoss
 #define EVENT_WARLORD_DYNACORD_COUNT (32)               // 20% fewer projectiles than the old 40-grenade barrage
 #define EVENT_WARLORD_ECA_MALE_CRTYPE (147)              // black Enclave Combat Armor sprite
 #define EVENT_WARLORD_ECA_FEMALE_CRTYPE (148)
+#define EVENT_BOSS_BEHEMOTH_VARIANT (0)
 #define EVENT_BOSS_WARLORD_VARIANT (1)
+#define EVENT_BOSS_HARBINGER_VARIANT (2)
 #define EVENT_WARLORD_TARGET_INTERVAL (REAL_SECOND(1))
 #define EVENT_BOSS_SLAVE_MASTER_VARIANT (3)
+#define EVENT_BOSS_HUD_INTERVAL     (REAL_SECOND(1) / 2)
 #define EVENT_SLAVE_MARKER         (4242)
 #define EVENT_SLAVE_MARKER_PARAM   (ST_VAR7)
 #define EVENT_SLAVE_BOSS_PARAM     (ST_VAR6)
@@ -1053,6 +1058,40 @@ void _EventFocusWarlord(Critter& boss)
     AddAttackPlane(boss, 220, target, true);
 }
 
+void _EventTrackWarlordLegBreaks(Critter& boss)
+{
+    if(boss.Param[EVENT_BOSS_VARIANT_PARAM] != EVENT_BOSS_WARLORD_VARIANT)
+        return;
+    CBoss@ controller = GetBoss(uint(boss.Param[ST_VAR0]));
+    Map@ map = boss.GetMap();
+    if(!valid(controller) || !valid(map))
+        return;
+
+    array<Critter@> players;
+    uint count = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+    for(uint i = 0; i < count; i++)
+    {
+        if(!_IsEventEnemy(boss, players[i]))
+            continue;
+        uint mask = (players[i].Damage[DAMAGE_LEFT_LEG] != 0 ? 1 : 0) |
+                    (players[i].Damage[DAMAGE_RIGHT_LEG] != 0 ? 2 : 0);
+        int tracked = controller.trackedLegPlayerIds.find(players[i].Id);
+        if(tracked < 0)
+        {
+            // Establish the entry state without attributing an injury the
+            // player already had before meeting Kaine.
+            controller.trackedLegPlayerIds.insertLast(players[i].Id);
+            controller.trackedLegMasks.insertLast(mask);
+            continue;
+        }
+
+        uint oldMask = controller.trackedLegMasks[tracked];
+        if((mask & ~oldMask) != 0 && controller.pendingBombPlayerIds.find(players[i].Id) < 0)
+            controller.pendingBombPlayerIds.insertLast(players[i].Id);
+        controller.trackedLegMasks[tracked] = mask;
+    }
+}
+
 uint e_EventWarlordTarget(array<uint>@ vals)
 {
     Critter@ boss = GetCritter(vals[0]);
@@ -1060,6 +1099,7 @@ uint e_EventWarlordTarget(array<uint>@ vals)
        boss.Param[EVENT_BOSS_VARIANT_PARAM] != EVENT_BOSS_WARLORD_VARIANT)
         return 0;
     _EventFocusWarlord(boss);
+    _EventTrackWarlordLegBreaks(boss);
     return EVENT_WARLORD_TARGET_INTERVAL;
 }
 
@@ -1099,14 +1139,39 @@ void _EventArmSlave(Critter& slave, Critter& boss)
 
     slave.ParamBase[EVENT_SLAVE_ARMED_PARAM] = 1;
     slave.ParamBase[EVENT_SLAVE_SACRIFICE_PARAM] = 0;
-    slave.Say(SAY_SHOUT_ON_HEAD, "*COLLAR ARMED*");
     Critter@ target = _EventRandomEnemy(boss);
     if(valid(target))
         _EventFocusSlave(slave, boss, target);
 
+    uint fuse = EventBossScaledDelay(boss, EVENT_SLAVE_COLLAR_FUSE);
+    uint second = REAL_SECOND(1);
+    uint secondsLeft = (fuse + second - 1) / second;
+    slave.Say(SAY_SHOUT_ON_HEAD, "*COLLAR: " + secondsLeft + "*");
+    if(secondsLeft > 1)
+    {
+        array<uint> countdown = { slave.Id, boss.Id, secondsLeft - 1 };
+        CreateTimeEvent(AFTER(second), "e_EventSlaveCollarCountdown", countdown, false);
+    }
+
     array<uint> vals = { slave.Id, boss.Id };
-    CreateTimeEvent(AFTER(EventBossScaledDelay(boss, EVENT_SLAVE_COLLAR_FUSE)),
-                    "e_EventSlaveCollarDetonate", vals, false);
+    CreateTimeEvent(AFTER(fuse), "e_EventSlaveCollarDetonate", vals, false);
+}
+
+uint e_EventSlaveCollarCountdown(array<uint>@ vals)
+{
+    Critter@ slave = GetCritter(vals[0]);
+    Critter@ boss = GetCritter(vals[1]);
+    if(!valid(slave) || slave.IsDead() || slave.Param[EVENT_SLAVE_ARMED_PARAM] == 0 ||
+       !valid(boss) || boss.IsDead() || vals[2] == 0)
+        return 0;
+
+    slave.Say(SAY_SHOUT_ON_HEAD, "*COLLAR: " + vals[2] + "*");
+    if(vals[2] > 1)
+    {
+        array<uint> next = { slave.Id, boss.Id, vals[2] - 1 };
+        CreateTimeEvent(AFTER(REAL_SECOND(1)), "e_EventSlaveCollarCountdown", next, false);
+    }
+    return 0;
 }
 
 uint e_EventSlaveCollarDetonate(array<uint>@ vals)
@@ -1229,6 +1294,9 @@ uint e_EventSlaveMasterState(array<uint>@ vals)
         boss.StatBase[ST_MELEE_DAMAGE] += normalDamage * EVENT_SLAVE_RAGE_DAMAGE_PERCENT / 100;
         boss.ParamBase[ST_ACTION_POINTS] = 2;
         boss.Say(SAY_SHOUT, "NO WITNESSES! ALL COLLARS ARMED!");
+        CBoss@ controller = GetBoss(uint(boss.Param[ST_VAR0]));
+        if(valid(controller))
+            controller.AnnounceSpecialAttack("All Collars Armed", REAL_SECOND(5));
         array<Critter@> slaves;
         _EventGetSlaveMasterSlaves(boss, slaves);
         for(uint i = 0; i < slaves.length(); i++)
@@ -1278,8 +1346,12 @@ uint e_EventHarbingerPoisonCast(array<uint>@ vals)
     Critter@ boss = GetCritter(vals[0]);
     if(!valid(boss) || boss.IsDead())
         return 0;   // Harbinger dead/gone -> stop
+    uint windup = EventBossScaledDelay(boss, REAL_SECOND(5));
+    CBoss@ controller = GetBoss(uint(boss.Param[ST_VAR0]));
+    if(valid(controller))
+        controller.AnnounceSpecialAttack("Poison", windup);
     boss.Say(SAY_SHOUT, "POISON!");
-    CreateTimeEvent(AFTER(EventBossScaledDelay(boss, REAL_SECOND(5))),
+    CreateTimeEvent(AFTER(windup),
                     "e_EventHarbingerPoisonHit", vals, false);
     return EventBossScaledDelay(boss, REAL_SECOND(30));
 }
@@ -1320,6 +1392,19 @@ void _EventBossMapIn(Map& map, Critter& cr)
         AddAttackPlane(npcs[i], 180, cr, true);
     }
 
+    // Push immediately on entry; the periodic refresh below keeps HP and attack
+    // text current for as long as this player remains on the boss map.
+    for(uint i = 0; i < n; i++)
+    {
+        if(npcs[i].Param[ST_NPC_BOSS] == 0)
+            continue;
+        CBoss@ controller = GetBoss(uint(npcs[i].Param[ST_VAR0]));
+        if(valid(controller))
+            _EventSendBossHud(cr, npcs[i], controller);
+        _EventTrackWarlordLegBreaks(npcs[i]);
+        break;
+    }
+
     // Slave Master starts with 20 captives. Each additional living player raises
     // the target by two; entry immediately fills the newly unlocked capacity.
     for(uint i = 0; i < n; i++)
@@ -1337,6 +1422,58 @@ void _EventBossMapIn(Map& map, Critter& cr)
         }
         break;
     }
+}
+
+void _EventBossMapOut(Map& map, Critter& cr)
+{
+    if(cr.IsPlayer())
+        cr.RunClientScript("client_eventboss@Clear", 0, 0, 0, null, null);
+}
+
+void _EventSendBossHud(Critter& player, Critter& boss, CBoss& controller)
+{
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return;
+    array<int> data =
+    {
+        int(boss.Id), boss.Param[EVENT_BOSS_VARIANT_PARAM], int(map.GetProtoId()),
+        int(controller.hudAttackSerial)
+    };
+    player.RunClientScript("client_eventboss@Update",
+                           boss.Stat[ST_CURRENT_HP], boss.Stat[ST_MAX_LIFE], 0,
+                           controller.HudAttack(), data);
+}
+
+void _EventClearBossHud(Map@ map)
+{
+    if(!valid(map))
+        return;
+    array<Critter@> players;
+    uint count = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+    for(uint i = 0; i < count; i++)
+        players[i].RunClientScript("client_eventboss@Clear", 0, 0, 0, null, null);
+}
+
+uint e_EventBossHud(array<uint>@ vals)
+{
+    Critter@ boss = GetCritter(vals[0]);
+    CBoss@ controller = GetBoss(vals[1]);
+    if(!valid(boss) || boss.IsDead() || !valid(controller))
+    {
+        if(valid(boss))
+            _EventClearBossHud(boss.GetMap());
+        return 0;
+    }
+
+    Map@ map = boss.GetMap();
+    if(!valid(map))
+        return 0;
+    array<Critter@> players;
+    uint count = map.GetCritters(0, FIND_ONLY_PLAYERS | FIND_LIFE_AND_KO, players);
+    for(uint i = 0; i < count; i++)
+        _EventSendBossHud(players[i], boss, controller);
+    return EVENT_BOSS_HUD_INTERVAL;
 }
 
 
@@ -1424,6 +1561,7 @@ class AtkDynacordBarrage : IAttack
         Map@ map = c.GetMap();
         if(!valid(map))
             return;
+        _EventTrackWarlordLegBreaks(c);
         for(uint g = 0; g < EVENT_WARLORD_DYNACORD_COUNT; g++)
         {
             uint16 gx = c.HexX, gy = c.HexY;
@@ -1433,6 +1571,20 @@ class AtkDynacordBarrage : IAttack
                 map.MoveHexByDir(gx, gy, Random(0, 5), scatter);     // engine rejects steps == 0
             ArmThrownDynacord(c, map, gx, gy);
         }
+
+        // Consume each newly crippled victim once: the next barrage puts one
+        // guaranteed Dynacord on that player's exact current hex.
+        for(uint i = 0; i < boss.pendingBombPlayerIds.length(); i++)
+        {
+            Critter@ player = GetCritter(boss.pendingBombPlayerIds[i]);
+            if(!valid(player) || player.IsDead() || player.GetMapId() != map.Id ||
+               !_IsEventEnemy(c, player) ||
+               (player.Damage[DAMAGE_LEFT_LEG] == 0 &&
+                player.Damage[DAMAGE_RIGHT_LEG] == 0))
+                continue;
+            ArmThrownDynacord(c, map, player.HexX, player.HexY);
+        }
+        boss.pendingBombPlayerIds.resize(0);
     }
     void AttackRecuperationEnd()
     {}
@@ -1735,7 +1887,12 @@ uint e_EventSlaveFreshStock(array<uint>@ vals)
         uint spawned = _EventTopUpSlaves(boss, _EventSlaveTargetCount(map),
                                          EVENT_SLAVE_RESPAWN_BATCH);
         if(spawned > 0)
+        {
+            CBoss@ controller = GetBoss(uint(boss.Param[ST_VAR0]));
+            if(valid(controller))
+                controller.AnnounceSpecialAttack("Fresh Stock", REAL_SECOND(3));
             boss.Say(SAY_SHOUT, "FRESH STOCK! COLLARS ON!");
+        }
     }
     return EVENT_SLAVE_RESPAWN_TIME;
 }
@@ -1764,6 +1921,10 @@ uint e_EventSlaveBloodPrice(array<uint>@ vals)
     sacrifice.ParamBase[EVENT_SLAVE_SACRIFICE_PARAM] = 1;
     sacrifice.Say(SAY_SHOUT_ON_HEAD, "*MARKED FOR THE BLOOD PRICE*");
     boss.Say(SAY_SHOUT, "YOUR LIFE FOR MINE!");
+    uint bloodWindow = EventBossScaledDelay(boss, EVENT_SLAVE_BLOOD_WINDOW);
+    CBoss@ controller = GetBoss(uint(boss.Param[ST_VAR0]));
+    if(valid(controller))
+        controller.AnnounceSpecialAttack("Blood Price", bloodWindow);
 
     Map@ map = boss.GetMap();
     if(valid(map))
@@ -1776,7 +1937,7 @@ uint e_EventSlaveBloodPrice(array<uint>@ vals)
     }
 
     array<uint> resolve = { boss.Id, sacrifice.Id };
-    CreateTimeEvent(AFTER(EventBossScaledDelay(boss, EVENT_SLAVE_BLOOD_WINDOW)),
+    CreateTimeEvent(AFTER(bloodWindow),
                     "e_EventSlaveBloodPriceResolve", resolve, false);
     return EVENT_SLAVE_BLOOD_INTERVAL;
 }
@@ -1823,9 +1984,9 @@ class EventBossBehemoth : CBoss
         if(valid(npc))
             AddCritter(npc);
         // Damage comes from the engine-driven 3-hex ranged claw (MODE_RANGE_HTH); specials are utility only.
-        AddAttack(AtkSummonHorde(this, 0, 6, true), 3, REAL_SECOND(2), REAL_SECOND(4));   // pack spawns on a random player
-        AddAttack(AtkEnrageHeal(this, 600), 2, REAL_SECOND(2), REAL_SECOND(6));
-        AddAttack(AtkRetarget(this, 30), 3, REAL_SECOND(2), REAL_SECOND(6));              // keeps switching to different nearby players
+        AddAttack(AtkSummonHorde(this, 0, 6, true), 3, REAL_SECOND(2), REAL_SECOND(4), "Call the Pack");   // pack spawns on a random player
+        AddAttack(AtkEnrageHeal(this, 600), 2, REAL_SECOND(2), REAL_SECOND(6), "Enraged Regeneration");
+        AddAttack(AtkRetarget(this, 30), 3, REAL_SECOND(2), REAL_SECOND(6), "Predator's Focus");           // keeps switching to different nearby players
     }
     void aggressionStart()
     {
@@ -1882,9 +2043,9 @@ class EventBossWarlord : CBoss
                             "e_EventWarlordTarget", targetData, true);
         }
         // Barrage is announced, lands 5s later, then its Dynacords detonate after their normal 5s fuse.
-        AddAttack(AtkDynacordBarrage(this), 6, REAL_SECOND(5), REAL_SECOND(6));
-        AddAttack(AtkSuppression(this, 35, 75), 3, REAL_SECOND(3), REAL_SECOND(4));
-        AddAttack(AtkSummonHorde(this, 1, 2, false), 2, REAL_SECOND(4), REAL_SECOND(12));
+        AddAttack(AtkDynacordBarrage(this), 6, REAL_SECOND(5), REAL_SECOND(6), "Dynacord Barrage");
+        AddAttack(AtkSuppression(this, 35, 75), 3, REAL_SECOND(3), REAL_SECOND(4), "Suppressing Fire");
+        AddAttack(AtkSummonHorde(this, 1, 2, false), 2, REAL_SECOND(4), REAL_SECOND(12), "Enclave Reinforcements");
     }
     void aggressionStart()
     {
@@ -1936,10 +2097,10 @@ class EventBossHarbinger : CBoss
         Critter@ npc = map.AddNpc(NPC_PID_GenericGlowingOne, x, y, Random(0, 5), null, null, "_EventBossHarbingerInit");
         if(valid(npc))
             AddCritter(npc);
-        AddAttack(AtkEnergyNova(this, 90, 150, 5, DAMAGE_LASER), 4, REAL_SECOND(4), REAL_SECOND(4));
+        AddAttack(AtkEnergyNova(this, 90, 150, 5, DAMAGE_LASER), 4, REAL_SECOND(4), REAL_SECOND(4), "Energy Nova");
         // Count == cap: AtkSummonHorde clamps to (cap - alive), so each cast refills the horde back to full.
-        AddAttack(AtkSummonHorde(this, 2, _EventMinionMax(2), false), 3, REAL_SECOND(2), REAL_SECOND(4));
-        AddAttack(AtkEnrageHeal(this, 900), 2, REAL_SECOND(2), REAL_SECOND(5));
+        AddAttack(AtkSummonHorde(this, 2, _EventMinionMax(2), false), 3, REAL_SECOND(2), REAL_SECOND(4), "Raise the Horde");
+        AddAttack(AtkEnrageHeal(this, 900), 2, REAL_SECOND(2), REAL_SECOND(5), "Unholy Regeneration");
     }
     void aggressionStart()
     {
@@ -1995,8 +2156,8 @@ class EventBossSlaveMaster : CBoss
             CreateTimeEvent(AFTER(EVENT_SLAVE_BLOOD_INTERVAL),
                             "e_EventSlaveBloodPrice", stateData, true);
         }
-        AddAttack(AtkSlaveDetonation(this), 5, REAL_SECOND(5), REAL_SECOND(4));
-        AddAttack(AtkSlaveWhip(this), 3, REAL_SECOND(2), REAL_SECOND(4));
+        AddAttack(AtkSlaveDetonation(this), 5, REAL_SECOND(5), REAL_SECOND(4), "Detonation Order");
+        AddAttack(AtkSlaveWhip(this), 3, REAL_SECOND(2), REAL_SECOND(4), "The Whip Says: Kill");
     }
     void aggressionStart()
     {
@@ -2043,6 +2204,21 @@ class EventBossSlaveMaster : CBoss
 //  Boss NPC stat initializers (turbo-tanky, but no percentage/one-shot damage)
 // ---------------------------------------------------------------------------
 
+void _EventEquipActiveIrGoggles(Critter& cr)
+{
+    Item@ goggles = cr.GetItem(0, SLOT_UTILITY);
+    if(!valid(goggles) || goggles.GetProtoId() != PID_IR_GOGGLES)
+        @goggles = cr.AddItem(PID_IR_GOGGLES, 1);
+    if(!valid(goggles))
+        return;
+
+    cr.MoveItem(goggles.Id, 1, SLOT_UTILITY);
+    goggles.Charge = goggles.Proto.Misc_ChargeMax;
+    goggles.Val1 = 1;   // check_look.dll and smoke targeting treat Val1 as active
+    goggles.Update();
+    cr.RefreshVisible();
+}
+
 void _EventBossCommonInit(Critter& b)
 {
     b.StatBase[ST_HEALING_RATE] = 25;
@@ -2068,6 +2244,7 @@ void _EventBossBehemothInit(Critter& b, bool firstTime)
     if(firstTime)
         b.ParamBase[ST_CURRENT_HP] = 2500;
     _EventBossCommonInit(b);
+    b.ParamBase[EVENT_BOSS_VARIANT_PARAM] = EVENT_BOSS_BEHEMOTH_VARIANT;
     b.StatBase[ST_HEALING_RATE] = 18;
     b.ParamBase[ST_STRENGTH] = 20;
     b.ParamBase[ST_AGILITY] = 8;
@@ -2101,6 +2278,7 @@ void _EventBossWarlordInit(Critter& b, bool firstTime)
     b.AddItem(PID_YK42B_PULSE_RIFLE, 1);
     b.AddItem(PID_MICRO_FUSION_CELL, 500);     // loaded rounds so it starts firing immediately
     b.SetFavoriteItem(SLOT_HAND1, PID_YK42B_PULSE_RIFLE);
+    _EventEquipActiveIrGoggles(b);
 }
 
 void _EventBossHarbingerInit(Critter& b, bool firstTime)
@@ -2109,6 +2287,7 @@ void _EventBossHarbingerInit(Critter& b, bool firstTime)
     if(firstTime)
         b.ParamBase[ST_CURRENT_HP] = 4000;
     _EventBossCommonInit(b);
+    b.ParamBase[EVENT_BOSS_VARIANT_PARAM] = EVENT_BOSS_HARBINGER_VARIANT;
     b.StatBase[ST_HEALING_RATE] = 250;
     b.ParamBase[ST_AGILITY] = 9;
     b.ParamBase[ST_ARMOR_CLASS] = 0;
@@ -2340,6 +2519,7 @@ void SpawnEventMinions(Map& map, uint16 cx, uint16 cy, int variant, uint count, 
                                 EVENT_WARLORD_ECA_FEMALE_CRTYPE : EVENT_WARLORD_ECA_MALE_CRTYPE;
                 m.ParamBase[ST_OVERRIDE_CRTYPE] = ecaCrType;
                 m.ChangeCrType(ecaCrType);
+                _EventEquipActiveIrGoggles(m);
             }
             if(variant == 2)
                 m.StatBase[ST_TOXIC] = 40;   // Harbinger's ghouls poison on hit (combat.fos: Random(toxic/3, toxic))
@@ -2485,10 +2665,14 @@ uint SpawnWorldmapBoss(int forceVariant)
     AddBoss(boss);
     boss.MakeAgressive();
 
+    array<uint> hudData = { boss.critterList[0], boss.id };
+    CreateTimeEvent(0, "e_EventBossHud", hudData, true);
+
     SpawnEventMinions(map, bx, by, variant, _EventMinionMax(variant), boss.critterList[0]);
 
     // Aggro the boss + horde as soon as any player enters the arena (not only when attacked).
     map.SetEvent(MAP_EVENT_IN_CRITTER, "eventboss@_EventBossMapIn");
+    map.SetEvent(MAP_EVENT_OUT_CRITTER, "eventboss@_EventBossMapOut");
 
     // Generic hordes top back up periodically. Slave Master instead replenishes
     // captives through the telegraphed Fresh Stock ability.
@@ -2526,7 +2710,10 @@ void _EventBossOnDeath(Critter& boss, uint locId)
     // Turn off the Harbinger's radiation aura on death (no-op for the other bosses, which never set it).
     Map@ deathMap = boss.GetMap();
     if(valid(deathMap))
+    {
         deathMap.SetEvent(MAP_EVENT_LOOP_1, null);
+        _EventClearBossHud(deathMap);
+    }
 
     // Loot: strip everything, leave exactly one New Era Holotape.
     array<Item@> items;

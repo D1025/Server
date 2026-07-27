@@ -829,12 +829,49 @@ EXPORT void Item_Weapon_SetMode(Item& item, uint8 mode)
 #ifdef __CLIENT
 EXPORT bool GetNameTextInfo( CritterCl& cr, int& x, int& y )
 {
-	if( !cr.strTextOnHead.empty() )
+	const int drawOrderCritter = 29;
+	const int drawOrderDeadCritter = 10;
+	const int preferredDrawOrder = ( cr.Cond == COND_DEAD ? drawOrderDeadCritter : drawOrderCritter );
+
+	uint spriteCount = 0;
+	Sprite** sprites = FOnline->GetDrawingSprites( spriteCount );
+	if( !sprites || !spriteCount )
 		return false;
-		
-	x = (int) ( (float) ( cr.TextRect.L + (cr.TextRect.R - cr.TextRect.L) / 2 + FOnline->ScrOx ) / FOnline->SpritesZoom - 100.0f );
-	y = (int) ( (float) ( cr.TextRect.T + FOnline->ScrOy ) / FOnline->SpritesZoom - 70.0f );
-	return true;
+
+	for( uint pass = 0; pass < 2; pass++ )
+	{
+		const int drawOrder = ( pass == 0 ? preferredDrawOrder :
+		                      ( preferredDrawOrder == drawOrderCritter ? drawOrderDeadCritter : drawOrderCritter ) );
+
+		for( uint i = 0; i < spriteCount; i++ )
+		{
+			Sprite* sprite = sprites[ i ];
+			if( !sprite || !sprite->Valid || ( sprite->ValidCallback && !*sprite->ValidCallback ) ||
+			    sprite->DrawOrderType != drawOrder || sprite->HexX != cr.HexX || sprite->HexY != cr.HexY )
+				continue;
+
+			SpriteInfo* spriteInfo = sprite->GetSprInfo();
+			if( !spriteInfo || spriteInfo->Anim3d )
+				continue;
+
+			const float scale = ( cr.Params[ ST_SCALE_FACTOR ] > 0 ?
+			                      (float) cr.Params[ ST_SCALE_FACTOR ] / 1000.0f : 1.0f );
+			const int width = (int) ( (float) spriteInfo->Width * scale );
+			const int height = (int) ( (float) spriteInfo->Height * scale );
+			const int left = sprite->ScrX - width / 2 + spriteInfo->OffsX +
+			                 ( sprite->OffsX ? *sprite->OffsX : 0 );
+			const int top = sprite->ScrY - height + spriteInfo->OffsY +
+			                ( sprite->OffsY ? *sprite->OffsY : 0 );
+
+			x = (int) ( (float) ( left + width / 2 + FOnline->ScrOx ) /
+			           FOnline->SpritesZoom - 100.0f );
+			y = (int) ( (float) ( top + FOnline->ScrOy ) /
+			           FOnline->SpritesZoom - 70.0f );
+			return true;
+		}
+	}
+
+	return false;
 }
 #endif
 
