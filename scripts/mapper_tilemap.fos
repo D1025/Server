@@ -38,21 +38,21 @@ class Tile
 
     void Draw(uint16 hx)
     {
-        if(Hash & (1 << 0) != 0)
+        if((Hash & (1 << 0)) != 0)
             DrawHexRect2(0, 14, 6, 20, color, hx);
-        if(Hash & (1 << 1) != 0)
+        if((Hash & (1 << 1)) != 0)
             DrawHexRect2(6, 14, 14, 20, color, hx);
-        if(Hash & (1 << 2) != 0)
+        if((Hash & (1 << 2)) != 0)
             DrawHexRect2(14, 14, 20, 20, color, hx);
-        if(Hash & (1 << 3) != 0)
+        if((Hash & (1 << 3)) != 0)
             DrawHexRect2(0, 6, 6, 14, color, hx);
-        if(Hash & (1 << 4) != 0)
+        if((Hash & (1 << 4)) != 0)
             DrawHexRect2(14, 6, 20, 14, color, hx);
-        if(Hash & (1 << 5) != 0)
+        if((Hash & (1 << 5)) != 0)
             DrawHexRect2(0, 0, 6, 6, color, hx);
-        if(Hash & (1 << 6) != 0)
+        if((Hash & (1 << 6)) != 0)
             DrawHexRect2(6, 0, 14, 6, color, hx);
-        if(Hash & (1 << 7) != 0)
+        if((Hash & (1 << 7)) != 0)
             DrawHexRect2(14, 0, 20, 6, color, hx);
     }
 };

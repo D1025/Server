@@ -40,11 +40,10 @@ class CGrid : IMapperPlugin
     private uint hexGridColor = COLOR_RGBA(190, 190, 100, 120);
 
     private bool enabled = true;
-    private uint color = COLOR_RGB(160, 160, 160);
 
     void Render(uint layer)
     {
-        if(layer == 1)
+        if(enabled && layer == 1)
         {
             MapperMap@ map = GetActiveMap();
             if(!valid(map))
@@ -54,7 +53,7 @@ class CGrid : IMapperPlugin
             uint zoom = GetZoom();
 
             // (crappy) grid...
-            if(hexGrid)
+            if(hexGrid && zoom >= hexGridMinZoom && zoom <= hexGridMaxZoom)
             {
                 int gridW = GetHexWidth();
                 int gridH = gridW / 2;
@@ -111,39 +110,42 @@ class CGrid : IMapperPlugin
             // edge
             //
 
-            int x1 = 0, y1 = 0,
-                x2 = 0, y2 = 0,
-                x3 = 0, y3 = 0,
-                x4 = 0, y4 = 0;
-
-            uint16 lastHexX = map.Width - 1;
-            uint16 lastHexY = map.Height - 1;
-
-            GetHexPos(0, 0, x1, y1);
-            GetHexPos(0, lastHexY, x2, y2);
-            GetHexPos(lastHexX, lastHexY, x3, y3);
-            GetHexPos(lastHexX, 0, x4, y4);
-
-            if(map.Width % 2 == 0)
+            if(edgeGrid && zoom >= edgeGridMinZoom && zoom <= edgeGridMaxZoom)
             {
-                int ox = 0, oy = 0;
-                HexOffset(3, ox, oy);
-                x3 += ox;
-                y3 += oy;
-                x4 += ox;
-                y4 += oy;
+                int x1 = 0, y1 = 0,
+                    x2 = 0, y2 = 0,
+                    x3 = 0, y3 = 0,
+                    x4 = 0, y4 = 0;
+
+                uint16 lastHexX = map.Width - 1;
+                uint16 lastHexY = map.Height - 1;
+
+                GetHexPos(0, 0, x1, y1);
+                GetHexPos(0, lastHexY, x2, y2);
+                GetHexPos(lastHexX, lastHexY, x3, y3);
+                GetHexPos(lastHexX, 0, x4, y4);
+
+                if(map.Width % 2 == 0)
+                {
+                    int ox = 0, oy = 0;
+                    HexOffset(3, ox, oy);
+                    x3 += ox;
+                    y3 += oy;
+                    x4 += ox;
+                    y4 += oy;
+                }
+
+                array<int> gridData =
+                {
+                    x1, y1, edgeGridColor,
+                    x2, y2, edgeGridColor,
+                    x3, y3, edgeGridColor,
+                    x4, y4, edgeGridColor,
+                    x1, y1, edgeGridColor
+                };
+
+                DrawPrimitive(DRAW_PRIMITIVE_LINESTRIP, gridData);
             }
-
-            array<int> gridData =
-            {
-                x1, y1, edgeGridColor,
-                x2, y2, edgeGridColor,
-                x3, y3, edgeGridColor,
-                x4, y4, edgeGridColor,
-                x1, y1, edgeGridColor
-            };
-
-            DrawPrimitive(DRAW_PRIMITIVE_LINESTRIP, gridData);
         }
     }
 
@@ -158,9 +160,15 @@ class CGrid : IMapperPlugin
         array<string@> msg = splitEx(message, " ");
         if(msg[0] == "grid")
         {
+            if(msg.length() < 2)
+            {
+                message = "Grid plugin commands: on, off, color <r> <g> <b>.";
+                return true;
+            }
             if(msg[1] == "on")
             {
                 message = "Grid enabled.";
+                enabled = true;
                 hexGrid = true;
                 edgeGrid = true;
                 tileGrid = true;
@@ -168,17 +176,27 @@ class CGrid : IMapperPlugin
             else if(msg[1] == "off")
             {
                 message = "Grid disabled.";
-                hexGrid = false;
-                edgeGrid = false;
-                tileGrid = false;
+                enabled = false;
             }
             else if(msg[1] == "color")
             {
-                uint r = 0, g = 0, b = 0;
-                if(StrToInt(msg[2], r) && StrToInt(msg[3], g) && StrToInt(msg[4], b))
+                if(msg.length() < 5)
                 {
-                    color = COLOR_RGB(r, g, b);
+                    message = "Usage: grid color <r> <g> <b>.";
+                    return true;
+                }
+                uint r = 0, g = 0, b = 0;
+                if(StrToInt(msg[2], r) && StrToInt(msg[3], g) && StrToInt(msg[4], b) && r <= 255 && g <= 255 && b <= 255)
+                {
+                    edgeGridColor = COLOR_RGB(r, g, b);
+                    tileGridColor = COLOR_RGBA(r, g, b, 160);
+                    tileGridColor2 = COLOR_RGBA(r, g, b, 240);
+                    hexGridColor = COLOR_RGBA(r, g, b, 120);
                     message = "Grid color changed.";
+                }
+                else
+                {
+                    message = "Grid color components must be integers from 0 to 255.";
                 }
             }
             else
@@ -197,18 +215,8 @@ class CGrid : IMapperPlugin
     void MouseMove(int, int) {}
     bool KeyDown(uint8 key, string& keyText)
     {
-        if(key == DIK_G)
-        {
-            if(hexGrid)
-            {
-
-                hexGrid = false;
-            }
-            else
-            {
-                hexGrid = true;
-            }
-        }
+        if(key == DIK_G && !Plugins_HasKeyModifier())
+            enabled = !enabled;
         return false;
     }
     bool KeyUp(uint8,string&) { return false; }
@@ -222,7 +230,7 @@ void RegisterGrid()
     IMapperPlugin@ grid = CGrid();
     if(Plugins_Register(grid))
     {
-        Message("Grid plugin (WIP) registered. Press G to switch grid mode.");
+        Message("Grid plugin (WIP) registered. Press G to show or hide it.");
     }
 }
 #endif // __MAPPER_GRID__ //

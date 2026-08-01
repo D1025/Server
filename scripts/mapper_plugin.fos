@@ -5,11 +5,38 @@
 // mapper_plugin.fos
 //
 
+#include "_mapper_defines.fos"
 #include "_macros.fos"
 #define __MAPPER_PLUGIN_MODULE__
 #include "mapper_plugin_h.fos"
 
 array<IMapperPlugin@> Plugins;
+bool PluginLeftCtrlDown = false;
+bool PluginRightCtrlDown = false;
+bool PluginLeftAltDown = false;
+bool PluginRightAltDown = false;
+bool PluginLeftShiftDown = false;
+bool PluginRightShiftDown = false;
+
+bool Plugins_HasKeyModifier()
+{
+    return PluginLeftCtrlDown || PluginRightCtrlDown || PluginLeftAltDown || PluginRightAltDown || PluginLeftShiftDown || PluginRightShiftDown;
+}
+
+bool Plugins_IsCtrlDown()
+{
+    return PluginLeftCtrlDown || PluginRightCtrlDown;
+}
+
+bool Plugins_IsAltDown()
+{
+    return PluginLeftAltDown || PluginRightAltDown;
+}
+
+bool Plugins_IsShiftDown()
+{
+    return PluginLeftShiftDown || PluginRightShiftDown;
+}
 
 bool Plugins_Register(IMapperPlugin@ plugin)
 {
@@ -47,22 +74,99 @@ void Plugins_MouseMove(int x, int y)
 
 bool Plugins_KeyDown(uint8 key, string& keyText)
 {
+    bool isModifier = false;
+    if(key == DIK_LCONTROL)
+    {
+        PluginLeftCtrlDown = true;
+        isModifier = true;
+    }
+    else if(key == DIK_RCONTROL)
+    {
+        PluginRightCtrlDown = true;
+        isModifier = true;
+    }
+    else if(key == DIK_LMENU)
+    {
+        PluginLeftAltDown = true;
+        isModifier = true;
+    }
+    else if(key == DIK_RMENU)
+    {
+        PluginRightAltDown = true;
+        isModifier = true;
+    }
+    else if(key == DIK_LSHIFT)
+    {
+        PluginLeftShiftDown = true;
+        isModifier = true;
+    }
+    else if(key == DIK_RSHIFT)
+    {
+        PluginRightShiftDown = true;
+        isModifier = true;
+    }
+
     for(uint i = 0, j = Plugins.length(); i < j; i++)
         if(Plugins[i].KeyDown(key, keyText))
-            return true;
+            return !isModifier;
     return false;
 }
 
 bool Plugins_KeyUp(uint8 key, string& keyText)
 {
+    bool handled = false;
+    bool isModifier = false;
     for(uint i = 0, j = Plugins.length(); i < j; i++)
+    {
         if(Plugins[i].KeyUp(key, keyText))
-            return true;
-    return false;
+        {
+            handled = true;
+            break;
+        }
+    }
+
+    if(key == DIK_LCONTROL)
+    {
+        PluginLeftCtrlDown = false;
+        isModifier = true;
+    }
+    else if(key == DIK_RCONTROL)
+    {
+        PluginRightCtrlDown = false;
+        isModifier = true;
+    }
+    else if(key == DIK_LMENU)
+    {
+        PluginLeftAltDown = false;
+        isModifier = true;
+    }
+    else if(key == DIK_RMENU)
+    {
+        PluginRightAltDown = false;
+        isModifier = true;
+    }
+    else if(key == DIK_LSHIFT)
+    {
+        PluginLeftShiftDown = false;
+        isModifier = true;
+    }
+    else if(key == DIK_RSHIFT)
+    {
+        PluginRightShiftDown = false;
+        isModifier = true;
+    }
+
+    return handled && !isModifier;
 }
 
 void Plugins_InputLost()
 {
+    PluginLeftCtrlDown = false;
+    PluginRightCtrlDown = false;
+    PluginLeftAltDown = false;
+    PluginRightAltDown = false;
+    PluginLeftShiftDown = false;
+    PluginRightShiftDown = false;
     for(uint i = 0, j = Plugins.length(); i < j; i++)
         Plugins[i].InputLost();
 }

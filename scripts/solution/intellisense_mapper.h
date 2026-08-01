@@ -676,15 +676,22 @@ class MapperMap
 {
 	const uint16 Width;
 	const uint16 Height;
+	const bool IsDirty;
+	const uint EditRevision;
+	const bool CanUndo;
+	const bool CanRedo;
 	const int WorkHexX;
 	const int WorkHexY;
 	int Time;
 	bool NoLogOut;
 	MapperObject@ AddObject(uint16 hexX, uint16 hexY, int mapObjType, uint16 pid); // Arguments for this function have been guessed
+	bool Undo();
+	bool Redo();
 	MapperObject@ GetObject(uint16 hexX, uint16 hexY, int mapObjType, uint16 pid, uint skip) const; // Arguments for this function have been guessed
 	uint GetObjects(uint16 hexX, uint16 hexY, uint radius, int mapObjType, uint16 pid, array<MapperObject@> @ objects) const; // Arguments for this function have been guessed
 	void UpdateObjects() const;
-	void Resize(uint16 width, uint16 height); // Arguments for this function have been guessed
+	void Resize(uint16 width, uint16 height); // Legacy bytecode-compatible overload
+	bool Resize(uint16 width, uint16 height, bool allowDataLoss);
 	uint GetTilesCount(uint16 hexX, uint16 hexY, bool roof) const; // Arguments for this function have been guessed
 	void DeleteTile(uint16 hexX, uint16 hexY, bool roof, uint index); // Arguments for this function have been guessed
 	uint GetTile(uint16 hexX, uint16 hexY, bool roof, uint index) const; // Arguments for this function have been guessed
@@ -735,7 +742,8 @@ float floor(float);
 float fraction(float);
 void SetDefaultCritterParam(uint index, int param);
 MapperMap@ LoadMap(string&inout fileName, int pathType);
-void UnloadMap(MapperMap@ map);
+void UnloadMap(MapperMap@ map); // Legacy bytecode-compatible overload
+bool UnloadMap(MapperMap@ map, bool discardChanges);
 bool SaveMap(MapperMap@ map, string&inout fileName, int pathType);
 bool ShowMap(MapperMap@ map);
 int GetLoadedMaps(array<MapperMap@> @ maps);

@@ -409,7 +409,7 @@ class CAutowall : CGuiManager
 
     bool KeyDown(uint8 key, string& keyText)
     {
-        if(key == DIK_AUTOWALL)
+        if(key == DIK_AUTOWALL && !Plugins_HasKeyModifier())
             buttonPressed = true;
         return CGuiManager::KeyDown(key, keyText);
     }
@@ -1054,5 +1054,5 @@ void RegisterAutowall() // export
     IMapperPlugin@ autowall = CAutowallPlugin();
     // autowall.ParseSets();
     if(Plugins_Register(autowall))
-        Message("Autowall (WIP) registered.");
+        Message("Autowall (WIP) registered. Hold A while dragging on the map.");
 }

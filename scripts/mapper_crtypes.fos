@@ -13,7 +13,7 @@
 
 #pragma bindfunc "int MapperObject::CritterCl_GetParam(uint16) -> MapperUtils.dll MapObject_CritterCl_GetParam"
 #pragma bindfunc "void MapperObject::CritterCl_SetBaseType(uint) -> MapperUtils.dll MapObject_CritterCl_SetBaseType"
-#pragma bindfunc "uint MapperObject::CritterCl_GetBaseType() -> MapperUtils.dll MapObject_CritterCl_SetBaseType"
+#pragma bindfunc "uint MapperObject::CritterCl_GetBaseType() -> MapperUtils.dll MapObject_CritterCl_GetBaseType"
 
 array<uint> UnarmoredTypesMale;
 array<uint> UnarmoredTypesFemale;
@@ -121,6 +121,8 @@ void UpdateImplied(MapperObject@ critter, uint16 pid, uint& implied)
     if(!AssertCrtypeReadiness(critter))
         return;
     array<uint>@ types = GetValidCrtypes(critter, pid);
+    if(types.length() == 0)
+        return;
     if(types.find(critter.Critter_ParamValue8) == -1)
     {
         critter.Critter_ParamValue8 = 0;
@@ -252,12 +254,10 @@ class CCrtypeMenu : Control
 
 class CCrtypePlugin : CGuiManager, IMapperPlugin
 {
-    bool Alt;
     int  LastIndex;
 
     CCrtypePlugin()
     {
-        Alt = false;
         LastIndex = -1;
         SetUnarmoredCrtypes();
         @Menu = CCrtypeMenu(this);
@@ -266,24 +266,25 @@ class CCrtypePlugin : CGuiManager, IMapperPlugin
 
     bool KeyDown(uint8 key, string& keyText)
     {
-        if(key == DIK_LMENU)
-            Alt = true;
-        if(key == DIK_C && Alt)
+        if(key == DIK_C && Plugins_IsAltDown() && !Plugins_IsCtrlDown() && !Plugins_IsShiftDown())
         {
             MapperObject@ obj = GetSelectedObject();
-            if(obj.MapObjType == MAP_OBJECT_CRITTER)
+            if(valid(obj) && obj.MapObjType == MAP_OBJECT_CRITTER)
             {
                 Menu.Fill(obj);
                 Menu.Show(__ScreenWidth - Menu.Width() - SPR_WIDTH, 100);
             }
+            else
+            {
+                Message("Select one critter before opening the crtype menu.");
+            }
+            return true;
         }
         return CGuiManager::KeyDown(key, keyText);
     }
 
     bool KeyUp(uint8 key, string& keyText)
     {
-        if(key == DIK_LMENU)
-            Alt = false;
         return CGuiManager::KeyUp(key, keyText);
     }
 
@@ -293,7 +294,7 @@ class CCrtypePlugin : CGuiManager, IMapperPlugin
     {
         array<MapperMap@> maps;
         int               index = GetLoadedMaps(maps);
-        if(maps.length() == 0)
+        if(maps.length() == 0 || index < 0)
             return;
         MapperObject@ object = GetSelectedObject();
         if(valid(object) && object.MapObjType == MAP_OBJECT_CRITTER)
@@ -304,6 +305,7 @@ class CCrtypePlugin : CGuiManager, IMapperPlugin
         uint                 n = maps[index].GetObjects(0, 0, 10 * (maps[index].Width + maps[index].Height), MAP_OBJECT_CRITTER, 0, crits);
         for(uint i = 0, j = crits.length(); i < j; i++)
             NormalizeCrtype(crits[i]);
+        LastIndex = index;
     }
     void Render(uint layer)
     {

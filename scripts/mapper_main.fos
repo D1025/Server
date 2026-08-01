@@ -50,7 +50,6 @@ import void RegisterCrtypes() from "mapper_crtypes";
 import void RegisterAutowall() from "mapper_autowall";
 import void RegisterTilemap() from "mapper_tilemap";
 import void RegisterGrid() from "mapper_grid";
-//import void DrawMenu() from "mapper_menu";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Call on new mapper instance creating.
@@ -86,6 +85,9 @@ void InitializePlugins()
     RegisterCrtypes();
     RegisterTilemap();
     RegisterGrid();
+    Message("Save: Ctrl+S current map, Ctrl+Shift+S all changed maps. A '*' before a map name means unsaved changes.");
+    Message("History: Ctrl+Z/*undo, Ctrl+Y or Ctrl+Shift+Z/*redo. Rapid edits are grouped into one step.");
+    Message("Diagnostic overlays: Ctrl+Shift+C containers, Ctrl+Shift+D doors, Ctrl+Shift+F forcefields.");
 }
 
 // helper
@@ -268,7 +270,6 @@ void render_iface(uint layer)
 	Plugins_Render(layer);
 	if(layer == 1)
 	{
-		DrawMenu();
 		DrawDescForItems();
 	}
     if(layer == 5)
@@ -314,15 +315,20 @@ bool key_down(uint8 key, string& keyText)
 {
     if(Plugins_KeyDown(key, keyText))
         return true;
-	//showDoorScript
-	if(key == DIK_D && showDoorScript) showDoorScript = false;
-	else if (key == DIK_D && !showDoorScript) showDoorScript = true;
-	//showContainerScript
-	if(key == DIK_C && showContainerScript) showContainerScript = false;
-	else if (key == DIK_C && !showContainerScript) showContainerScript = true;
-	//showForcefieldScript
-	if(key == DIK_F && showForcefieldScript) showForcefieldScript = false;
-	else if (key == DIK_F && !showForcefieldScript) showForcefieldScript = true;
+
+    // Keep diagnostic overlays away from text input and regular editor shortcuts.
+    if(Plugins_IsCtrlDown() && Plugins_IsShiftDown() && !Plugins_IsAltDown())
+    {
+        if(key == DIK_D)
+            showDoorScript = !showDoorScript;
+        else if(key == DIK_C)
+            showContainerScript = !showContainerScript;
+        else if(key == DIK_F)
+            showForcefieldScript = !showForcefieldScript;
+        else
+            return false;
+        return true;
+    }
     return false;
 }
 
@@ -388,35 +394,11 @@ void input_lost()
    }
  */
 
-void DrawMenu()
-{
-	// contours for menu background
-	/* array<int> menubackground = {10, 10, int(COLOR_RED),
-								210, 10, int(COLOR_RED),
-								210, 50, int(COLOR_RED),
-								10, 50, int(COLOR_RED),
-								10, 10, int(COLOR_RED)};
-	DrawPrimitive(DRAW_PRIMITIVE_TRIANGLESTRIP, menubackground); */
-	DrawText("FOnline: New Dawn", 15, 15, 195, 10, COLOR_LGREEN, FONT_FALLOUT, 0);
-	MapperMap@ map = GetActiveMap();
-	
-	if(!valid(map))
-	{		
-		DrawSprite(LoadSprite("options_singleplayer.png", PT_ART_INTRFACE),0,(__ScreenWidth / 2) - (164 / 2),100,0);
-		DrawText("NEW MAP", (__ScreenWidth / 2) - 164 / 2 + 18, 123, 130, 25, COLOR_LGREEN, FONT_BIG, FT_CENTERX);
-		DrawText("LOAD MAP", (__ScreenWidth / 2) - 164 / 2 + 18, 159, 130, 25, COLOR_LGREEN, FONT_BIG, FT_CENTERX);
-		DrawText("SETTINGS", (__ScreenWidth / 2) - 164 / 2 + 18, 195, 130, 25, COLOR_LGREEN, FONT_BIG, FT_CENTERX);
-		DrawText("CONVERT", (__ScreenWidth / 2) - 164 / 2 + 18, 231, 130, 25, COLOR_LGREEN, FONT_BIG, FT_CENTERX);
-		DrawText("EXIT", (__ScreenWidth / 2) - 164 / 2 + 18, 267, 130, 25, COLOR_LGREEN, FONT_BIG, FT_CENTERX);
-		DrawText("This menu is not active yet.", (__ScreenWidth / 2) - 164 / 2 + 5 , 293, 160, 20, COLOR_LGREEN, FONT_FALLOUT, FT_CENTERX);
-	}
-	// DrawSprite(LoadSprite("command_attack.png", PT_ART_INTRFACE),0,220,25,0);
-}
-
 void DrawDescForItems()
 {
 	MapperMap@ map = GetActiveMap();
 	if(!valid(map)) return;
+	if(!showContainerScript && !showDoorScript && !showForcefieldScript) return;
 	
 	array<MapperObject@> items;
 	for(uint i = 0, n = map.GetObjects(1, 1, 10000, MAP_OBJECT_ITEM, 0, items); i < n; i++)
