@@ -11,11 +11,11 @@
 //     (see main.fos: SetSendParameter(ST_DEPLOYED, ...)) so everyone sees the state.
 //   - Merely CARRYING a deploy weapon in the main hand blocks running (walk only) unless a
 //     power armor bears the weight - that carry lock lives in critter_item_movement.fos.
-//   - Exception - Powered Bipod perk (PE_POWERED_BIPOD) worn with a power armor: the wielder
+//   - Exception - Powered Bipod perk (PE_POWERED_BIPOD) with power armor equivalence: the wielder
 //     may still WALK while deployed (DEPLOY_STATE_MOBILE) - never run - and the engine
 //     charges 1 AP per move hex (Act_Move / GetApCostCritterMove keyed on ST_DEPLOYED).
 //   - A weapon with WEAPON_PERK_DEPLOY can only fire while its wielder is deployed
-//     (gate in main.fos::critter_attack) - unless the wielder has PE_SERVO_GUNNER and a power armor,
+//     (gate in main.fos::critter_attack) - unless the wielder has PE_SERVO_GUNNER and power armor equivalence,
 //     which lets them fire un-deployed (deploying then shaves 1 AP off each shot, in parameters.dll).
 //   - Deploy never survives a session: CleanupDeploy() runs on critter_init / player_login.
 //   - Server authoritative. unsafe_ToggleDeploy is the single client entry point,
@@ -33,9 +33,9 @@ import bool IsInPowerArmor(Critter& cr) from "power_armor";
 // (ExitDeploy / CleanupDeploy) can reverse exactly what EnterDeploy applied even
 // if it runs after a save/login. Any nonzero value still means "deployed".
 #define DEPLOY_STATE_NORMAL    (1) // immobile bipod: MODE_NO_WALK + MODE_NO_RUN added
-#define DEPLOY_STATE_MOBILE    (2) // Powered Bipod in power armor: walk only (MODE_NO_RUN added), 1 AP/hex (engine)
+#define DEPLOY_STATE_MOBILE    (2) // Powered Bipod with PA equivalence: walk only (MODE_NO_RUN added), 1 AP/hex (engine)
 
-// Powered Bipod perk + a power armor: the wielder stays mobile while deployed.
+// Powered Bipod perk + power armor equivalence: the wielder stays mobile while deployed.
 bool CanDeployMobile(Critter& cr)   // Export
 {
     return cr.Perk[PE_POWERED_BIPOD] > 0 && IsInPowerArmor(cr);
@@ -99,8 +99,8 @@ bool EnterDeploy(Critter& cr)   // Export
     }
     if(CanDeployMobile(cr))
     {
-        // Powered Bipod + power armor: may still walk while deployed, but never run.
-        // In power armor the carry lock (critter_item_movement.fos) is lifted, so add our own
+        // Powered Bipod + power armor equivalence: may still walk while deployed, but never run.
+        // The deploy-weapon carry lock (critter_item_movement.fos) is lifted, so add our own
         // run lock; the engine charges 1 AP per move hex while ST_DEPLOYED is set
         // (Act_Move / GetApCostCritterMove). No walk lock added.
         cr.ParamBase[ST_DEPLOYED] = DEPLOY_STATE_MOBILE;

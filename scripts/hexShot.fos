@@ -65,12 +65,14 @@ bool IsAirShotWeapon(ItemMutual@ item)
     return _WeaponMaxDist(item.Proto, use) > 2 && _WeaponRound(item.Proto, use) > 1;
 }
 
-// Servo Gunner in a power armor fires deployable weapons from the hip, no deploy needed -
-// mirrors the deploy-gate bypass in main.fos::critter_attack. Client-safe (reads the armor proto).
+// Servo Gunner in a power armor (or on an inherently equivalent Super Mutant) fires deployable
+// weapons from the hip, no deploy needed - mirrors the deploy-gate bypass in main.fos::critter_attack.
 bool ServoHipFire(CritterMutual& cr)
 {
     if(cr.Perk[PE_SERVO_GUNNER] <= 0)
         return false;
+    if(cr.Param[ST_CLASS_ID] == CLASS_SUPER_MUTANT)
+        return true;
     ItemMutual@ armor = cr.GetItem(0, SLOT_ARMOR);
     if(!valid(armor) || armor.GetType() != ITEM_TYPE_ARMOR || armor.Proto.Slot != SLOT_ARMOR)
         return false;
@@ -366,7 +368,7 @@ void CommenceHexShoting(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty)
 void CommenceAirShot(Critter& cr, Map& map, Item& item, uint16 tx, uint16 ty)
 {
     // Deploy gate: a deployable weapon still has to be deployed to fire
-    // (unless Servo Gunner + power armor allow firing from the hip).
+    // (unless Servo Gunner + power armor equivalence allows firing from the hip).
     if(WeaponHasProtoPerk(item.Proto, WEAPON_PERK_DEPLOY) && cr.Param[ST_DEPLOYED] == 0 && !ServoHipFire(cr))
     {
         cr.Say(SAY_NETMSG, "You must deploy this weapon before firing.");
@@ -465,7 +467,7 @@ bool CascadeAirShotMouseDown(int click)
         return false;
 
     // Deploy gate mirrors the server one: don't animate a shot it will reject.
-    // Servo Gunner + power armor fires from the hip, same as the server allows.
+    // Servo Gunner + power armor equivalence fires from the hip, same as the server allows.
     if(WeaponHasProtoPerk(item.Proto, WEAPON_PERK_DEPLOY) && chosen.Param[ST_DEPLOYED] == 0 && !ServoHipFire(chosen))
     {
         Message("You must deploy this weapon before firing.");

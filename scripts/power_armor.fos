@@ -24,10 +24,17 @@ bool IsPoweredArmorItem(Item@ item)   // Export
            && ArmorHasProtoPerk(item.Proto, ARMOR_PERK_POWERED);
 }
 
-bool IsInPowerArmor(Critter& cr)   // Export
+bool IsWearingPowerArmor(Critter& cr)   // Export
 {
     Item@ armor = cr.GetItem(0, SLOT_ARMOR);
     return valid(armor) && ArmorHasProtoPerk(armor.Proto, ARMOR_PERK_POWERED);
+}
+
+bool IsInPowerArmor(Critter& cr)   // Export
+{
+    // Super Mutants are inherently equivalent to a powered frame for perk gates,
+    // but still do not physically wear a suit that can be entered or ejected.
+    return cr.Param[ST_CLASS_ID] == CLASS_SUPER_MUTANT || IsWearingPowerArmor(cr);
 }
 
 bool CanEnterPowerArmor(Critter& cr)   // Export
@@ -46,7 +53,7 @@ void EnterPowerArmor(Critter& cr, Item& groundArmor)   // Export
         cr.Say(SAY_NETMSG, "Your class cannot wear power armor.");
         return;
     }
-    if(IsInPowerArmor(cr))
+    if(IsWearingPowerArmor(cr))
     {
         cr.Say(SAY_NETMSG, "You are already wearing a power armor.");
         return;
@@ -99,6 +106,6 @@ void ExitPowerArmor(Critter& cr)   // Export
 // Client -> server entry point for the exit keybind.
 void unsafe_ExitPowerArmor(Critter& player, int, int, int, string@, array<int>@)   // Export
 {
-    if(IsInPowerArmor(player))
+    if(IsWearingPowerArmor(player))
         ExitPowerArmor(player);
 }

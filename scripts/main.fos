@@ -102,6 +102,7 @@ import bool   HasDeployWeaponInHand(Critter& cr) from "deploy";
 import void   EnterPowerArmor(Critter& cr, Item& groundArmor) from "power_armor";
 import void   ExitPowerArmor(Critter& cr) from "power_armor";
 import bool   IsInPowerArmor(Critter& cr) from "power_armor";
+import bool   IsWearingPowerArmor(Critter& cr) from "power_armor";
 import bool   IsPoweredArmorItem(Item@ item) from "power_armor";
 import void   CritterGenerate(Critter& cr) from "parameters";
 import void   CritterDescription_Set(Critter& player, int& description1, int& description2) from "critter_description";
@@ -638,7 +639,7 @@ void critter_attack(Critter& cr, Critter& target, ProtoItem& weapon, uint8 weapo
 	// Deploy gate: a weapon carrying WEAPON_PERK_DEPLOY can only fire while its wielder is deployed.
 	if(WeaponHasProtoPerk(weapon, WEAPON_PERK_DEPLOY) && !IsDeployed(cr))
 	{
-		// Servo Gunner + power armor: fire deployable weapons from the hip, no deploy required.
+		// Servo Gunner + power armor equivalence: fire deployable weapons from the hip, no deploy required.
 		// (Deploying anyway shaves 1 AP off each shot - handled in parameters.dll GetUseApCost.)
 		if(cr.Perk[PE_SERVO_GUNNER] > 0 && IsInPowerArmor(cr))
 		{
@@ -673,7 +674,7 @@ void critter_attack_hex(Critter& cr, uint16 tx, uint16 ty, ProtoItem& weapon, ui
 	{
 		if(cr.Perk[PE_SERVO_GUNNER] > 0 && IsInPowerArmor(cr))
 		{
-			// Servo Gunner + power armor: fire from the hip, no deploy required.
+			// Servo Gunner + power armor equivalence: fire from the hip, no deploy required.
 		}
 		else if(cr.IsPlayer())
 		{
@@ -3519,7 +3520,7 @@ bool critter_use_skill(Critter& cr, int skill, Critter@ targetCr, Item@ targetIt
         Critter@ paTarget = targetCr;
         if(!valid(paTarget))
             @paTarget = cr;
-        if(!valid(targetItem) && IsInPowerArmor(paTarget) && !_IsTrueNpc(paTarget))
+        if(!valid(targetItem) && IsWearingPowerArmor(paTarget) && !_IsTrueNpc(paTarget))
         {
             ExitPowerArmor(paTarget);
             return true;
@@ -4171,7 +4172,7 @@ void critter_finish(Critter& cr, bool toDelete)
     // The corpse is being deleted: drop a kept power suit onto the ground so it isn't destroyed with
     // the body (players keep the suit on the corpse after death - see critter_dead). True NPCs never
     // leave a suit behind - theirs is destroyed instead. Idempotent.
-    if(toDelete && IsInPowerArmor(cr))
+    if(toDelete && IsWearingPowerArmor(cr))
     {
         if(_IsTrueNpc(cr))
             DeletePoweredArmors(cr);
@@ -4546,7 +4547,7 @@ void critter_idle(Critter& cr)
         // The dead body is about to respawn/move away: drop a kept power suit where it fell first,
         // so the pilot leaves it on the ground at the death spot. True NPCs never leave a suit
         // behind - theirs is destroyed instead.
-        if(IsInPowerArmor(cr))
+        if(IsWearingPowerArmor(cr))
         {
             if(_IsTrueNpc(cr))
                 DeletePoweredArmors(cr);
@@ -4694,7 +4695,7 @@ void critter_dead(Critter& cr, Critter@ killer)
 	{
 		if(_IsTrueNpc(cr))
 			DeletePoweredArmors(cr);
-		else if(IsInPowerArmor(cr))
+		else if(IsWearingPowerArmor(cr))
 			ExitPowerArmor(cr);
 	}
 	uint crGroup = _GroupIndex(cr);
